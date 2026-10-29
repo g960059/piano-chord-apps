@@ -313,6 +313,7 @@ function render(){
   h+=linksCard();
   h+=`<p class="note">※ 音の 高さは 平均律です。<span class="ds">x</span> は ダブルシャープの 楽譜での 書き方です。</p></div>`;
   PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx+':'+t);
+  if(state.anim) PA.follow(document.getElementById('view')); // つくりかたで 音の高さが かわっても 鍵が 見えるように
   const acts=(A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
     `<button class="btn" data-act="play">🔊 いっしょに</button><button class="btn primary" data-act="resolve">➡️ Ⅴへ</button>`;
   if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}

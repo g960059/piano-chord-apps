@@ -430,6 +430,17 @@ PA.paint=(el,html,sig)=>{
   focus(document.querySelector(`#actions .btn.primary${ok}`)||document.querySelector(`#actions button${ok}`));
 };
 // はじめて出す横スクロールの位置：鍵盤は focus の鍵（なければ 色つきの鍵、なければ まんなかのド）を まん中に。data-start="end" は右はし
+// アニメの とちゅうなどで、色のついた鍵が 見えない ところに あるときだけ まん中へ（見えていれば 動かさない）
+PA.follow=el=>{
+  (el||document).querySelectorAll('[data-sk]').forEach(b=>{
+    if(b.scrollWidth<=b.clientWidth+1) return;
+    let t=[...b.querySelectorAll('[data-focus]')]; if(!t.length) t=[...b.querySelectorAll('[data-mk]')];
+    if(!t.length) return;
+    const br=b.getBoundingClientRect(), L=Math.min(...t.map(r=>r.getBoundingClientRect().left)), R=Math.max(...t.map(r=>r.getBoundingClientRect().right));
+    if(L>=br.left-1&&R<=br.right+1) return;
+    PA.placeScroll(b);
+  });
+};
 PA.placeScroll=b=>{
   if(b.scrollWidth<=b.clientWidth+1) return;
   if(b.dataset.start==='end'){b.scrollLeft=b.scrollWidth;return;}

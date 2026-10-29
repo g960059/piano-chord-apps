@@ -132,13 +132,18 @@ function render(){
   const marks=new Map();
   shown.forEach(t=>marks.set(t.midi,{fill:col,label:PA.nm(t),focus:true}));
   if(A&&A.ghost) marks.set(A.ghost.midi,{fill:'#fff',ring:col,tc:col,label:PA.nm(A.ghost.note),focus:true});
-  if(A) A.scaleLit.forEach(k=>{const m=PA.at(key.scale,k).midi;if(!marks.has(m))marks.set(m,{fill:PA.BLACK.has(m%12)?'#8a7440':'#fff3c4'});});
+  if(A){
+    // いま 鳴っている音（かえるの いる音、音階を ならべている ときは 最後に 光った音）を 見える ところへ
+    const lit=[...A.scaleLit], curK=A.frog!=null?A.frog:(lit.length&&lit.length<=8?lit[lit.length-1]:null);
+    lit.forEach(k=>{const m=PA.at(key.scale,k).midi;if(!marks.has(m))marks.set(m,{fill:PA.BLACK.has(m%12)?'#8a7440':'#fff3c4',focus:k===curK&&!shown.length});});
+  }
   h+=`<section class="card"><h2>🎹 けんばん<small>さわると 音が出るよ</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(60,88,marks)}</div></section>`;
   let staffNote='';
   if(shown.length){const st=PA.stepOf(shown[0]);staffNote=`ひとつとばし だから、この和音は <b>${(st-30)%2===0?'線・線・線':'間・間・間'}</b> に ならぶよ。`;}
   h+=`<section class="card"><h2>🎼 がくふ</h2><div class="scroll" data-sk="staff">${PA.staffSVG(key,[{notes:shown,color:col,ltColor:'#d1495b',accColor:'#d1495b'}],{minW:220})}</div><p class="note">${staffNote}</p></section>`;
   h+=`<details class="more tips"><summary>💡 おぼえかたの コツ</summary>${tipsHTML(key)}</details></div>`;
   PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx);
+  if(state.anim) PA.follow(document.getElementById('view')); // アニメで 光る鍵が 見えるように
   PA.paint(document.getElementById('actions'),
     (A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
     `<button class="btn" data-act="play">🔊 いっしょに</button><button class="btn" data-act="arp">🎶 ひとつずつ</button>`,'bar');

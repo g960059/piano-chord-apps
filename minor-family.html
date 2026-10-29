@@ -221,6 +221,7 @@ function render(){
   h+=`<section class="card">${shapeCard(key,f)}</section>`;
   h+=`<p class="note">※ 和音は 和声的短音階（7ばんめの音を 半音上げた音階）で 作っています。<span class="ds">x</span> は ダブルシャープの 楽譜での 書き方です。</p></div>`;
   PA.paint(document.getElementById('view'),h,state.keyIdx+':'+f);
+  if(state.anim) PA.follow(document.getElementById('view')); // アニメで 光る鍵が 見えるように
   const acts=(A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
     `<button class="btn" data-act="play">🔊 いっしょに</button><button class="btn primary" data-act="resolve">➡️ Ⅰへ 解決</button>`;
   if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
