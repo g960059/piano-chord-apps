@@ -300,10 +300,13 @@ const earKeys=lv=>{const out=[], sets=lv===3?[false]:Q.keyset==='both'?[false,tr
   Q.openSet=d.openSet===true;
   ['keys','ear'].forEach(m=>{const s=d.sc&&d.sc[m];if(s&&isInt(s.total,0,1e6)&&isInt(s.right,0,s.total)&&isInt(s.streak,0,s.right)) Q.sc[m]={right:s.right,total:s.total,streak:s.streak};});
   Q.deck=KD.create({quiz:QUIZ,tier:Q.tier,modes:effModes(),weak:Q.weak});
+  const hasBag=Q.deck.restore(d.deck); // ひらきなおしても 調の ふくろの つづきから
+  if(Array.isArray(d.tBag)) tBag=d.tBag.filter(t=>TYPES.includes(t)).slice(0,TYPES.length);
   // まだ こたえていない もんだいは そのまま つづける（「つくりかたを見る」から もどったとき）
   const q=d.q;
   if(q&&typeof q==='object'&&!d.answered&&typeof q.minor==='boolean'&&isInt(q.keyIdx,0,PA.keyCount(q.minor)-1)&&TYPES.includes(q.type)&&inPool(q)){
     startQ({minor:q.minor,keyIdx:q.keyIdx,type:q.type});
+    if(!hasBag) Q.deck.draw(x=>x.id===keyId(q)); // ふくろの きろくが ないときも、この 調は「出た」ことに
     if(d.scored===true) Q.result=false; // きろくずみ（スコアを 0 に もどした あとでも もう きろくしない）
   }
   const e=d.eq;
@@ -317,7 +320,7 @@ const earKeys=lv=>{const out=[], sets=lv===3?[false]:Q.keyset==='both'?[false,tr
 function save(){
   PA.store.set('chroma-quiz',{mode:Q.mode,keyset:Q.keyset,tier:Q.tier,weak:Q.weak,kLv:Q.kLv,types:Q.types,earLv:Q.earLv,openSet:Q.openSet,sc:Q.sc,
     q:Q.q?{minor:Q.q.minor,keyIdx:Q.q.keyIdx,type:Q.q.type}:null,answered:Q.checked,scored:Q.result!==null,
-    eq:Q.eq,ans:Q.ans,resShown:Q.resShown});
+    eq:Q.eq,ans:Q.ans,resShown:Q.resShown,deck:Q.deck.state(),tBag});
 }
 const score=(m,ok)=>{const s=Q.sc[m];s.total++;if(ok){s.right++;s.streak++;}else s.streak=0;};
 
@@ -945,7 +948,7 @@ function goExplain(minor,keyIdx,type){
 /* ===== 操作 ===== */
 PA.mountBar({title:'変化和音クイズ',app:'chroma-quiz'});
 PA.onSettings=render;
-PA.onPageShow=render;
+PA.onPageShow=()=>{PA.stopSound();location.reload();}; // 「もどる」で もどったら 読みなおす（べつの ページで すすめた きろくを 古い きろくで 上書きしない）
 PA.onKey=m=>{ // 音は core が 鳴らす
   if(Q.mode!=='keys'||Q.checked) return;
   Q.picked.has(m)?Q.picked.delete(m):Q.picked.add(m); render();
