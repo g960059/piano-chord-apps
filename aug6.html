@@ -449,7 +449,7 @@ document.addEventListener('click',e=>{
   else if(a==='biiger'){playSeq([{notes:aug(key,'ger'),color:AUG,cap:'ドイツの6'},{notes:C.gerToI64(key),color:ICOL,cap:`${I64H}（Ⅰの 第2転回形）`},{notes:C.aug6ToV(key,'ger'),color:VCOL,cap:'Ⅴ'}]);}
   else if(a==='altplay'){
     const alt=C.gerMajorAlt(key); if(!alt) return;
-    stop(); const my=token;
+    stop(); render(); const my=token; // つくりかたの とちゅうでも 画面を もどしてから 鳴らす
     [alt,C.gerToI64(key),C.aug6ToV(key,'ger')].forEach((ns,i)=>setTimeout(()=>{if(my===token)PA.chord(ns.map(n=>n.midi),{dur:i===2?2.2:1.4});},i*1300));
   }
   else if(a==='go'){
