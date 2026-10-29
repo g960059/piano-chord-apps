@@ -472,6 +472,90 @@ document.addEventListener('keydown',e=>{
   rove(n); n.focus();
 });
 document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&&e.target.closest('.kb [data-m]');if(k) hitKey(k);}});
+/* ===== ドッペルドミナントと 増六の和音（芸大和声の 考え方） =====
+ * 長調・短調どちらでも、key（PA.majorKey / PA.minorKey）を わたすと、正しい つづりと 高さの 音を かえす。
+ * 音：{letter, acc, midi, role(日本語の役わり), tag('lt'＝Ⅴへの導音、'low'＝下げた音、'b9'＝短9度、'raised'＝上げた音)}
+ *   Ⅱ7                 … 調の音だけで つくる Ⅱ の七の和音（下属の なかま）
+ *   ドッペルドミナント   … Ⅱ7 の 第3音を 半音上げた「Ⅴ の ための Ⅴ7」。第3音が Ⅴ の 導音になる
+ *   Ⅴ9/Ⅴ・減七/Ⅴ        … Ⅴの家族と おなじ しくみ（短9度・根音省略）
+ *   増六（イタリア・フランス・ドイツ）… ドッペルドミナントの 第5音を 半音下げ、その音を いちばん下に おいた形
+ *     イタリア＝Ⅴ7/Ⅴ の 根音省略、フランス＝Ⅴ7/Ⅴ（根音あり）、ドイツ＝Ⅴ9/Ⅴ（短9）の 根音省略
+ *     下げた音（♭6）と 上げた音（♯4）が「増6度」。外へ ひらいて Ⅴ の オクターブに 解決する
+ */
+(function(){
+  const C=PA.chroma={};
+  // 主音から letterOff 文字・semis 半音 上の 音（base＝主音の 高さ）
+  const tone=(key,letterOff,semis,base,role,tag)=>{
+    const L=(key.l+letterOff)%7, pc=key.tpc+semis;
+    return {letter:L,acc:PA.spell(L,pc),midi:base+semis,role,tag:tag||null};
+  };
+  // ベース（Ⅱ・Ⅴ/Ⅴ の 根音）を ラ2〜ソ♯3 に おく
+  const rootBase=key=>{const r=PA.mod(key.tpc+2,12);return 45+PA.mod(r-45,12)-2;}; // 主音の 高さ（根音＝主音＋2 が 45〜56）
+  C.TYPES={ii7:'Ⅱ7',dd:'ドッペルドミナント',dd9:'Ⅴ9/Ⅴ',ddim:'減七/Ⅴ',it:'イタリアの6',fr:'フランスの6',ger:'ドイツの6'};
+  // ----- Ⅱ7 と ドッペルドミナント（根音を ベースに、上に 5音・7音・3音 の 形） -----
+  C.ii7=key=>{
+    const b=rootBase(key), fifth=key.minor?8:9;
+    return [tone(key,1,2,b,'根音'),tone(key,5,fifth,b,'第5音'),tone(key,7,12,b,'第7音'),tone(key,3,17,b,'第3音')];
+  };
+  C.dd=key=>{
+    const b=rootBase(key);
+    return [tone(key,1,2,b,'根音'),tone(key,5,9,b,'第5音',key.minor?'raised':null),tone(key,7,12,b,'第7音'),tone(key,3,18,b,'第3音（Ⅴへの導音）','lt')];
+  };
+  // Ⅱ7・ドッペル → Ⅴ（ベースは 5度下へ、第3音は Ⅴ の 根音へ、第7音は 半音・全音 下へ）
+  C.toV=key=>{
+    const b=rootBase(key);
+    return [tone(key,4,-5,b,'Ⅴの根音'),tone(key,4,7,b,'Ⅴの根音'),tone(key,6,11,b,'Ⅴの第3音（導音）',key.minor?'raised':null),tone(key,4,19,b,'Ⅴの根音')];
+  };
+  // ----- ドッペルドミナントの 家族（根音位置・よこに つみかさねた形。主音の 高さは key.tonicMidi） -----
+  C.ddStack=(key,kind='dd',major9=false)=>{
+    const b=key.tonicMidi-12;
+    const r=tone(key,1,2,b,'根音'), t3=tone(key,3,6,b,'第3音（Ⅴへの導音）','lt'), t5=tone(key,5,9,b,'第5音',key.minor?'raised':null), t7=tone(key,7,12,b,'第7音');
+    const t9=major9&&!key.minor?tone(key,9,16,b,'第9音'):tone(key,9,15,b,'第9音（短9度）','b9');
+    if(kind==='dd') return [r,t3,t5,t7];
+    if(kind==='dd9') return [r,t3,t5,t7,t9];
+    if(kind==='ddim') return [t3,t5,t7,t9];
+    return [];
+  };
+  // ----- 増六の和音（いちばん下＝下げた第5音 ♭6、いちばん上＝第3音 ♯4） -----
+  const augBase=key=>{const p=PA.mod(key.tpc+8,12);return 52+PA.mod(p-52,12)-8;}; // ♭6 が 52〜63 に くるように
+  C.aug6=(key,type)=>{
+    const b=augBase(key);
+    const low=tone(key,5,8,b,'下げた第5音（いちばん下）','low'), c=tone(key,7,12,b,'第7音'), up=tone(key,3,18,b,'第3音（Ⅴへの導音）','lt');
+    if(type==='it') return [low,c,up];
+    if(type==='fr') return [low,c,tone(key,1,14,b,'根音'),up];
+    if(type==='ger') return [low,c,tone(key,9,15,b,'第9音（短9度）','b9'),up];
+    return [];
+  };
+  // 増六 → Ⅴ（下の音は 半音下、上の音は 半音上：外へ ひらいて オクターブ）。aug6 と おなじ ならびで かえす
+  C.aug6ToV=(key,type)=>{
+    const b=augBase(key);
+    const V1=tone(key,4,7,b,'Ⅴの根音'), V3=tone(key,6,11,b,'Ⅴの第3音',key.minor?'raised':null), V5=tone(key,1,14,b,'Ⅴの第5音'), V8=tone(key,4,19,b,'Ⅴの根音');
+    if(type==='it') return [V1,V3,V8];
+    return [V1,V3,V5,V8];
+  };
+  // ドイツの6 → Ⅰの第2転回形（Ⅰ6/4）→ Ⅴ（Ⅴへ 直接 すすむと 平行5度に なるため）
+  C.gerToI64=key=>{
+    const b=augBase(key), third=key.minor?15:16;
+    return [tone(key,4,7,b,'Ⅰの第5音（いちばん下）'),tone(key,0,12,b,'Ⅰの根音'),tone(key,2,third,b,'Ⅰの第3音'),tone(key,4,19,b,'Ⅰの第5音')];
+  };
+  // 長調の ドイツの6 は、Ⅰ6/4 へ すすむとき 第9音を 二重増4度（♯2）で 書くことも ある
+  C.gerMajorAlt=key=>{
+    if(key.minor) return null;
+    const b=augBase(key), n=C.aug6(key,'ger');
+    n[2]=tone(key,1,15,b,'二重増4度で 書いた音','b9');
+    return n;
+  };
+  // コードネーム（めやす）
+  const nameOf=n=>PA.LET_EN[n.letter]+PA.ACC[n.acc];
+  C.symbol=(key,type)=>{
+    const r=tone(key,1,2,0), t3=tone(key,3,6,0);
+    if(type==='ii7') return PA.H(nameOf(r)+(key.minor?'m7(♭5)':'m7'));
+    if(type==='dd') return PA.H(nameOf(r)+'7');
+    if(type==='dd9') return PA.H(nameOf(r)+'7(♭9)');
+    if(type==='ddim') return PA.H(nameOf(t3)+'dim7');
+    return '';
+  };
+})();
 PA.reduceMotion=()=>!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
 PA.scrollTop=()=>window.scrollTo({top:0,behavior:PA.reduceMotion()?'auto':'smooth'});
 })();

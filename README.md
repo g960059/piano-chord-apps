@@ -15,8 +15,15 @@
 | | 調号と 臨時記号 | `minor-signature.html` |
 | | Ⅴの家族（Ⅴ・Ⅴ7・Ⅴ9・減七） | `minor-family.html` |
 | | 短調クイズ | `minor-quiz.html` |
+| ドッペルドミナントと 増六 | Ⅱ7と ドッペルドミナント | `doppel.html` |
+| | 増六の和音（イタリア・フランス・ドイツの6） | `aug6.html` |
+| | ドッペル・増六クイズ | `chroma-quiz.html` |
 | つかってみる | 伴奏づけ | `accompaniment.html` |
 | 耳をきたえる | 和音の 聴きわけ | `ear.html` |
+
+## 公開先
+
+https://piano-chord-apps.g960059.workers.dev/ （Cloudflare。main に push すると自動で更新されます）
 
 ## しくみ
 

@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fdf8f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Ⅱ7と ドッペルドミナント</title>
+<link rel="stylesheet" href="assets/app.css">
+<style>
+.toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.hero{border-top:6px solid var(--c)}
+.hero-top{display:flex;gap:12px;align-items:center}
+.hero .badge{font-size:24px;min-width:72px}
+.hk{font-weight:700;font-size:15px;line-height:1.4}
+.hn{font-size:clamp(22px,6.4vw,34px);font-weight:800;color:var(--c);line-height:1.25;text-wrap:balance}
+.hs{font-size:13px;color:var(--sub)}
+.nw{white-space:nowrap}
+.up{color:var(--red)}
+.roles{display:grid;gap:4px;margin-top:10px}
+.role{display:flex;align-items:center;flex-wrap:wrap;gap:2px 10px;padding:6px 10px;border-radius:12px;background:var(--soft2);min-height:40px}
+.role .rn{flex:none;min-width:3.6em;font-size:14px;color:var(--sub);font-weight:700}
+.role .rv{font-size:19px;font-weight:800}
+.role .rf{font-size:14px;color:var(--sub)}
+.role .rt{font-size:13px;font-weight:800;padding:2px 10px;border-radius:999px;background:var(--red);color:#fff}
+.role .rt.soft{background:var(--redl);color:#a3273a}
+.role.on{background:var(--redl);outline:2px solid var(--red)}
+.sw{width:100%;gap:10px;margin-top:10px;background:var(--card);border:2px solid var(--red);color:var(--red);font-size:clamp(14px,4vw,16px);min-height:52px}
+.sw .knob{width:44px;height:26px;border-radius:13px;background:#d8cfc4;position:relative;flex:none;transition:background .2s}
+.sw .knob::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .2s}
+.sw.on{background:var(--redl)}
+.sw.on .knob{background:var(--red)}
+.sw.on .knob::after{left:21px}
+.hero .chips{margin-top:10px;align-items:center}
+.chip.arrow{background:none;padding:4px 0}
+.chip.q-s{background:#daf3e6;color:#11603e}
+.chip.q-dd{background:#ece2fb;color:#5b2aa6}
+.msg{margin-top:10px}
+.msg b.big{font-size:20px;color:var(--c)}
+.seqrow{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:2px 0 8px}
+.seqrow .sc{min-width:44px;padding:4px 10px;border-radius:12px;font-weight:800;font-size:17px;text-align:center;background:var(--soft2);color:var(--c);border:2px solid transparent}
+.seqrow .sc.on{background:var(--c);color:#fff}
+.seqrow .ar{color:var(--sub);font-size:14px}
+.ab{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.ab .btn{font-size:16px;padding-inline:8px}
+.ab.one{grid-template-columns:1fr}
+.askline{margin:12px 0 0;font-weight:700}
+.fb{margin-top:12px}
+.qscore{float:right;font-weight:800;font-size:15px}
+.fam .names{font-size:20px;font-weight:800;margin:8px 0 2px}
+.b9{color:#b0307a}
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
+.links .btn{background:var(--card);border:2px solid var(--line);justify-content:flex-start;padding-inline:16px;min-height:56px}
+.links .btn small{display:block;font-weight:400;color:var(--sub);font-size:12.5px}
+.more ul{margin:0;padding-left:1.3em}
+.more li{margin:6px 0}
+.inner{margin-top:10px;background:var(--card)}
+@media (prefers-reduced-motion:reduce){.sw .knob,.sw .knob::after{transition:none}}
+</style>
+</head>
+<body>
+<header class="appbar" id="appbar"></header>
+<main class="page" id="view"></main>
+<div class="actionbar" id="actions"></div>
+<script src="assets/core.js"></script>
+<script>
+/* Ⅱ7と ドッペルドミナント：Ⅱ7 の 第3音（短調は 第5音も）を 半音上げると「Ⅴ の ための Ⅴ7」に なる。
+ * 和音の つづり・高さ・Ⅴ への すすみかたは ぜんぶ PA.chroma（増六・クイズの ページと おなじ） */
+const C=PA.chroma;
+const S_COL=PA.COL.IV, DD_COL=PA.COL.V7, V_COL=PA.COL.V, I_COL=PA.COL.I, RED='#d1495b', B9='#b0307a';
+const LIGHT={[S_COL]:'#bfe8d3',[DD_COL]:'#dccbf6',[V_COL]:'#c6dafa',[I_COL]:'#f8c9bd'};
+const DARK={[S_COL]:'#11603e',[DD_COL]:'#4b2390',[V_COL]:'#1d4f9a',[I_COL]:'#8f2a17'};
+const FAMS=[['dd','Ⅴ7/Ⅴ'],['dd9','Ⅴ9/Ⅴ'],['ddim','減七/Ⅴ']];
+
+const saved=PA.store.get('doppel',{})||{};
+const state={minor:!!saved.minor,keyIdx:0,raised:saved.raised===true,res:0,cad:null,cad64:false,ab:null,abOk:0,abN:0,fam:'dd'};
+// res：0＝和音、2＝Ⅴ に すすんだ ところ。cad：{i}＝カデンツを 鳴らしている
+if(Number.isInteger(saved.keyIdx)&&saved.keyIdx>=0&&saved.keyIdx<PA.keyCount(state.minor)) state.keyIdx=saved.keyIdx;
+const save=()=>PA.store.set('doppel',{minor:state.minor,keyIdx:state.keyIdx,raised:state.raised});
+const curKey=()=>PA.keyOf(state.minor,state.keyIdx); // 長調の主音は ド4〜シ4、短調は ラ3〜ソ♯4
+
+/* ===== 音 ===== */
+// PA.chroma と おなじ きまりで、主音から letterOff 文字・semis 半音 上の 音（カデンツの Ⅰ・Ⅰ6/4・Ⅴ7 に つかう）
+const tn=(key,b,lo,semis,role,tag)=>{const L=(key.l+lo)%7;return {letter:L,acc:PA.spell(L,key.tpc+semis),midi:b+semis,role:role||'',tag:tag||null};};
+const tonicBase=key=>C.ii7(key)[0].midi-2; // PA.chroma の Ⅱ7（根音＝主音＋2）と おなじ 高さの 主音
+const chordOf=(key,raised)=>raised?C.dd(key):C.ii7(key); // [ベース（根音）, 第5音, 第7音, 第3音]
+const byRole=ns=>[ns[0],ns[3],ns[1],ns[2]]; // 根音・第3音・第5音・第7音 の じゅん
+const isUp=n=>n.tag==='lt'||n.tag==='raised';
+const label=raised=>raised?'Ⅴ7/Ⅴ':'Ⅱ7';
+const colOf=raised=>raised?DD_COL:S_COL;
+function cadSeq(key,raised,use64){
+  const b=tonicBase(key), th=key.minor?3:4, X=chordOf(key,raised), lt=key.minor?'raised':null;
+  // Ⅰ：アルトの 主音が そのまま Ⅱ7・ドッペルの 第7音に なる（第7音の 準備）
+  // ただし 短調の ドッペルでは テノールが 第3音 → 上げた第5音 の 増4度に なるので、Ⅰ の 根音を 2つ にした 形から すすむ
+  const I1=key.minor&&raised
+    ?[tn(key,b,0,0,'Ⅰの根音'),tn(key,b,0,12,'Ⅰの根音'),tn(key,b,2,12+th,'Ⅰの第3音'),tn(key,b,4,19,'Ⅰの第5音')]
+    :[tn(key,b,0,0,'Ⅰの根音'),tn(key,b,2,th,'Ⅰの第3音'),tn(key,b,0,12,'Ⅰの根音'),tn(key,b,4,19,'Ⅰの第5音')];
+  if(raised&&use64){
+    let I64,V7,I3;
+    if(!key.minor){
+      // ドッペル → Ⅰ6/4：第7音は アルトに のこり（Ⅰ6/4 の 4度）、導音は ソプラノで 上へ
+      I64=[tn(key,b,4,-5,'Ⅰの第5音'),tn(key,b,2,th,'Ⅰの第3音'),tn(key,b,0,12,'Ⅰの根音'),tn(key,b,4,19,'Ⅰの第5音')];
+      // Ⅰ6/4 → Ⅴ7：6度は 下へ（第3音→Ⅴの第5音）、4度は 下へ（根音→導音）、ソプラノ 8度→7度
+      V7=[tn(key,b,4,-5,'Ⅴの根音'),tn(key,b,1,2,'Ⅴの第5音'),tn(key,b,6,11,'Ⅴの第3音（導音）'),tn(key,b,3,17,'Ⅴの第7音')];
+      // Ⅴ7（根音あり・第5音あり）→ Ⅰ：根音を 3つ、第5音は はぶく
+      I3=[tn(key,b,0,0,'Ⅰの根音'),tn(key,b,0,0,'Ⅰの根音'),tn(key,b,0,12,'Ⅰの根音'),tn(key,b,2,12+th,'Ⅰの第3音')];
+    }else{
+      // 短調：上げた第5音（テノール）から Ⅰ6/4 の 第3音へは 増4度に なってしまうので、
+      // テノールは 半音上げた音を 上へ すすめて 主音（第7音と おなじ 音）を うけつぎ、アルトが 第3音へ
+      I64=[tn(key,b,4,-5,'Ⅰの第5音'),tn(key,b,0,12,'Ⅰの根音'),tn(key,b,2,12+th,'Ⅰの第3音'),tn(key,b,4,19,'Ⅰの第5音')];
+      // Ⅰ6/4 → Ⅴ7：4度は 下へ（主音→導音）、6度は 下へ（第3音→Ⅴの第5音）、ソプラノ 8度→7度
+      V7=[tn(key,b,4,-5,'Ⅴの根音'),tn(key,b,6,11,'Ⅴの第3音（導音）',lt),tn(key,b,1,14,'Ⅴの第5音'),tn(key,b,3,17,'Ⅴの第7音')];
+      // Ⅴ7 → Ⅰ：内声の 導音は 3度 下の Ⅰ の 第5音へ（Ⅰ が 4つの 音 そろう）
+      I3=[tn(key,b,0,0,'Ⅰの根音'),tn(key,b,4,7,'Ⅰの第5音'),tn(key,b,0,12,'Ⅰの根音'),tn(key,b,2,12+th,'Ⅰの第3音')];
+    }
+    return [{lab:'Ⅰ',col:I_COL,ns:I1,d:1},{lab:label(true),col:DD_COL,ns:X,d:1.3},{lab:'Ⅰ6/4',col:V_COL,ns:I64,d:1.1},{lab:'Ⅴ7',col:V_COL,ns:V7,d:1.1},{lab:'Ⅰ',col:I_COL,ns:I3,d:2.2}];
+  }
+  const V=C.toV(key), V7=[V[0],V[1],V[2],tn(key,b,3,17,'Ⅴの第7音')];
+  const I2=[tn(key,b,0,0,'Ⅰの根音'),tn(key,b,4,7,'Ⅰの第5音'),tn(key,b,0,12,'Ⅰの根音'),tn(key,b,2,12+th,'Ⅰの第3音')];
+  return [{lab:'Ⅰ',col:I_COL,ns:I1,d:1},{lab:label(raised),col:colOf(raised),ns:X,d:1.3},{lab:'Ⅴ',col:V_COL,ns:V,d:0.9},{lab:'Ⅴ7',col:V_COL,ns:V7,d:0.9},{lab:'Ⅰ',col:I_COL,ns:I2,d:2.2}];
+}
+const parKey=key=>{const L=key.minor?PA.MAJOR_KEYS:PA.MINOR_KEYS, i=L.findIndex(([l,a])=>l===key.l&&a===key.a);return i<0?null:PA.keyOf(!key.minor,i);}; // おなじ主音の 長調・短調（リストに ない 調は null）
+const uniq=ms=>[...new Set(ms)];
+const midisOf=ns=>uniq(ns.map(n=>n.midi));
+
+/* ===== 名前・形 ===== */
+const nmW=n=>`<span class="nw">${PA.nmH(n)}</span>`;
+const nmC=n=>isUp(n)?`<span class="nw up">${PA.nmH(n)}</span>`:nmW(n);
+const namesC=(ns,sep='・')=>ns.map(nmC).join(sep);
+const unraised=n=>({...n,acc:n.acc-1,midi:n.midi-1});
+// コードネーム（白鍵だけの 形の めやす。音の 数は 画面に 出さない）
+function symOf(ns){
+  const d=i=>PA.mod(ns[i].midi-ns[0].midi,12), r=PA.LET_EN[ns[0].letter]+PA.ACC[ns[0].acc];
+  const k=d(1)+'-'+d(2)+'-'+d(3);
+  const S={'4-7-10':'7','3-7-10':'m7','3-6-10':'m7(♭5)','4-7-11':'maj7','3-6-9':'dim7','3-7-11':'mM7'}[k];
+  return PA.H(r+(S||''));
+}
+// 白鍵だけ → 調号 → 半音上げる（おなじ 文字のまま）
+function shapeChain(key){
+  const ii=byRole(C.ii7(key)), dd=byRole(C.dd(key));
+  const white=ii.map(n=>({...n,acc:0,midi:n.midi-n.acc})); // 臨時記号を とった 音の 高さ（コードネームも この 高さで 決める）
+  const st=[['白鍵だけ',white,''],['調号を つける',ii,'q-s'],[state.minor?'第3音と 第5音を 上げる':'第3音を 上げる',dd,'q-dd']];
+  const out=[];
+  st.forEach(([lab,ns,cls],i)=>{
+    if(i>0&&ns.every((n,j)=>n.acc===st[i-1][1][j].acc)) return;
+    const sym=i===1?C.symbol(key,'ii7'):i===2?C.symbol(key,'dd'):symOf(ns);
+    out.push(`<span class="chip ${cls}">${lab}：${ns.map(n=>i===2&&isUp(n)?`<span class="up">${PA.nmH(n)}</span>`:PA.nmH(n)).join('')}（${sym}）</span>`);
+  });
+  return out.join('<span class="chip arrow" aria-hidden="true">→</span>');
+}
+
+/* ===== けんばん ===== */
+const isWhite=m=>!PA.BLACK.has(PA.mod(m,12));
+function kbRange(ms,minWhite=10){
+  let lo=Math.min(...ms)-1, hi=Math.max(...ms)+1;
+  while(!isWhite(lo)) lo--; while(!isWhite(hi)) hi++;
+  const wc=()=>{let c=0;for(let m=lo;m<=hi;m++) if(isWhite(m)) c++;return c;};
+  for(let s=0;wc()<minWhite&&s<12;s++){if(s%2){lo--;while(!isWhite(lo))lo--;}else{hi++;while(!isWhite(hi))hi++;}}
+  return [lo,hi];
+}
+// 4声の 和音：ベースは 左手（うすい色）、上の 3つは 右手（フォーカス）
+function voiceMarks(ns,col,redUp){
+  const m=new Map();
+  ns.forEach((n,i)=>{
+    const up=redUp&&isUp(n);
+    if(i===0) m.set(n.midi,{fill:LIGHT[col]||'#eee',tc:DARK[col]||'#3a3245',label:PA.nm(n),sub:'左手',subColor:col});
+    else if(!m.has(n.midi)) m.set(n.midi,{fill:up?RED:col,label:PA.nm(n),focus:true}); // ベースと おなじ 鍵（Ⅰ の 根音 2つ）は 左手の まま
+  });
+  return m;
+}
+
+/* ===== がくふ ===== */
+// 4声：ト音記号に 上の2つ（アルト・ソプラノ）、ヘ音記号に 下の2つ（ベース・テノール）
+const staffCol=(ns,o)=>({notes:[ns[2],ns[3]].map(o.mark||(n=>n)),lh:[ns[0],ns[1]].map(o.mark||(n=>n)),color:o.color,ltColor:RED,accColor:RED,label:o.label,labelColor:o.color,op:o.op});
+// 前の和音で つけた 臨時記号を おぼえて、もどすときは ♮ を 書く
+function withCarry(key,cols){
+  const mem={};
+  cols.forEach(c=>{
+    c.carry={...mem};
+    [...c.notes,...c.lh].forEach(n=>{const sa=key.sig[n.letter]||0;if(n.acc!==sa||(mem[n.letter]!==undefined&&mem[n.letter]!==n.acc)) mem[n.letter]=n.acc;});
+  });
+  return cols;
+}
+// ヘ音記号の 矢印（PA.staffSVG の 矢印は ト音記号だけなので、おなじ 形を ここで 足す）
+function bassArrows(svg,key,cols,o,arrows){
+  const ns=PA.sigInfo(key).letters.length, nx=50+ns*10+(ns?24:14), cw=o.colW||70, BT=96+82;
+  const pos=(ci,n)=>({x:nx+ci*cw+cw/2,y:BT-(PA.stepOf(n)-26)*5});
+  let s='', cs=new Set();
+  arrows.forEach(a=>{
+    const p=pos(a.c1,cols[a.c1].lh[a.i1]), q=pos(a.c2,cols[a.c2].lh[a.i2]); cs.add(a.color);
+    s+=`<path d="M${p.x+12} ${p.y} L${q.x-22} ${q.y}" stroke="${a.color}" stroke-width="2.2" fill="none" stroke-dasharray="${a.dash||''}" marker-end="url(#bar-${a.color.slice(1)})"/>`;
+    if(a.text) s+=`<text x="${q.x+14}" y="${q.y+5}" font-size="14" font-weight="800" fill="${a.color}">${a.text}</text>`;
+  });
+  s+=`<defs>${[...cs].map(c=>`<marker id="bar-${c.slice(1)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${c}"/></marker>`).join('')}</defs>`;
+  return svg.replace(/<\/svg>$/,s+'</svg>');
+}
+function staffBox(svg,name){
+  // 小さく なりすぎないように（文字が 読めるように）横スクロールに する
+  const m=svg.match(/viewBox="0 0 ([\d.]+) /), W=m?+m[1]:400;
+  return `<div class="scroll" data-sk="${name}"><div style="min-width:${Math.round(W*0.66)}px">${svg}</div></div>`;
+}
+const redMark=n=>isUp(n)?{...n,raised:true}:n;
+function mainStaff(key){
+  const r=state.raised, X=chordOf(key,r), V=C.toV(key), col=colOf(r);
+  const cols=withCarry(key,[staffCol(X,{color:col,label:label(r),mark:redMark}),staffCol(V,{color:V_COL,label:'Ⅴ'})]);
+  const o={grand:true,colW:150,minW:340,arrows:[
+    {c1:0,i1:1,c2:1,i2:1,color:r?RED:col,text:r?'半音↑':'↑'},
+    {c1:0,i1:0,c2:1,i2:0,color:col,text:'↓'}]};
+  let svg=PA.staffSVG(key,cols,o);
+  svg=bassArrows(svg,key,cols,o,[{c1:0,i1:0,c2:1,i2:0,color:'#6b6273',text:'5度下'},{c1:0,i1:1,c2:1,i2:1,color:'#b3a99c',text:'↓',dash:'4 4'}]);
+  return staffBox(svg,'staff');
+}
+function cadStaff(key,seq){
+  const cur=state.cad?state.cad.i:-1;
+  const cols=withCarry(key,seq.map((s,i)=>staffCol(s.ns,{color:s.col,label:s.lab,mark:i===1?redMark:null,op:cur<0||cur===i?1:.35})));
+  return staffBox(PA.staffSVG(key,cols,{grand:true,colW:76,minW:340}),'cadstaff');
+}
+
+/* ===== 画面 ===== */
+function heroMsg(key){
+  const ii=byRole(C.ii7(key)), dd=byRole(C.dd(key)), V=C.toV(key), vr=V[1];
+  const deg2=key.scale[1];
+  if(!state.raised) return `Ⅱ7（にどしち）は 音階の <b>2ばんめ「${PA.nmH(deg2)}」</b>から ひとつとばしで 4つ。<b>調の音だけ</b>で できる 和音で、Ⅳ と おなじ <b>下属（S）の なかま</b>。Ⅴ の 前に おいて「つぎは Ⅴ だよ」と つなぐよ。<br>🔴 スイッチを おして、第3音「${PA.nmH(ii[1])}」${state.minor?`と 第5音「${PA.nmH(ii[2])}」`:''}を 半音上げてみよう！`;
+  let m=`第3音「${PA.nmH(ii[1])}」を 半音上げて <b class="up">「${PA.nmH(dd[1])}」</b>。${PA.nmH(dd[1])} は Ⅴ の 根音「${PA.nmH(vr)}」の すぐ下 → 「${PA.nmH(vr)}」へ すいこまれる <b class="up">Ⅴへの導音</b> に なるよ。`;
+  if(state.minor) m+=`<br>🌙 短調では 第5音「${PA.nmH(ii[2])}」も 半音上げて「${PA.nmH(dd[2])}」に する（Ⅴ7 と おなじ 形に するため）。`;
+  m+=`<br><b>${namesC(dd)}</b> は、「${PA.nmH(vr)}」を 主音に した 調の Ⅴ7 と おなじ 形。だから <b>「Ⅴ の ための Ⅴ7」</b>＝ ドッペルドミナント。Ⅴ が もっと つよく 聞こえるよ。`;
+  return m;
+}
+function rolesHTML(key){
+  const r=state.raised, ns=byRole(chordOf(key,r)), base=byRole(C.ii7(key));
+  const NAME=['根音','第3音','第5音','第7音'];
+  return `<div class="roles">`+ns.map((n,i)=>{
+    const up=r&&isUp(n);
+    const tagH=!up?'':n.tag==='lt'?`<span class="rt">Ⅴへの導音</span>`:`<span class="rt soft">半音上げた</span>`;
+    return `<div class="role ${up?'on':''}"><span class="rn">${NAME[i]}</span>${up?`<span class="rf">${PA.nmH(base[i])} →</span>`:''}<b class="rv ${up?'up':''}">${PA.nmH(n)}</b>${tagH}</div>`;
+  }).join('')+`</div>`;
+}
+function kbCaption(key,seq){
+  if(state.cad){const s=seq[state.cad.i];return `カデンツ ${state.cad.i+1}/${seq.length}：<b style="color:${s.col}">${PA.H(s.lab)}</b>　${state.cad.i===1?namesC(s.ns.slice(1)):PA.namesH(s.ns.slice(1))}（左手 ${PA.nmH(s.ns[0])}）`;}
+  if(state.res===2) return `<b style="color:${V_COL}">Ⅴ</b>：${PA.namesH(C.toV(key).slice(1))}（左手 ${PA.nmH(C.toV(key)[0])}）`;
+  return `<b style="color:${colOf(state.raised)}">${label(state.raised)}</b>：左手は いちばん下の 根音。${state.raised?'<span class="up">赤＝半音上げた 音（第3音は Ⅴへの導音）</span>。':''}さわると 音が出るよ`;
+}
+function abCard(key){
+  const ab=state.ab, ii=byRole(C.ii7(key)), dd=byRole(C.dd(key));
+  let h=`<section class="card"><h2>👂 どっちが ドッペル？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>A と B、どちらも そのあと Ⅴ を 鳴らすよ</small></h2>
+    <p class="note" style="margin-top:0">ひとつは Ⅱ7、もうひとつは ドッペルドミナント。Ⅴ に「ぐっと ひっぱられる」のは どっち？</p>`;
+  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext">🎲 もんだいを 出す</button></div></section>`;
+  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ A を きく</button><button class="btn" data-act="abplay" data-v="B">▶️ B を きく</button></div>`;
+  if(ab.answer==null) return h+`<p class="askline">ドッペルドミナントは？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">A が ドッペル</button><button class="btn night" data-act="qchoose" data-v="B">B が ドッペル</button></div></section>`;
+  const ok=ab.answer===ab.dd, other=ab.dd==='A'?'B':'A';
+  return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！ もういちど 聴きくらべてみよう。'}
+      <b>${ab.dd}</b> が ドッペル（${namesC(dd)}）、<b>${other}</b> が Ⅱ7（${PA.namesH(ii)}）。
+      <br>「${PA.nmH(dd[1])}」が Ⅴ の「${PA.nmH(C.toV(key)[1])}」へ 半音で のぼるので、Ⅴ が つよく 聞こえるんだ。</div>
+    <div class="ab one"><button class="btn night" data-act="qnext">🎲 つぎの もんだい</button></div></section>`;
+}
+function famCard(key){
+  const f=state.fam, ns=C.ddStack(key,f), root=C.ddStack(key,'dd')[0], lt=ns.find(n=>n.tag==='lt'), n9=C.ddStack(key,'dd9')[4];
+  const nmF=n=>n.tag==='lt'?`<span class="nw up">${PA.nmH(n)}</span>`:n.tag==='b9'?`<span class="nw b9">${PA.nmH(n)}</span>`:nmW(n);
+  let line;
+  if(f==='dd') line=`ドッペルドミナント そのもの。根音「${PA.nmH(root)}」から ひとつとばしで 4つ。<span class="up">赤＝Ⅴへの導音</span>。`;
+  else if(f==='dd9'){
+    line=`Ⅴ7/Ⅴ に、もうひとつ とばして 第9音 <b class="b9">「${PA.nmH(n9)}」</b>を のせた 5つの音（第9音は 短9度）。Ⅴの家族の Ⅴ9 と おなじ しくみ だよ。`;
+    if(!key.minor){const M=C.ddStack(key,'dd9',true)[4];line+=`<br>長調では「${PA.nmH(n9)}」は おなじ主音の 短調から かりてきた 音。第9音を「${PA.nmH(M)}」に した Ⅴ9/Ⅴ も あるよ。`;}
+  }else line=`Ⅴ9/Ⅴ から 根音「${PA.nmH(root)}」を はぶくと（けんばんの うすい 鍵）<b>${ns.map(nmF).join('・')}</b> ＝ <b>減七の和音</b>。いちばん下が Ⅴへの導音「${PA.nmH(lt)}」だよ。`;
+  const all=C.ddStack(key,'dd9').map(n=>n.midi), [lo,hi]=kbRange(all,10);
+  const marks=new Map();
+  ns.forEach(n=>marks.set(n.midi,{fill:n.tag==='lt'?RED:n.tag==='b9'?B9:DD_COL,label:PA.nm(n),focus:true}));
+  if(f==='ddim') marks.set(root.midi,{fill:'#f4efe8',ring:'#b3a99c',tc:'#857c8f',label:PA.nm(root)});
+  return `<section class="card fam"><h2>🏠 ドッペルの 家族<small>Ⅴの家族（Ⅴ7・Ⅴ9・減七）と おなじ つくりかたで、Ⅴ へ むかう 和音</small></h2>
+    ${PA.seg('fam',FAMS,f,'full')}
+    <div class="names">${ns.map(nmF).join('&nbsp;・ ')}</div>
+    <div class="hs">コードネーム <b>${C.symbol(key,f)}</b></div>
+    <p class="note" style="color:var(--ink)">${line}</p>
+    <div class="scroll" data-sk="famkb" style="margin-top:8px">${PA.kbSVG(lo,hi,marks)}</div>
+    <div class="row" style="margin-top:8px"><button class="btn small" data-act="famplay">🔊 鳴らす</button><button class="btn small" data-act="famarp">🎶 ひとつずつ</button></div>
+    <p class="note"><a href="minor-family.html" data-go="family">🏠 Ⅴの家族</a> で、おなじ しくみの「Ⅰ へ むかう 和音」を 見てみよう（短調）。</p></section>`;
+}
+let lastActions='';
+function render(){
+  const key=curKey(), r=state.raised, col=colOf(r), X=chordOf(key,r), V=C.toV(key);
+  const seq=cadSeq(key,r,r&&state.cad64), pk=parKey(key);
+  let h=`<div class="stack">
+    <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
+    <section class="card hero" style="--c:${col}">
+      <div class="hero-top"><span class="badge" style="--c:${col}">${label(r)}</span>
+        <div style="min-width:0"><div class="hk">${PA.keyName(key)}の ${r?'ドッペルドミナント':'Ⅱ7（にどしち）'}</div>
+        <div class="hn">${namesC(byRole(X),'&nbsp;・ ')}</div>
+        <div class="hs">コードネーム <b>${C.symbol(key,r?'dd':'ii7')}</b>　/　${r?'Ⅴ7/Ⅴ（Ⅴ の ための Ⅴ7）':'Ⅱ の 七の和音・下属（S）の なかま'}</div></div></div>
+      ${rolesHTML(key)}
+      <button class="btn sw ${r?'on':''}" data-act="raise" role="switch" aria-checked="${r}"><span class="knob"></span>${key.minor?'第3音と 第5音を 半音上げる':'第3音を 半音上げる'}</button>
+      <div class="chips">${shapeChain(key)}</div>
+      <div class="msg">${heroMsg(key)}</div>
+    </section>`;
+  // けんばん（和音・Ⅴ・カデンツの いま 鳴っている 和音）
+  const allMs=[...X,...V,...C.dd(key),...seq.flatMap(s=>s.ns),...cadSeq(key,true,true).flatMap(s=>s.ns)].map(n=>n.midi), [lo,hi]=kbRange(allMs);
+  let marks;
+  if(state.cad){const s=seq[state.cad.i];marks=voiceMarks(s.ns,s.col,state.cad.i===1);}
+  else if(state.res===2) marks=voiceMarks(V,V_COL,false);
+  else marks=voiceMarks(X,col,true);
+  h+=`<section class="card"><h2>🎹 けんばん<small id="kbcap">${kbCaption(key,seq)}</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(lo,hi,marks)}</div></section>`;
+  // がくふ：和音 → Ⅴ
+  const dd=byRole(C.dd(key)), ii=byRole(C.ii7(key)), vr=V[1];
+  h+=`<section class="card"><h2>🎼 がくふ<small>左：${label(r)}　右：Ⅴ（「➡️ Ⅴへ」で 聴けるよ）</small></h2>${mainStaff(key)}
+    <p class="note">${r?`<b class="up">第3音「${PA.nmH(dd[1])}」は 半音 上へ</b>（Ⅴ の 根音「${PA.nmH(vr)}」へ）`:`第3音「${PA.nmH(ii[1])}」は 上の「${PA.nmH(vr)}」へ`}、<b style="color:${col}">第7音「${PA.nmH(ii[3])}」は 下へ</b>、ベースは 5度下の「${PA.nmH(V[0])}」へ すすむよ。</p></section>`;
+  h+=`<div class="rule">Ⅱ7 も ドッペルドミナントも、<b>Ⅴ の 前</b>に おく 和音。ドッペルの ほうが 導音の 力で Ⅴ を つよく よぶよ。<br><span style="font-weight:400">「ドッペル」は ドイツ語で「ダブル（2じゅう）」。Ⅴ（ドミナント）の、そのまた Ⅴ だから「Ⅴ度の Ⅴ度」とも いうよ。</span></div>`;
+  // カデンツ
+  const cad64=r&&state.cad64;
+  h+=`<section class="card"><h2>🎵 カデンツ<small>下の「🎵 カデンツ」で 鳴らすよ</small></h2>
+    ${r?`<div style="margin-bottom:8px">${PA.seg('cad64',[['0','そのまま Ⅴ へ'],['1','Ⅰ6/4 を はさむ']],cad64?'1':'0','full')}</div>`:''}
+    <div class="seqrow">${seq.map((s,i)=>`${i?'<span class="ar" aria-hidden="true">→</span>':''}<span class="sc ${state.cad&&state.cad.i===i?'on':''}" style="--c:${s.col}">${PA.H(s.lab)}</span>`).join('')}</div>
+    ${cadStaff(key,seq)}
+    <p class="note">ソプラノ（いちばん上）は <b>${namesC(seq.map(x=>x.ns[3]),' → ')}</b>。${cad64?`ドッペルの 第7音「${PA.nmH(dd[3])}」の 音は Ⅰ6/4 でも のこって、Ⅴ7 で「${PA.nmH(seq[3].ns[seq[2].ns.findIndex(n=>n.midi===dd[3].midi)])}」へ おりるよ。ベースは「${PA.nmH(V[0])}」の まま。`:`Ⅴ の 上の「${PA.nmH(vr)}」が「${PA.nmH(seq[3].ns[3])}」に おりて Ⅴ7 に なるよ。`}</p>
+    <details class="more inner"><summary>🎓 Ⅰ6/4 を はさむ と？</summary>
+      <p class="note" style="color:var(--ink);margin-top:0">ドッペルの あと、すぐ Ⅴ に 行かずに <b>Ⅰ6/4</b>（Ⅰ の 第5音「${PA.nmH(V[0])}」を いちばん下に おいた形）を はさむことも 多いよ。ベースは「${PA.nmH(V[0])}」の まま Ⅰ6/4 → Ⅴ7 と すすむので、Ⅴ の 前の「ため」が うまれる。</p>
+      <p class="note" style="color:var(--ink)">Ⅰ6/4 は Ⅰ の 音だけど、ベースが Ⅴ の 根音なので <b style="color:${V_COL}">Ⅴ の なかま</b>として はたらくよ（だから 青い 色）。</p>
+      <p class="note" style="color:var(--ink)">${r?'上の「Ⅰ6/4 を はさむ」を えらんで「🎵 カデンツ」を おしてみよう。':'スイッチで ドッペルドミナントに すると、「Ⅰ6/4 を はさむ」が えらべるよ。'}</p></details>
+  </section>`;
+  h+=abCard(key);
+  h+=famCard(key);
+  h+=`<div class="links">
+    <a class="btn" href="aug6.html" data-go="aug6">↔️ <span>つぎは 増六の和音 ›<small>ドッペルの 第5音を 下げると…</small></span></a>
+    <a class="btn" href="chroma-quiz.html">🎯 <span>ドッペル・増六クイズ ›<small>けんばんで おさえる／耳で 聴きわける</small></span></a></div>
+  <details class="more"><summary>💡 もっと くわしく</summary><ul>
+    <li>ドッペルドミナントは、Ⅱ7 と おなじ ところ（Ⅴ の 前）で つかう。だから「Ⅱ の なかま」と 考えるよ。</li>
+    <li><b>おなじ主音の 長調と 短調では、ドッペルドミナントは おなじ 音</b>（${namesC(dd)}）に なるよ。${pk?`${PA.keyName(pk)}に かえて たしかめてみよう。`:''}</li>
+    <li>和音の 名前は「Ⅴ7/Ⅴ」（Ⅴ の Ⅴ7）と 書くよ。Ⅱ の なかま なので、「Ⅱ」に 印を つけて あらわす 本も あるよ。</li>
+    <li>ダブルシャープは、楽譜では「<span class="ds">x</span>」のような 形で 書くよ。この画面でも <span class="ds">x</span> で あらわしているよ。</li>
+    <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべるよ。</li>
+  </ul></details></div>`;
+  PA.paint(document.getElementById('view'),h,'doppel:'+state.minor+':'+state.keyIdx);
+  renderActions();
+}
+function renderActions(){
+  const acts=`<button class="btn" data-act="play">🔊 いっしょに</button><button class="btn primary" data-act="tov">➡️ Ⅴへ</button>`+
+    (state.cad?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="cplay">🎵 カデンツ</button>`);
+  if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
+}
+
+/* ===== 鳴らす ===== */
+let token=0;
+function stop(){token++;state.cad=null;PA.stopSound();}
+function playChord(){stop();state.res=0;render();PA.chord(midisOf(chordOf(curKey(),state.raised)),{dur:2});}
+async function playToV(){
+  stop(); const my=token, key=curKey();
+  state.res=0; render();
+  PA.chord(midisOf(chordOf(key,state.raised)),{dur:1.4});
+  await PA.sleep(1300); if(my!==token) return;
+  state.res=2; render();
+  PA.chord(midisOf(C.toV(key)),{dur:2.2});
+  await PA.sleep(2200); if(my!==token) return;
+  state.res=0; render(); // けんばんを いまの 和音（赤い 導音）に もどす
+}
+async function playCad(){
+  stop(); const my=token, key=curKey(), seq=cadSeq(key,state.raised,state.raised&&state.cad64);
+  state.res=0;
+  for(let i=0;i<seq.length;i++){
+    state.cad={i}; render();
+    PA.chord(midisOf(seq[i].ns),{dur:seq[i].d+0.3});
+    await PA.sleep(seq[i].d*1000); if(my!==token) return;
+  }
+  await PA.sleep(400); if(my!==token) return;
+  state.cad=null; render();
+}
+// 聴きくらべ：答えが わからないように、けんばんには 出さない
+function playAB(v){
+  if(!state.ab) return;
+  stop(); state.res=0; render();
+  const key=curKey(), X=chordOf(key,v===state.ab.dd);
+  PA.chord(midisOf(X),{dur:1.4}); PA.chord(midisOf(C.toV(key)),{when:1.3,dur:2.2});
+}
+
+/* ===== 操作 ===== */
+PA.mountBar({title:'Ⅱ7と ドッペルドミナント',app:'doppel'});
+PA.onSettings=render;
+PA.onPageShow=()=>{stop();render();};
+PA.onStopDown=stop;
+PA.onStopCancel=render; // ⏹ を おしたのに click が 来なかったとき 画面を もどす
+PA.onKeySheet=()=>PA.openKeySheet({minor:state.minor,idx:state.keyIdx,both:true,onPick:(minor,idx)=>{
+  stop(); state.minor=minor; state.keyIdx=idx; state.res=0; state.ab=null; save(); render();
+  PA.chord(midisOf(chordOf(curKey(),state.raised)),{dur:2});
+}});
+document.addEventListener('click',e=>{
+  const g=e.target.closest('[data-go]');
+  if(g){ // おなじ調を ひらく（リンクは そのまま 進む）
+    if(g.dataset.go==='aug6'){
+      const p=PA.store.get('aug6',{}), t=p&&['it','fr','ger'].includes(p.type)?p.type:'it';
+      PA.store.set('aug6',{minor:state.minor,keyIdx:state.keyIdx,type:t});
+    }else if(g.dataset.go==='family'&&state.minor){
+      const p=PA.store.get('minor-family',{});
+      PA.store.set('minor-family',{...(p&&typeof p==='object'?p:{}),keyIdx:state.keyIdx,fam:{dd:'V7',dd9:'V9',ddim:'DIM'}[state.fam]});
+    }
+    return;
+  }
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  const a=el.dataset.act, v=el.dataset.v;
+  if(a==='raise'){state.raised=!state.raised;if(!state.raised)state.cad64=false;save();playToV();}
+  else if(a==='play') playChord();
+  else if(a==='tov') playToV();
+  else if(a==='cplay') playCad();
+  else if(a==='stop'){stop();render();}
+  else if(a==='cad64'){stop();state.cad64=v==='1';render();}
+  else if(a==='qnext'){stop();state.ab={dd:Math.random()<0.5?'A':'B',answer:null};render();}
+  else if(a==='abplay') playAB(v);
+  else if(a==='qchoose'){if(state.ab&&state.ab.answer==null){stop();state.ab.answer=v;state.abN++;if(v===state.ab.dd)state.abOk++;render();}}
+  else if(a==='fam'){if(!FAMS.some(f=>f[0]===v))return;stop();state.fam=v;render();PA.chord(midisOf(C.ddStack(curKey(),v)),{dur:2});}
+  else if(a==='famplay'){stop();render();PA.chord(midisOf(C.ddStack(curKey(),state.fam)),{dur:2});}
+  else if(a==='famarp'){stop();render();PA.chord(midisOf(C.ddStack(curKey(),state.fam)),{arp:true});}
+});
+render();
+</script>
+</body>
+</html>
