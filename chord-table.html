@@ -40,6 +40,16 @@
 @media (min-width:420px){.lbl-w{display:inline}}
 .more ul{margin:0;padding-left:1.3em}
 .more li{margin:6px 0}
+/* 📖 用語メモ（くわしく 知りたい人むけ。ふだんは とじておく） */
+.terms>summary small{font-weight:400;font-size:12px;color:var(--sub);margin-left:8px}
+.terms dl{margin:0}
+.terms dt{font-weight:800;margin:12px 0 2px}
+.terms dt:first-child{margin-top:2px}
+.terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
+.terms dd ul{margin:4px 0 0}
+.terms dd li{margin:4px 0}
+.terms rt{font-weight:400;font-size:.6em;color:var(--sub)}
+.terms .nw{white-space:nowrap}
 @media (max-width:359px){.actionbar .btn{font-size:14px}.cell{font-size:14px}}
 @media (min-width:620px){
   .colhead,.krow{grid-template-columns:minmax(150px,1.3fr) repeat(4,minmax(0,1fr));gap:5px}
@@ -85,6 +95,33 @@ const cellId=(minor,i,ch)=>`${minor?1:0}-${i}-${ch}`;
 const total=()=>PA.keyCount(state.minor)*CH.length;
 const openedCount=()=>{let n=0;state.revealed.forEach(id=>{if(id.startsWith((state.minor?1:0)+'-'))n++;});return n;};
 
+/* 📖 用語メモ：正式な 名前。れいは えらんだ マスの 調（なければ いちばん上の 調）。かくして れんしゅう中は れいを 出さない */
+const yomi=(w,y)=>`<ruby>${w}<rt>${y}</rt></ruby>`; // ふりがな
+function termsHTML(minor,sel,hide){
+  const i=sel&&sel.minor===minor?sel.i:0, k=keyAt(minor,i);
+  const ex=CH.map(ch=>`${CHORDS[ch].label} <b class="nw">${chordSym(chordTones(k,ch))}</b>`).join('・');
+  const si={letter:6,acc:0}, sif={letter:6,acc:-1};
+  const br=n=>PA.settings.naming==='en'?PA.LET_SOLFA[n.letter]+PA.ACC[n.acc]:PA.nmH(n); // en のときは ドレミで そえる（B（B）に ならないように）
+  return `<details class="more terms" data-d="terms"><summary>📖 用語メモ<small>正式な よびかた</small></summary><dl>
+    <dt>${yomi('主要三和音','しゅよう さんわおん')}</dt>
+    <dd>Ⅰ（<b>${yomi('主和音','しゅわおん')}</b>）・Ⅳ（<b>${yomi('下属和音','かぞくわおん')}</b>）・Ⅴ（<b>${yomi('属和音','ぞくわおん')}</b>）の 3つ。調の 中心に なる 和音で、3つ あわせると 音階の 7つの音が ぜんぶ 出てくる。Ⅴ7 は Ⅴ に 第7音を 加えた <b>属七の和音</b>（四和音）。</dd>
+    <dt>コードネーム</dt>
+    <dd>根音の 英語の 音名（C D E F G A B）＋ 和音の 種類。<ul>
+      <li><b>C</b>（文字だけ）＝ <b>長三和音</b>（メジャー）</li>
+      <li><b>Cm</b> ＝ <b>短三和音</b>（マイナー）</li>
+      <li><b>C7</b> ＝ 長三和音に、根音から 短7度上の音を 加えた 和音（属七の和音と おなじ 形。ドミナントセブンス）</li>
+    </ul></dd>
+    <dt>${yomi('音度記号','おんどきごう')} と コードネーム の ちがい</dt>
+    <dd>音度記号（Ⅰ・Ⅳ・Ⅴ）は <b>調の 中での 役わり</b>、コードネームは <b>音 そのもの</b>。おなじ G でも ハ長調では Ⅴ、ト長調では Ⅰ。<ul>
+      <li>長調の Ⅰ・Ⅳ・Ⅴ は どれも 長三和音（メジャー）。</li>
+      <li>短調の Ⅰ・Ⅳ は 短三和音（m）。Ⅴ は 第3音（音階の 7ばんめ）を 半音上げて 導音に するので 長三和音。</li>
+      ${hide?'':`<li>れい：${PA.keyName(k)} → ${ex}</li>`}
+      ${hide?'':`<li>調の 名前の よこの ${PA.keyEn(k)} なども、その調の Ⅰ の コードネームと おなじ 書きかた。</li>`}
+    </ul></dd>
+    <dt>ドイツ音名 に 注意</dt>
+    <dd>クラシックで つかう ドイツ音名 では、英語の <b>B</b>（${br(si)}）を <b>H</b>、<b>B♭</b>（${br(sif)}）を <b>B</b> と よぶ。コードネームの B は ドイツ音名の H の 音。</dd>
+  </dl></details>`;
+}
 function render(){
   const minor=state.minor, n=PA.keyCount(minor), flatFrom=minor?PA.MINOR_FLAT_FROM:PA.MAJOR_FLAT_FROM, sel=state.sel;
   let h=`<div class="stack">
@@ -122,6 +159,7 @@ function render(){
       <li>🌙 <b>短調の Ⅴ・Ⅴ7</b> は、7ばんめの音を <b>半音上げる</b>。だから 短調でも Ⅴ は 明るいひびき。</li>
       <li>🙈 <b>かくして れんしゅう</b>：「？」の 和音を 先に 声に出して 言ってから タップ。音と 名前で たしかめよう。</li>
     </ul></details>
+    ${termsHTML(minor,sel,state.hide)}
   </div>`;
   PA.paint(document.getElementById('view'),h,'table:'+minor);
   const hasSel=!!(sel&&sel.minor===minor);

@@ -368,6 +368,20 @@ function tipsHTML(key){
     <li>${key.minor?'短調では 第5音は もともと この 調の 音なので、臨時記号が いるのは 根音（と Ⅴ の 導音）だけ。':'長調では 第5音も 同主短調から かりた 音なので、臨時記号が 2つ つくよ。'}</li>
   </ul></details>`;
 }
+// 📖 用語メモ：画面の やさしい ことば → 和声の 用語（芸大和声）。例は いまの 調の 音で
+function termsHTML(key){
+  const n6=n6Of(key), r=n6[3], lt=toV7(key)[3];
+  const span=[0,1,2].map(i=>PA.nm({letter:PA.mod(r.letter-i,7),acc:0})).join('・'); // 減3度を 文字で 数える（下へ）
+  return `<details class="more" data-d="terms"><summary>📖 用語メモ（くわしく 知りたい人へ）</summary>
+    <p class="note" style="margin:0 0 4px">画面の ことば → 和声の 用語（芸大和声）。例は ${PA.keyName(key)}の 音だよ。</p><ul>
+    <li>「ナポリの六」「N6」「♭Ⅱ6」 → <b>ナポリの六の和音</b>＝ <b>Ⅱ の 根音 下方変位</b>（♭Ⅱ＝<b>ナポリの和音</b>）の <b>第1転回形</b>。${key.minor?'短調では 第5音は もともと 調の 音なので、根音だけ 下方変位。':`長調では、準固有の ${srcLabel(key,'ii6',true)}（第5音は 同主短調の 音）の 根音を 下方変位した 形。`}${PA.keyName(key)}では ${H.symbol(key,'N6')}。（半音 下げる＝<b>下方変位</b>、上げる＝<b>上方変位</b>）</li>
+    <li>「6」「6/4」 → 転回形の 記号。6＝<b>第1転回形</b>（<b>六の和音</b>：ベースの 上に 3度と 6度）、6/4＝<b>第2転回形</b>（<b>四六の和音</b>：6度と 4度）。Ⅴ の 前の ${I64H} は <b>終止四六</b> と いい、<b>属機能（D）</b>として はたらく。芸大和声では 転回の 番号で Ⅱ¹（第1転回形）・Ⅰ²（第2転回形）のように 書く（この画面の 6・6/4 は 数字付き低音ふうの 書き方）。</li>
+    <li>「減3度 下へ」 →${q(r)}から${q(lt)}は 文字で 数えて 3つ（${span}）なので 3度。短3度より せまいので <b>減3度</b>（けんばんでは 長2度と おなじ はば）。下方変位音は 下へ すすむ <b>限定進行音</b>。</li>
+    <li>「下属（S）の なかま」 → <b>下属機能（S）</b>。和音の はたらき（<b>機能</b>）は <b>主機能（T）</b>Ⅰ など、<b>下属機能（S）</b>Ⅳ・Ⅱ など、<b>属機能（D）</b>Ⅴ・Ⅴ7 など。<b>カデンツ</b>（終止形）T→S→D→T の S に、Ⅳ・Ⅱ6 の かわりに ナポリの六を おく。</li>
+    ${key.minor?'':`<li>「短調から かりる」「○」 → <b>準固有和音</b>（同主短調からの 借用和音）。○ は 準固有の しるし。${PA.keyName(key)}は ${parMinor(key)}から かりる。</li>`}
+    <li>「そのまま のこって Ⅴ7 の 第7音」 → <b>共通音の 保留</b>（となりあう 和音に ある おなじ 音を、おなじ 声部で のこす こと）。</li>
+  </ul></details>`;
+}
 function linksCard(){
   return `<section class="card"><h2>🔗 つながる アプリ</h2><div class="links">
     <button class="btn" data-act="go" data-v="aug6">↔️ 増六の和音 <small>おなじ「下げた 第6音」を つかう 和音</small></button>
@@ -399,7 +413,7 @@ function render(){
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
     ${heroCard(key)}${kbCard(key)}${staffCard(key)}${placeCard(key)}${cadCard(key)}${abCard(key)}
-    ${nameDetails(key)}${key.minor?'':borrowDetails(key)}${tipsHTML(key)}${linksCard()}${footNote(key)}</div>`;
+    ${nameDetails(key)}${key.minor?'':borrowDetails(key)}${tipsHTML(key)}${termsHTML(key)}${linksCard()}${footNote(key)}</div>`;
   PA.paint(document.getElementById('view'),h,'neapolitan:'+state.minor+':'+state.keyIdx);
   if(A||state.playing) PA.follow(document.getElementById('view')); // 音の高さが かわっても 鍵が 見えるように
   const acts=(A||state.playing?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+

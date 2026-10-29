@@ -275,6 +275,23 @@ function tipsHTML(key){
     <li>${key.minor?'短調では、下げた 第5音も 第9音も 調号の 音（音階の 音）なので、増六の和音の 中で 臨時記号が いるのは Ⅴへの 導音だけ。':'長調では、下げた 音は おなじ主音の 短調から かりた 音なので、臨時記号が つくよ。'}</li>
   </ul></details>`;
 }
+// 📖 用語メモ：画面の やさしい ことば → 和声の 用語（芸大和声）。例は いまの 調・えらんだ 和音の 音で
+function termsHTML(key,t){
+  const a=aug(key,t), low=a[0], up=a[a.length-1], g=aug(key,'ger'), gv=C.aug6ToV(key,'ger'), b=bIIinfo(key);
+  const span=[0,1,2,3,4,5].map(i=>PA.nm({letter:(low.letter+i)%7,acc:0})).join('・'); // 増6度を 文字で 数える
+  return `<details class="more" data-d="terms"><summary>📖 用語メモ（くわしく 知りたい人へ）</summary>
+    <p class="note" style="margin:0 0 4px">画面の ことば → 和声の 用語（芸大和声）。例は ${PA.keyName(key)}の ${TYPES[t].name}だよ。</p><ul>
+    <li>「第5音を 半音下げて いちばん下に」 → <b>増六の和音</b>＝ ドッペルドミナント（Ⅱ の 変化和音）の <b>第5音 下方変位</b>形を、下げた 音を ベースに した <b>第2転回形</b>で つかう 和音（半音 下げる＝<b>下方変位</b>、上げる＝<b>上方変位</b>）。</li>
+    <li>「イタリア・フランス・ドイツ」 → <b>イタリアの6</b>＝Ⅴ7/Ⅴ の 根音省略形、<b>フランスの6</b>＝Ⅴ7/Ⅴ（根音あり）、<b>ドイツの6</b>＝Ⅴ9/Ⅴ（短9度）の 根音省略形 から つくる。英語では It+6・Fr+6・Ger+6。国の 名前は ならわしの よび名。</li>
+    <li>「増6度」 → ${q(low)}から${q(up)}は 文字で 数えて 6つ（${span}）なので 6度。長6度より ひろいので <b>増6度</b>（けんばんでは 短7度と おなじ はば）。</li>
+    <li>「外へ ひらいて Ⅴ の オクターブへ」 → 下方変位音は 下へ、上方変位音（Ⅴ への 導音）は 上へ すすむ <b>限定進行</b>。増6度は <b>8度</b>（オクターブ）に 解決する。</li>
+    <li>「平行5度」 → 芸大和声では <b>連続5度</b>（禁則）。ドイツの6 から すぐ Ⅴ へ すすむと${q(g[0])}${q(g[2])} →${q(gv[0])}${q(gv[2])}が 連続5度。</li>
+    <li>「${I64H}（Ⅰの 第2転回形）」 → <b>四六の和音</b>（ベースの 上に 6度と 4度）。Ⅴ の 前の ${I64H} は <b>終止四六</b> と いい、<b>属機能（D）</b>として はたらく。芸大和声では 転回の 番号で Ⅰ¹（第1転回形）・Ⅰ²（第2転回形）と 書く（この画面の 6・6/4 は 数字付き低音ふうの 書き方）。</li>
+    <li>「Ⅴ へ すすむ」 → 和音の はたらき（<b>機能</b>）は <b>主機能（T）</b>・<b>下属機能（S）</b>・<b>属機能（D）</b>。増六の和音は ドッペルドミナントと おなじく T→S→D→T の S の 場所に おく。</li>
+    ${key.minor?'':`<li>「短調から 音を かりる」 → <b>準固有</b>（同主短調 ${parMinor(key)}からの 借用）。下方変位した 第5音は、${parMinor(key)}の 音でも あるよ。</li>`}
+    <li>${t==='ger'?`「けんばんでは ${b.domName} と おなじ音」`:`ドイツの6 と ${b.domName}`} → <b>異名同音</b>の 読みかえ。ドイツの6 は ♭Ⅱ（${b.bII}＝<b>ナポリの和音</b>：Ⅱ の 根音 下方変位${key.minor?'':'。長調では 準固有 ○Ⅱ の 根音 下方変位'}）の Ⅴ7 と おなじ けんばんで、<b>転調</b>にも つかわれる。</li>
+  </ul></details>`;
+}
 function linksCard(){
   return `<section class="card"><h2>🔗 つながる アプリ</h2><div class="links">
     <button class="btn" data-act="go" data-v="doppel">🔺 Ⅱ7と ドッペルドミナント <small>増六の もとに なる 和音</small></button>
@@ -310,6 +327,7 @@ function render(){
   if(t==='ger') h+=bIIDetails(key);
   if(!key.minor) h+=borrowDetails(key,t);
   h+=tipsHTML(key);
+  h+=termsHTML(key,t);
   h+=linksCard();
   h+=`<p class="note">※ 音の 高さは 平均律です。<span class="ds">x</span> は ダブルシャープの 楽譜での 書き方です。</p></div>`;
   PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx+':'+t);

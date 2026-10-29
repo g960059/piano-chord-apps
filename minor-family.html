@@ -36,6 +36,13 @@
 .dfam b.n{font-size:17px}
 .dfam .note{margin:2px 0 0;font-size:13px}
 @media (min-width:600px){.fams{grid-template-columns:repeat(4,1fr)}}
+/* 📖 用語メモ（くわしく 知りたい人むけ。ふだんは とじておく） */
+.terms>summary small{font-weight:400;font-size:12px;color:var(--sub);margin-left:8px}
+.terms dl{margin:0}
+.terms dt{font-weight:800;margin:12px 0 2px}
+.terms dt:first-child{margin-top:2px}
+.terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
+.terms .yomi{font-weight:400;font-size:12px;color:var(--sub)}
 </style>
 </head>
 <body>
@@ -175,6 +182,26 @@ function staffBox(svg,name){
   const m=svg.match(/viewBox="0 0 ([\d.]+) /), W=m?+m[1]:400;
   return `<div class="scroll" data-sk="${name}"><div style="min-width:${Math.round(W*0.66)}px">${svg}</div></div>`;
 }
+// 📖 用語メモ：正式な 名前（いまの 調・和音の 音を れいに）。よみかたは 小さく
+const yomi=(w,y)=>`${w}<span class="yomi">（${y}）</span>`;
+function termsHTML(key){
+  const r=PA.at(key.harm,4), n9=PA.at(key.harm,12), pn9=PA.at(key.par.scale,12), fam=PA.mod(key.lt.midi,3), q=n=>`「${PA.nmH(n)}」`;
+  // 同主調の 長調の 調号に x が いる とき（嬰ト・嬰ニ長調）は、おなじ けんばんの 長調の 名前を そえる
+  const par=key.par, ei=PA.MAJOR_KEYS.findIndex(([l,a])=>PA.mod(PA.NAT[l]+a,12)===par.tpc);
+  const parNote=par.scale.some(n=>Math.abs(n.acc)>1)&&ei>=0?`${PA.keyName(par)}は 調号に ${PA.H('𝄪')} が いるので、ふつうは おなじ けんばんの ${PA.keyName(PA.majorKey(ei))}で 書く。`:'';
+  return `<details class="more terms" data-d="terms"><summary>📖 用語メモ<small>正式な よびかた</small></summary><dl>
+    <dt>${yomi('属七の和音','ぞくしち の わおん')}</dt>
+      <dd>属音（音階の 第5音${q(r)}）を 根音に した 七の和音 Ⅴ7。長三和音の 上に、根音から 短7度の 音を のせる。${PA.keyName(key)}では ${PA.namesH(famTones(key,'V7'))}。</dd>
+    <dt>${yomi('属九の和音','ぞくきゅう の わおん')}</dt>
+      <dd>Ⅴ7 の 上に、根音から 9度の 音（第9音）を のせた 5つの 音の 和音 Ⅴ9。</dd>
+    <dt>${yomi('短9度','たん 9ど')}</dt>
+      <dd>1オクターブと 短2度の はば。短調の Ⅴ9 は、根音${q(r)}と 第9音${q(n9)}が 短9度（コードネームでは 7(♭9)）。同主調の ${PA.keyName(key.par)}の Ⅴ9 では 長9度（${q(pn9)}）。${parNote}</dd>
+    <dt>${yomi('根音省略形','こんおん しょうりゃくけい')}</dt>
+      <dd>和音から 根音を はぶいた 形。Ⅴ9 の 根音省略形が 減七の和音（Ⅶ7）、Ⅴ7 の 根音省略形が Ⅶ（減三和音）。芸大和声では どちらも Ⅴ の なかま（ドミナント）と 考える。</dd>
+    <dt>減七の和音の 3種類</dt>
+      <dd>減七は 短3度を 3つ かさねた 和音。4つめの 上に もう1つ 短3度 つむと、いちばん下の 音の 1オクターブ上（けんばんでは おなじ 音）に もどる。だから けんばんで 見ると 3種類（Ａ・Ｂ・Ｃの家族）だけ。1つの 減七は、書きかえると 4つの 短調の 減七に なる。${PA.keyName(key)}は <b>${ABC[fam]}の家族</b>。</dd>
+  </dl></details>`;
+}
 let lastActions='';
 function render(){
   const key=curKey(), f=state.fam, A=state.anim, info=famInfo(key,f), res=resolution(key,f);
@@ -219,6 +246,7 @@ function render(){
     ${A?'':`<p class="note"><b style="color:${LT}">導音は 半音 上へ</b>（主音へ）、<b style="color:${NIGHT}">第7音・第9音は 下へ</b> すすむと、きれいに おわるよ。「Ⅰへ 解決」では 左手の ベース（ヘ音記号の 音）も いっしょに 鳴らすよ。</p>`}</section>`;
 
   h+=`<section class="card">${shapeCard(key,f)}</section>`;
+  h+=termsHTML(key);
   h+=`<p class="note">※ 和音は 和声的短音階（7ばんめの音を 半音上げた音階）で 作っています。<span class="ds">x</span> は ダブルシャープの 楽譜での 書き方です。</p></div>`;
   PA.paint(document.getElementById('view'),h,state.keyIdx+':'+f);
   if(state.anim) PA.follow(document.getElementById('view')); // アニメで 光る鍵が 見えるように

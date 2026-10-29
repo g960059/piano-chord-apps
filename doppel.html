@@ -281,6 +281,20 @@ function famCard(key){
     <div class="row" style="margin-top:8px"><button class="btn small" data-act="famplay">🔊 鳴らす</button><button class="btn small" data-act="famarp">🎶 ひとつずつ</button></div>
     <p class="note"><a href="minor-family.html" data-go="family">🏠 Ⅴの家族</a> で、おなじ しくみの「Ⅰ へ むかう 和音」を 見てみよう（短調）。</p></section>`;
 }
+// 📖 用語メモ：画面の やさしい ことば → 和声の 用語（芸大和声）。例は いまの 調の 音で
+function termsHTML(key){
+  const dd=byRole(C.dd(key)), vr=C.toV(key)[1];
+  const dl=(key.l+4)%7, dk={l:dl,a:PA.spell(dl,key.tpc+7),minor:key.minor}; // 属調（Ⅴ を 主音に した 調。長調・短調は おなじ）
+  return `<details class="more" data-d="terms"><summary>📖 用語メモ（くわしく 知りたい人へ）</summary>
+    <p class="note" style="margin:0 0 4px">画面の ことば → 和声の 用語（芸大和声）。例は ${PA.keyName(key)}の 音だよ。</p><ul>
+    <li>「Ⅴ の ための Ⅴ7」「Ⅴ度の Ⅴ度」 → <b>ドッペルドミナント</b>＝<b>属調の 属和音</b>（ふつうは 属七 Ⅴ7/Ⅴ。Ⅴ9/Ⅴ や 根音省略形も ふくむ）。${PA.keyName(key)}の 属調（Ⅴ を 主音に した 調）は ${PA.keyName(dk)}で、その Ⅴ7 が <b>${namesC(dd)}</b>（${C.symbol(key,'dd')}）。Ⅴ を 目標に した <b>副属和音</b>（Ⅴ7/Ⅴ）でも あるよ。</li>
+    <li>「半音上げる」 → <b>上方変位</b>（臨時記号で 半音 上げること。下げるのは <b>下方変位</b>）。芸大和声では ドッペルドミナントを <b>Ⅱ の 変化和音</b>（Ⅱ7 の ${key.minor?'第3音と 第5音の':'第3音の'} 上方変位）として あつかう。</li>
+    <li>「Ⅴへの 導音」 → <b>属調の 導音</b>（${nmC(dd[1])} は ${PA.keyName(dk)}の 導音で、${nmW(vr)} へ すすむ）。導音は 上へ、第7音は 下へ のように、すすむ 向きが きまっている 音を <b>限定進行音</b> と いう。</li>
+    <li>「下属（S）の なかま」 → <b>下属機能（S）</b>。和音の はたらき（<b>機能</b>）は 3つ：<b>主機能（T）</b>Ⅰ など、<b>下属機能（S）</b>Ⅳ・Ⅱ（Ⅱ7）など、<b>属機能（D）</b>Ⅴ・Ⅴ7 など。<b>カデンツ</b>（終止形）は T→D→T、T→S→D→T、T→S→T の 3つの 型で、ドッペルドミナントは T→S→D→T の S の 場所に おく。</li>
+    <li>「Ⅰ6/4」 → <b>Ⅰ の 第2転回形</b>（<b>四六の和音</b>）。6/4 は ベースの 上に 6度と 4度の 音が ある しるし（第1転回形は 6 で <b>六の和音</b>）。Ⅴ の 前の Ⅰ6/4 は <b>終止四六</b> と いい、<b>属機能（D）</b>として はたらく。芸大和声では 転回の 番号で Ⅰ¹（第1転回形）・Ⅰ²（第2転回形）と 書く（この画面の 6・6/4 は 数字付き低音ふうの 書き方）。</li>
+    <li>「ドッペルの 家族」 → Ⅴ を 目標に した <b>属九の和音</b>（Ⅴ9/Ⅴ・短9度）と、その <b>根音省略形</b>（減七/Ⅴ＝<b>減七の和音</b>）。${key.minor?'':'長調では 短9度の 音は 同主短調から かりる <b>準固有</b>（○）。長9度の Ⅴ9/Ⅴ も ある。'}</li>
+  </ul></details>`;
+}
 let lastActions='';
 function render(){
   const key=curKey(), r=state.raised, col=colOf(r), X=chordOf(key,r), V=C.toV(key);
@@ -332,7 +346,7 @@ function render(){
     <li>和音の 名前は「Ⅴ7/Ⅴ」（Ⅴ の Ⅴ7）と 書くよ。Ⅱ の なかま なので、「Ⅱ」に 印を つけて あらわす 本も あるよ。</li>
     <li>ダブルシャープは、楽譜では「<span class="ds">x</span>」のような 形で 書くよ。この画面でも <span class="ds">x</span> で あらわしているよ。</li>
     <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべるよ。</li>
-  </ul></details></div>`;
+  </ul></details>${termsHTML(key)}</div>`;
   PA.paint(document.getElementById('view'),h,'doppel:'+state.minor+':'+state.keyIdx);
   renderActions();
 }

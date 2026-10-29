@@ -527,6 +527,21 @@ function tipsHTML(key){
     <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべるよ。</li>
   </ul></details>`;
 }
+// 📖 用語メモ：画面の やさしい ことば → 和声の 用語（芸大和声）。例は いまの 調・えらんだ 副属和音で
+function termsHTML(key,I){
+  const lt=I.X.find(n=>n.tag==='lt');
+  return `<details class="more" data-d="terms"><summary>📖 用語メモ（くわしく 知りたい人へ）</summary>
+    <p class="note" style="margin:0 0 4px">画面の ことば → 和声の 用語（芸大和声）。例は ${PA.keyName(key)}の ${I.lab}（${I.sym}）だよ。</p><ul>
+    <li>「副属和音」 → <b>副属和音</b>（セカンダリー・ドミナント）＝ Ⅰ 以外の 和音を <b>主和音と みなした ときの 属和音</b>。<b>副属七の和音</b>（Ⅴ7/x）と、副属九の和音の 根音省略形（Ⅶ7/x）が ある。いまは ${I.lab} ＝ ${srcWhat(I)}。</li>
+    <li>「いっときの Ⅰ」 → <b>一時的 転調</b>（<b>トニカイゼーション</b>＝主和音化）。${I.lab} → ${I.tl} の あいだだけ ${I.tkName}に うつった と 考える。新しい 調に おちついたら ふつうの <b>転調</b>。</li>
+    <li>「導音」「半音上げた・下げた 音」 → ${qC(key,lt)}は ${I.tkName}の <b>導音</b>。調に ない 音は 臨時記号で 半音 かえた <b>変位音</b>（上げる＝<b>上方変位</b>、下げる＝<b>下方変位</b>）。導音は 上へ、第7音・第9音は 下へ すすむ <b>限定進行音</b>。</li>
+    <li>「減七」「半減七」 → <b>減七の和音</b>（減三和音＋減7度）と <b>減五短七の和音</b>（半減七の和音：減三和音＋短7度）。どちらも <b>Ⅴ9 の 根音省略形</b>（短9度 → 減七、長9度 → 半減七）なので、名前は Ⅴ9 から 見て、導音が 第3音。</li>
+    <li>「○」 → <b>準固有</b>（同主調からの 借用）。${I.jun?`いまの ${I.lab} は ${I.tkName}の 同主調 ${I.pm}から かりた 和音。`:`いっときの 調が 長調で、Ⅶ7（減七）の 第9音（短9度）を その 同主短調から かりて、その 音が もとの 調にも ない ときに つく（いっときの 調が 短調なら、第9音は もともと その 調の 音なので つかない）。${I.k==='vii7'&&I.tmin?`いまの 第9音は ${I.tkName}の 音。`:''}`}</li>
+    ${key.minor?'<li>「Ⅲ（自然）」「Ⅶ（自然）」 → <b>自然的短音階</b>の 和音（長三和音）。<b>和声的短音階</b>では Ⅲ は 増三和音、Ⅶ は 減三和音。</li>':''}
+    <li>「目標」「Ⅰ6」 → 和音の はたらき（<b>機能</b>）は <b>主機能（T）</b>・<b>下属機能（S）</b>・<b>属機能（D）</b>。副属和音は 目標に たいして D の はたらき。和音記号の 6 は <b>第1転回形</b>（<b>六の和音</b>）、6/4 は <b>第2転回形</b>（<b>四六の和音</b>）。芸大和声では 転回の 番号で Ⅰ¹（第1転回形）・Ⅰ²（第2転回形）と 書く（この画面の 6・6/4 は 数字付き低音ふうの 書き方）。</li>
+    <li>「対斜」 → <b>対斜</b>：おなじ 文字の 音が 変化記号を かえて つづく とき、ちがう 声部に わかれる こと（禁則）。おなじ 声部で 半音 うごかせば さけられる。</li>
+  </ul></details>`;
+}
 function linksCard(){
   return `<section class="card"><h2>🔗 つながる アプリ</h2><div class="links">
     <a class="btn" href="doppel.html" data-go="doppel">🔺 <span>Ⅱ7と ドッペルドミナント ›<small>Ⅴ7/Ⅴ ＝ ドッペルドミナント</small></span></a>
@@ -564,6 +579,7 @@ function render(){
   h+=abCard(key,I);
   h+=overview(key);
   h+=tipsHTML(key);
+  h+=termsHTML(key,I);
   h+=linksCard();
   h+=`<p class="note">※ 音の 高さは 平均律です。</p></div>`;
   PA.paint(document.getElementById('view'),h,['secondary',state.minor,state.keyIdx,state.target,I.k,state.mode].join(':'));

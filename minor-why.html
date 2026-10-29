@@ -45,6 +45,13 @@
 .more ul{margin:0;padding-left:1.3em}
 .more li{margin:6px 0}
 @media (prefers-reduced-motion:reduce){.sw .knob,.sw .knob::after{transition:none}}
+/* 📖 用語メモ（くわしく 知りたい人むけ。ふだんは とじておく） */
+.terms>summary small{font-weight:400;font-size:12px;color:var(--sub);margin-left:8px}
+.terms dl{margin:0}
+.terms dt{font-weight:800;margin:12px 0 2px}
+.terms dt:first-child{margin-top:2px}
+.terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
+.terms .yomi{font-weight:400;font-size:12px;color:var(--sub)}
 </style>
 </head>
 <body>
@@ -136,6 +143,22 @@ function centerOn(b,midis){
   else b.scrollLeft+=(L+R)/2-(br.left+br.right)/2;
 }
 
+// 📖 用語メモ：正式な 名前（いまの 調・和音の 音を れいに）。よみかたは 小さく
+function termsHTML(key){
+  return `<details class="more terms" data-d="terms"><summary>📖 用語メモ<small>正式な よびかた</small></summary><dl>
+    <dt>自然的短音階<span class="yomi">（しぜんてき たんおんかい）</span></dt>
+      <dd>調号の とおりの 短音階（${namesH(key.nat)}）。平行調の 長調と おなじ 音を 使う。第7音から 主音までは 全音。</dd>
+    <dt>和声的短音階<span class="yomi">（わせいてき たんおんかい）</span></dt>
+      <dd>自然的短音階の 第7音を 半音 上げた 音階（${namesH(key.harm)}）。Ⅴ・Ⅴ7 に 導音を 入れる ための 音階。和音（和声）の ために 使うので「和声的」と いう。</dd>
+    <dt>旋律的短音階<span class="yomi">（せんりつてき たんおんかい）</span></dt>
+      <dd>メロディーの ための 短音階。この アプリでは あつかわないので、名前だけ おぼえておこう。</dd>
+    <dt>導音<span class="yomi">（どうおん）</span></dt>
+      <dd>主音の 短2度 下の 第7音（${PA.keyName(key)}では ${nmH(key.lt)}）。主音へ すいこまれるように すすむ 音。長調では もともと 音階の 中に あり、短調では 第7音を 上げて つくる。</dd>
+    <dt>増2度<span class="yomi">（ぞう2ど）</span></dt>
+      <dd>長2度より 半音 ひろい 2度。和声的短音階の 第6音 → 第7音（${nmH(key.harm[5])} → ${nmH(key.lt)}）が 増2度。けんばんでは 短3度と おなじ はばだけど、となりの 文字どうしなので 2度と よぶ。和声では、1つの 声部が 増2度で すすむのを さける。</dd>
+  </dl></details>`;
+}
+
 /* ===== 画面 ===== */
 function render(){
   const key=curKey(), rel=key.rel, raise=state.raise;
@@ -199,6 +222,7 @@ function render(){
       <li>ダブルシャープは、楽譜では「<span class="ds">x</span>」のような 形で 書くよ。この画面でも <span class="ds">x</span> で あらわしているよ。</li>
       <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべるよ。</li>
     </ul></details>
+    ${termsHTML(key)}
   </div>`;
   PA.paint(document.getElementById('view'),h,'minor-why:'+state.keyIdx);
   renderActions();

@@ -50,6 +50,13 @@
   .khead,.krow{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,1.4fr)}
   .kname b{font-size:16px}
 }
+/* 📖 用語メモ（くわしく 知りたい人むけ。ふだんは とじておく） */
+.terms>summary small{font-weight:400;font-size:12px;color:var(--sub);margin-left:8px}
+.terms dl{margin:0}
+.terms dt{font-weight:800;margin:12px 0 2px}
+.terms dt:first-child{margin-top:2px}
+.terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
+.terms .yomi{font-weight:400;font-size:12px;color:var(--sub)}
 </style>
 </head>
 <body>
@@ -91,6 +98,29 @@ function ltKeyboard(key){
   marks.set(lt,{fill:'#d1495b',label:PA.nm(key.lt),focus:true});
   marks.set(ton,{fill:'#3b4fa8',label:PA.nm(key.nat[0]),focus:true});
   return PA.kbSVG(whiteDown(lt-5),whiteUp(ton+4),marks);
+}
+// 📖 用語メモ：正式な 名前（いまの 調・和音の 音を れいに）。よみかたは 小さく
+function termsHTML(key){
+  const rel=key.rel, par=key.par, pi=PA.MAJOR_KEYS.findIndex(([l,a])=>l===par.l&&a===par.a);
+  // 同主調が 調の リストに ない（嬰ハ・嬰ト・嬰ニ長調）ときは、おなじ けんばんの 長調の 名前を そえる
+  // 嬰ハ長調は ♯7つの ほんとうの 調。嬰ト・嬰ニ長調は 調号に x が いる 調
+  const ei=PA.MAJOR_KEYS.findIndex(([l,a])=>PA.mod(PA.NAT[l]+a,12)===par.tpc), eq=ei>=0?PA.majorKey(ei):null;
+  const parDbl=par.scale.some(n=>Math.abs(n.acc)>1), parN=par.scale.filter(n=>n.acc>0).length;
+  const parTxt=pi>=0?`${PA.keyName(par)}（${PA.sigLabel(PA.majorKey(pi))}）`
+    :parDbl?`${PA.keyName(par)}（調号に ${PA.H('𝄪')} が いるので、ふつうは おなじ けんばんの ${PA.keyName(eq)}で 書く）`
+    :`${PA.keyName(par)}（♯${parN}つ。おなじ けんばんの ${PA.keyName(eq)}（${PA.sigLabel(eq)}）で 書くことも 多い）`;
+  const si=PA.sigInfo(key), mine=new Set(si.letters);
+  const ord=(acc,ls)=>ls.map(L=>{const t=PA.nmH({letter:L,acc});return si.type===acc&&mine.has(L)?`<b style="color:var(--night)">${t}</b>`:t;}).join('・');
+  return `<details class="more terms" data-d="terms"><summary>📖 用語メモ<small>正式な よびかた</small></summary><dl>
+    <dt>平行調<span class="yomi">（へいこうちょう）</span></dt>
+      <dd>調号が おなじ 長調と 短調（${PA.keyName(key)}と ${PA.keyName(rel)}）。短調の 主音は、長調の 第6音。</dd>
+    <dt>同主調<span class="yomi">（どうしゅちょう）</span></dt>
+      <dd>主音が おなじ 長調と 短調。${PA.keyName(key)}（${PA.sigLabel(key)}）の 同主調は ${parTxt}。短調の 調号は、同主調の 長調より ♯が へる／♭が ふえる 向きに 3つ ずれる（ニ長調 ♯2つ → ニ短調 ♭1つ のように、両方 おきる ことも ある）。</dd>
+    <dt>臨時記号<span class="yomi">（りんじきごう）</span></dt>
+      <dd>楽譜の とちゅうで、音符の すぐ前に つける ♯・♭・♮・${PA.H('𝄪')}・${PA.H('𝄫')}。その 小節の 中だけ、おなじ 線・間の 音に きく（つぎの 小節では 調号の とおりに もどる）。調号は 曲 ぜんたいに きく。</dd>
+    <dt>調号の 順番<span class="yomi">（ちょうごう の じゅんばん）</span></dt>
+      <dd>♯は ${ord(1,PA.SHARP_ORDER)}、♭は その ぎゃくの ${ord(-1,[...PA.SHARP_ORDER].reverse())} の じゅんに、左から ふえていく。${si.letters.length?`${PA.keyName(key)}（${PA.sigLabel(key)}）は 太字の 音。`:`${PA.keyName(key)}は 調号なし。`}</dd>
+  </dl></details>`;
 }
 function render(){
   const key=curKey(), rel=key.rel, harm8=harm8Of(key);
@@ -143,7 +173,8 @@ function render(){
   <section class="card"><h2>🔗 つぎは</h2><div class="links">
     <a class="btn" href="minor-why.html">❓ なぜ 7ばんめを 上げるの？</a>
     <a class="btn" href="minor-quiz.html">🎯 短調クイズ（臨時記号を えらぶ）</a>
-  </div></section></div>`;
+  </div></section>
+  ${termsHTML(key)}</div>`;
   PA.paint(document.getElementById('view'),h,String(state.keyIdx));
   PA.paint(document.getElementById('actions'),
     `<button class="btn" data-act="harmplay" aria-label="${PA.keyName(key)}の 和声的短音階を きく">🎶 ${PA.keyName(key)}</button>`+

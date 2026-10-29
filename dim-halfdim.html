@@ -64,6 +64,13 @@
 .more ul{margin:0;padding-left:1.3em}
 .more li{margin:6px 0}
 .rule{margin-top:10px}
+/* 📖 用語メモ（くわしく 知りたい人むけ。ふだんは とじておく） */
+.terms>summary small{font-weight:400;font-size:12px;color:var(--sub);margin-left:8px}
+.terms dl{margin:0}
+.terms dt{font-weight:800;margin:12px 0 2px}
+.terms dt:first-child{margin-top:2px}
+.terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
+.terms .yomi{font-weight:400;font-size:12px;color:var(--sub)}
 </style>
 </head>
 <body>
@@ -408,12 +415,26 @@ function moreHTML(P){
     <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべるよ。</li>
   </ul></details>`;
 }
+// 📖 用語メモ：正式な 名前（いまの 調・和音の 音を れいに）。よみかたは 小さく
+function termsHTML(P){
+  const M=P.maj, N=P.min;
+  return `<details class="more terms" data-d="terms"><summary>📖 用語メモ<small>正式な よびかた</small></summary><dl>
+    <dt>減七の和音<span class="yomi">（げんしち の わおん）</span></dt>
+      <dd>減三和音の 上に、根音から <b>減7度</b>の 音を のせた 七の和音。となりどうしが ぜんぶ 短3度。例：${kn(N.k)}の Ⅶ7（${namesW(N.stack)}）。</dd>
+    <dt>半減七の和音（減五短七の和音）<span class="yomi">（はんげんしち の わおん）</span></dt>
+      <dd>減三和音の 上に、根音から <b>短7度</b>の 音を のせた 七の和音。長調の Ⅶ7（導音の 上の 七の和音）が この 形で、これを「導七の和音<span class="yomi">（どうしち）</span>」と よぶ。例：${kn(M.k)}の Ⅶ7（${namesW(M.stack)}）。短調の Ⅱ7 も 半減七の 形だけれど、導七とは よばない。</dd>
+    <dt>根音省略形<span class="yomi">（こんおん しょうりゃくけい）</span></dt>
+      <dd>和音から 根音を はぶいた 形。芸大和声では Ⅶ7 を Ⅴ9 の 根音省略形、Ⅶ（減三和音）を Ⅴ7 の 根音省略形 と 考える。だから はたらきは ドミナント（Ⅴ）の まま。</dd>
+    <dt>長調の Ⅶ7・短調の Ⅶ7</dt>
+      <dd>長調の Ⅶ7 は <b>半減七</b>（長9度の Ⅴ9 の 根音省略形）。短調の Ⅶ7 は、和声的短音階で 導音を 上げて つむので <b>減七</b>（短9度の Ⅴ9 の 根音省略形）。長調で 減七を 使うと、準固有和音の ${PA.H(H.label(P.majK,'borrowed','vii_dim7'))}。</dd>
+  </dl></details>`;
+}
 let lastActions='';
 function render(){
   const key=curKey(), P=pairOf(key);
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}・${P.respell?`${kn(P.majK)}（おなじ けんばん）で ${kn(P.minK)}と`:`${kn(state.minor?P.majK:P.minK)}と`} くらべる</span></div>`;
-  h+=heroCard(P)+kbCard(P)+tableCard(P)+staffCmpCard(P)+resCard(P)+shapeCard(P)+abCard(P)+linksCard(P)+moreHTML(P);
+  h+=heroCard(P)+kbCard(P)+tableCard(P)+staffCmpCard(P)+resCard(P)+shapeCard(P)+abCard(P)+linksCard(P)+moreHTML(P)+termsHTML(P);
   h+=`<p class="note">※ 音の 高さは 平均律です。けんばんと「がくふで くらべる」は Ⅶ7 を 導音から ひとつとばしで つんだ 形、「Ⅰへ 解決」は 4声の 形で 鳴らします。</p></div>`;
   PA.paint(document.getElementById('view'),h,'dh:'+state.minor+':'+state.keyIdx);
   PA.follow(document.getElementById('view')); // 光る鍵が 見えるように（見えて いれば 動かさない。鳴らしおわって もとの 形に もどったときも）

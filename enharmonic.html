@@ -55,6 +55,13 @@
 .links .btn{justify-content:flex-start;text-align:left;flex-wrap:wrap;row-gap:0}
 .links .btn small{font-weight:400;color:var(--sub);font-size:13px}
 @media (min-width:600px){.rt td{font-size:19px}.rk{font-size:15px}}
+/* 📖 用語メモ（くわしく 知りたい人むけ。ふだんは とじておく） */
+.terms>summary small{font-weight:400;font-size:12px;color:var(--sub);margin-left:8px}
+.terms dl{margin:0}
+.terms dt{font-weight:800;margin:12px 0 2px}
+.terms dt:first-child{margin-top:2px}
+.terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
+.terms .yomi{font-weight:400;font-size:12px;color:var(--sub)}
 </style>
 </head>
 <body>
@@ -213,12 +220,16 @@ function aug2Msg(rs,r){
   if(!b9||!s7||!n2) return '';
   return `減七の 4つの 音は、けんばんの 上では おなじ 間かくで ならんでいる。でも 書くと、どこか 1か所が <b>増2度</b>に なるよ（${PA.keyName(r.key)}なら${q(b9)}と${q(lt)}）。おなじ 2つの けんばんを ${PA.keyName(up.key)}の 名前で 書くと${q(s7)}と${q(n2)}で <b>短3度</b>。名前の 書き方で 増2度の 場所が かわるから、<b>4つの 短調の 減七</b>として 読めるんだ。`;
 }
-// おなじ けんばんで 名前が ちがう 例（いちばん上の けんばん）
+// おなじ けんばんで 名前が ちがう 例（名前の 種類が いちばん 多い けんばん。おなじ 数なら 上の けんばん）
 function enhExample(rs){
-  const m=Math.max(...rs[0].spelling.map(n=>n.midi));
-  const seen=new Set(), out=[];
-  rs.forEach(r=>{const n=r.spelling.find(x=>x.midi===m), k=PA.nm(n);if(!seen.has(k)){seen.add(k);out.push(n);}});
-  return out;
+  const ms=rs[0].spelling.map(n=>n.midi).sort((a,b)=>b-a);
+  let best=[];
+  ms.forEach(m=>{
+    const seen=new Set(), out=[];
+    rs.forEach(r=>{const n=r.spelling.find(x=>x.midi===m), k=PA.nm(n);if(!seen.has(k)){seen.add(k);out.push(n);}});
+    if(out.length>best.length) best=out;
+  });
+  return best;
 }
 function heroCard(){
   const {rs,si,r,res}=view(), A=state.anim, ex=enhExample(rs);
@@ -357,6 +368,19 @@ function linksCard(){
   </div></section>`;
 }
 
+// 📖 用語メモ：正式な 名前（いまの 調・和音の 音を れいに）。よみかたは 小さく
+function termsHTML(){
+  const {rs}=view(), ex=enhExample(rs);
+  return `<details class="more terms" data-d="terms"><summary>📖 用語メモ<small>正式な よびかた</small></summary><dl>
+    <dt>異名同音<span class="yomi">（いめい どうおん）</span></dt>
+      <dd>名前（書き方）は ちがうけれど、けんばんでは おなじ 高さの 音（${ex.map(q).join('と')} など）。調にも あって、嬰ヘ長調と 変ト長調は 異名同音の 調。</dd>
+    <dt>異名同音的転調<span class="yomi">（いめいどうおんてき てんちょう）</span></dt>
+      <dd>和音の 音を 異名同音で 書きかえて（読みかえて）、その 書き方の 調へ すすむ 転調。遠い 調へも 一気に 行ける。② の ドイツの6 と Ⅴ7/♭Ⅱ の 読みかえも、よく 使われる。</dd>
+    <dt>減七の和音による転調</dt>
+      <dd>減七は となりどうしが ぜんぶ 短3度なので、どの 音を 導音と して 書きかえても 減七の 形の まま。だから 1つの 減七が、4つの 短調の Ⅶ7（Ⅴ9 の 根音省略形）に なる。${ABC[state.fam]}の家族なら ${rs.map(r=>PA.keyName(r.key)).join('・')}。おなじ 主音の 長調の ○Ⅶ7（準固有和音）と 読めば、長調へも 行ける。</dd>
+  </dl></details>`;
+}
+
 /* ===== 画面 ===== */
 let lastActions='';
 function render(){
@@ -369,7 +393,8 @@ function render(){
     ${staffCard()}
     ${quizCard()}
     ${gerCard()}
-    ${linksCard()}`;
+    ${linksCard()}
+    ${termsHTML()}`;
   // この 画面に 出てくる 記号だけ 説明する
   const ds=h.includes('class="ds"'), df=h.includes('class="df"');
   h+=`<p class="note">※ 音の 高さは 平均律です。${ds?'<span class="ds">x</span> は ダブルシャープ'+(df?'、':'の 楽譜での 書き方です。'):''}${df?'<span class="df" style="letter-spacing:-.12em">♭♭</span> は ダブルフラットの 楽譜での 書き方です。':''}</p>

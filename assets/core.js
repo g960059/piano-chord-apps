@@ -1015,6 +1015,195 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
     return '';
   };
 })();
+/* ===== 調の 出しかた（クイズ用の 調の ふくろ）と 24調 チェック表 =====
+ * 調の id：'M0'〜'M12'＝PA.MAJOR_KEYS の 番号、'm0'〜'm12'＝PA.MINOR_KEYS の 番号（26こ。嬰ヘ長調／変ト長調・嬰ニ短調／変ホ短調 は
+ *   おなじ 音の 調の 2つの 書きかた なので、26こで「24調」）
+ * TIERS：調号の 数で わける。easy 0〜1、normal 2〜3、hard 4〜5、all ぜんぶ（6 も）
+ * const deck=PA.keyDeck.create({quiz:'minor-quiz', tier:'easy', modes:['major','minor'], weak:true, rng, now})
+ *   deck.draw(filter?) → {minor, idx, id}（えらべる 調が ないときは null）
+ *     ふくろ：えらべる 調を ぜんぶ 1つずつ 入れて まぜ、ふくろが からに なるまで おなじ 調は 出ない。
+ *     新しい ふくろの 1つめは、いま 出した 調に しない。filter({minor,idx,id})＝true の 調だけ ほしいときは、
+ *     ふくろの 中から つぎに 合う 調を とる（合わない 調は ふくろに のこる）。
+ *     weak：まちがいの 多い 調は、新しい ふくろに 1〜2こ よぶんに 入れる（となりどうしに ならないように）
+ *   deck.record(id, ok) … 答えを きろく（PA.store('keystats-<quiz>') に {id:{right, wrong, last(さいごに 答えた 時刻 ms)}}）
+ *   deck.stats() / deck.reset()（きろくを けす）/ deck.setOptions({tier, modes, weak})（ふくろを つくりなおす）
+ * PA.keyDeck.tierSeg(act, cur) … 4つの むずかしさの ボタン（PA.seg）
+ * PA.keyDeck.checkTableHTML(quiz, {modes}) … 24調 チェック表（けすボタン data-act="keystats-reset" data-v=quiz は ページで あつかう）
+ */
+(function(){
+  const D=PA.keyDeck={};
+  D.TIERS=[
+    {id:'easy',emoji:'🌱',name:'やさしい',min:0,max:1,label:'🌱 やさしい（調号 0〜1）'},
+    {id:'normal',emoji:'🌿',name:'ふつう',min:2,max:3,label:'🌿 ふつう（調号 2〜3）'},
+    {id:'hard',emoji:'🌳',name:'むずかしい',min:4,max:5,label:'🌳 むずかしい（調号 4〜5）'},
+    {id:'all',emoji:'🌏',name:'ぜんぶ',min:0,max:6,label:'🌏 ぜんぶ（調号 0〜6）'}
+  ];
+  const tierOf=t=>D.TIERS.find(x=>x.id===t)||D.TIERS[3];
+  const ID_RE=/^([Mm])(\d{1,2})$/;
+  D.id=(minor,idx)=>(minor?'m':'M')+idx;
+  D.parse=id=>{
+    const r=ID_RE.exec(String(id)); if(!r) return null;
+    const minor=r[1]==='m', idx=+r[2];
+    if(String(idx)!==r[2]||idx>=PA.keyCount(minor)) return null;
+    return {minor,idx,id:D.id(minor,idx)};
+  };
+  // 調号の 数（0〜6）と 種類（1＝♯、-1＝♭、0＝なし）
+  D.sigOf=(minor,idx)=>{const s=PA.sigInfo(PA.keyOf(minor,idx));return {n:s.letters.length,type:s.letters.length?s.type:0};};
+  const ALL=[false,true].flatMap(minor=>[...Array(PA.keyCount(minor)).keys()].map(idx=>({minor,idx,id:D.id(minor,idx),...D.sigOf(minor,idx)})));
+  // 調号の じゅん：0、♯1、♭1、♯2、♭2 … ♯6、♭6
+  const bySig=(a,b)=>a.n-b.n||b.type-a.type;
+  const normModes=m=>{
+    const ok=(Array.isArray(m)?m:[]).filter(x=>x==='major'||x==='minor');
+    return ok.length?[...new Set(ok)]:['major','minor'];
+  };
+  // えらべる 調の id（長調 → 短調、それぞれ 調号の じゅん）
+  D.ids=(o={})=>{
+    const t=tierOf(o.tier), modes=normModes(o.modes);
+    return ALL.filter(k=>modes.includes(k.minor?'minor':'major')&&k.n>=t.min&&k.n<=t.max).sort((a,b)=>(a.minor-b.minor)||bySig(a,b)).map(k=>k.id);
+  };
+  // ----- きろく -----
+  const QUIZ_RE=/^[a-z0-9][a-z0-9-]{0,40}$/;
+  const qkey=quiz=>{if(typeof quiz!=='string'||!QUIZ_RE.test(quiz)) throw new TypeError('PA.keyDeck: quiz は 英小文字・数字・- の 名前に');return 'keystats-'+quiz;};
+  const cnt=v=>Number.isFinite(v)&&v>=0?Math.min(1e6,Math.floor(v)):0;
+  const clean=raw=>{
+    const out={};
+    if(!raw||typeof raw!=='object'||Array.isArray(raw)) return out;
+    Object.keys(raw).forEach(k=>{
+      const p=D.parse(k), v=raw[k];
+      if(!p||p.id!==k||!v||typeof v!=='object'||Array.isArray(v)) return;
+      const s={right:cnt(v.right),wrong:cnt(v.wrong),last:Number.isFinite(v.last)&&v.last>0?v.last:0};
+      if(s.right||s.wrong) out[k]=s;
+    });
+    return out;
+  };
+  D.stats=quiz=>clean(PA.store.get(qkey(quiz),null));
+  D.reset=quiz=>PA.store.set(qkey(quiz),{});
+  // ようす：'none'（まだ）、'weak'（にがて）、'learning'（れんしゅう中）、'good'（できた）
+  D.mastery=s=>{
+    const r=s?cnt(s.right):0, w=s?cnt(s.wrong):0;
+    if(!r&&!w) return 'none';
+    if(r>=3&&w*4<=r) return 'good';
+    if(w>0&&w>=r) return 'weak';
+    return 'learning';
+  };
+  // よぶんに 入れる 数（0〜2）：まちがい − せいかい÷3
+  D.extraCopies=s=>s?Math.max(0,Math.min(2,cnt(s.wrong)-Math.floor(cnt(s.right)/3))):0;
+
+  D.create=(o={})=>{
+    const sk=qkey(o.quiz), rng=typeof o.rng==='function'?o.rng:Math.random, now=typeof o.now==='function'?o.now:Date.now;
+    let opt, eligible, bag=[], last=null;
+    const setOpt=p=>{
+      opt={tier:tierOf(p.tier).id,modes:normModes(p.modes),weak:p.weak!==false};
+      eligible=D.ids(opt); bag=[];
+    };
+    setOpt(o);
+    const rand=n=>{const r=+rng();return Math.min(n-1,Math.max(0,Math.floor((Number.isFinite(r)?r:0)*n)));};
+    const shuffle=a=>{for(let i=a.length-1;i>0;i--){const j=rand(i+1);[a[i],a[j]]=[a[j],a[i]];}return a;};
+    // となりどうしが おなじ 調に ならないように 入れかえる（prev＝その前に 出た 調）
+    const spread=(a,prev)=>{
+      for(let i=0;i<a.length;i++){
+        const x=a[i];
+        if(x!==(i?a[i-1]:prev)) continue;
+        // うしろの ちがう 調と 入れかえる（うごいた 先で また となりに なれば、そこに 来たとき なおす）
+        const j=a.findIndex((y,q)=>q>i&&y!==x);
+        if(j>0){[a[i],a[j]]=[a[j],a[i]];continue;}
+        // うしろに ちがう 調が ない（さいご）：前の すきまで、両どなりが ちがう ところへ うつす
+        for(let k=0;k<i;k++){
+          if((k?a[k-1]:prev)!==x&&a[k]!==x){a.splice(i,1);a.splice(k,0,x);break;}
+        }
+      }
+      return a;
+    };
+    const fresh=()=>{
+      const st=opt.weak?D.stats(o.quiz):{}, a=[];
+      eligible.forEach(id=>{a.push(id);for(let k=D.extraCopies(st[id]);k>0;k--) a.push(id);});
+      return shuffle(a);
+    };
+    // ふくろを たす。のこっている 調（filter に 合わなかった 調）は そのまま 先に、新しい ふくろからは その 調を のぞく
+    const refill=()=>{
+      const left=new Set(bag), add=fresh().filter(id=>!left.has(id));
+      spread(add,bag.length?bag[bag.length-1]:last);
+      bag=bag.concat(add);
+    };
+    const take=i=>{const id=bag.splice(i,1)[0];last=id;const p=D.parse(id);return {minor:p.minor,idx:p.idx,id};};
+    const deck={
+      get quiz(){return o.quiz;},
+      get options(){return {...opt,modes:[...opt.modes]};},
+      get ids(){return [...eligible];},
+      get size(){return eligible.length;},
+      get bag(){return [...bag];},
+      get last(){return last;},
+      draw(filter){
+        const ok=typeof filter==='function'?id=>{const p=D.parse(id);return !!filter({minor:p.minor,idx:p.idx,id});}:()=>true;
+        const match=eligible.filter(ok);
+        if(!match.length) return null;
+        const find=()=>bag.findIndex(id=>id!==last&&ok(id));
+        let i=find();
+        if(i<0){refill();i=find();}
+        if(i<0){i=bag.findIndex(ok);if(i<0){refill();i=bag.findIndex(ok);}} // 合う 調が 1つだけ（いま 出した 調）のとき
+        return i<0?null:take(i);
+      },
+      record(id,ok){
+        const p=D.parse(id); if(!p||p.id!==id) return null;
+        const st=D.stats(o.quiz), s=st[id]||{right:0,wrong:0,last:0};
+        if(ok) s.right=Math.min(1e6,s.right+1); else s.wrong=Math.min(1e6,s.wrong+1);
+        const t=+now(); s.last=Number.isFinite(t)&&t>0?t:0;
+        st[id]=s; PA.store.set(sk,st);
+        return {...s};
+      },
+      stats(){return D.stats(o.quiz);},
+      reset(){D.reset(o.quiz);bag=[];},
+      setOptions(p){setOpt({...opt,...p});}
+    };
+    return deck;
+  };
+
+  // ----- 画面 -----
+  // 4つの むずかしさ（スマホは 2×2、広い 画面は 4つ ならべる）
+  D.tierSeg=(act,cur)=>PA.seg(act,D.TIERS.map(t=>[t.id,`${t.emoji} ${t.name}<span style="display:block;font-size:12px;font-weight:400;color:var(--sub);line-height:1.2">調号 ${t.min}〜${t.max}</span>`]),tierOf(cur).id,'kd-tiers')
+    .replace('class="seg kd-tiers"','class="seg kd-tiers" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,128px),1fr));border-radius:18px"');
+  const LOOK={
+    none:{mark:'',text:'まだ',bg:'var(--soft2)',bd:'transparent',fg:'var(--sub)'},
+    weak:{mark:'△',text:'にがて',bg:'#fde4e7',bd:'#e79aa5',fg:'#8f2233'},
+    learning:{mark:'○',text:'れんしゅう中',bg:'#fff4d6',bd:'#ecc967',fg:'#6e4c00'},
+    good:{mark:'◎',text:'できた',bg:'#dcf5e8',bd:'#7fcfa6',fg:'#0f6b44'}
+  };
+  D.LOOK=LOOK;
+  const SR='position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap';
+  const shortName=k=>(k.a>0?'嬰':k.a<0?'変':'')+PA.LET_JA[k.l];
+  const sigShort=k=>!k.n?'なし':(k.type>0?'♯':'♭')+k.n;
+  const num=n=>n>999?'999+':String(n);
+  D.checkTableHTML=(quiz,o={})=>{
+    const st=D.stats(quiz), modes=normModes(o.modes);
+    let good=0,total=0;
+    const cell=k=>{
+      const s=st[k.id]||{right:0,wrong:0}, m=D.mastery(s), L=LOOK[m], key=PA.keyOf(k.minor,k.idx);
+      total++; if(m==='good') good++;
+      return `<li data-key="${k.id}" data-mastery="${m}" style="position:relative;min-width:0;padding:5px 2px 4px;border-radius:12px;border:2px solid ${L.bd};background:${L.bg};color:${L.fg};text-align:center;line-height:1.25">`
+        +`<span style="${SR}">${PA.keyName(key)}（${PA.sigLabel(key)}）：${L.text}。せいかい ${s.right}、まちがい ${s.wrong}</span>`
+        +`<span aria-hidden="true" style="display:block">`
+        +(L.mark?`<span style="position:absolute;top:1px;right:4px;font-size:10px;font-weight:800">${L.mark}</span>`:'')
+        +`<b style="display:block;font-size:15px;color:var(--ink);white-space:nowrap">${shortName(key)}</b>`
+        +`<span style="display:block;font-size:11px;color:var(--sub)">${sigShort(k)}</span>`
+        +`<span style="display:flex;flex-wrap:wrap;justify-content:center;gap:0 4px;font-size:12px;font-weight:700"><span style="color:${s.right?'var(--ok)':'var(--sub)'}">✓${num(s.right)}</span><span style="color:${s.wrong?'var(--ng)':'var(--sub)'}">✗${num(s.wrong)}</span></span>`
+        +`</span></li>`;
+    };
+    const group=(minor,title)=>{
+      const ks=ALL.filter(k=>k.minor===minor).sort(bySig);
+      return `<h3 style="margin:10px 0 6px;font-size:15px">${title}</h3>`
+        +`<ul role="list" aria-label="${minor?'短調':'長調'}" style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:4px">${ks.map(cell).join('')}</ul>`;
+    };
+    let body='';
+    if(modes.includes('major')) body+=group(false,'☀️ 長調');
+    if(modes.includes('minor')) body+=group(true,'🌙 短調');
+    const legend=['good','learning','weak','none'].map(m=>`<span class="chip" style="background:${LOOK[m].bg};color:${LOOK[m].fg};border:1px solid ${LOOK[m].bd}">${LOOK[m].mark?LOOK[m].mark+' ':''}${LOOK[m].text}</span>`).join('');
+    return `<section class="card kd-check" data-quiz="${quiz}"><h2>📋 24調 チェック表<small>できた 調：${good} ／ ${total}　（左から 調号の 少ない じゅん）</small></h2>`
+      +`<div class="chips" style="margin-bottom:2px">${legend}</div>`
+      +body
+      +`<p class="note">◎ は 3回 いじょう せいかいして、まちがいが 少ない 調です。嬰ヘ長調と 変ト長調、嬰ニ短調と 変ホ短調は おなじ 音の 調で、書きかたが ちがうだけです。</p>`
+      +`<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn small" data-act="keystats-reset" data-v="${quiz}">🗑 きろくを けす</button></div></section>`;
+  };
+})();
 PA.reduceMotion=()=>!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
 PA.scrollTop=()=>window.scrollTo({top:0,behavior:PA.reduceMotion()?'auto':'smooth'});
 })();

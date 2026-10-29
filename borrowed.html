@@ -73,6 +73,13 @@
 .more ul{margin:0;padding-left:1.3em}
 .more li{margin:6px 0}
 @media (prefers-reduced-motion:reduce){.sw .knob,.sw .knob::after{transition:none}}
+/* 📖 用語メモ（くわしく 知りたい人むけ。ふだんは とじておく） */
+.terms>summary small{font-weight:400;font-size:12px;color:var(--sub);margin-left:8px}
+.terms dl{margin:0}
+.terms dt{font-weight:800;margin:12px 0 2px}
+.terms dt:first-child{margin-top:2px}
+.terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
+.terms .yomi{font-weight:400;font-size:12px;color:var(--sub)}
 </style>
 </head>
 <body>
@@ -466,6 +473,24 @@ function tipsHTML(key){
     <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべるよ。</li>
   </ul></details>`;
 }
+// 📖 用語メモ：正式な 名前（いまの 調・和音の 音を れいに）。よみかたは 小さく
+function termsHTML(key){
+  const pm=parMinor(key), six=key.scale[5], six2=pm.nat[5];
+  // 同主短調が 変イ・変ニ・変ト短調の ときは、おなじ けんばんの 短調の 名前を そえる
+  const pmDbl=Object.values(pm.sig).some(a=>Math.abs(a)>1), pmEq=pm.enh?PA.minorKey(pm.idx):null;
+  const pmNote=!pm.enh?'':pmDbl?`${PA.keyName(pm)}は 調号に ${PA.H('𝄫')} が いるので、ふつうは おなじ けんばんの ${PA.keyName(pmEq)}で 書く。`
+    :`${PA.keyName(pm)}は ${PA.sigLabel(pm)}。おなじ けんばんの ${PA.keyName(pmEq)}（${PA.sigLabel(pmEq)}）で 書くことも 多い。`;
+  return `<details class="more terms" data-d="terms"><summary>📖 用語メモ<small>正式な よびかた</small></summary><dl>
+    <dt>準固有和音<span class="yomi">（じゅんこゆう わおん）</span></dt>
+      <dd>長調で、同主短調の 音を かりて つくる 和音。和音記号の 左上に ○ を つける（${IDS.map(i=>PA.H(H.BORROWED[i].label)).join('・')}）。</dd>
+    <dt>同主調<span class="yomi">（どうしゅちょう）</span></dt>
+      <dd>主音が おなじ 長調と 短調（${PA.keyName(key)}と ${PA.keyName(pm)}）。${pmNote}調号が おなじ「平行調」（${PA.keyName(PA.minorKey(state.keyIdx))}）とは べつ。</dd>
+    <dt>借用<span class="yomi">（しゃくよう）</span></dt>
+      <dd>ほかの 調の 音や 和音を かりて 使うこと。芸大和声で「借用和音」と いうと、ふつうは 近親調から かりた 和音（副属和音 など）。同主短調から かりた 和音は「準固有和音」と よんで わける。ポピュラー音楽の「借用和音」（モーダル・インターチェンジ）は、準固有和音と ほぼ おなじ 意味。</dd>
+    <dt>♭6<span class="yomi">（フラット 6・下げた 第6音）</span></dt>
+      <dd>長音階の 第6音を 半音 下げた 音（${q(six,false)} → ${q(six2)}）。同主短調の 第6音で、準固有和音の 中心に なる 音。ふつう 半音下の 第5音へ すすむ。「♭」は「半音 下げる」と いう 意味で、${PA.keyName(key)}では 臨時記号 <b class="bo">${accOf(six2)}</b> を つけるよ。</dd>
+  </dl></details>`;
+}
 let lastActions='';
 function render(){
   const key=curKey(), id=state.id, on=state.on, A=state.anim, seq=seqFor(key,id,on), [lo,hi]=keyRange(key,id);
@@ -494,6 +519,7 @@ function render(){
   h+=abCard(key,id);
   h+=linksCard(key);
   h+=tipsHTML(key);
+  h+=termsHTML(key);
   h+=`<p class="note">※ 音の 高さは 平均律です。${dblOf(key)?`${PA.H('𝄫')} は ダブルフラットの 書き方です。`:''}</p></div>`;
   PA.paint(document.getElementById('view'),h,'borrowed:'+state.keyIdx+':'+id);
   if(state.anim||state.cad||state.res===1) PA.follow(document.getElementById('view')); // 音の 高さが かわっても 光る鍵が 見えるように
