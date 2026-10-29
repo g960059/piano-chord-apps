@@ -245,8 +245,15 @@ PA.staffSVG=(key,cols,o={})=>{
   }
   const ns=sigDraw.length, TB=grand?96:110, BT=TB+82, cw=o.colW||70, sx=50, nx=sx+ns*10+(ns?24:14);
   const hasLabel=cols.some(c=>c.label);
-  const W=Math.max(nx+cols.length*cw+8,o.minW||0), H=(grand?BT+48:TB+48)+(hasLabel?20:0);
   const ty=s=>TB-(s-30)*5, by=s=>BT-(s-26)*5;
+  // いちばん低い音符の 下に 余白と 和音名を おく（低い ベースと 名前が 重ならないように）
+  let lowY=grand?BT+40:TB;
+  cols.forEach(c=>{
+    (c.notes||[]).forEach(n=>{lowY=Math.max(lowY,ty(PA.stepOf(n)));});
+    if(grand)(c.lh||[]).forEach(n=>{lowY=Math.max(lowY,by(PA.stepOf(n)));});
+  });
+  const baseH=grand?BT+48:TB+48, labelY=Math.max(baseH+16,lowY+30);
+  const W=Math.max(nx+cols.length*cw+8,o.minW||0), H=hasLabel?labelY+6:Math.max(baseH,lowY+16);
   let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="がくふ" style="max-width:${Math.round(W*(o.maxScale||1.5))}px;margin:0 auto">`;
   for(let i=0;i<5;i++) svg+=`<line x1="6" x2="${W-4}" y1="${TB-i*10}" y2="${TB-i*10}" stroke="#6b6273" stroke-width="1.2"/>`;
   svg+=PA.gClef(10,TB-10);
@@ -291,7 +298,7 @@ PA.staffSVG=(key,cols,o={})=>{
   cols.forEach((c,ci)=>{
     const x=nx+ci*cw+cw/2;
     svg+=`<g opacity="${c.op==null?1:c.op}">`+drawNotes(ci,c,c.notes,ty,30,38)+(grand?drawNotes(ci,c,c.lh,by,18,26):'');
-    if(c.label) svg+=`<text x="${x}" y="${H-4}" text-anchor="middle" font-size="17" font-weight="800" fill="${c.labelColor||'#3a3245'}">${PA.Svg(c.label)}</text>`;
+    if(c.label) svg+=`<text x="${x}" y="${labelY}" text-anchor="middle" font-size="17" font-weight="800" fill="${c.labelColor||'#3a3245'}">${PA.Svg(c.label)}</text>`;
     svg+=`</g>`;
   });
   (o.arrows||[]).forEach(a=>{
