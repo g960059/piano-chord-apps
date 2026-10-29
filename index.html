@@ -25,7 +25,7 @@
 .appcard .tx{min-width:0;flex:1}
 .appcard b{display:block;font-size:17px;line-height:1.3}
 .appcard .d{display:block;color:var(--sub);font-size:13px;line-height:1.45;margin-top:2px}
-.appcard .ty{display:inline-block;font-size:11.5px;font-weight:800;padding:1px 8px;border-radius:999px;background:var(--l);color:var(--c);margin-bottom:2px}
+.appcard .ty{display:inline-block;font-size:12px;font-weight:800;padding:1px 8px;border-radius:999px;background:var(--l);color:var(--c);margin-bottom:2px}
 .appcard::after{content:"›";flex:none;color:var(--sub);font-size:24px}
 .cont{border-left-color:var(--ink)}
 </style>
@@ -66,7 +66,7 @@ function render(){
   const last=PA.store.get('last',null), la=last&&ALL.find(a=>a.id===last.app);
   let h=`<div class="stack">
     <section class="card"><div class="hello"><span class="logo">🎹</span><div><h2>ピアノ和音アプリ</h2><p class="lead">Ⅰ・Ⅳ・Ⅴ・Ⅴ7、短調の Ⅴ・減七、伴奏づけを「見て・聴いて・さわって」おぼえよう</p></div></div></section>`;
-  if(la) h+=`<div class="cat"><div class="cat-head"><h2>▶️ つづきから</h2></div>${card(la,'cont')}</div>`;
+  if(la) h+=`<div class="cat"><div class="cat-head"><h2>▶️ つづきから</h2></div><div class="apps">${card(la,'cont')}</div></div>`; // 広い画面でも 1まいだけ 横に のびない
   CATS.forEach(c=>{h+=`<div class="cat"><div class="cat-head"><h2>${c.title}</h2><span>${c.sub}</span></div><div class="apps">${c.apps.map(a=>card(a)).join('')}</div></div>`;});
   h+=`<p class="note">右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべます。どのアプリにも 同じ設定が つかわれます。<br>
     スマホの ホーム画面に 追加すると、アプリのように すぐ ひらけます。</p></div>`;

@@ -190,7 +190,7 @@ PA.kbSVG=(lo,hi,marks=new Map(),opts={})=>{
   // キーボードでも ひける：けんばん1つにつき Tab で 1か所（←→ で となりの鍵、Enter／スペースで ひく）
   const drawn=[];for(let m=lo;m<=hi;m++) if(!PA.BLACK.has(mod(m,12))||X[m-1]!==undefined) drawn.push(m);
   const tabM=(drawn.find(m=>{const k=marks.get(m);return k&&k.focus;})??drawn.find(m=>marks.get(m))??(drawn.includes(60)?60:drawn[0]));
-  let s=`<svg viewBox="-2 0 ${TW+4} ${TH}" class="kb" style="min-width:${wh.length*36}px" role="group" aria-label="けんばん">`;
+  let s=`<svg viewBox="-2 0 ${TW+4} ${TH}" class="kb" style="min-width:${wh.length*36}px;max-width:${wh.length*56}px;margin-inline:auto" role="group" aria-label="けんばん">`;
   const attrs=(m,mk)=>`data-m="${m}" ${mk?'data-mk="1"':''} ${mk&&mk.focus?'data-focus="1"':''} tabindex="${m===tabM?0:-1}" role="button" aria-label="${keyLabel(m)}"`;
   wh.forEach(m=>{
     const x=X[m], mk=marks.get(m);
@@ -198,7 +198,7 @@ PA.kbSVG=(lo,hi,marks=new Map(),opts={})=>{
     if(mk&&mk.ring) s+=`<rect x="${x+3}" y="${TOP+3}" width="${W-6}" height="${H-6}" rx="5" fill="none" stroke="${mk.ring}" stroke-width="4" pointer-events="none"/>`;
     if(mk&&mk.label) s+=`<text x="${x+W/2}" y="${TOP+H-40}" text-anchor="middle" font-size="${String(mk.label).length>3?12:15}" font-weight="800" fill="${mk.tc||'#fff'}">${PA.Svg(mk.label)}</text>`;
     if(mk&&mk.sub) s+=`<text x="${x+W/2}" y="${TOP+H+17}" text-anchor="middle" font-size="11" font-weight="700" fill="${mk.subColor||'#857c8f'}">${mk.sub}</text>`;
-    else if(m===60) s+=`<text x="${m===lo?x+2:x+W/2}" y="${TOP+H+17}" text-anchor="${m===lo?'start':'middle'}" font-size="10.5" fill="#a99f93">まんなかの${PA.nm({letter:0,acc:0})}</text>`;
+    else if(m===60) s+=`<text x="${m===lo?x+2:x+W/2}" y="${TOP+H+17}" text-anchor="${m===lo?'start':'middle'}" font-size="12" fill="#a99f93">まんなかの${PA.nm({letter:0,acc:0})}</text>`;
   });
   if(mifa) wh.forEach(m=>{const pc=mod(m,12);if((pc===4||pc===11)&&X[m+1]!==undefined) s+=`<rect x="${X[m]+W-3}" y="${TOP+H-30}" width="6" height="24" rx="3" fill="#f4a100" pointer-events="none"/>`;});
   for(let m=lo;m<=hi;m++){

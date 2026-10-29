@@ -32,6 +32,16 @@
 .sw.on{background:var(--redl)}
 .sw.on .knob{background:var(--red)}
 .sw.on .knob::after{left:19px}
+.duo{display:grid;grid-template-columns:minmax(0,1fr);gap:12px}
+/* iPad たて：1だんで かいだんを 大きく ぜんぶ 見せる（ページの はばは ふつうの 760px） */
+.page.wide{max-width:760px}
+/* 広い画面（iPad よこ）・スマホ よこ：長調と 短調を ならべて くらべる */
+@media (min-width:1000px),(orientation:landscape) and (max-height:500px){.page.wide{max-width:1040px}}
+@media (min-width:1000px),(orientation:landscape) and (max-height:500px) and (min-width:600px){.duo{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (min-width:1000px){
+  .stair{min-width:0} /* 2れつでも かいだんが 横スクロールなしで おさまる */
+  .ab{max-width:600px;margin-inline:auto}
+}
 .more ul{margin:0;padding-left:1.3em}
 .more li{margin:6px 0}
 @media (prefers-reduced-motion:reduce){.sw .knob,.sw .knob::after{transition:none}}
@@ -134,7 +144,7 @@ function render(){
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
     <h2 class="ptitle">長調と 短調の「7ばんめ → 主音」を くらべよう<small>${PA.keyName(rel)} と ${PA.keyName(key)} は 調号が おなじ（${PA.sigLabel(key)}）</small></h2>
-    <div class="grid2">
+    <div class="duo">
     <section class="card panel" style="--pc:${MAJ_C}">
       <h2>☀️ ${PA.keyName(rel)}（長調）</h2>
       <p class="sub">かいだんの 高さ＝音の高さ。7ばんめ「${nmH(relLT)}」と 主音「${nmH(relT)}」は…</p>

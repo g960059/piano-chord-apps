@@ -15,6 +15,7 @@
 .colhead{position:sticky;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:5;background:var(--bg);padding:6px 6px 4px}
 .colhead span{display:flex;align-items:center;justify-content:center;min-height:34px;border-radius:10px;background:var(--l);color:var(--c);font-size:20px;font-weight:800;line-height:1}
 .colhead .k0{display:none}
+@media (max-height:500px) and (orientation:landscape){.colhead{top:calc(env(safe-area-inset-top,0px) + 46px)}} /* 横にした スマホは 上のバーが うすい */
 .krow{background:var(--card);border-radius:16px;padding:6px;box-shadow:0 2px 0 #eadfce,0 6px 18px rgba(80,60,30,.06)}
 .khead{grid-column:1/-1;display:flex;align-items:center;gap:8px;min-height:44px;padding:4px 8px;border-radius:10px;background:var(--soft2);text-align:left;line-height:1.25}
 .khead b{font-size:17px}

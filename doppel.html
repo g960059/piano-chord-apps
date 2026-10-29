@@ -18,12 +18,16 @@
 .hs{font-size:13px;color:var(--sub)}
 .nw{white-space:nowrap}
 .up{color:var(--red)}
-.roles{display:grid;gap:4px;margin-top:10px}
-.role{display:flex;align-items:center;flex-wrap:wrap;gap:2px 10px;padding:6px 10px;border-radius:12px;background:var(--soft2);min-height:40px}
-.role .rn{flex:none;min-width:3.6em;font-size:14px;color:var(--sub);font-weight:700}
-.role .rv{font-size:19px;font-weight:800}
+.hero>.hn{margin-top:8px}
+/* 根音・第3音 ／ 第5音・第7音 の 2×2（スマホでも けんばんが 上に 来るように ひくく） */
+.roles{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px}
+.role{display:flex;flex-direction:column;justify-content:center;min-width:0;padding:5px 10px 6px;border-radius:12px;background:var(--soft2)}
+.role .rh{display:flex;align-items:center;flex-wrap:wrap;gap:2px 6px;min-height:22px}
+.role .rn{font-size:13px;color:var(--sub);font-weight:700;line-height:1.4}
+.role .rb{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 6px}
+.role .rv{font-size:20px;font-weight:800;line-height:1.3}
 .role .rf{font-size:14px;color:var(--sub)}
-.role .rt{font-size:13px;font-weight:800;padding:2px 10px;border-radius:999px;background:var(--red);color:#fff}
+.role .rt{font-size:12px;font-weight:800;line-height:1.5;padding:1px 8px;border-radius:999px;background:var(--red);color:#fff;white-space:nowrap}
 .role .rt.soft{background:var(--redl);color:#a3273a}
 .role.on{background:var(--redl);outline:2px solid var(--red)}
 .sw{width:100%;gap:10px;margin-top:10px;background:var(--card);border:2px solid var(--red);color:var(--red);font-size:clamp(14px,4vw,16px);min-height:52px}
@@ -128,6 +132,7 @@ const midisOf=ns=>uniq(ns.map(n=>n.midi));
 const nmW=n=>`<span class="nw">${PA.nmH(n)}</span>`;
 const nmC=n=>isUp(n)?`<span class="nw up">${PA.nmH(n)}</span>`:nmW(n);
 const namesC=(ns,sep='・')=>ns.map(nmC).join(sep);
+const namesW=ns=>ns.map(nmW).join('・'); // 音名の とちゅうで 改行しない（「・」の あとで だけ 折りかえす）
 const unraised=n=>({...n,acc:n.acc-1,midi:n.midi-1});
 // コードネーム（白鍵だけの 形の めやす。音の 数は 画面に 出さない）
 function symOf(ns){
@@ -233,12 +238,12 @@ function rolesHTML(key){
   return `<div class="roles">`+ns.map((n,i)=>{
     const up=r&&isUp(n);
     const tagH=!up?'':n.tag==='lt'?`<span class="rt">Ⅴへの導音</span>`:`<span class="rt soft">半音上げた</span>`;
-    return `<div class="role ${up?'on':''}"><span class="rn">${NAME[i]}</span>${up?`<span class="rf">${PA.nmH(base[i])} →</span>`:''}<b class="rv ${up?'up':''}">${PA.nmH(n)}</b>${tagH}</div>`;
+    return `<div class="role ${up?'on':''}"><div class="rh"><span class="rn">${NAME[i]}</span>${tagH}</div><div class="rb">${up?`<span class="rf nw">${PA.nmH(base[i])} →</span>`:''}<b class="rv nw ${up?'up':''}">${PA.nmH(n)}</b></div></div>`;
   }).join('')+`</div>`;
 }
 function kbCaption(key,seq){
-  if(state.cad){const s=seq[state.cad.i];return `カデンツ ${state.cad.i+1}/${seq.length}：<b style="color:${s.col}">${PA.H(s.lab)}</b>　${state.cad.i===1?namesC(s.ns.slice(1)):PA.namesH(s.ns.slice(1))}（左手 ${PA.nmH(s.ns[0])}）`;}
-  if(state.res===2) return `<b style="color:${V_COL}">Ⅴ</b>：${PA.namesH(C.toV(key).slice(1))}（左手 ${PA.nmH(C.toV(key)[0])}）`;
+  if(state.cad){const s=seq[state.cad.i];return `カデンツ ${state.cad.i+1}/${seq.length}：<b style="color:${s.col}">${PA.H(s.lab)}</b>　${state.cad.i===1?namesC(s.ns.slice(1)):namesW(s.ns.slice(1))}（左手 ${PA.nmH(s.ns[0])}）`;}
+  if(state.res===2) return `<b style="color:${V_COL}">Ⅴ</b>：${namesW(C.toV(key).slice(1))}（左手 ${PA.nmH(C.toV(key)[0])}）`;
   return `<b style="color:${colOf(state.raised)}">${label(state.raised)}</b>：左手は いちばん下の 根音。${state.raised?'<span class="up">赤＝半音上げた 音（第3音は Ⅴへの導音）</span>。':''}さわると 音が出るよ`;
 }
 function abCard(key){
@@ -250,7 +255,7 @@ function abCard(key){
   if(ab.answer==null) return h+`<p class="askline">ドッペルドミナントは？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">A が ドッペル</button><button class="btn night" data-act="qchoose" data-v="B">B が ドッペル</button></div></section>`;
   const ok=ab.answer===ab.dd, other=ab.dd==='A'?'B':'A';
   return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！ もういちど 聴きくらべてみよう。'}
-      <b>${ab.dd}</b> が ドッペル（${namesC(dd)}）、<b>${other}</b> が Ⅱ7（${PA.namesH(ii)}）。
+      <b>${ab.dd}</b> が ドッペル（${namesC(dd)}）、<b>${other}</b> が Ⅱ7（${namesW(ii)}）。
       <br>「${PA.nmH(dd[1])}」が Ⅴ の「${PA.nmH(C.toV(key)[1])}」へ 半音で のぼるので、Ⅴ が つよく 聞こえるんだ。</div>
     <div class="ab one"><button class="btn night" data-act="qnext">🎲 つぎの もんだい</button></div></section>`;
 }
@@ -285,8 +290,8 @@ function render(){
     <section class="card hero" style="--c:${col}">
       <div class="hero-top"><span class="badge" style="--c:${col}">${label(r)}</span>
         <div style="min-width:0"><div class="hk">${PA.keyName(key)}の ${r?'ドッペルドミナント':'Ⅱ7（にどしち）'}</div>
-        <div class="hn">${namesC(byRole(X),'&nbsp;・ ')}</div>
         <div class="hs">コードネーム <b>${C.symbol(key,r?'dd':'ii7')}</b>　/　${r?'Ⅴ7/Ⅴ（Ⅴ の ための Ⅴ7）':'Ⅱ の 七の和音・下属（S）の なかま'}</div></div></div>
+      <div class="hn">${namesC(byRole(X),'&nbsp;・ ')}</div>
       ${rolesHTML(key)}
       <button class="btn sw ${r?'on':''}" data-act="raise" role="switch" aria-checked="${r}"><span class="knob"></span>${key.minor?'第3音と 第5音を 半音上げる':'第3音を 半音上げる'}</button>
       <div class="chips">${shapeChain(key)}</div>

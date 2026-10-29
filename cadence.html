@@ -26,15 +26,16 @@
 .hl{font-size:15px;font-weight:700}
 .hl b{color:var(--c);font-size:20px}
 .tag{display:inline-block;vertical-align:middle;margin-right:6px;padding:1px 8px;border-radius:999px;background:var(--soft2);color:var(--sub);font-size:12px;font-weight:700;line-height:1.6}
-.hand{margin:10px 0 2px;font-size:15px;font-weight:700}
-.hand:first-of-type{margin-top:0}
+.hand{margin:0 0 2px;font-size:15px;font-weight:700}
+.handblk{margin:10px auto 0}
+.handblk:first-of-type{margin-top:0} /* 広い画面では 名前を けんばんの 左はしに そろえる */
 .kbw{margin:0 auto}
 .staffw{margin:0 auto}
 .actionbar .btn{padding-inline:4px;gap:4px;overflow:hidden}
 .actionbar .btn.nx{flex-grow:.6}
 .nw{white-space:nowrap}
 .msgs{display:grid;margin-top:10px}
-.msgs>.msg{grid-area:1/1}
+.msgs>.msg{grid-area:1/1;display:flex;align-items:center} /* 高さは いちばん長い メッセージに そろえ、短い文は たて まん中に */
 .lbl-n{display:none}
 @media (max-width:359px){
   .actionbar{gap:6px}
@@ -122,7 +123,7 @@ function render(){
         <div style="min-width:0"><div class="hk">${PA.keyName(key)}の カデンツ　${step+1}つめ</div>
           <div class="hn"><span class="tag">右手</span>${cur.rh.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join(' ・ ')}</div>
           <div class="hl"><span class="tag">左手</span><b class="nw">${PA.nmH(cur.lh[0])}</b></div></div></div>
-      <div class="msgs">${data.map((_,i)=>`<div class="msg" ${i===step?'':'aria-hidden="true" style="visibility:hidden"'}>${i===step?M.html:stepMsg(key,data,i,state.form).html}</div>`).join('')}</div>
+      <div class="msgs">${data.map((_,i)=>`<div class="msg" ${i===step?'':'aria-hidden="true" style="visibility:hidden"'}><span>${i===step?M.html:stepMsg(key,data,i,state.form).html}</span></div>`).join('')}</div>
       <div class="row" style="margin-top:10px">${PA.seg('speed',[['normal','🐇 ふつう'],['slow','🐢 ゆっくり']],state.speed)}</div>
     </section>`;
   // けんばん：上＝右手、下＝左手（がくふと 同じ ならび）
@@ -133,10 +134,10 @@ function render(){
     lmarks.set(n.midi,blk?{fill:col,light:true,tc:'#fff',label:PA.nm(n),sub:'左手',subColor:col,focus:true}
                          :{fill:PA.LCOL[cur.ch],tc:col,label:PA.nm(n),sub:'左手',subColor:col,focus:true});});
   const [rlo,rhi]=rhRange(data);
-  const kb=(lo,hi,marks,sk)=>`<div class="scroll" data-sk="${sk}"><div class="kbw" style="max-width:${whiteCount(lo,hi)*54}px">${PA.kbSVG(lo,hi,marks)}</div></div>`;
+  const kb=(lo,hi,marks,sk,hand)=>`<div class="handblk" style="max-width:${whiteCount(lo,hi)*54}px"><div class="hand">${hand}</div><div class="scroll" data-sk="${sk}"><div class="kbw">${PA.kbSVG(lo,hi,marks)}</div></div></div>`;
   h+=`<section class="card"><h2>🎹 けんばん<small>こい色＝右手、うすい色＝左手。🟡のわく＝そのまま</small></h2>
-    <div class="hand">✋ 右手</div>${kb(rlo,rhi,rmarks,'kbr')}
-    <div class="hand">🤚 左手</div>${kb(48,59,lmarks,'kbl')}</section>`;
+    ${kb(rlo,rhi,rmarks,'kbr','✋ 右手')}
+    ${kb(48,59,lmarks,'kbl','🤚 左手')}</section>`;
   const cols=data.map((d,i)=>({notes:d.rh,lh:d.lh,color:PA.COL[d.ch],accColor:'#d1495b',op:i===step?1:0.28,label:LABEL[d.ch],labelColor:PA.COL[d.ch]}));
   h+=`<section class="card"><h2>🎼 がくふ<small>いま ひいている和音が こい色。上が右手、下が左手</small></h2>
     <div class="scroll" data-sk="staff"><div class="staffw" style="min-width:${staffMinW(key)}px">${PA.staffSVG(key,cols,{grand:true,colW:66})}</div></div></section>`;

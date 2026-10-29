@@ -17,6 +17,7 @@
 .hk{font-weight:700;font-size:15px;line-height:1.4}
 .hn{font-size:clamp(22px,6.4vw,34px);font-weight:800;color:var(--c);line-height:1.25;text-wrap:balance}
 .hs{font-size:13px;color:var(--sub);line-height:1.45}
+.hero>.hn{margin-top:8px}
 .msg b.big{font-size:20px;color:var(--c)}
 .roles{margin-top:10px}
 .roles .chip{font-weight:400;font-size:13.5px}
@@ -41,7 +42,7 @@
 .vs>div{background:var(--card);border-radius:12px;padding:8px 10px;min-width:0}
 .vs h3{margin:0 0 4px;font-size:15px}
 .links{display:flex;flex-direction:column;gap:8px}
-.links .btn{justify-content:flex-start;text-align:left}
+.links .btn{justify-content:flex-start;text-align:left;flex-wrap:wrap;row-gap:0}
 .links .btn small{font-weight:400;color:var(--sub);font-size:13px}
 </style>
 </head>
@@ -192,8 +193,9 @@ function heroCard(key,t){
   const cur=A?A.cols[A.cols.length-1].notes:a; // つくりかたの とちゅうは、いま できている 音だけ
   let h=`<section class="card hero" style="--c:${AUG}">
     <div class="hero-top"><span class="badge" style="--c:${AUG}">増6</span>
-      <div style="min-width:0"><div class="hk">${PA.keyName(key)}の ${T.name}</div><div class="hn">${cur.length?namesC(cur):'…'}</div>
-      <div class="hs">もとの 和音：${T.from}（${src}）　<span class="lo">青＝下げた 第5音</span>・<span class="up">赤＝Ⅴへの 導音</span></div></div></div>
+      <div style="min-width:0"><div class="hk">${PA.keyName(key)}の ${T.name}</div>
+      <div class="hs">もとの 和音：${T.from}（${src}）　<span class="lo nw">青＝下げた 第5音</span>・<span class="up nw">赤＝Ⅴへの 導音</span></div></div></div>
+    <div class="hn">${cur.length?namesC(cur):'…'}</div>
     ${A?'':`<div class="chips roles">${a.map(n=>`<span class="chip"><b class="${n.tag==='low'?'lo':n.tag==='lt'?'up':''}">${PA.nmH(n)}</b> ${n.role}</span>`).join('')}</div>
     <div class="pair">↕️ ${q(low)}と ${q(up)} ＝ <b>増6度</b>。${q(low)}は 半音下へ、${q(up)}は 半音上へ。</div>`}
     <div class="msg" style="margin-top:10px">${A?A.msg:state.autoWait?'👆 どこかを タッチすると <b>つくりかた</b>が はじまるよ':(state.msg||staticMsg(key,t))}</div>
@@ -205,7 +207,7 @@ function compareCard(key){
   TKEYS.forEach(t=>{
     const T=TYPES[t], a=aug(key,t);
     h+=`<div class="cmprow ${(state.cmp?state.cmp===t:t===state.type)?'on':''}" style="--c:${AUG}"><button class="btn" data-act="cmp" data-v="${t}" aria-pressed="${state.cmp===t}">🔊 ${T.short}</button>
-      <div class="tx"><b>${PA.namesH(a)}</b><br>${T.from}・根音${T.root?'あり':'なし'}・${T.n}つの音</div></div>`;
+      <div class="tx"><b>${a.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}</b><br>${T.from}・根音${T.root?'あり':'なし'}・${T.n}つの音</div></div>`;
   });
   return h+`<p class="note">イタリアは <b>うすく かるい</b>（3つの 音）。フランスは 根音が 入って <b>ふしぎ・ふわっと</b>。ドイツは <b>こくて Ⅴ7 みたい</b>。</p></section>`;
 }
@@ -240,7 +242,7 @@ function bIIDetails(key){
     <p>ドイツの6${b.plain?`の 音を ぜんぶ けんばんの ふつうの 名前（${namesC(d,'・')}）で 書きかえると`:`${q(g[3])}を${q(d[3])}と 書きかえると`}、<b>${b.domName}</b>（♭Ⅱ＝${b.bII} の ための Ⅴ7）と <b>まったく おなじ けんばん</b>。絶対音感で 聴くと おなじ 和音に 聴こえるね。でも 書き方と すすみ方が ちがうよ。</p>
     <div class="vs">
       <div><h3 style="color:${AUG}">ドイツの6</h3>${namesC(g,'・')}<br><span class="note">${q(g[3])}は 半音上へ → Ⅴ へ</span></div>
-      <div><h3 style="color:${VCOL}">${b.domName}</h3>${PA.namesH(d)}<br><span class="note">${q(d[3])}は 半音下へ → ${b.bII}（♭Ⅱ）へ</span></div>
+      <div><h3 style="color:${VCOL}">${b.domName}</h3>${d.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}<br><span class="note">${q(d[3])}は 半音下へ → ${b.bII}（♭Ⅱ）へ</span></div>
     </div>
     <div class="scroll" data-sk="biikb" style="margin-top:8px">${PA.kbSVG(lo,hi,mk)}</div>
     <p class="note" style="margin-top:2px">${alt?alt.cap:`けんばんの 下の 赤い 字は ${b.domName} での 名前`}</p>

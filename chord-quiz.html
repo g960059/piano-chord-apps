@@ -33,6 +33,10 @@
 .sumtx small{font-weight:400;color:var(--sub);font-size:13px}
 .opt{display:flex;flex-direction:column;gap:6px;margin-top:12px}
 .opt>.lab{font-size:14px;color:var(--sub);font-weight:700}
+/* 調号の数（6つ）：スマホは 3つずつ 2だん、広い画面は 1だん */
+.seg.grid4{display:grid;grid-template-columns:repeat(3,1fr);border-radius:18px}
+.seg.grid4 button{padding:6px 4px;border-radius:16px}
+@media (min-width:560px){.seg.grid4{grid-template-columns:repeat(6,1fr)}}
 .tog{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .tog button{min-height:48px;border-radius:14px;font-weight:800;font-size:17px;background:var(--card);color:var(--sub);border:3px solid var(--line)}
 .tog button.on{background:var(--l);color:var(--c);border-color:var(--c)}

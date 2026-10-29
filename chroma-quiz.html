@@ -68,6 +68,10 @@
 .cmpbtn small{color:var(--sub);font-size:13.5px;line-height:1.4}
 .diff b.lt{color:#a3273a}
 .wide{width:100%}
+.nw{white-space:nowrap}
+.tips .row{margin-top:8px}
+/* スマホを 横にしたとき：こたえの ボタンを 少し ひくく（上下の バーの あいだに おさまるように） */
+@media (max-height:500px) and (orientation:landscape){.echoice{min-height:80px;padding-block:6px}.echoice .em{font-size:26px}}
 @media (max-width:420px){.echoice{min-height:92px}}
 @media (min-width:700px){
   .echoices.n3{grid-template-columns:repeat(3,1fr)}
@@ -114,6 +118,9 @@ const isBlack=m=>PA.BLACK.has(mod(m,12));
 // 主音から letterOff 文字・semis 半音 上の 音の つづり（ヒントで 名前を 出すため）
 const tn=(key,lo,semis)=>{const L=(key.l+lo)%7;return {letter:L,acc:PA.spell(L,key.tpc+semis)};};
 const rel=(key,m)=>mod(m-key.tpc,12); // 主音から なん半音（ピッチクラスの くらべっこ だけに つかう）
+// 音名の とちゅう（「ファ」と「♯」の あいだ など）で 改行しない。折りかえすのは「・」の あとだけ
+const nwH=s=>`<span class="nw">${s}</span>`;
+const namesN=ns=>ns.map(n=>nwH(PA.nmH(n))).join('・');
 
 /* ===== 和音（PA.chroma） ===== */
 function chordOf(key,t){
@@ -285,9 +292,9 @@ function gerTwin(key){
 function keysFb(key,t){
   if(!Q.checked) return '';
   const g=grade(key,t);
-  if(g.ok) return `🎉 せいかい！ ${PA.keyName(key)}の ${T[t].long} は <b>${PA.namesH(disp(t,g.ans))}</b>`+okExtra(key,t,g.ans).filter(Boolean).map(x=>`<span class="sm">${x}</span>`).join('');
+  if(g.ok) return `🎉 せいかい！ ${PA.keyName(key)}の ${T[t].long} は <b>${namesN(disp(t,g.ans))}</b>`+okExtra(key,t,g.ans).filter(Boolean).map(x=>`<span class="sm">${x}</span>`).join('');
   const H=hintsOf(key,t,g);
-  return `🤔 おしい！ こたえは <b>${PA.namesH(disp(t,g.ans))}</b><br>`+(H.length?H.join('<br>'):recipe(key,t));
+  return `🤔 おしい！ こたえは <b>${namesN(disp(t,g.ans))}</b><br>`+(H.length?H.join('<br>'):recipe(key,t));
 }
 function checkKeys(){
   const key=keyOfQ(Q.q), g=grade(key,Q.q.type);
@@ -362,7 +369,7 @@ function keysView(){
       ${done?'':`<div class="sigstaff">${sigStaff(key)}</div>`}</div>
     <p class="qsub">${PA.sigLabel(key)}・<b>${ans.length}つ</b>の音・${M.sub}</p>
   </section>`;
-  const names=[...Q.picked].sort((a,b)=>a-b).map(m=>PA.H(nameOf(m,key,book)));
+  const names=[...Q.picked].sort((a,b)=>a-b).map(m=>nwH(PA.H(nameOf(m,key,book))));
   h+=`<section class="card"><h2>🎹 けんばんで おさえよう<small>${done?'緑の○＝あたり・赤の×＝ちがう音・わくだけ＝たりない音':`<b>${ans.length}つ</b>の音を タップ・どの オクターブでも OK`}</small></h2>
     <div class="scroll" data-sk="kb">${PA.kbSVG(KB_LO,KB_HI,keysMarks(key,t,book))}</div>
     <div class="picked">おさえた音： <b>${names.length?names.join('・'):'まだ なし'}</b>${done?'':'<small>もういちど タップすると けせるよ</small>'}</div></section>`;
@@ -370,7 +377,7 @@ function keysView(){
   if(msg) h+=`<div class="fb ${Q.lastOk?'good':'bad'}" id="fb" role="status">${msg}</div>`;
   else if(Q.hint>=1){
     const b=baseOf(key,t);
-    h+=`<div class="msg" id="fb" role="status">💡 ヒント${Q.hint}：${recipe(key,t)}${Q.hint>=2?`<br>${b.root?`いちばん下の 根音は <b>「${PA.nmH(b.notes[0])}」</b>（オレンジの わく）。`:`もとの 和音 <b>${b.name}</b>（${PA.namesH(b.notes)}）を オレンジの わくで 出したよ。`}`:''}</div>`;
+    h+=`<div class="msg" id="fb" role="status">💡 ヒント${Q.hint}：${recipe(key,t)}${Q.hint>=2?`<br>${b.root?`いちばん下の 根音は <b>「${PA.nmH(b.notes[0])}」</b>（オレンジの わく）。`:`もとの 和音 <b>${b.name}</b>（${namesN(b.notes)}）を オレンジの わくで 出したよ。`}`:''}</div>`;
   }
   h+=`<div class="row center"><button class="btn small" data-act="qexplain">🐸 ${t==='ddim'?'ドッペルの 家族を 見る':'つくりかたを見る'}</button></div>`+
     (t==='ddim'?`<p class="qsub" style="text-align:center;margin:0">ひらいたら 下の 🏠 ドッペルの 家族 で「減七/Ⅴ」を えらんでね</p>`:'')+
@@ -424,11 +431,11 @@ function echoiceHTML(t){
 }
 function earFb(){
   const e=Q.eq, ok=Q.ans===e.type, M=T[e.type], d=earData(e), key=d.key;
-  let h=`<div class="fb ${ok?'good':'bad'}${Q.fresh?'':' still'}" role="status">${ok?'🎉 せいかい！':'🤔 おしい！'} これは <b>${M.long}</b>。「${M.word}」 ひびき。<br>${PA.keyName(key)}で 音は <b>${PA.namesH(disp(e.type,d.chord))}</b>`;
+  let h=`<div class="fb ${ok?'good':'bad'}${Q.fresh?'':' still'}" role="status">${ok?'🎉 せいかい！':'🤔 おしい！'} これは <b>${M.long}</b>。「${M.word}」 ひびき。<br>${PA.keyName(key)}で 音は <b>${namesN(disp(e.type,d.chord))}</b>`;
   if(e.lv===1){
     const ii=byRole(shiftN(C.ii7(key),e.shift)), dd=byRole(shiftN(C.dd(key),e.shift));
     const diff=ii.map((n,i)=>n.letter!==dd[i].letter||n.acc!==dd[i].acc?`「${PA.nmH(n)}」→「<b class="lt">${PA.nmH(dd[i])}</b>」`:'').filter(Boolean);
-    h+=`<span class="sm diff">Ⅱ7：${PA.namesH(ii)}<br>ドッペル：${PA.namesH(dd)}<br>ちがうのは ${diff.join('と ')}（半音上げた音）。上げた 第3音が Ⅴ の 根音「${PA.nmH(d.steps[0].notes[3])}」へ ぐっと 引っぱられるよ。</span>`;
+    h+=`<span class="sm diff">Ⅱ7：${namesN(ii)}<br>ドッペル：${namesN(dd)}<br>ちがうのは ${diff.join('と ')}（半音上げた音）。上げた 第3音が Ⅴ の 根音「${PA.nmH(d.steps[0].notes[3])}」へ ぐっと 引っぱられるよ。</span>`;
   }else{
     const lo=d.chord.find(n=>n.tag==='low'), up=d.chord.find(n=>n.tag==='lt');
     h+=`<span class="sm">「${PA.nmH(lo)}」と「${PA.nmH(up)}」が 増6度。${e.type==='it'?'根音なしの 3つの音。':e.type==='fr'?'根音「'+PA.nmH(d.chord[2])+'」が 入った 4つの音。':'第9音（短9度）「'+PA.nmH(d.chord[2])+'」が 入った 4つの音。'}</span>`;
@@ -436,7 +443,7 @@ function earFb(){
   }
   h+=`</div>`;
   const resAll=Q.resShown?d.steps:[];
-  if(resAll.length) h+=`<div class="msg" style="margin-top:10px">${M.label} → ${resAll.map(s=>`${labH(s.label)}：<b>${PA.namesH(uniqM(s.notes))}</b>`).join(' → ')}</div>`;
+  if(resAll.length) h+=`<div class="msg" style="margin-top:10px">${M.label} → ${resAll.map(s=>`${labH(s.label)}：<b>${namesN(uniqM(s.notes))}</b>`).join(' → ')}</div>`;
   const marks=new Map(), last=resAll.length?resAll[resAll.length-1].notes:[];
   last.forEach(n=>marks.set(n.midi,{fill:'#fff',ring:V_C,tc:V_C,label:PA.nm(n),focus:true}));
   d.chord.forEach(n=>{const r=last.some(x=>x.midi===n.midi);marks.set(n.midi,{fill:isLow(n)?LOW_C:isRed(n)?LT_C:M.color,label:PA.nm(n),focus:true,ring:r?V_C:undefined});});
@@ -461,7 +468,7 @@ function earView(){
   const k=cmpKey();
   h+=`<section class="card"><h2>🎧 くらべて きく<small>${PA.keyName(k)}で ならべたよ</small></h2><div class="cmpgrid">`+types.map(t=>{
     const c=t==='ii7'||t==='dd'?C[t](k):C.aug6(k,t), st=stepsOf(k,t);
-    return `<button class="cmpbtn" style="--c:${T[t].color}" data-act="ecmp" data-v="${t}"><b>${T[t].emoji} ${T[t].long} → ${st.map(x=>labH(x.label)).join(' → ')}</b><small>${PA.namesH(disp(t,c))} → ${st.map(x=>PA.namesH(uniqM(x.notes))).join(' → ')}</small></button>`;
+    return `<button class="cmpbtn" style="--c:${T[t].color}" data-act="ecmp" data-v="${t}"><b>${T[t].emoji} ${T[t].long} → ${st.map(x=>labH(x.label)).join(' → ')}</b><small>${namesN(disp(t,c))} → ${st.map(x=>namesN(uniqM(x.notes))).join(' → ')}</small></button>`;
   }).join('')+`</div></section>`;
   return h;
 }
@@ -484,7 +491,7 @@ function tipsHTML(){
     <li><b>増六の和音</b>は ドッペルの <b>第5音を 半音下げて</b>、その音を <b>いちばん下</b>に おいた形。<br>イタリア＝根音なし（3つ）、フランス＝根音あり、ドイツ＝根音の かわりに 第9音（短9度）。</li>
     <li>下げた音と 上げた音の あいだが <b>増6度</b>。外へ ひらいて Ⅴ の オクターブへ。ドイツの6 は 平行5度を さけるため ${I64H} を とおることが 多いよ。</li>
     <li>長調の 増六は、下げた音（ドイツは 第9音も）を おなじ主音の 短調から かりてくるよ。</li>
-  </ul><p class="note">くわしくは <a href="doppel.html">Ⅱ7と ドッペルドミナント</a>・<a href="aug6.html">増六の和音</a> で。</p></details>`;
+  </ul><div class="row"><span class="note" style="margin:0">くわしくは</span><a class="btn small" href="doppel.html">🔺 Ⅱ7と ドッペルドミナント</a><a class="btn small" href="aug6.html">↔️ 増六の和音</a></div></details>`;
 }
 function render(){
   if(Q.mode==='keys'&&!Q.q) newQ();

@@ -28,7 +28,7 @@ select{font:inherit;font-size:16px;min-height:44px;padding:6px 10px;border-radiu
   background:rgba(253,248,240,.94);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .appbar h1{flex:1;min-width:0;margin:0;font-size:18px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 .iconbtn{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:var(--soft);text-decoration:none}
-.iconbtn:hover{filter:brightness(.97)}
+@media (hover:hover){.iconbtn:hover{filter:brightness(.97)}}
 
 /* ===== ページ ===== */
 .page{max-width:760px;margin:0 auto;padding-block:12px 24px;
@@ -54,7 +54,7 @@ select{font:inherit;font-size:16px;min-height:44px;padding:6px 10px;border-radiu
 /* ===== ボタン ===== */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:10px 16px;border-radius:999px;
   background:var(--soft);font-weight:700;font-size:16px;line-height:1.2;text-align:center;text-decoration:none}
-.btn:hover{filter:brightness(.97)}
+@media (hover:hover){.btn:hover{filter:brightness(.97)}}
 .btn.primary{background:var(--ink);color:#fff}
 .btn.night{background:var(--night);color:#fff}
 .btn.ok{background:var(--ok);color:#fff}
@@ -126,3 +126,22 @@ details.more[open]{padding-bottom:12px}
   .choices{grid-template-columns:repeat(4,1fr)}
   .appbar h1{font-size:20px}
 }
+
+/* ===== iPhone・iPad で 自然に つかえるように ===== */
+/* ボタンを 長おししても 文字が 選ばれない */
+button,.btn,.seg,.keychip,.kbtn,.appcard,.choice{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* 文の中の リンクは、見た目は そのままで タップできる はんいを 広げる */
+#view p a:not(.btn),#view li a:not(.btn),#view .note a:not(.btn),#view .msg a:not(.btn){display:inline-block;padding:12px 2px;margin:-12px 0;text-underline-offset:3px}
+/* スマホを 横にしたとき：上と下の バーを うすくして、見える はんいを 広げる */
+@media (max-height:500px) and (orientation:landscape){
+  .appbar{min-height:46px;padding-top:3px;padding-bottom:3px}
+  .appbar h1{font-size:16px}
+  .actionbar{padding-top:5px;padding-bottom:calc(5px + env(safe-area-inset-bottom,0px))}
+  .actionbar .btn{min-height:44px;padding-block:6px}
+  .page{padding-block:8px 16px}
+}
+/* iPad など：1行が 長くなりすぎないように ページの はばは そのまま、ボタンバーも まん中に まとめる */
+@media (min-width:700px){
+  .actionbar{padding-left:max(12px,calc((100vw - 760px)/2));padding-right:max(12px,calc((100vw - 760px)/2))}
+}
+
