@@ -19,6 +19,7 @@
 .seg.lvseg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-radius:18px}
 .seg.lvseg button{display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:0;padding:3px 1px;border-radius:15px;line-height:1.15}
 .seg.lvseg small{font-size:12px;font-weight:700;color:var(--sub);white-space:nowrap}
+@media (max-width:374px){.seg.lvseg small{font-size:10px}} /* 320〜360px でも ボタンから はみださない */
 .seg.lvseg .lvn{font-size:20px;font-weight:800}
 .lvdesc{font-size:14px;color:var(--sub);margin:6px 2px 0;line-height:1.45}
 .lvdesc b{color:var(--ink)}
@@ -27,7 +28,7 @@
 .rdots i{display:inline-block;width:11px;height:11px;border-radius:50%;background:var(--soft);border:2px solid #d9cdbb}
 .rdots i.on{background:var(--night);border-color:var(--night)}
 /* こたえの ボタン */
-.echoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 0}
+.echoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 0;scroll-margin-bottom:96px}
 .card>h2+.echoices{margin-top:0}
 .echoices.odd .echoice:last-child{grid-column:1/-1}
 .echoice{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;min-height:84px;padding:8px 4px;border-radius:18px;
@@ -35,13 +36,17 @@
 .echoice:not([disabled]):active{transform:scale(.97)}
 .echoice .em{font-size:24px;line-height:1.1}
 .echoice .wd{font-size:18px}
+.echoice rt{font-size:.5em;font-weight:700}
+.fb rt{font-size:.55em;font-weight:700}
 .echoice .lb{font-size:13px;font-weight:700;opacity:.85}
 .echoice.right{background:#dcf5e8;border-color:var(--ok);color:#137a4f}
 .echoice.wrong{background:#fde4e7;border-color:var(--ng);color:#a3273a}
 .echoice[disabled]{cursor:default}
 .echoice.dim[disabled]{opacity:.55}
 @media (min-width:520px){.echoices{grid-template-columns:repeat(3,minmax(0,1fr))}.echoices.odd .echoice:last-child{grid-column:auto}}
-@media (max-height:500px) and (orientation:landscape){.echoice{min-height:68px;padding-block:4px}.echoice .em{font-size:20px}}
+/* よこむきの スマホ：絵文字と 名前を 1行に（ふりがなの ぶん 高く ならないように。2だんで ⬇の バーの 上に おさまる） */
+@media (max-height:500px) and (orientation:landscape){.echoice{min-height:64px;padding-block:4px;flex-direction:row;flex-wrap:wrap;column-gap:6px;align-content:center}
+  .echoice .em{font-size:20px}.echoice .lb{flex-basis:100%}.qtitle{scroll-margin-top:56px}}
 .fb,.msg{scroll-margin-bottom:96px;scroll-margin-top:72px}
 .fb{margin-top:12px}
 .fb .sm{display:block;font-size:15px;margin-top:6px}
@@ -86,7 +91,8 @@
 <script>
 /* おわりかたクイズ：4つの 和音の ならびを 👂 きいて／🎼 見て、おわりかた（終止）の 名前を 当てる。和音は PA.ending（core.js）から
  * 保存（'ending-quiz'）：mode（'ear'｜'see'）・level（1〜4）・tier（PA.keyDeck の むずかしさ）・weak・sc（モードごとの スコア）・openSet・
- *   いまの もんだい q {minor, keyIdx, pat（PA.ending.PATTERNS の id）}・ans（えらんだ こたえ）・hint・left（もういちど きける 回数）・step
+ *   いまの もんだい q {minor, keyIdx, pat（PA.ending.PATTERNS の id）}・ans（えらんだ こたえ）・hint・left（もういちど きける 回数）・played・step・
+ *   deck（調の ふくろの のこり）・cBag（こたえの ふくろの のこり）・lastCat・lastPat
  * 調の きろくは PA.keyDeck（'keystats-ending-quiz'） */
 const E=PA.ending, KD=PA.keyDeck, QUIZ='ending-quiz', mod=PA.mod;
 const LEVELS=[
@@ -100,7 +106,7 @@ const LV=lv=>LEVELS.find(L=>L.lv===lv)||LEVELS[0];
 const PATS={full:['perfect','imperfectA','imperfectB'],perfect:['perfect'],imperfect:['imperfectA','imperfectB'],half:['half'],plagal:['plagal'],deceptive:['deceptive'],phrygian:['phrygian']};
 const catOf=(pat,lv)=>{const c=E.pattern(pat).type;return LV(lv).choices.includes(c)?c:'full';}; // レベル1・2 では 完全・不完全 は「全終止」
 // さいごの 2つの 和音の 目じるし（まちがえた ときに「えらんだ ほうは こう」）
-const SIGN={full:'Ⅴ（Ⅴ7）→ Ⅰ',perfect:'Ⅴ7 → Ⅰ で、いちばん上が 主音',imperfect:'Ⅴ7 → Ⅰ で、いちばん上か いちばん下が ちがう',half:'Ⅴ で とまる',plagal:'Ⅳ → Ⅰ',deceptive:'Ⅴ7 → Ⅵ',phrygian:'短調の Ⅳ（てんかい）→ Ⅴ'};
+const SIGN={full:'Ⅴ（Ⅴ7）→ Ⅰ',perfect:'Ⅴ7 → Ⅰ で、どちらも いちばん下が 根音、Ⅰ の いちばん上が 主音',imperfect:'Ⅴ7 → Ⅰ だけど、Ⅰ の いちばん上が 主音では ない か、Ⅴ7 の いちばん下が 根音では ない',half:'Ⅴ で とまる',plagal:'Ⅳ → Ⅰ',deceptive:'Ⅴ7 → Ⅵ',phrygian:'短調の Ⅳ（てんかい）→ Ⅴ'};
 const REPLAYS=3;
 const TIER_IDS=KD.TIERS.map(t=>t.id);
 const isInt=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
@@ -115,6 +121,8 @@ const dots=(n,on)=>`<span class="rdots" aria-hidden="true">${Array.from({length:
 const Q={mode:'ear',level:1,tier:'easy',weak:true,openSet:false,sc:{ear:{right:0,total:0,streak:0},see:{right:0,total:0,streak:0}},
   q:null,qid:0,ans:null,hint:false,left:REPLAYS,played:false,step:0,muteHint:false,fresh:false,kdArm:false,recorded:false,playing:false};
 let deck=null, cBag=[], lastCat=null, lastPat=null;
+const restoreDeck=s=>deck.restore(s); // ひらきなおしても ふくろの つづきから。もどせたら true
+const deckState=()=>deck.state();
 const validQ=q=>!!q&&typeof q==='object'&&typeof q.minor==='boolean'&&isInt(q.keyIdx,0,PA.keyCount(q.minor)-1)&&!!E.pattern(q.pat);
 // その もんだいが いまの レベル・調の せっていで 出せるか
 const inPool=q=>{const p=E.pattern(q.pat);return PATS[catOf(q.pat,Q.level)].includes(q.pat)&&E.allowed(keyOfQ(q),p.type)&&LV(Q.level).modes.includes(q.minor?'minor':'major')&&deck.ids.includes(keyIdOf(q));};
@@ -127,20 +135,27 @@ const inPool=q=>{const p=E.pattern(q.pat);return PATS[catOf(q.pat,Q.level)].incl
   Q.openSet=d.openSet===true;
   ['ear','see'].forEach(m=>{const s=d.sc&&d.sc[m];if(s&&isInt(s.total,0,1e6)&&isInt(s.right,0,s.total)&&isInt(s.streak,0,s.right)) Q.sc[m]={right:s.right,total:s.total,streak:s.streak};});
   deck=KD.create({quiz:QUIZ,tier:Q.tier,modes:LV(Q.level).modes,weak:Q.weak});
+  const hasBag=restoreDeck(d.deck); // ひらきなおしても ふくろの つづきから
+  const ch0=LV(Q.level).choices; // こたえの ふくろも つづきから
+  if(Array.isArray(d.cBag)) cBag=d.cBag.slice(0,20).filter(c=>ch0.includes(c));
+  if(ch0.includes(d.lastCat)) lastCat=d.lastCat;
+  if(typeof d.lastPat==='string'&&E.pattern(d.lastPat)) lastPat=d.lastPat;
   // とちゅうの もんだい（「しくみを 見る」から もどったとき など）は そのまま
   if(validQ(d.q)&&inPool(d.q)){
     startQ({minor:d.q.minor,keyIdx:d.q.keyIdx,pat:d.q.pat});
-    deck.draw(x=>x.id===keyIdOf(Q.q)); // この 調は「出た」ことに
+    if(!hasBag) deck.draw(x=>x.id===keyIdOf(Q.q)); // ふくろの きろくが ないときも、この 調は「出た」ことに
     const ch=LV(Q.level).choices;
     if(ch.includes(d.ans)){Q.ans=d.ans;Q.recorded=true;}
     Q.hint=d.hint===true;
     if(isInt(d.left,0,REPLAYS)) Q.left=d.left;
+    Q.played=d.played===true||Q.left<REPLAYS; // もう 聴いた もんだいは「もういちど」の 回数を つづける
     if(isInt(d.step,0,3)) Q.step=d.step;
   }
 })();
 function save(){
   PA.store.set(QUIZ,{mode:Q.mode,level:Q.level,tier:Q.tier,weak:Q.weak,openSet:Q.openSet,sc:Q.sc,
-    q:Q.q?{minor:Q.q.minor,keyIdx:Q.q.keyIdx,pat:Q.q.pat}:null,ans:Q.ans,hint:Q.hint,left:Q.left,step:Q.step});
+    q:Q.q?{minor:Q.q.minor,keyIdx:Q.q.keyIdx,pat:Q.q.pat}:null,ans:Q.ans,hint:Q.hint,left:Q.left,played:Q.played,step:Q.step,
+    deck:deckState(),cBag,lastCat,lastPat});
 }
 
 /* ===== もんだい ===== */
@@ -169,11 +184,12 @@ function answer(v){
 }
 
 /* ===== 音 ===== */
-let token=0;
+let token=0, playAt=0;
+const freshPlay=()=>Date.now()-playAt<600; // 2どおしの 2回めで ⏹ を おして すぐ とまらないように
 function stop(){token++;Q.playing=false;PA.stopSound();}
 async function playAll(show){
   stop(); const my=token, d=dataOf(Q.q);
-  Q.playing=true; renderActions();
+  Q.playing=true; playAt=Date.now(); renderActions();
   for(let i=0;i<d.length;i++){
     const last=i===d.length-1;
     if(show){Q.step=i;render();}
@@ -204,15 +220,17 @@ function lvHTML(){
 function choiceHTML(c){
   const M=T(c), A=Q.ans, right=Q.q?catOf(Q.q.pat,Q.level):null;
   let cls=''; if(A){if(c===right)cls='right';else if(c===A)cls='wrong';else cls='dim';}
-  return `<button class="echoice ${cls}" style="--c:${M.color}" data-act="eans" data-v="${c}" ${A?'disabled':''} aria-label="${M.name}（${M.nick}）"><span class="em" aria-hidden="true">${M.emoji}</span><span class="wd">${M.name}</span><span class="lb">「${M.nick}」</span></button>`;
+  return `<button class="echoice ${cls}" style="--c:${M.color}" data-act="eans" data-v="${c}" ${A?'disabled':''} aria-label="${M.name}（${M.nick}）"><span class="em" aria-hidden="true">${M.emoji}</span><span class="wd">${yomi(M.name,M.yomi)}</span><span class="lb">「${M.nick}」</span></button>`;
 }
 function fbHTML(key,data){
   const p=E.pattern(Q.q.pat), right=catOf(Q.q.pat,Q.level), ok=Q.ans===right, M=T(right), D=T(p.type);
-  let h=`<div class="fb ${ok?'good':'bad'}${Q.fresh?'':' still'}" id="fb" role="status">${ok?'🎉 せいかい！':'🤔 おしい！'} こたえは <b>${M.name}</b>「${M.nick}」`;
+  let h=`<div class="fb ${ok?'good':'bad'}${Q.fresh?'':' still'}" id="fb" role="status">${ok?'🎉 せいかい！':'🤔 おしい！'} こたえは <b>${yomi(M.name,M.yomi)}</b>「${M.nick}」`;
   h+=`<span class="sm">${data.map(c=>`<span class="nw">${E.labelText(c)}</span>`).join(' → ')}</span>`;
   if(right==='full') h+=`<span class="sm">さいごが <b>${E.labelText(data[2])} → ${E.labelText(data[3])}</b>。だから <b>${M.name}</b></span><span class="sm">くわしく いうと ${D.name}（レベル3 から 分けるよ）</span>`;
   else h+=`<span class="sm">${E.why(key,p.type,p.variant)}。だから <b>${M.name}</b></span>`;
-  if(!ok) h+=`<span class="sm">えらんだ ${T(Q.ans).name}は、さいごが ${SIGN[Q.ans]}。</span>`;
+  if(!ok) h+=Q.ans==='half'&&right==='phrygian'
+    ?`<span class="sm">Ⅴ で とまるのは 半終止と おなじ。でも Ⅳ（てんかい）から いちばん下が 半音 下がって Ⅴ に とまるので フリギア終止。</span>`
+    :`<span class="sm">えらんだ ${T(Q.ans).name}は、さいごが ${SIGN[Q.ans]}。</span>`;
   h+=`<div class="row"><button class="btn small" data-act="howto">🏁 おわりかたの しくみを 見る</button></div></div>`;
   return h;
 }
@@ -267,7 +285,7 @@ function render(){
     <section class="card hero">${lvHTML()}
       <div class="score">⭐ ${s.right} / ${s.total} もん せいかい <span class="note" style="margin:0">れんぞく ${s.streak}</span> <span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(s.streak,10))}</span></div>
       <div class="qtitle"><span class="qkey">${PA.keyName(key)}</span><span>の おわりかたは？</span></div>
-      <p class="qsub">${PA.sigLabel(key)}・${Q.mode==='ear'?'4つの 和音が 鳴るよ。さいごの ほうを よく 聴こう。':'がくふと けんばんを 見て 当てよう。'}</p>`;
+      <p class="qsub">（${PA.sigLabel(key)}）${Q.mode==='ear'?'和音が 4つ 鳴るよ。さいごの ほうを よく 聴こう。':'がくふと けんばんを 見て 当てよう。'}</p>`;
   if(Q.mode==='ear'&&!Q.ans) h+=`<div class="rinfo" role="status" aria-label="もういちど きけるのは あと${Q.left}回">もういちど きける ${dots(REPLAYS,Q.left)}${Q.left?'':' <span>あとは こたえよう！</span>'}</div>`;
   if(Q.muteHint&&!PA.settings.sound) h+=`<div class="rinfo" role="status">🔇 音が オフだよ。⚙️ で オンに してね</div>`;
   if(Q.mode==='see'&&Q.hint&&!Q.ans) h+=`<div class="msg" role="status" style="margin-top:10px">💡 ヒント：ローマ数字を 出したよ。<b>さいごの 2つ</b>を 見よう。</div>`;
@@ -291,6 +309,12 @@ function renderActions(){
   else a=`<button class="btn" data-act="qhint" ${Q.hint?'disabled':''}>💡 ヒント</button>`+playBtn('▶️ 聴く');
   if(a!==lastActions){PA.paint(document.getElementById('actions'),a,'bar');lastActions=a;}
 }
+// あたらしい もんだいの 見せかた：よこむきの スマホは 問題の 行から。👂 は こたえの ボタンが ⬇の バーに かくれない ところまで
+function showQ(){
+  const t=document.querySelector('.qtitle');
+  if(t&&matchMedia('(max-height:500px) and (orientation:landscape)').matches){t.scrollIntoView({block:'start',behavior:PA.reduceMotion()?'auto':'smooth'});return;}
+  if(Q.mode==='ear'){window.scrollTo(0,0);reveal(document.querySelector('.echoices'));} else PA.scrollTop();
+}
 function reveal(el){
   if(!el||!el.getBoundingClientRect) return;
   const r=el.getBoundingClientRect(), ab=document.getElementById('actions'), bottom=innerHeight-(ab?ab.offsetHeight:0);
@@ -301,7 +325,7 @@ function reveal(el){
 PA.mountBar({title:'おわりかたクイズ',app:'ending-quiz'});
 PA.onSettings=render;
 PA.onPageShow=render;
-PA.onStopDown=stop;
+PA.onStopDown=()=>{if(!freshPlay()) stop();};
 PA.onStopCancel=render;
 // 聴く：きいて 当てる で こたえる まえは、2回め から 回数を へらす。音が オフの ときは へらさずに おしえるだけ
 function listen(){
@@ -321,7 +345,7 @@ document.addEventListener('click',e=>{
     case 'qmode': if(Q.mode===v||!['ear','see'].includes(v)) return; stop(); Q.mode=v; newQ(); break;
     case 'qlevel': {const lv=+v; if(lv===Q.level||!isInt(lv,1,LEVELS.length)) return; stop(); Q.level=lv; cBag=[]; deck.setOptions({modes:LV(lv).modes}); newQ(); break;}
     case 'qtier': if(Q.tier===v||!TIER_IDS.includes(v)) return; stop(); Q.tier=v; deck.setOptions({tier:v}); newQ(); break;
-    case 'qweak': Q.weak=!Q.weak; deck.setOptions({weak:Q.weak}); break; // つぎの ふくろから
+    case 'qweak': {Q.weak=!Q.weak; const s=deckState(); deck.setOptions({weak:Q.weak}); restoreDeck(s); break;} // 今の もんだいも ふくろの のこりも そのまま。つぎの ふくろから
     case 'qreset': Q.sc[Q.mode]={right:0,total:0,streak:0}; break;
     case 'keystats-reset': if(v!==QUIZ||Q.kdArm) return; Q.kdArm=true; break;
     case 'kdreset-yes': case 'kdreset-no': {
@@ -335,7 +359,7 @@ document.addEventListener('click',e=>{
       if(Q.playing) return;
       if(!Q.ans&&Date.now()-askedAt<600) return; // 「つぎ」の 2どおしで 回数が へらないように
       listen(); return;
-    case 'stop': stop(); render(); return;
+    case 'stop': if(freshPlay()) return; stop(); render(); return;
     case 'qhint': if(Q.mode!=='see'||Q.ans) return; Q.hint=true; break;
     case 'qstep': {const i=+v; if(!isInt(i,0,3)) return; stop(); Q.step=i; save(); render(); if(!PA.settings.sound){Q.muteHint=true;render();} else playStep(i); return;}
     case 'eans': {
@@ -345,7 +369,7 @@ document.addEventListener('click',e=>{
       reveal(document.getElementById('fb')); return;
     }
     case 'enew': {
-      stop(); newQ(); save(); askedAt=Date.now(); render(); PA.scrollTop();
+      stop(); newQ(); save(); askedAt=Date.now(); render(); showQ();
       if(Q.mode==='ear') listen();
       return;
     }
@@ -361,6 +385,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('toggle',e=>{if(e.target.id==='qsetd'&&Q.openSet!==e.target.open){Q.openSet=e.target.open;save();}},true);
 if(!Q.q) newQ();
 save(); render();
+if(Q.mode==='ear'&&!Q.ans&&!window.scrollY) showQ(); // ひらいた ときも、こたえの ボタンが 見える ように
 </script>
 </body>
 </html>

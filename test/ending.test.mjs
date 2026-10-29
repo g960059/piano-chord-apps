@@ -55,21 +55,22 @@ test('どの調でも：えらべる ならびは ぜんぶ 4つの 和音。フ
 });
 
 test('ならびの 和音と 名前（ローマ数字・てんかい）',()=>{
-  const want={perfect:['I','IV','V7','I'],imperfectA:['I','IV','V7','I'],imperfectB:['I','VI','V7','I'],half:['I','IV','I','V'],
+  const want={perfect:['I','IV','V7','I'],imperfectA:['I','IV','V7','I'],imperfectB:['I','IV','V7','I'],half:['I','IV','I','V'],
     plagal:['I','VI','IV','I'],deceptive:['I','IV','V7','VI'],phrygian:['I','VI','IV','V']};
   const L={I:'Ⅰ',IV:'Ⅳ',V:'Ⅴ',V7:'Ⅴ7',VI:'Ⅵ'};
   each((key,p,d,w)=>{
     assert.deepEqual(J(d.map(c=>c.ch)),want[p.id],w);
     d.forEach((c,i)=>{
       assert.equal(c.label,L[c.ch],w);
-      const inv=(p.id==='imperfectB'&&i===2)||(p.id==='phrygian'&&i===2)?1:0;
+      // 不完全B の Ⅴ7 は 第2転回形（いちばん下が 第5音）、フリギアの Ⅳ は 第1転回形（いちばん下が 第3音）
+      const inv=p.id==='imperfectB'&&i===2?2:p.id==='phrygian'&&i===2?1:0;
       assert.equal(c.inv,inv,`${w} ${i} の 形`);
       assert.equal(E.labelText(c),c.label+(inv?'（てんかい）':''));
       assert.equal(c.rh.length,3,w);
       assert.equal(c.lh.length,1,w);
       // いちばん下の 音の 度数（0〜6）
       assert.equal(mod(c.lh[0].letter-key.l,7),c.bassDeg,w);
-      assert.equal(mod(c.bassDeg-ROOT[c.ch],7),inv?2:0,`${w} ${i} いちばん下`);
+      assert.equal(mod(c.bassDeg-ROOT[c.ch],7),[0,2,4][inv],`${w} ${i} いちばん下`);
     });
   });
 });
@@ -106,11 +107,11 @@ test('短調：Ⅴ・Ⅴ7 の 7ばんめは 上げた音、Ⅳ・Ⅵ・Ⅰ は �
       }
     }));
   });
-  // 不完全B の Ⅴ7（てんかい）の いちばん下は 上げた 7ばんめ
-  for(const key of KEYS.filter(k=>k.minor)){
+  // 不完全B の Ⅴ7（てんかい）の いちばん下は 2ばんめ（レ）。上げた 7ばんめでは ない
+  for(const key of KEYS){
     const b=E.build(key,'imperfect','B')[2].lh[0];
-    assert.equal(pc(b),mod(key.tpc+11,12),kn(key));
-    assert.ok(b.raised);
+    assert.equal(mod(b.letter-key.l,7),1,kn(key));
+    assert.ok(!b.raised,kn(key));
   }
 });
 
@@ -155,14 +156,44 @@ test('(e) 完全終止は さいごの いちばん上が 主音、不完全終�
     const top=d=>d[3].rh[2];
     assert.equal(pc(top(E.build(key,'perfect'))),key.tpc,kn(key));
     assert.notEqual(pc(top(E.build(key,'imperfect','A'))),key.tpc,kn(key));
-    // 不完全B：Ⅴ7 の いちばん下が 根音では ない（さいごの Ⅰ は 基本形）
+    // 不完全B：Ⅴ7 の いちばん下が 根音では ない（さいごの Ⅰ は 基本形で、いちばん上は 主音）
     const b=E.build(key,'imperfect','B');
     assert.notEqual(mod(b[2].lh[0].letter-key.l,7),4,kn(key));
     assert.equal(b[3].inv,0);
+    assert.equal(pc(top(b)),key.tpc,kn(key)+' 不完全B の さいごの 上');
     // 完全終止：Ⅴ7 も Ⅰ も いちばん下が 根音
     const pf=E.build(key,'perfect');
     assert.equal(mod(pf[2].lh[0].letter-key.l,7),4); assert.equal(mod(pf[3].lh[0].letter-key.l,7),0);
+    // 不完全B と 完全終止の ちがいは 3つめ（Ⅴ7）の いちばん下だけ
+    const sig=c=>c.ch+':'+c.rh.map(n=>n.midi).join(',');
+    assert.deepEqual(J(b.map(sig)),J(pf.map(sig)),kn(key));
+    // 左手の 音名（高さの オクターブは 4つ まとめて えらぶので ちがうことも ある）
+    const ln=c=>c.lh[0].letter+':'+c.lh[0].acc;
+    [0,1,3].forEach(i=>assert.equal(ln(b[i]),ln(pf[i]),`${kn(key)} ${i}`));
+    assert.notEqual(ln(b[2]),ln(pf[2]),kn(key));
+    assert.deepEqual(J(b.map(c=>c.bassDeg)),[0,3,1,0],kn(key));
+    assert.equal(E.labelText(b[2]),'Ⅴ7（てんかい）');
   }
+});
+
+test('(g) 左手は 長6度より 大きく とばない。偽終止の Ⅴ7 → Ⅵ は 左手が 1つ 上がる',()=>{
+  each((key,p,d,w)=>{for(let i=1;i<4;i++){const x=d[i].lh[0].midi-d[i-1].lh[0].midi;assert.ok(Math.abs(x)<=9,`${w} ${i}: ${x}`);}});
+  for(const key of KEYS){const d=E.build(key,'deceptive'),x=d[3].lh[0].midi-d[2].lh[0].midi;assert.ok(x===1||x===2,`${kn(key)} ${x}`);}
+});
+
+test('(h) どの 声も 増2度（となりの 文字で 半音3つ）を とばない',()=>{
+  each((key,p,d,w)=>{for(let i=1;i<4;i++){const A=voices(d[i-1]),B=voices(d[i]);A.forEach((a,v)=>{
+    const s=Math.abs(B[v].midi-a.midi), l=Math.abs(B[v].k-a.k);
+    assert.ok(!(s===3&&l===1),`${w} ${i} 声${v} 増2度 ${nm([a])}→${nm([B[v]])}`);
+  });}});
+});
+
+test('(i) いちばん上と 左手が おなじ 向きに 5度・8度へ 入るとき、いちばん上は とばない（並達5度・8度が ない）',()=>{
+  each((key,p,d,w)=>{for(let i=1;i<4;i++){
+    const b1=d[i-1].lh[0].midi, b2=d[i].lh[0].midi, s1=d[i-1].rh[2].midi, s2=d[i].rh[2].midi;
+    const bad=[0,7].includes(mod(s2-b2,12))&&b1!==b2&&s1!==s2&&Math.sign(b2-b1)===Math.sign(s2-s1)&&Math.abs(s2-s1)>2;
+    assert.ok(!bad,`${w} ${i}: ${nm(voices(d[i-1]))} → ${nm(voices(d[i]))}`);
+  }});
 });
 
 test('(f) フリギア終止：さいごに いちばん下が 6ばんめ → 5ばんめへ 半音 下がる',()=>{

@@ -97,27 +97,8 @@ const openD={}; // ひらいている <details>（描きなおしても とじ�
 /* ===== もんだい（調は PA.keyDeck の ふくろから） ===== */
 const deck=KD.create({quiz:QUIZ,tier:Q.tier,modes:MODES,weak:Q.weak});
 const keyIdOf=q=>KD.id(true,q.keyIdx);
-// ふくろの のこりを もどす（s＝保存した {bag, last}）。新しい ふくろを あけて、のこりより 多い 調を とりだし、
-// さいごに last を とる。deck.draw は「いま 出した 調」しか 合わないと ふくろを たすので、つづけて おなじ 調は とらない。もどせたら true
-function restoreDeck(s){
-  if(!s||typeof s!=='object'||!Array.isArray(s.bag)) return false;
-  const ids=deck.ids, ok=id=>typeof id==='string'&&ids.includes(id);
-  const rest=s.bag.slice(0,200).filter(ok), last=ok(s.last)?s.last:null;
-  if(!rest.length) return true; // ふくろが から：つぎは 新しい ふくろ
-  const need=new Map(); rest.forEach(id=>need.set(id,(need.get(id)||0)+1));
-  const cnt=id=>deck.bag.reduce((n,x)=>n+(x===id),0);
-  const first=ids.find(id=>id!==last&&!need.has(id))||last; // ふつうは もう 出た 調。なければ last
-  if(!first) return true;
-  deck.draw(x=>x.id===first); // 新しい ふくろを あける
-  for(let g=0;g<300;g++){
-    const id=ids.find(x=>x!==deck.last&&x!==last&&cnt(x)>(need.get(x)||0));
-    if(!id) break;
-    deck.draw(x=>x.id===id);
-  }
-  if(last&&deck.last!==last&&cnt(last)>0) deck.draw(x=>x.id===last);
-  return true;
-}
-const deckState=()=>({bag:deck.bag,last:deck.last});
+const restoreDeck=s=>deck.restore(s); // ひらきなおしても ふくろの つづきから。もどせたら true
+const deckState=()=>deck.state();
 const hasBag=restoreDeck(saved.deck); // ひらきなおしても ふくろの つづきから
 let lastQ=null; // ひらいたとき、まえに 出ていた もんだい（つづけて おなじ もんだいに しない）
 function newQuestion(){

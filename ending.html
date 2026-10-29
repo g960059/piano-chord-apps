@@ -167,12 +167,15 @@ function tipsHTML(key){
     <li>がくふで 見るときは、まず <b>さいごの 和音</b>：<b>Ⅰ</b> なら 全終止か 変格終止、<b>Ⅴ</b> なら 半終止か フリギア終止、<b>Ⅵ</b> なら 偽終止。</li>
     <li>つぎに その <b>1つ前</b>：Ⅴ（Ⅴ7）→ Ⅰ なら 全終止、Ⅳ → Ⅰ なら 変格終止。</li>
     <li>全終止は さらに 2つに わかれる。さいごの <b>いちばん上の 音が 主音</b>「${d(0)}」で、Ⅴ7 も Ⅰ も <b>いちばん下が 根音</b>なら 完全終止。どれかが ちがえば 不完全終止。</li>
-    <li>左手（いちばん下の 音）も ヒント。${PA.keyName(key)}では Ⅴ → Ⅰ は「${d(4)} → ${d(0)}」、Ⅳ → Ⅰ は「${d(3)} → ${d(0)}」、Ⅴ7 → Ⅵ は「${d(4)} → ${d(5)}」。</li>
+    <li>左手（いちばん下の 音）も ヒント。${PA.keyName(key)}では Ⅴ → Ⅰ は ふつう「${d(4)} → ${d(0)}」（不完全終止の れい B は「${d(1)} → ${d(0)}」）、Ⅳ → Ⅰ は「${d(3)} → ${d(0)}」、Ⅴ7 → Ⅵ は「${d(4)} → ${d(5)}」。</li>
     <li>${key.minor?`<b>フリギア終止</b>は 短調だけ。Ⅳ の いちばん下が 6ばんめの 音「${d(5)}」で、そこから 半音 下の「${d(4)}」へ 下がって Ⅴ で とまる。`:'<b>フリギア終止</b>は 短調だけ。Ⅳ の いちばん下が 6ばんめの 音で、そこから 半音 下がって Ⅴ で とまる。'}</li>
   </ul><p style="margin:10px 0 0"><a class="btn small" href="ending-quiz.html">🎯 おわりかたクイズで ためす</a></p></details>`;
 }
-function termsHTML(){
+function termsHTML(key){
+  const d=k=>PA.nmH(PA.at(key.scale,k));
   return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary><dl>
+    <dt>${yomi('主音','しゅおん')}・${yomi('根音','こんおん')}</dt>
+    <dd><b>主音</b>は 音階の 1ばんめの 音。調の 名前にも なる 音で、いまの 調では「${d(0)}」。<b>根音</b>は 和音を ひとつとばしで つんだ ときの いちばん下の 音（Ⅰ なら 主音の「${d(0)}」、Ⅳ なら 4ばんめの「${d(3)}」、Ⅴ・Ⅴ7 なら 5ばんめの「${d(4)}」、Ⅵ なら 6ばんめの「${d(5)}」）。根音の 上に つむ 音は、下から <b>第3音</b>・<b>第5音</b>（Ⅴ7 は さらに <b>第7音</b>）と いうよ。</dd>
     <dt>${yomi('終止','しゅうし')}・${yomi('終止形','しゅうしけい')}</dt>
     <dd>曲や、メロディーの ひとまとまりの おわりかた。和音の ならびで いくつかの 形が あって、それぞれに 名前が ついているよ。</dd>
     <dt>${yomi('全終止','ぜんしゅうし')}（${yomi('完全終止','かんぜんしゅうし')}＋${yomi('不完全終止','ふかんぜんしゅうし')}）</dt>
@@ -186,7 +189,7 @@ function termsHTML(){
     <dt>フリギア終止</dt>
     <dd>短調の、Ⅳ（いちばん下が 6ばんめの 音）→ Ⅴ。昔の 音階「フリギア」の ひびきに にているので この 名前。半終止の なかま。</dd>
     <dt>${yomi('基本形','きほんけい')}・${yomi('転回形','てんかいけい')}</dt>
-    <dd>和音の いちばん下が 根音なら <b>基本形</b>、ちがう 音なら <b>転回形</b>。この ページの「てんかい」は 転回形の こと。Ⅴ7（てんかい）も Ⅳ（てんかい）も、いちばん下が 第3音の <b>第1転回形</b>。</dd>
+    <dd>和音の いちばん下が 根音なら <b>基本形</b>、ちがう 音なら <b>転回形</b>。この ページの「てんかい」は 転回形の こと。Ⅳ（てんかい）は いちばん下が 第3音の <b>第1転回形</b>、Ⅴ7（てんかい）は いちばん下が 第5音の <b>第2転回形</b>。</dd>
   </dl></details>`;
 }
 
@@ -230,7 +233,7 @@ function render(){
   const cols=data.map((c,i)=>({notes:c.rh,lh:c.lh,color:PA.COL[c.ch],accColor:'#d1495b',op:i===step?1:0.28,label:c.label,sub:c.inv?'てんかい':'',labelColor:PA.COL[c.ch]}));
   h+=`<section class="card"><h2>🎼 がくふ<small>いま ひいている和音が こい色。上が右手、下が左手</small></h2>
     <div class="scroll" data-sk="staff"><div class="staffw" style="min-width:${staffMinW(key)}px">${PA.staffSVG(key,cols,{grand:true,colW:66})}</div></div></section>`;
-  h+=cmpHTML(key)+tipsHTML(key)+termsHTML()+`</div>`;
+  h+=cmpHTML(key)+tipsHTML(key)+termsHTML(key)+`</div>`;
   const view=document.getElementById('view'), sig=state.minor+':'+state.keyIdx+':'+state.type+':'+state.variant;
   PA.paint(view,h,sig);
   // 和音が かわったら けんばんを その和音へ（見えていれば 動かさない）

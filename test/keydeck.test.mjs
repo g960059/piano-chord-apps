@@ -248,3 +248,20 @@ test('checkTableHTML：24調 チェック表',()=>{
   deck.reset();
   assert.ok([...D.checkTableHTML(quiz).matchAll(/data-mastery="(\w+)"/g)].every(m=>m[1]==='none'));
 });
+
+test('state / restore：ふくろの のこりと last を その まま もどす（重みは つけなおさない）',()=>{
+  const quiz=q(), mk=()=>D.create({quiz,tier:'all',modes:['major'],weak:true,rng:mulberry(5)});
+  const a=mk(); a.draw(); a.draw();
+  const s=a.state(); a.record(s.last,false); a.record(s.last,false); // まちがいが ふえても
+  const b=mk(); assert.equal(b.restore(J(s)),true);
+  eq(b.state(),s,'ふくろが かわらない');
+  assert.ok(!b.bag.includes(s.last)||s.bag.includes(s.last),'出た 調が もどってこない');
+  assert.notEqual(b.draw().id,s.last);
+  // こわれた きろく
+  const c=mk();
+  assert.equal(c.restore(null),false); assert.equal(c.restore({bag:'x'}),false);
+  assert.equal(c.restore({bag:['M0','zz',3,'m1'],last:'qq'}),true);
+  eq(c.state(),{bag:['M0'],last:null},'えらべない 調は のぞく');
+  // setOptions の あと、おなじ 調の はんいなら のこりを もどせる
+  const d=mk(); d.draw(); const ds=d.state(); d.setOptions({weak:false}); d.restore(ds); eq(d.state(),ds);
+});

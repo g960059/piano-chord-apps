@@ -1029,6 +1029,7 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
  *     weak：まちがいの 多い 調は、新しい ふくろに 1〜2こ よぶんに 入れる（となりどうしに ならないように）
  *   deck.record(id, ok) … 答えを きろく（PA.store('keystats-<quiz>') に {id:{right, wrong, last(さいごに 答えた 時刻 ms)}}）
  *   deck.stats() / deck.reset()（きろくを けす）/ deck.setOptions({tier, modes, weak})（ふくろを つくりなおす）
+ *   deck.state() → {bag, last}（ほぞん用）/ deck.restore(state) → true（ふくろを その まま もどす。形が ちがえば false）
  * PA.keyDeck.tierSeg(act, cur) … 4つの むずかしさの ボタン（PA.seg）
  * PA.keyDeck.checkTableHTML(quiz, {modes}) … 24調 チェック表（けすボタン data-act="keystats-reset" data-v=quiz は ページで あつかう）
  */
@@ -1135,6 +1136,14 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
       get size(){return eligible.length;},
       get bag(){return [...bag];},
       get last(){return last;},
+      // ほぞん用：ふくろの のこりと、さいごに 出した 調。restore は その まま もどす（えらべない 調は のぞく。重みは つけなおさない）
+      state(){return {bag:[...bag],last};},
+      restore(s){
+        if(!s||typeof s!=='object'||!Array.isArray(s.bag)) return false;
+        const ok=id=>typeof id==='string'&&eligible.includes(id);
+        bag=s.bag.slice(0,200).filter(ok); last=ok(s.last)?s.last:null;
+        return true;
+      },
       draw(filter){
         const ok=typeof filter==='function'?id=>{const p=D.parse(id);return !!filter({minor:p.minor,idx:p.idx,id});}:()=>true;
         const match=eligible.filter(ok);
@@ -1212,12 +1221,14 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
  * PA.ending.TYPES  … [{id, name, yomi, nick, emoji, color, light, short, family('full'＝全終止の なかま), minorOnly}]
  * PA.ending.FULL   … 全終止（完全＋不完全）を ひとつに まとめた ときの 名前
  * PA.ending.PATTERNS … クイズで つかう ならび [{id, type, variant}]（不完全終止は A・B の 2つ）
- * PA.ending.build(key, typeId, variant) → [{ch:'I'|'IV'|'V'|'V7'|'VI', label:'Ⅰ'…, inv:0|1, rh:[音×3], lh:[音], bassDeg}]
+ * PA.ending.build(key, typeId, variant) → [{ch:'I'|'IV'|'V'|'V7'|'VI', label:'Ⅰ'…, inv:0|1|2, rh:[音×3], lh:[音], bassDeg}]（inv：0＝基本形、1＝第1転回形、2＝第2転回形）
  *   どれも 4つの 和音（長さで 答えが わからないように）。フリギア終止は 短調だけ（長調では null）。
  *   右手＝音階の なんばんめ k（PA.at(key.scale,k)。0＝主音、負＝主音より下）。左手＝根音（または bass に 書いた 度数）1つ：
- *   1つめは 主音の 音で ド3〜シ3（48〜59）、そのあとは 前の 左手に いちばん 近い 高さ（おなじ だけ はなれていたら 下）。
- *   ただし 左手は ミ2〜シ3（40〜59）で 右手の いちばん下より 下。その中で いちばん 近い 高さに する（オクターブの なおし）。
- *   いちばん 近い 高さだと 右手の どれかと 5度・8度の まま おなじ 向きに うごく ときは、もう 1つの 高さに する。
+ *   1つめは 主音の 音で ド3〜シ3（48〜59）、そのあとは ミ2〜シ3（40〜59）で 右手の いちばん下より 下。
+ *   4つの 左手の 高さは まとめて えらぶ（ありうる 高さを ぜんぶ ためす）。よい じゅん：
+ *   ① 右手の どれかと 5度・8度の まま うごく（おなじ 向きでも 反対むきでも）ことが ない
+ *   ② 左手が 短7度より 大きく とばない ③ いちばん上と 左手が おなじ 向きに 5度・8度へ 入り、いちばん上が とぶ ことが ない
+ *   ④ 左手の うごきが 小さい ⑤ 低い。
  *   音：PA.at と おなじ {letter, acc, midi, deg, k, raised?}。表示の 音＝鳴らす 音。
  * PA.ending.why(key, typeId, variant) … 「さいごが Ⅴ7 → Ⅰ で …」の やさしい 説明（HTML。音名は いまの 設定で）
  * test/ending.test.mjs で 24調 すべてを たしかめる（和音の 音・平行の 5度と 8度・左手が いちばん下・右手の はば など）
@@ -1231,7 +1242,7 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
     {id:'perfect',name:'完全終止',yomi:'かんぜんしゅうし',nick:'おしまい！',emoji:'🏁',color:'#e8553d',light:'#fde5df',family:'full',minorOnly:false,
       short:'Ⅴ7 → Ⅰ。どちらも いちばん下が 根音で、さいごの いちばん上が 主音。いちばん しっかり おわる。'},
     {id:'imperfect',name:'不完全終止',yomi:'ふかんぜんしゅうし',nick:'おわり…かな？',emoji:'🌤',color:'#c96a00',light:'#fdebd3',family:'full',minorOnly:false,
-      short:'Ⅴ7 → Ⅰ だけど、さいごの いちばん上が 主音では ない（または いちばん下が 根音では ない）。おわるけど すこし かるい。'},
+      short:'Ⅴ7 → Ⅰ だけど、さいごの いちばん上が 主音では ない（または Ⅴ7 の いちばん下が 根音では ない）。おわるけど すこし かるい。'},
     {id:'half',name:'半終止',yomi:'はんしゅうし',nick:'つづく…',emoji:'⏸',color:'#2f7ee8',light:'#dfeafd',family:null,minorOnly:false,
       short:'Ⅴ で とまる。まだ つづく 感じ。'},
     {id:'plagal',name:'変格終止',yomi:'へんかくしゅうし',nick:'アーメン',emoji:'🙏',color:'#22a06b',light:'#daf3e6',family:null,minorOnly:false,
@@ -1242,18 +1253,18 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
       short:'短調だけ。Ⅳ（いちばん下が 6ばんめの 音）から、いちばん下が 半音 下がって Ⅴ で とまる。'}
   ];
   E.IDS=E.TYPES.map(t=>t.id);
-  E.FULL={id:'full',name:'全終止',yomi:'ぜんしゅうし',nick:'しっかり おわる',emoji:'🏁',color:'#e8553d',light:'#fde5df',
+  E.FULL={id:'full',name:'全終止',yomi:'ぜんしゅうし',nick:'Ⅰ で おわる',emoji:'🏁',color:'#e8553d',light:'#fde5df',
     short:'Ⅴ（Ⅴ7）→ Ⅰ で おわる。完全終止と 不完全終止を あわせた よびかた。'};
   E.type=id=>id==='full'?E.FULL:E.TYPES.find(t=>t.id===id)||null;
   // [和音, 右手の k, 左手の 度数（なければ 根音）]
   const SPEC={
     perfect:   [['I',[2,4,7]],['IV',[3,5,7]],['V7',[3,4,6]],['I',[2,4,7]]], // 上の音 主音→主音→7ばんめ→主音（Ⅴ7 の 上が 5ばんめだと、上と 左手が 反対むきに 動いて 8度に なってしまう）
     imperfectA:[['I',[0,2,4]],['IV',[0,3,5]],['V7',[-1,3,4]],['I',[0,2,4]]],
-    imperfectB:[['I',[0,2,4]],['VI',[0,2,5]],['V7',[1,3,4],6],['I',[0,2,4]]],
+    imperfectB:[['I',[2,4,7]],['IV',[3,5,7]],['V7',[3,4,6],1],['I',[2,4,7]]], // 完全終止と おなじで、Ⅴ7 の 左手だけ 2ばんめ（第2転回形）
     half:      [['I',[0,2,4]],['IV',[0,3,5]],['I',[0,2,4]],['V',[-1,1,4]]],
     plagal:    [['I',[0,2,4]],['VI',[0,2,5]],['IV',[0,3,5]],['I',[0,2,4]]],
     deceptive: [['I',[0,2,4]],['IV',[0,3,5]],['V7',[-1,3,4]],['VI',[0,2,7]]],
-    phrygian:  [['I',[-3,0,2]],['VI',[-2,0,2]],['IV',[-4,0,3],5],['V',[-3,-1,1]]]
+    phrygian:  [['I',[-3,0,2]],['VI',[0,2,5]],['IV',[0,3,7],5],['V',[1,4,6]]] // さいごは 左手が 半音 下がり、いちばん上は 1つ となりへ（反対むき）
   };
   E.PATTERNS=[
     {id:'perfect',type:'perfect',variant:null},{id:'imperfectA',type:'imperfect',variant:'A'},{id:'imperfectB',type:'imperfect',variant:'B'},
@@ -1265,22 +1276,33 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
   E.allowed=(key,typeId)=>{const t=E.type(typeId);return !!t&&(!t.minorOnly||!!key.minor);};
   E.build=(key,typeId,variant)=>{
     const pid=E.patternOf(typeId,variant); if(!pid||!E.allowed(key,typeId)) return null;
-    let prev=null, prevRh=null;
-    // 左手 a→b と 右手 A→B が 5度・8度の まま おなじ 向きに うごくか（どちらも うごく とき）
+    // 左手 a→b と 右手 A→B が 5度・8度の まま うごくか（どちらも うごく とき。おなじ 向きでも 反対むきでも）
     const par=(a,b,A,B)=>A.some((x,i)=>{const y=B[i].midi, iv=mod(x.midi-a,12);
-      return (iv===0||iv===7)&&iv===mod(y-b,12)&&a!==b&&x.midi!==y&&Math.sign(b-a)===Math.sign(y-x.midi);});
-    return SPEC[pid].map(([ch,ks,bd])=>{
+      return (iv===0||iv===7)&&iv===mod(y-b,12)&&a!==b&&x.midi!==y;});
+    // いちばん上と 左手が おなじ 向きに 5度・8度へ 入り、いちばん上が とぶ（2つより 大きく うごく）
+    const hid=(a,b,A,B)=>{const s1=A[A.length-1].midi, s2=B[B.length-1].midi, iv=mod(s2-b,12);
+      return (iv===0||iv===7)&&a!==b&&s1!==s2&&Math.sign(b-a)===Math.sign(s2-s1)&&Math.abs(s2-s1)>2;};
+    const cs=SPEC[pid].map(([ch,ks,bd],i)=>{
       const rh=ks.map(k=>PA.at(key.scale,k)), d=bd==null?E.ROOT[ch]:bd, b=PA.at(key.scale,d), pc=mod(b.midi,12);
-      const lo=Math.min(...rh.map(n=>n.midi));
-      let m;
-      if(prev==null){m=48+mod(pc-48,12);while(m>=lo)m-=12;}
-      else{
-        const c=[];for(let x=40+mod(pc-40,12);x<=59;x+=12) if(x<lo) c.push(x); // ミ2〜シ3、右手より 下
-        c.sort((x,y)=>Math.abs(x-prev)-Math.abs(y-prev)||x-y); // 近いほう（おなじなら 下）
-        m=c.find(x=>!par(prev,x,prevRh,rh))??c[0];
-      }
-      prev=m; prevRh=rh;
-      const r=mod(d-E.ROOT[ch],7), inv=r===0?0:r===2?1:r===4?2:3;
+      const lo=Math.min(...rh.map(n=>n.midi)), c=[];
+      if(i===0){let m=48+mod(pc-48,12);while(m>=lo)m-=12;c.push(m);} // 1つめは 主音で ド3〜シ3
+      else for(let x=40+mod(pc-40,12);x<=59;x+=12) if(x<lo) c.push(x); // ミ2〜シ3、右手より 下
+      return {ch,rh,d,b,c};
+    });
+    // 4つの 左手を まとめて えらぶ（上の ①〜⑤ の じゅんに くらべる）
+    const score=ms=>{let pp=0,big=0,hd=0,sum=0;
+      for(let j=1;j<ms.length;j++){const a=cs[j-1].rh, B=cs[j].rh, dl=Math.abs(ms[j]-ms[j-1]);
+        if(par(ms[j-1],ms[j],a,B))pp++; if(dl>=10)big++; if(hid(ms[j-1],ms[j],a,B))hd++; sum+=dl;}
+      return [pp,big,hd,sum,ms.reduce((x,y)=>x+y,0)];};
+    const less=(x,y)=>{for(let k=0;k<x.length;k++) if(x[k]!==y[k]) return x[k]<y[k]; return false;};
+    let best=null;
+    const go=(i,ms)=>{
+      if(i===cs.length){const sc=score(ms);if(!best||less(sc,best.sc))best={sc,ms};return;}
+      for(const m of cs[i].c) go(i+1,[...ms,m]);
+    };
+    go(0,[]);
+    return cs.map(({ch,rh,d,b},i)=>{
+      const m=best.ms[i], r=mod(d-E.ROOT[ch],7), inv=r===0?0:r===2?1:r===4?2:3;
       return {ch,label:E.LABEL[ch],inv,rh,lh:[{...b,midi:m,k:d+(m-b.midi)/12*7}],bassDeg:d};
     });
   };
