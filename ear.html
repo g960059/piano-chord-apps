@@ -174,7 +174,7 @@ const CMP={}; ORDER.forEach(t=>{CMP[t]=T[t].ints.map(([,s])=>60+s);});
 
 /* ===== 状態（保存する：和音クイズと おなじ きまり） ===== */
 const isInt=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
-const state={mode:'free',level:1,q:null,answer:null,left:null,right:0,total:0,streak:0,resShown:false,qn:0,fresh:false,confirmReset:false};
+const state={mode:'free',level:1,q:null,answer:null,left:null,right:0,total:0,streak:0,resShown:false,qn:0,fresh:false,confirmReset:false,muteHint:false};
 // チャレンジ：active（とちゅう）、level、run（れんぞく正解）、best（クリアした いちばん上の レベル）、event・next（こたえたあと「つぎ」で うつる レベル）
 // cap：つづきから はじめる レベル（null＝best+1）。いちばん上で まちがえて 1つ下に もどったら、やめて つづきを おしても そこから。
 // q・left：れんしゅうに きりかえた ときに とっておく、まだ こたえて いない チャレンジの もんだい
@@ -301,7 +301,7 @@ function makeQ(lv,prevType){
 function newEar(){
   const lv=curLevel();
   state.q=makeQ(lv,state.q&&state.q.type);
-  state.answer=null; state.resShown=false; state.left=replaysOf(lv); state.qn++; save();
+  state.answer=null; state.resShown=false; state.left=replaysOf(lv); state.qn++; state.muteHint=false; save();
 }
 function playEar(arp=false){
   const q=state.q; if(!q) return;
@@ -417,6 +417,7 @@ function heroHTML(){
   let h=`<section class="card hero"><div class="qhead"><h2>👂 この和音は どれ？</h2>${score}</div>`;
   if(!q) h+=`<div class="msg" style="margin-top:10px">下の <b>▶️ はじめる</b> を おすと 和音が 鳴るよ。</div>`;
   else if(!state.answer&&R!=null) h+=`<div class="rinfo" role="status" aria-label="もういちど きけるのは あと${state.left}回">もういちど きける ${dots(R,state.left,'rdots')}${state.left?'':' <span>あとは こたえよう！</span>'}</div>`;
+  if(q&&state.muteHint&&!PA.settings.sound) h+=`<div class="rinfo" role="status">🔇 音が オフだよ。⚙️ で オンに してね</div>`;
   h+=`<div class="echoices n${types.length}${types.length>5?' many':''}">${types.map(choiceHTML).join('')}</div>`;
   if(q&&state.answer) h+=feedbackHTML();
   return h+`</section>`;
@@ -477,7 +478,7 @@ document.addEventListener('click',e=>{
     PA.stopSound();
     // こたえて いない チャレンジの もんだいは とっておき、もどったら おなじ もんだい（のこりの 回数も そのまま）から
     if(state.mode==='ch'&&ch.active&&state.q&&!state.answer){ch.q=state.q;ch.left=state.left;}
-    state.mode=v; state.q=null; state.answer=null; state.resShown=false; state.left=null; state.confirmReset=false;
+    state.mode=v; state.q=null; state.answer=null; state.resShown=false; state.left=null; state.confirmReset=false; state.muteHint=false;
     if(v==='ch'&&ch.active){applyNext();if(ch.q){state.q=ch.q;state.left=ch.left;state.askedAt=0;state.qn++;}ch.q=null;ch.left=null;}
     save(); render();
   }
@@ -504,6 +505,8 @@ document.addEventListener('click',e=>{
     if(!state.q) return;
     // 「つぎ」の 2どおしで、その場所に 出た ボタンが おされて 回数が へらないように
     if(!state.answer&&Date.now()-(state.askedAt||0)<600) return;
+    // 音が オフの ときは 鳴らないので、のこりの 回数は へらさずに おしえるだけ（オンに したら そのまま きける）
+    if(!PA.settings.sound){state.muteHint=true;render();return;}
     if(!state.answer&&state.left!=null){if(state.left<=0)return;state.left--;save();render();}
     playEar(a==='earp');
   }
