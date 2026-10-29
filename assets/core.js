@@ -231,7 +231,7 @@ PA.accGlyph=(x,y,a,color='#3a3245')=>{
 // ト音記号（y0＝ソ4の線）／ヘ音記号（y0＝ファ3の線）。フォントに頼らない線画
 PA.gClef=(x,y0)=>`<g transform="translate(${x} ${y0})" fill="none" stroke="#3a3245" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3 C8 3 7 -5 13 -7 C21 -9 25 0 20 7 C14 14 2 10 2 0 C2 -10 12 -17 17 -27 C20 -34 19 -44 15 -44 C10 -44 8 -34 10 -24 L16 24 C17 31 11 33 8 29"/><circle cx="9.5" cy="27.5" r="3.2" fill="#3a3245" stroke="none"/></g>`;
 PA.fClef=(x,y0)=>`<g transform="translate(${x} ${y0})"><circle cx="5" cy="0" r="4" fill="#3a3245"/><path d="M3 -2 C4 -10 14 -12 19 -7 C25 -1 22 10 14 17 C9 21 4 24 -1 26" fill="none" stroke="#3a3245" stroke-width="2.8" stroke-linecap="round"/><circle cx="27" cy="-5" r="2.2" fill="#3a3245"/><circle cx="27" cy="5" r="2.2" fill="#3a3245"/></g>`;
-/* cols: [{notes:[...ト音記号], lh:[...ヘ音記号], color, ltColor(導音の色), accColor, accRing, label, labelColor, op, noAcc, carry:{文字:変化記号}}]
+/* cols: [{notes:[...ト音記号], lh:[...ヘ音記号], color, ltColor(導音の色), accColor, accRing, label, sub(和音名の 下の 小さな字), labelColor, op, noAcc, carry:{文字:変化記号}}]
  * opts: {grand, colW, minW, arrows:[{c1,i1,c2,i2,color,text,dash,dy}], sigOverride:{letter,acc}, noSig, maxScale} */
 PA.staffSVG=(key,cols,o={})=>{
   const sig=o.noSig?{type:1,letters:[]}:PA.sigInfo(key), ov=o.sigOverride, grand=!!o.grand;
@@ -253,7 +253,8 @@ PA.staffSVG=(key,cols,o={})=>{
     if(grand)(c.lh||[]).forEach(n=>{lowY=Math.max(lowY,by(PA.stepOf(n)));});
   });
   const baseH=grand?BT+48:TB+48, labelY=Math.max(baseH+16,lowY+30);
-  const W=Math.max(nx+cols.length*cw+8,o.minW||0), H=hasLabel?labelY+6:Math.max(baseH,lowY+16);
+  const hasSub=hasLabel&&cols.some(c=>c.sub); // c.sub＝和音名の 下の 小さな字（なければ 前と おなじ 図）
+  const W=Math.max(nx+cols.length*cw+8,o.minW||0), H=hasLabel?labelY+6+(hasSub?15:0):Math.max(baseH,lowY+16);
   let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="がくふ" style="max-width:${Math.round(W*(o.maxScale||1.5))}px;margin:0 auto">`;
   for(let i=0;i<5;i++) svg+=`<line x1="6" x2="${W-4}" y1="${TB-i*10}" y2="${TB-i*10}" stroke="#6b6273" stroke-width="1.2"/>`;
   svg+=PA.gClef(10,TB-10);
@@ -299,6 +300,7 @@ PA.staffSVG=(key,cols,o={})=>{
     const x=nx+ci*cw+cw/2;
     svg+=`<g opacity="${c.op==null?1:c.op}">`+drawNotes(ci,c,c.notes,ty,30,38)+(grand?drawNotes(ci,c,c.lh,by,18,26):'');
     if(c.label) svg+=`<text x="${x}" y="${labelY}" text-anchor="middle" font-size="17" font-weight="800" fill="${c.labelColor||'#3a3245'}">${PA.Svg(c.label)}</text>`;
+    if(c.label&&c.sub) svg+=`<text x="${x}" y="${labelY+15}" text-anchor="middle" font-size="11.5" font-weight="700" fill="${c.labelColor||'#3a3245'}">${PA.Svg(c.sub)}</text>`;
     svg+=`</g>`;
   });
   (o.arrows||[]).forEach(a=>{
@@ -1202,6 +1204,101 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
       +body
       +`<p class="note">◎ は 3回 いじょう せいかいして、まちがいが 少ない 調です。嬰ヘ長調と 変ト長調、嬰ニ短調と 変ホ短調は おなじ 音の 調で、書きかたが ちがうだけです。</p>`
       +`<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn small" data-act="keystats-reset" data-v="${quiz}">🗑 きろくを けす</button></div></section>`;
+  };
+})();
+/* ===== おわりかた（終止形）：6つの 終止の 和音の ならび =====
+ * key は PA.keyOf(minor, idx, 60)（主音は ド4〜シ4）。短調の key.scale は 和声的短音階なので、Ⅴ・Ⅴ7 の 7ばんめは 上げた音（raised）。
+ *   Ⅳ・Ⅵ・Ⅰ は 7ばんめを つかわないので、調号どおり（自然的短音階）の 音に なる（短調の Ⅵ＝長三和音、Ⅳ＝短三和音）。
+ * PA.ending.TYPES  … [{id, name, yomi, nick, emoji, color, light, short, family('full'＝全終止の なかま), minorOnly}]
+ * PA.ending.FULL   … 全終止（完全＋不完全）を ひとつに まとめた ときの 名前
+ * PA.ending.PATTERNS … クイズで つかう ならび [{id, type, variant}]（不完全終止は A・B の 2つ）
+ * PA.ending.build(key, typeId, variant) → [{ch:'I'|'IV'|'V'|'V7'|'VI', label:'Ⅰ'…, inv:0|1, rh:[音×3], lh:[音], bassDeg}]
+ *   どれも 4つの 和音（長さで 答えが わからないように）。フリギア終止は 短調だけ（長調では null）。
+ *   右手＝音階の なんばんめ k（PA.at(key.scale,k)。0＝主音、負＝主音より下）。左手＝根音（または bass に 書いた 度数）1つ：
+ *   1つめは 主音の 音で ド3〜シ3（48〜59）、そのあとは 前の 左手に いちばん 近い 高さ（おなじ だけ はなれていたら 下）。
+ *   ただし 左手は ミ2〜シ3（40〜59）で 右手の いちばん下より 下。その中で いちばん 近い 高さに する（オクターブの なおし）。
+ *   いちばん 近い 高さだと 右手の どれかと 5度・8度の まま おなじ 向きに うごく ときは、もう 1つの 高さに する。
+ *   音：PA.at と おなじ {letter, acc, midi, deg, k, raised?}。表示の 音＝鳴らす 音。
+ * PA.ending.why(key, typeId, variant) … 「さいごが Ⅴ7 → Ⅰ で …」の やさしい 説明（HTML。音名は いまの 設定で）
+ * test/ending.test.mjs で 24調 すべてを たしかめる（和音の 音・平行の 5度と 8度・左手が いちばん下・右手の はば など）
+ */
+(function(){
+  const E=PA.ending={}, mod=PA.mod;
+  PA.COL.VI='#0e8a8a'; PA.LCOL.VI='#d3f1ef'; // Ⅵ（ほかの ページの 和音の 色と かさならない 青緑）
+  E.LABEL={I:'Ⅰ',IV:'Ⅳ',V:'Ⅴ',V7:'Ⅴ7',VI:'Ⅵ'};
+  E.ROOT={I:0,IV:3,V:4,V7:4,VI:5};
+  E.TYPES=[
+    {id:'perfect',name:'完全終止',yomi:'かんぜんしゅうし',nick:'おしまい！',emoji:'🏁',color:'#e8553d',light:'#fde5df',family:'full',minorOnly:false,
+      short:'Ⅴ7 → Ⅰ。どちらも いちばん下が 根音で、さいごの いちばん上が 主音。いちばん しっかり おわる。'},
+    {id:'imperfect',name:'不完全終止',yomi:'ふかんぜんしゅうし',nick:'おわり…かな？',emoji:'🌤',color:'#c96a00',light:'#fdebd3',family:'full',minorOnly:false,
+      short:'Ⅴ7 → Ⅰ だけど、さいごの いちばん上が 主音では ない（または いちばん下が 根音では ない）。おわるけど すこし かるい。'},
+    {id:'half',name:'半終止',yomi:'はんしゅうし',nick:'つづく…',emoji:'⏸',color:'#2f7ee8',light:'#dfeafd',family:null,minorOnly:false,
+      short:'Ⅴ で とまる。まだ つづく 感じ。'},
+    {id:'plagal',name:'変格終止',yomi:'へんかくしゅうし',nick:'アーメン',emoji:'🙏',color:'#22a06b',light:'#daf3e6',family:null,minorOnly:false,
+      short:'Ⅳ → Ⅰ。やわらかく おわる。'},
+    {id:'deceptive',name:'偽終止',yomi:'ぎしゅうし',nick:'あれっ？',emoji:'😮',color:'#b0307a',light:'#f8e0ee',family:null,minorOnly:false,
+      short:'Ⅴ7 の あと、Ⅰ の かわりに Ⅵ へ。おわると 思ったら、ちがう 和音へ すすむ。'},
+    {id:'phrygian',name:'フリギア終止',yomi:'ふりぎあしゅうし',nick:'くらい ひと休み',emoji:'🌙',color:'#3b4fa8',light:'#e6eafb',family:null,minorOnly:true,
+      short:'短調だけ。Ⅳ（いちばん下が 6ばんめの 音）から、いちばん下が 半音 下がって Ⅴ で とまる。'}
+  ];
+  E.IDS=E.TYPES.map(t=>t.id);
+  E.FULL={id:'full',name:'全終止',yomi:'ぜんしゅうし',nick:'しっかり おわる',emoji:'🏁',color:'#e8553d',light:'#fde5df',
+    short:'Ⅴ（Ⅴ7）→ Ⅰ で おわる。完全終止と 不完全終止を あわせた よびかた。'};
+  E.type=id=>id==='full'?E.FULL:E.TYPES.find(t=>t.id===id)||null;
+  // [和音, 右手の k, 左手の 度数（なければ 根音）]
+  const SPEC={
+    perfect:   [['I',[2,4,7]],['IV',[3,5,7]],['V7',[3,4,6]],['I',[2,4,7]]], // 上の音 主音→主音→7ばんめ→主音（Ⅴ7 の 上が 5ばんめだと、上と 左手が 反対むきに 動いて 8度に なってしまう）
+    imperfectA:[['I',[0,2,4]],['IV',[0,3,5]],['V7',[-1,3,4]],['I',[0,2,4]]],
+    imperfectB:[['I',[0,2,4]],['VI',[0,2,5]],['V7',[1,3,4],6],['I',[0,2,4]]],
+    half:      [['I',[0,2,4]],['IV',[0,3,5]],['I',[0,2,4]],['V',[-1,1,4]]],
+    plagal:    [['I',[0,2,4]],['VI',[0,2,5]],['IV',[0,3,5]],['I',[0,2,4]]],
+    deceptive: [['I',[0,2,4]],['IV',[0,3,5]],['V7',[-1,3,4]],['VI',[0,2,7]]],
+    phrygian:  [['I',[-3,0,2]],['VI',[-2,0,2]],['IV',[-4,0,3],5],['V',[-3,-1,1]]]
+  };
+  E.PATTERNS=[
+    {id:'perfect',type:'perfect',variant:null},{id:'imperfectA',type:'imperfect',variant:'A'},{id:'imperfectB',type:'imperfect',variant:'B'},
+    {id:'half',type:'half',variant:null},{id:'plagal',type:'plagal',variant:null},{id:'deceptive',type:'deceptive',variant:null},
+    {id:'phrygian',type:'phrygian',variant:null}
+  ];
+  E.pattern=id=>E.PATTERNS.find(p=>p.id===id)||null;
+  E.patternOf=(typeId,variant)=>typeId==='imperfect'?(variant==='B'?'imperfectB':'imperfectA'):SPEC[typeId]&&typeId!=='imperfectA'&&typeId!=='imperfectB'?typeId:null;
+  E.allowed=(key,typeId)=>{const t=E.type(typeId);return !!t&&(!t.minorOnly||!!key.minor);};
+  E.build=(key,typeId,variant)=>{
+    const pid=E.patternOf(typeId,variant); if(!pid||!E.allowed(key,typeId)) return null;
+    let prev=null, prevRh=null;
+    // 左手 a→b と 右手 A→B が 5度・8度の まま おなじ 向きに うごくか（どちらも うごく とき）
+    const par=(a,b,A,B)=>A.some((x,i)=>{const y=B[i].midi, iv=mod(x.midi-a,12);
+      return (iv===0||iv===7)&&iv===mod(y-b,12)&&a!==b&&x.midi!==y&&Math.sign(b-a)===Math.sign(y-x.midi);});
+    return SPEC[pid].map(([ch,ks,bd])=>{
+      const rh=ks.map(k=>PA.at(key.scale,k)), d=bd==null?E.ROOT[ch]:bd, b=PA.at(key.scale,d), pc=mod(b.midi,12);
+      const lo=Math.min(...rh.map(n=>n.midi));
+      let m;
+      if(prev==null){m=48+mod(pc-48,12);while(m>=lo)m-=12;}
+      else{
+        const c=[];for(let x=40+mod(pc-40,12);x<=59;x+=12) if(x<lo) c.push(x); // ミ2〜シ3、右手より 下
+        c.sort((x,y)=>Math.abs(x-prev)-Math.abs(y-prev)||x-y); // 近いほう（おなじなら 下）
+        m=c.find(x=>!par(prev,x,prevRh,rh))??c[0];
+      }
+      prev=m; prevRh=rh;
+      const r=mod(d-E.ROOT[ch],7), inv=r===0?0:r===2?1:r===4?2:3;
+      return {ch,label:E.LABEL[ch],inv,rh,lh:[{...b,midi:m,k:d+(m-b.midi)/12*7}],bassDeg:d};
+    });
+  };
+  // 和音の 名前（てんかい＝いちばん下が 根音では ない 形）
+  E.labelText=c=>c.label+(c.inv?'（てんかい）':'');
+  // さいごの 2つの 和音で 名前が きまる わけ（だから ○○終止、の まえの ところ）
+  E.why=(key,typeId,variant)=>{
+    const d=E.build(key,typeId,variant); if(!d) return '';
+    const a=d[2], b=d[3], arrow=`<b>${E.labelText(a)} → ${E.labelText(b)}</b>`, top=b.rh[b.rh.length-1], nm=PA.nmH;
+    if(typeId==='perfect') return `さいごが ${arrow} で、いちばん上が 主音「${nm(top)}」`;
+    if(typeId==='imperfect') return variant==='B'
+      ?`さいごが ${arrow}。でも Ⅴ7 の いちばん下が 根音では なく「${nm(a.lh[0])}」`
+      :`さいごが ${arrow}。でも いちばん上が 主音では なく「${nm(top)}」`;
+    if(typeId==='half') return `さいごが ${arrow}。Ⅴ で とまる`;
+    if(typeId==='plagal') return `さいごが ${arrow}`;
+    if(typeId==='deceptive') return `さいごが ${arrow}。Ⅰ の かわりに Ⅵ`;
+    if(typeId==='phrygian') return `短調で、さいごが ${arrow}。いちばん下が「${nm(a.lh[0])}」から「${nm(b.lh[0])}」へ 半音 下がる`;
+    return '';
   };
 })();
 PA.reduceMotion=()=>!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);

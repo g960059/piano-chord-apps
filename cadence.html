@@ -17,7 +17,7 @@
 .scard{border-radius:14px;padding:6px 2px;background:var(--l);color:var(--c);border:3px solid var(--c);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:72px;min-width:0}
 .scard .num{font-size:24px;font-weight:800;line-height:1.15}
 .scard .nm{font-size:11.5px;font-weight:700;line-height:1.3;text-align:center;display:flex;flex-direction:column-reverse;align-items:center} /* 1音1行。がくふと おなじく 下が ひくい音 */
-.scard .nm span{display:block;white-space:nowrap}
+.scard .nm>span{display:block;white-space:nowrap} /* 𝄪 の span は 1行に */
 .scard.on{background:var(--c);color:#fff;transform:translateY(-3px);box-shadow:0 4px 10px rgba(40,30,50,.15)}
 .hero{border-top:6px solid var(--c)}
 .hero-top{display:flex;gap:12px;align-items:center}
@@ -134,7 +134,8 @@ function termsHTML(key,data,step,form){
     <dd><ul>
       <li><b>${yomi('全終止','ぜんしゅうし')}</b> … Ⅴ（Ⅴ7）→ Ⅰ。しっかり おわる 感じ。この ページの さいごの Ⅴ7 → Ⅰ。</li>
       <li><b>${yomi('半終止','はんしゅうし')}</b> … Ⅴ で ひと休み。まだ つづく 感じ。</li>
-      <li><b>${yomi('変終止','へんしゅうし')}</b> … Ⅳ → Ⅰ。やわらかく おわる（「アーメン」の ひびき）。</li>    </ul></dd>
+      <li><b>${yomi('変格終止','へんかくしゅうし')}</b> … Ⅳ → Ⅰ。やわらかく おわる（「アーメン」の ひびき）。</li>
+    </ul>6つの おわりかたは <a href="ending.html">🏁 おわりかた</a> で 聴けるよ。</dd>
     <dt>${yomi('基本形','きほんけい')}・${yomi('転回形','てんかいけい')}</dt>
     <dd>いちばん 低い音が 根音なら <b>基本形</b>。音の じゅんばんを 入れかえて、いちばん下が 第3音なら <b>第1転回形</b>、第5音なら <b>第2転回形</b>（Ⅴ7 の 第7音なら <b>第3転回形</b>）。この ページでは 左手が 根音を ひくので、🤲 なめらかな形 も 和音ぜんたいでは 基本形。${form==='inv'?rhNow+`なめらかな形の Ⅴ7 は ${dg(1)}を はぶいて いるよ。`:''}</dd>
     <dt>${yomi('共通音','きょうつうおん')}</dt>
