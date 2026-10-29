@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fdf8f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>異名同音の 読みかえ</title>
+<link rel="stylesheet" href="assets/app.css">
+<style>
+.toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.fams{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.fbtn{border-radius:16px;padding:6px 4px;background:var(--nightl);color:var(--night);border:3px solid var(--night);display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:64px;text-align:center;min-width:0}
+.fbtn .num{font-size:17px;font-weight:800;line-height:1.2}
+.fbtn .nm{font-size:12.5px;font-weight:700;line-height:1.3;word-break:keep-all;overflow-wrap:anywhere}
+.fbtn.on{background:var(--night);color:#fff}
+.hero{border-top:6px solid var(--night)}
+.hero h2{font-size:18px}
+.rule{text-align:center;font-size:clamp(15px,4.4vw,18px)}
+.nw{white-space:nowrap}
+.up{color:#d1495b}
+.lo{color:#2f7ee8}
+.msg b.big{font-size:19px}
+.fig{display:inline-flex;flex-direction:column;font-size:.62em;line-height:.95;vertical-align:middle;margin-left:1px;text-align:center}
+/* 4つの 読みかたの 表（よこの 列＝おなじ けんばん） */
+.rt{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:4px 3px;margin-top:10px}
+.rt th{padding:0;font-weight:400}
+.rt td{text-align:center;font-size:17px;font-weight:800;padding:6px 2px;border-radius:10px;background:var(--soft2);line-height:1.25;overflow-wrap:anywhere}
+.rt td.on{background:#fff;background:color-mix(in srgb,var(--rc) 14%,#fff);box-shadow:inset 0 0 0 2px var(--rc)}
+.rt td.lt{color:#d1495b}
+.rt td.lt::after{content:"導音";display:block;font-size:10.5px;font-weight:700}
+.rt td.dest{font-size:15px;color:var(--rc);background:none;padding-top:2px}
+.rt td.dest small{display:block;font-size:11px;font-weight:700;color:var(--sub)}
+.rt td.pl{background:none;padding:0}
+.rk{width:100%;min-height:56px;border-radius:14px;padding:4px 2px;background:var(--card);border:3px solid var(--rc);color:var(--ink);font-weight:800;font-size:13.5px;line-height:1.25;display:flex;flex-direction:column;align-items:center;justify-content:center;word-break:keep-all;overflow-wrap:anywhere}
+.rk small{font-weight:700;font-size:12px;color:var(--rc)}
+.rk.on{background:var(--rc);color:#fff}
+.rk.on small{color:#fff}
+.pbtn{width:100%;min-height:44px;border-radius:999px;background:var(--soft);font-weight:800;font-size:14px;color:var(--rc)}
+.pbtn.on{background:var(--rc);color:#fff}
+.legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--sub);margin-top:4px}
+.vs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:10px;margin-top:8px}
+.vs>div{border-radius:14px;padding:10px 12px;min-width:0;background:var(--soft2);border-top:5px solid var(--c)}
+.vs h3{margin:0 0 4px;font-size:16px;color:var(--c)}
+.vs .ns{font-size:19px;font-weight:800;line-height:1.35}
+.vs .to{font-size:14px;margin:4px 0 8px}
+.vs .btn{width:100%;color:#fff;background:var(--c)}
+.choices .choice{font-size:17px}
+.choice small{display:block;font-size:12.5px;font-weight:700;color:var(--sub)}
+.askline{margin:10px 0 6px;font-weight:800}
+.ab{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.ab.one{grid-template-columns:1fr}
+.links{display:flex;flex-direction:column;gap:8px}
+.links .btn{justify-content:flex-start;text-align:left;flex-wrap:wrap;row-gap:0}
+.links .btn small{font-weight:400;color:var(--sub);font-size:13px}
+@media (min-width:600px){.rt td{font-size:19px}.rk{font-size:15px}}
+/* 📖 ことばメモ（本や 楽譜で 見かける 名前。ふだんは とじておく） */
+.terms dl{margin:0}
+.terms dt{font-weight:800;margin:12px 0 2px}
+.terms dt:first-child{margin-top:2px}
+.terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
+.terms .yomi{font-weight:400;font-size:12px;color:var(--sub)}
+</style>
+</head>
+<body>
+<header class="appbar" id="appbar"></header>
+<main class="page" id="view"></main>
+<div class="actionbar" id="actions"></div>
+<script src="assets/core.js"></script>
+<script>
+/* 異名同音の 読みかえ：
+ *  ① 減七の和音は 3つの家族だけ。おなじ けんばんを 4つの 短調の 減七（Ⅴ9 の 根音省略）として 書きわけると、4つの 調へ 解決する（第9音が いちばん下の 読みは Ⅰ6/4 → Ⅴ → Ⅰ）
+ *  ② ドイツの6 と Ⅴ7/♭Ⅱ：おなじ けんばん、♯4 と ♭5 の 書きかえで、行き先が Ⅴ と ♭Ⅱ に わかれる
+ * 和音の つづり・高さ・解決は すべて PA.henka（dimReadings・ger6Vs7）と PA.chroma（② は aug6.html と おなじ 高さ・名前：gerSet）、Ⅴ→Ⅰ は vToI */
+const H=PA.henka;
+const NIGHT='#3b4fa8', LT='#d1495b', LOW='#2f7ee8', VCOL='#2f7ee8', GER='#8a4fe0', V7C='#1f8a5b', GHOST='#9b9184', ICOL=PA.COL.I;
+const RCOL=['#e07a00','#22a06b','#2f7ee8','#8a4fe0']; // 4つの 読みかた（行き先）の 色
+// 減七の 3つの家族（Ⅴの家族の ページと おなじ よびかた・おなじ 書き方）。家族 i ＝ 導音の 高さを 3で わった あまり
+const DIM_FAMS=[[[0,0],[2,-1],[4,-1],[5,0]],[[0,1],[2,0],[4,0],[6,-1]],[[1,0],[3,0],[5,-1],[6,0]]];
+const ABC=['Ａ','Ｂ','Ｃ'];
+const NK=PA.keyCount(true);
+const famOf=idx=>PA.mod(PA.minorKey(idx).lt.midi,3);
+const famPcs=f=>[0,3,6,9].map(x=>x+f);
+
+const saved=PA.store.get('enharmonic',{})||{};
+// res／resT：鳴らしおわった あとも 解決の 和音を 見せる（resT＝その 読みかたの 主音の 高さ）。quiz.ans・pick も 主音の 高さ
+const state={fam:2,keyIdx:0,res:0,resT:null,anim:null,autoWait:false,play:null,g:null,quiz:null,qOk:0,qN:0};
+if(Number.isInteger(saved.keyIdx)&&saved.keyIdx>=0&&saved.keyIdx<NK) state.keyIdx=saved.keyIdx;
+state.fam=famOf(state.keyIdx); // 家族は 調から きまる（保存した fam が ずれていても 調に あわせる）
+const save=()=>PA.store.set('enharmonic',{fam:state.fam,keyIdx:state.keyIdx});
+const curKey=()=>PA.minorKey(state.keyIdx);
+
+/* ===== 減七の 4つの 読みかた（PA.henka.dimReadings） ===== */
+// えらんだ 調の 読みが given。表の 列の じゅんばんは 調が かわっても うごかないように 主音の 高さで ならべる（ラから）
+// 第9音が いちばん下の 読み（ninthInBass）は Ⅰ6/4 → Ⅴ → Ⅰ と すすめて、fin（さいごの Ⅰ）で 解決させる
+const readingsOf=idx=>H.dimReadings(PA.minorKey(idx)).map(r=>({...r,fin:r.next?vToI(r.key,r.next):null}))
+  .sort((a,b)=>PA.mod(a.key.tpc-9,12)-PA.mod(b.key.tpc-9,12));
+// 読みかたの 和音の ならび：減七 → 解決（→ Ⅴ → Ⅰ）
+const stagesOf=r=>[r.spelling,r.resolution].concat(r.next?[r.next,r.fin]:[]);
+// Ⅴ → Ⅰ（おなじ 声の ならび）：ベースは 主音へ、導音は 主音へ（上へ）、第5音は 主音か 第3音へ、根音は のこすか 主音・第3音へ。
+// 交差なし・連続5度／8度なし・第3音は かならず 入れる。動きの 合計が いちばん 小さい ものを えらぶ（第3音の 重複・第5音の 省略は すこし 減点）
+function vToI(key,V){
+  const t=key.tpc, O=(d,midi,role)=>({letter:key.nat[d].letter,acc:key.nat[d].acc,midi,role,tag:null});
+  const opts=V.map((n,i)=>{
+    const rel=PA.mod(n.midi-t,12);
+    if(i===0) return [O(0,n.midi-7,'主音（根音）'),O(0,n.midi+5,'主音（根音）')];
+    if(rel===11) return [O(0,n.midi+1,'主音（根音）')];
+    if(rel===2) return [O(0,n.midi-2,'主音（根音）'),O(2,n.midi+1,'第3音')];
+    return [O(4,n.midi,'第5音'),O(0,n.midi+5,'主音（根音）'),O(2,n.midi-4,'第3音')];
+  });
+  let best=null;
+  const walk=(i,acc)=>{
+    if(i===opts.length){
+      for(let j=1;j<acc.length;j++) if(acc[j].midi<=acc[j-1].midi) return;
+      const rels=acc.map(n=>PA.mod(n.midi-t,12));
+      if(!rels.includes(3)||!rels.includes(0)) return;
+      for(let a=0;a<acc.length;a++) for(let b=a+1;b<acc.length;b++){
+        const x=PA.mod(V[b].midi-V[a].midi,12), y=PA.mod(acc[b].midi-acc[a].midi,12);
+        if(x===y&&(x===0||x===7)&&V[a].midi!==acc[a].midi&&V[b].midi!==acc[b].midi) return;
+      }
+      const cost=acc.reduce((s,n,j)=>s+Math.abs(n.midi-V[j].midi),0)+(rels.filter(r=>r===3).length>1?6:0)+(rels.includes(7)?0:2);
+      if(!best||cost<best.cost) best={cost,acc:[...acc]};
+      return;
+    }
+    opts[i].forEach(o=>{acc.push(o);walk(i+1,acc);acc.pop();});
+  };
+  walk(0,[]);
+  return best?best.acc:null;
+}
+// 家族の ボタンを おしたとき：その家族で 調号の いちばん すくない 調
+function easiestIn(f){
+  const rs=H.dimReadings(famPcs(f));
+  return rs.reduce((a,r)=>!a||PA.sigInfo(r.key).letters.length<PA.sigInfo(a.key).letters.length?r:a,null).key.idx;
+}
+// けんばんの はんい：3つの家族 ぜんぶ（どの 読みかた・解決でも おなじ はんいの けんばん）
+const whiteDown=m=>{while(PA.BLACK.has(PA.mod(m,12)))m--;return m;};
+const whiteUp=m=>{while(PA.BLACK.has(PA.mod(m,12)))m++;return m;};
+const kbRange=lists=>{const ms=lists.flat().filter(Boolean).map(n=>n.midi);return [whiteDown(Math.min(...ms)-2),whiteUp(Math.max(...ms)+2)];};
+const DIM_RANGE=kbRange([0,1,2].flatMap(f=>H.dimReadings(famPcs(f)).flatMap(r=>[r.spelling,r.resolution,r.next||[],r.next?vToI(r.key,r.next):[]])));
+
+/* ===== 音の よびかた ===== */
+const nH=n=>{const c=n.tag==='lt'?'up':n.tag==='low'?'lo':'';return `<span class="nw ${c}">${PA.nmH(n)}</span>`;};
+const q=n=>`「${nH(n)}」`;
+const namesC=(ns,sep='・')=>ns.map(nH).join(sep);
+const I64H='Ⅰ<span class="fig"><span>6</span><span>4</span></span>';
+const I64S='Ⅰ<tspan font-size="11" dy="-7">6</tspan><tspan font-size="11" dx="-6.5" dy="11">4</tspan>';
+const resLabel=(r,svg)=>r.resInv===2?(svg?I64S:I64H):r.resInv===1?'Ⅰ6':'Ⅰ';
+const tonicOf=key=>key.nat[0];
+const sigAcc=(key,L)=>key.sig[L]||0;
+// C♭・F♭・E♯・B♯・重変・重嬰：けんばんの ふつうの 名前も そえる（ハ長調の 名前＝♯）
+const oddName=n=>Math.abs(n.acc)>1||(n.acc===-1&&(n.letter===0||n.letter===3))||(n.acc===1&&(n.letter===2||n.letter===6));
+const plainOf=n=>PA.spellMidi(n.midi,PA.majorKey(0));
+
+/* ===== がくふ（大譜表。いちばん下の音と ド4より 下の音は ヘ音記号）＋ 矢印 ===== */
+const prep=n=>({letter:n.letter,acc:n.acc,midi:n.midi,raised:n.tag==='lt'||undefined});
+// cols:[{notes,color,label,op}]、arrows:[{c1,n1,c2,n2,color,text,dash,dy}]（n1・n2 は cols の 音そのもの）
+function staff(key,cols,arrows=[],o={}){
+  const cw=o.cw||110;
+  const sc=cols.map(c=>{
+    const lo=c.notes.length?c.notes.reduce((a,b)=>b.midi<a.midi?b:a):null;
+    const lh=c.notes.filter(n=>n===lo||n.midi<60), tr=c.notes.filter(n=>!lh.includes(n));
+    const col={notes:tr.map(prep),lh:lh.map(prep),color:c.color,ltColor:LT,accColor:LT,label:c.label,labelColor:c.color,op:c.op};
+    return {col,tr,lh};
+  });
+  const ns=PA.sigInfo(key).letters.length, nx=50+ns*10+(ns?24:14);
+  const tw=t=>[...(t||'')].reduce((w,ch)=>w+(ch.charCodeAt(0)>255?14:8.5),0);
+  const pad=Math.max(44,...arrows.map(a=>tw(a.text)-cw/2+22));
+  let svg=PA.staffSVG(key,sc.map(s=>s.col),{grand:true,autoCarry:true,colW:cw,minW:Math.max(o.minW||0,arrows.length?nx+cols.length*cw+pad:0)});
+  const posOf=(ci,n)=>{
+    const s=sc[ci]; if(!s) return null;
+    const inT=s.tr.includes(n), arr=inT?s.tr:s.lh.includes(n)?s.lh:null; if(!arr) return null;
+    const P=arr.map(m=>({m,s:PA.stepOf(m)})).sort((a,b)=>a.s-b.s);
+    let ps=-99,po=false; P.forEach(p=>{p.off=(p.s-ps===1&&!po);po=p.off;ps=p.s;});
+    const p=P.find(p=>p.m===n);
+    return {x:nx+ci*cw+cw/2+(p.off?13:0),y:inT?96-(p.s-30)*5:178-(p.s-26)*5};
+  };
+  let add='';
+  const cs=new Set();
+  arrows.forEach(a=>{
+    const p=posOf(a.c1,a.n1), r=posOf(a.c2,a.n2); if(!p||!r) return;
+    const id='en'+a.color.slice(1); cs.add(a.color);
+    add+=`<path d="M${p.x+12} ${p.y} L${r.x-22} ${r.y}" stroke="${a.color}" stroke-width="2.4" fill="none" stroke-dasharray="${a.dash||''}" marker-end="url(#${id})"/>`;
+    if(a.text) add+=`<text x="${r.x+14}" y="${r.y+5+(a.dy||0)}" font-size="14" font-weight="800" fill="${a.color}">${a.text}</text>`;
+  });
+  if(cs.size) add+=`<defs>${[...cs].map(c=>`<marker id="en${c.slice(1)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${c}"/></marker>`).join('')}</defs>`;
+  svg=svg.replace(/<\/svg>$/,add+'</svg>');
+  // 小さく なりすぎないように（文字が 読めるように）横スクロールに する
+  const m=svg.match(/viewBox="0 0 ([\d.]+) /), W=m?+m[1]:400;
+  return `<div class="scroll" data-sk="${o.sk||'staff'}"><div style="min-width:${Math.round(W*0.66)}px">${svg}</div></div>`;
+}
+
+/* ===== ① 減七の 読みかえ ===== */
+// いま 見せる 読みかた（つくりかたの とちゅうは アニメの 読みかた）
+function view(){
+  const rs=readingsOf(state.keyIdx), A=state.anim;
+  // 鳴らしおわった あと（state.res>0）は、鳴らした 読みかたの 解決を そのまま 見せる
+  const ri=state.res>0?rs.findIndex(r=>r.key.tpc===state.resT):-1;
+  const si=A?A.i:state.play?state.play.i:ri>=0?ri:rs.findIndex(r=>r.given);
+  const res=A?A.stage:state.play?state.play.stage:ri>=0?Math.min(state.res,stagesOf(rs[ri]).length-1):0;
+  return {rs,si,r:rs[si],res};
+}
+function famButtons(){
+  return `<div class="fams">`+DIM_FAMS.map((ns,i)=>`<button class="fbtn ${i===state.fam?'on':''}" data-act="fam" data-v="${i}" aria-pressed="${i===state.fam}"><span class="num">${ABC[i]}の家族</span><span class="nm">${PA.namesH(ns.map(([l,a])=>({letter:l,acc:a})))}</span></button>`).join('')+`</div>`;
+}
+function staticMsg(r){
+  const key=r.key, t=tonicOf(key), root=PA.at(key.harm,4);
+  let m=`<b>${PA.keyName(key)}</b>として 読むと、${q(r.lt)}が <b class="up">導音</b>。導音は 半音上の${q(t)}へ すすむから、行き先は <b>${PA.keyName(key)}</b>。`;
+  m+=`<br>減七は Ⅴ9 から 根音を はぶいた 和音。${PA.keyName(key)}なら、かくれた 根音は${q(root)}だよ。`;
+  if(r.ninthInBass) m+=`<br>※ この 読みかたは、第9音${q(r.spelling[0])}が いちばん下に なる 形。ふつうは あまり 使わない 形だけれど、おなじ けんばんで くらべるために 鳴らしているよ。${I64H} → Ⅴ → Ⅰ と すすんで、さいごの Ⅰ に おちつくよ。`;
+  return m;
+}
+// 書くと 1か所だけ となりの 文字（増2度：第9音–導音）。おなじ 2つの けんばんを 主音が 短3度 上の 調の 名前で 書くと ひとつとばしの 文字（第7音–第9音）
+function aug2Msg(rs,r){
+  const b9=r.spelling.find(n=>n.tag==='b9'), lt=r.lt, up=rs.find(x=>x.key.tpc===PA.mod(r.key.tpc+3,12));
+  const s7=up&&up.spelling.find(n=>n.midi===b9.midi), n2=up&&up.spelling.find(n=>n.midi===lt.midi);
+  if(!b9||!s7||!n2) return '';
+  return `減七の 4つの 音は、けんばんの 上では おなじ 間かくで ならんでいる。でも 名前で 書くと、どこか 1か所だけ <b>となりの 文字どうし</b>に なるよ（${PA.keyName(r.key)}なら${q(b9)}と${q(lt)}）。おなじ 2つの けんばんを ${PA.keyName(up.key)}の 名前で 書くと${q(s7)}と${q(n2)}で、ほかと おなじ <b>ひとつとばしの 文字</b>。どこが「となりの 文字」に なるかが 書き方で かわるから、<b>4つの 短調の 減七</b>として 読めるんだ。`;
+}
+// おなじ けんばんで 名前が ちがう 例（名前の 種類が いちばん 多い けんばん。おなじ 数なら 上の けんばん）
+function enhExample(rs){
+  const ms=rs[0].spelling.map(n=>n.midi).sort((a,b)=>b-a);
+  let best=[];
+  ms.forEach(m=>{
+    const seen=new Set(), out=[];
+    rs.forEach(r=>{const n=r.spelling.find(x=>x.midi===m), k=PA.nm(n);if(!seen.has(k)){seen.add(k);out.push(n);}});
+    if(out.length>best.length) best=out;
+  });
+  return best;
+}
+function heroCard(){
+  const {rs,si,r,res}=view(), A=state.anim, ex=enhExample(rs);
+  const ms=rs[0].spelling.map(n=>n.midi).sort((a,b)=>b-a);
+  let h=`<section class="card hero"><h2>① 減七の 読みかえ<small>${ABC[state.fam]}の家族を、4つの 調の 減七として 書きわけると…</small></h2>
+    <div class="rule">同じ けんばん、ちがう 名前、ちがう 行き先</div>
+    <p class="note" style="color:var(--ink)">${ex.map(q).join('と')}のように、<b>おなじ けんばんで 名前が ちがう 音</b>を「異名同音」と いうよ。${aug2Msg(rs,r)}</p>`;
+  h+=`<table class="rt"><thead><tr>`+rs.map((x,i)=>`<th><button class="rk ${i===si?'on':''}" style="--rc:${RCOL[i]}" data-act="pick" data-v="${x.key.idx}" aria-pressed="${i===si}">${PA.keyName(x.key)}<small>${PA.keyEn(x.key)}</small></button></th>`).join('')+`</tr></thead><tbody>`;
+  ms.forEach(m=>{
+    h+='<tr>'+rs.map((x,i)=>{const n=x.spelling.find(y=>y.midi===m);return `<td style="--rc:${RCOL[i]}" class="${i===si?'on':''} ${n.tag==='lt'?'lt':''}">${PA.nmH(n)}</td>`;}).join('')+'</tr>';
+  });
+  h+='<tr>'+rs.map((x,i)=>`<td class="dest" style="--rc:${RCOL[i]}">→ ${PA.nmH(tonicOf(x.key))}${x.next?'<sup>※</sup>':''}<small>${resLabel(x)}${x.next?' → Ⅴ → Ⅰ':''}</small></td>`).join('')+'</tr>';
+  const pi=state.play?state.play.i:-1;
+  h+='<tr>'+rs.map((x,i)=>`<td class="pl"><button class="pbtn ${i===pi?'on':''}" style="--rc:${RCOL[i]}" data-act="rplay" data-v="${x.key.idx}" aria-label="${PA.keyName(x.key)}として Ⅰへ すすむ ところを きく">▶ きく</button></td>`).join('')+'</tr>';
+  h+=`</tbody></table>
+    <div class="legend"><span>よこに ならんだ 4つ＝おなじ けんばん</span><span class="up"><b>赤＝導音</b>（半音上の 主音へ）</span>${rs.some(x=>x.next)?'<span>※＝第9音が いちばん下の 形</span>':''}</div>
+    <div class="msg" style="margin-top:10px">${A?A.msg:state.autoWait?'👆 どこかを タッチすると <b>4つの 行き先</b>めぐりが はじまるよ':staticMsg(r)}</div>
+  </section>`;
+  return h;
+}
+function kbCard(){
+  const {si,r,res}=view(), rc=RCOL[si], mk=new Map();
+  let cap;
+  if(res===0){
+    r.spelling.forEach(n=>mk.set(n.midi,{fill:n.tag==='lt'?LT:NIGHT,label:PA.nm(n),focus:true,sub:n.tag==='lt'?'導音':'',subColor:LT}));
+    cap=`${PA.keyName(r.key)}の 名前で 書いた 減七。けんばんは どの 読みかたでも おなじ`;
+  }else if(res===1||res===3){
+    const t=PA.mod(r.key.tpc,12), ns=res===1?r.resolution:r.fin;
+    ns.forEach(n=>mk.set(n.midi,{fill:rc,label:PA.nm(n),focus:true,sub:PA.mod(n.midi,12)===t?'主音':'',subColor:rc}));
+    cap=res===3?`${PA.keyName(r.key)}の Ⅰ（ここで おちつく）`:r.next?`${PA.keyName(r.key)}の ${resLabel(r)}（このあと Ⅴ → Ⅰ）`:`${PA.keyName(r.key)}の ${resLabel(r)}（おちついた 和音）`;
+  }else{
+    r.next.forEach(n=>mk.set(n.midi,{fill:n.tag==='lt'?LT:VCOL,label:PA.nm(n),focus:true}));
+    cap=`${PA.keyName(r.key)}の Ⅴ（このあと Ⅰ）`;
+  }
+  return `<section class="card"><h2>🎹 けんばん<small>${cap}　さわると 音が出るよ</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(DIM_RANGE[0],DIM_RANGE[1],mk)}</div></section>`;
+}
+function staffCard(){
+  const {si,r,res}=view(), rc=RCOL[si], key=r.key;
+  const op=i=>state.anim||state.play||res>0?(i===res?1:.4):1;
+  // 和音記号：減七（＝Ⅴ9 の 根音省略。Ⅴの家族の ページと おなじ よびかた）
+  const cols=[{notes:r.spelling,color:NIGHT,label:'減七',op:op(0)},{notes:r.resolution,color:rc,label:resLabel(r,true),op:op(1)}];
+  if(r.next) cols.push({notes:r.next,color:VCOL,label:'Ⅴ',op:op(2)},{notes:r.fin,color:rc,label:'Ⅰ',op:op(3)});
+  const arrows=r.spelling.map((n,i)=>{
+    const to=r.resolution[i];
+    if(n.tag==='lt') return {c1:0,n1:n,c2:1,n2:to,color:LT,text:'半音↑'};
+    if(n.tag==='seventh'||n.tag==='b9') return {c1:0,n1:n,c2:1,n2:to,color:NIGHT};
+    return {c1:0,n1:n,c2:1,n2:to,color:GHOST,dash:'4 4'};
+  });
+  const sev=r.spelling.find(n=>n.tag==='seventh'), b9=r.spelling.find(n=>n.tag==='b9');
+  return `<section class="card"><h2>🎼 がくふ<small>${PA.keyName(key)}の 調号で 書くと（${H.symbol(key,'vii7')} → ${resLabel(r)}${r.next?' → Ⅴ → Ⅰ':''}）</small></h2>
+    ${staff(key,cols,arrows,{sk:'staff',cw:r.next?90:120})}
+    <p class="note"><b class="up">導音${q(r.lt)}は 半音上へ</b>（主音へ）、<b style="color:${NIGHT}">第7音${q(sev)}・第9音${q(b9)}は 下へ</b>。調号も 臨時記号も 読みかたごとに かわるけれど、けんばんは おなじ だよ。${r.next?`<br>※ この 読みかたは 第9音が いちばん下の 形（ふつうは あまり 使わない）。${I64H} では まだ おちつかなくて、Ⅴ を とおって さいごの Ⅰ に おちつくよ。`:''}</p>
+  </section>`;
+}
+function quizCard(){
+  const Q=state.quiz, rs=readingsOf(state.keyIdx);
+  let h=`<section class="card"><h2>🎲 どこへ 行った？<small>減七の あとに 鳴る 和音を 聴いて、行き先の 調を あてよう</small></h2>`;
+  if(state.qN) h+=`<p class="note score" style="margin-top:0">${state.qOk} / ${state.qN} もん せいかい</p>`;
+  if(!Q) return h+`<div class="ab one"><button class="btn night" data-act="qnext">🎲 もんだいを 出す</button></div></section>`;
+  h+=`<div class="ab one"><button class="btn" data-act="qplay">▶️ もういちど きく</button></div>`;
+  // 答えは 主音の 高さ（tpc）で おぼえる：おなじ 家族の 中で 調を かえても（嬰ニ短調⇔変ホ短調）、おなじ 答えの まま
+  h+=`<p class="askline">どの 調へ 行った？</p><div class="choices">`+rs.map(x=>{
+    const t=x.key.tpc, cls=Q.pick==null?'':t===Q.ans?'right':t===Q.pick?'wrong':'';
+    return `<button class="choice ${cls}" data-act="qchoose" data-v="${t}" ${Q.pick!=null?'aria-disabled="true"':''}>${PA.keyName(x.key)}<small>${PA.keyEn(x.key)}</small></button>`;
+  }).join('')+`</div>`;
+  const r=rs.find(x=>x.key.tpc===Q.ans);
+  if(Q.pick!=null&&r){
+    const ok=Q.pick===Q.ans;
+    h+=`<div class="fb ${ok?'good':'bad'}" role="status" style="margin-top:10px">${ok?'🎉 そのとおり！':'🤔 おしい！'} 行き先は <b>${PA.keyName(r.key)}</b>。${PA.keyName(r.key)}の 読みかたでは${q(r.lt)}が 導音で、${q(tonicOf(r.key))}へ すすんだね。</div>
+      <div class="ab"><button class="btn" data-act="pick" data-v="${r.key.idx}">👀 この 読みかたを 見る</button><button class="btn night" data-act="qnext">🎲 つぎの もんだい</button></div>`;
+  }
+  return h+`</section>`;
+}
+
+/* ===== ② ドイツの6 と Ⅴ7/♭Ⅱ（PA.henka.ger6Vs7） ===== */
+// ② の 和音：aug6.html と おなじ 高さ（PA.chroma の まま。ger6Vs7 の ベースの オクターブ下げ bassShift は もどす。
+//   ♭Ⅱ の ベースは aug6.html と おなじく 5度下）。♭6 が けんばんの ふつうで ない 名前（変ホ短調の ド♭）の ときは、aug6.html と
+//   おなじく Ⅴ7 と ♭Ⅱ を ぜんぶ けんばんの ふつうの 名前で 書く（重変を さける）
+function gerSet(key){
+  const g=H.ger6Vs7(key), sh=-g.bassShift, up=ns=>ns.map((n,i)=>i?n:{...n,midi:n.midi+sh});
+  const ger=up(g.ger), gerRes=g.gerRes.map(up);
+  let v7=up(g.v7), v7Res=g.v7Res.map((n,i)=>i?n:{...n,midi:ger[0].midi-7});
+  const plain=oddName(ger[0]);
+  if(plain){
+    const rt=plainOf(ger[0]), rpc=PA.NAT[rt.letter]+rt.acc;
+    const nt=(dl,dp,n)=>{const L=(rt.letter+dl)%7;return {...n,letter:L,acc:PA.spell(L,rpc+dp)};};
+    v7=[nt(0,0,v7[0]),nt(2,4,v7[1]),nt(4,7,v7[2]),nt(6,10,v7[3])];
+    v7Res=[nt(3,5,v7Res[0]),nt(3,5,v7Res[1]),nt(3,5,v7Res[2]),nt(5,9,v7Res[3])];
+  }
+  return {ger,gerRes,v7,v7Res,diff:g.diff,plain,v7Name:H.chordName(v7[0],'7'),bII:H.chordName(v7Res[0],'')};
+}
+const sameName=(a,b)=>a.letter===b.letter&&a.acc===b.acc;
+function gerCard(){
+  const key=curKey(), g=gerSet(key), d=g.diff, gn=g.ger[d], vn=g.v7[d];
+  const [i64,V]=g.gerRes, {v7Name,bII}=g;
+  // けんばんの ふつうで ない 名前（ファ♭・ド♭ など）は、どの けんばんか そえる
+  const odds=[];[...g.v7,g.v7Res[0]].forEach(n=>{if(oddName(n)&&!odds.some(o=>sameName(o,n))) odds.push(n);});
+  const all=[g.ger,i64,V,g.v7,g.v7Res], [lo,hi]=kbRange(all), G=state.g;
+  // けんばん
+  let mk=new Map(), cap;
+  if(G){
+    const s=G.steps[G.i];
+    s.notes.forEach(n=>mk.set(n.midi,{fill:n.tag==='lt'?LT:n.tag==='low'?LOW:s.color,label:PA.nm(n),focus:true}));
+    cap=s.cap;
+  }else{
+    g.ger.forEach((n,i)=>mk.set(n.midi,{fill:i===d?LT:GER,label:PA.nm(n),focus:true,sub:sameName(n,g.v7[i])?'':PA.Svg(PA.nm(g.v7[i])),subColor:V7C}));
+    cap=g.plain?`むらさき＝ドイツの6。けんばんの 下の 字は、${v7Name} での 名前`:`むらさき＝ドイツの6。赤い けんばんの 下の 字は、${v7Name} での 名前`;
+  }
+  const how=g.plain?`<b style="color:${GER}">ドイツの6</b> を けんばんの ふつうの 名前（${namesC(g.v7)}）で 書きかえると`:`<b style="color:${GER}">ドイツの6</b> の${q(gn)}を${q(vn)}と 書きかえると`;
+  let h=`<section class="card" id="ger"><h2>② ドイツの6 と Ⅴ7/♭Ⅱ<small>${PA.keyName(key)}で。同じ けんばん、ちがう 名前、ちがう 行き先</small></h2>
+    <p class="note" style="margin-top:0;color:var(--ink)">${PA.keyName(key)}の ${how}、<b style="color:${V7C}">${v7Name}</b>（♭Ⅱ＝${bII} の ための Ⅴ7）と まったく おなじ けんばん。耳で 聴くと まったく おなじ 和音だね。でも 名前が ちがうと、すすむ 方向が ぎゃくに なるよ。</p>
+    <div class="vs">
+      <div style="--c:${GER}"><h3>ドイツの6</h3><div class="ns">${namesC(g.ger)}</div>
+        <p class="to">${q(gn)}（Ⅴへの 導音）は <b>半音上へ</b> → ${I64H} → <b>Ⅴ</b></p>
+        <button class="btn small" data-act="gplay" data-v="ger">🔊 ドイツの6 → Ⅴ</button></div>
+      <div style="--c:${V7C}"><h3>${v7Name}（Ⅴ7/♭Ⅱ）</h3><div class="ns">${g.v7.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}</div>
+        <p class="to">${q(vn)}（第7音）は <b>半音下へ</b> → <b>${bII}</b>（♭Ⅱ）</p>
+        <button class="btn small" data-act="gplay" data-v="v7">🔊 ${v7Name} → ${bII}</button></div>
+    </div>
+    ${odds.length?`<p class="note">${odds.map(n=>`${q(n)}は${q(plainOf(n))}`).join('、')}の けんばん だよ。</p>`:''}
+    <div class="scroll" data-sk="gkb" style="margin-top:8px">${PA.kbSVG(lo,hi,mk)}</div>
+    <p class="note" style="margin-top:2px">${cap}　さわると 音が出るよ</p>
+    ${staff(key,[{notes:g.ger,color:GER,label:'ドイツ'},{notes:i64,color:ICOL,label:I64S},{notes:V,color:VCOL,label:'Ⅴ'}],
+      [{c1:0,n1:gn,c2:1,n2:i64[d],color:LT,text:'半音↑'},{c1:0,n1:g.ger[0],c2:1,n2:i64[0],color:LOW,text:'半音↓'}],{sk:'g1',cw:100})}
+    ${staff(key,[{notes:g.v7,color:V7C,label:'Ⅴ7/♭Ⅱ'},{notes:g.v7Res,color:V7C,label:'♭Ⅱ'}],
+      [{c1:0,n1:vn,c2:1,n2:g.v7Res[d],color:V7C,text:'半音↓'},{c1:0,n1:g.v7[1],c2:1,n2:g.v7Res[1],color:LT,text:'半音↑',dy:-14}],{sk:'g2',cw:110})}
+    <p class="note">${q(g.v7[1])}と${q(g.v7[2])}は どちらも ♭Ⅱ の 根音${q(g.v7Res[1])}へ すすむので、${bII} では 2つの 声が おなじ 音に なるよ（2つの 声が 5度の はばの まま いっしょに 動くのを さけるため）。ドイツの6 も おなじ わけで、${I64H} を とおってから Ⅴ へ 行くのが ふつう。</p>
+  </section>`;
+  return h;
+}
+function linksCard(){
+  return `<section class="card"><h2>🔗 つながる アプリ</h2><div class="links">
+    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族 <small>Ⅴ9 の 根音を はぶくと 減七（3つの家族）</small></button>
+    <button class="btn" data-act="go" data-v="aug6">↔️ 増六の和音 <small>イタリア・フランス・ドイツの6</small></button>
+    <button class="btn" data-act="go" data-v="dim-halfdim">⚖️ 減七と 半減七 <small>ちがうのは 第7音だけ</small></button>
+  </div></section>`;
+}
+
+// 📖 ことばメモ：本や 楽譜で 見かける 名前を、やさしい ことばで（いまの 調の 音を れいに）。よみかたは 小さく
+function termsHTML(){
+  const {rs,r}=view(), ex=enhExample(rs), b9=r.spelling.find(n=>n.tag==='b9');
+  return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary><dl>
+    <dt>異名同音<span class="yomi">（いめい どうおん）</span></dt>
+      <dd>名前（書き方）は ちがうけれど、けんばんは おなじ 音（${ex.map(q).join('と')} など）。調にも あって、嬰ヘ長調と 変ト長調は おなじ けんばんの 調。</dd>
+    <dt>転調<span class="yomi">（てんちょう）</span></dt>
+      <dd>曲の とちゅうで べつの 調へ うつる こと。この ページの ① ② は、音の 名前を 書きかえて うつる やりかた（本では「異名同音的転調<span class="yomi">（いめいどうおんてき てんちょう）</span>」と 書く）。1つの 減七は、書き方を かえると 4つの 短調の Ⅶ7 に なる（${ABC[state.fam]}の家族なら ${rs.map(x=>PA.keyName(x.key)).join('・')}）ので、遠い 調へも いっきに 行けるよ。おなじ 主音の 長調の ○Ⅶ7（準固有和音）と 読めば、長調へも 行ける。</dd>
+    <dt>解決<span class="yomi">（かいけつ）</span></dt>
+      <dd>ドキドキする 和音が、おちつく 和音（Ⅰ など）へ すすむ こと。この ページの「Ⅰへ すすむ」の こと。</dd>
+    <dt>増2度<span class="yomi">（ぞう 2ど）</span></dt>
+      <dd>となりの 文字どうしなのに、けんばんでは ひとつとばしの 文字と おなじ はばに なる 2つの 音。いまの 読みかたでは${q(b9)}と${q(r.lt)}。</dd>
+  </dl></details>`;
+}
+
+/* ===== 画面 ===== */
+let lastActions='';
+function render(){
+  const key=curKey(), A=state.anim;
+  let h=`<div class="stack">
+    <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">減七は 3つの 家族だけ</span></div>
+    ${famButtons()}
+    ${heroCard()}
+    ${kbCard()}
+    ${staffCard()}
+    ${quizCard()}
+    ${gerCard()}
+    ${linksCard()}
+    ${termsHTML()}`;
+  // この 画面に 出てくる 記号だけ 説明する
+  const ds=h.includes('class="ds"'), df=h.includes('class="df"');
+  h+=`<p class="note">※ 音の 高さは ふつうの ピアノと おなじです。${ds?'<span class="ds">x</span> は ダブルシャープ'+(df?'、':'の 楽譜での 書き方です。'):''}${df?'<span class="df" style="letter-spacing:-.12em">♭♭</span> は ダブルフラットの 楽譜での 書き方です。':''}</p>
+  </div>`;
+  PA.paint(document.getElementById('view'),h,state.keyIdx+':'+state.fam);
+  // 光る けんばんが 見えるように：鳴らしている ほうの けんばんだけ うごかす（もう 一方は 手で うごかした 位置の まま）
+  const box=sk=>{const b=document.querySelector(`[data-sk="${sk}"]`);return b&&b.parentElement;};
+  if(A||state.play){const b=box('kb');if(b) PA.follow(b);}
+  if(state.g){const b=document.getElementById('ger');if(b) PA.follow(b);}
+  const acts=(A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="tour">🔀 4つの調</button>`)+
+    `<button class="btn" data-act="play">🔊 減七</button><button class="btn primary" data-act="resolve">➡️ Ⅰへ すすむ</button>`;
+  if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
+}
+
+/* ===== 音・アニメ ===== */
+let token=0;
+function stop(){token++;state.anim=null;state.autoWait=false;state.play=null;state.g=null;PA.stopSound();}
+const midis=ns=>[...new Set(ns.map(n=>n.midi))];
+// 読みかた r を 鳴らす：減七 → 解決（→ Ⅴ → Ⅰ）。i＝表の 列。おわったら 解決の 和音を 出した まま
+async function playReading(i){
+  stop(); const my=token;
+  const rs=readingsOf(state.keyIdx), r=rs[i]; if(!r) return;
+  state.res=0;
+  const seq=stagesOf(r);
+  for(let s=0;s<seq.length;s++){
+    state.play={i,stage:s}; render();
+    PA.chord(midis(seq[s]),{dur:s===seq.length-1?2.2:1.4});
+    await PA.sleep(1300); if(my!==token) return;
+  }
+  await PA.sleep(900); if(my!==token) return;
+  state.play=null; state.res=seq.length-1; state.resT=r.key.tpc; render();
+}
+async function runTour(){
+  stop(); const my=token, alive=()=>my===token;
+  const rs=readingsOf(state.keyIdx), A={i:0,stage:0,msg:''}; state.anim=A; state.res=0; state.quiz=null;
+  const upd=m=>{if(m!==undefined)A.msg=m;render();};
+  const wait=async ms=>{await PA.sleep(ms);return alive();};
+  upd(`<b>${ABC[state.fam]}の家族</b>の 減七を、4つの 調の 名前で 書いて、それぞれ Ⅰへ すすめてみよう。<b>けんばんは ずっと おなじ</b> だよ。`);
+  PA.chord(midis(rs[0].spelling),{dur:1.6});
+  if(!await wait(2000)) return;
+  for(let i=0;i<rs.length;i++){
+    const r=rs[i], kn=PA.keyName(r.key);
+    A.i=i; A.stage=0;
+    upd(`<b>${i+1}.</b> <b style="color:${RCOL[i]}">${kn}</b>として 読むと <b class="big">${namesC(r.spelling)}</b><br>導音は${q(r.lt)}。`);
+    PA.chord(midis(r.spelling),{dur:1.5});
+    if(!await wait(1700)) return;
+    A.stage=1;
+    if(!r.next) upd(`<b>${i+1}.</b> 導音${q(r.lt)}→${q(tonicOf(r.key))}。<b style="color:${RCOL[i]}">${kn}</b>の ${resLabel(r)} に おちついた！`);
+    else upd(`<b>${i+1}.</b> 導音${q(r.lt)}→${q(tonicOf(r.key))}。※ 第9音が いちばん下の 形なので、<b style="color:${RCOL[i]}">${kn}</b>の ${I64H} → Ⅴ → Ⅰ と すすむよ。`);
+    PA.chord(midis(r.resolution),{dur:r.next?1.4:1.9});
+    if(!await wait(r.next?1300:2000)) return;
+    if(r.next){
+      A.stage=2;render();PA.chord(midis(r.next),{dur:1.4});if(!await wait(1300)) return;
+      A.stage=3;upd(`<b>${i+1}.</b> <b style="color:${RCOL[i]}">${kn}</b>の Ⅰ に おちついた！`);PA.chord(midis(r.fin),{dur:1.9});if(!await wait(2000)) return;
+    }
+  }
+  A.i=rs.findIndex(r=>r.given); A.stage=0;
+  upd(`🎉 おなじ けんばんの 減七から、<b>${rs.map((r,i)=>`<span style="color:${RCOL[i]}">${PA.keyName(r.key)}</span>`).join('・')}</b> の 4つの 調へ 行けたね！<br>名前（書き方）を かえると、行き先が かわる。これが「異名同音の 読みかえ」。`);
+  if(!await wait(3800)) return;
+  state.anim=null; render();
+}
+async function playResolve(){
+  const rs=readingsOf(state.keyIdx); playReading(rs.findIndex(r=>r.given));
+}
+// ② の 和音を じゅんに 鳴らす
+async function playGer(which){
+  stop(); const my=token;
+  const key=curKey(), g=gerSet(key), {v7Name,bII}=g;
+  const steps=which==='ger'
+    ?[{notes:g.ger,color:GER,cap:'ドイツの6'},{notes:g.gerRes[0],color:ICOL,cap:`${I64H}（Ⅰの 第2転回形）`},{notes:g.gerRes[1],color:VCOL,cap:'Ⅴ'}]
+    :[{notes:g.v7,color:V7C,cap:`${v7Name}（♭Ⅱ の ための Ⅴ7）`},{notes:g.v7Res,color:V7C,cap:`${bII}（♭Ⅱ）`}];
+  for(let i=0;i<steps.length;i++){
+    state.g={steps,i}; render();
+    PA.chord(midis(steps[i].notes),{dur:i===steps.length-1?2.2:1.4});
+    await PA.sleep(1300); if(my!==token) return;
+  }
+  await PA.sleep(900); if(my!==token) return;
+  state.g=null; render();
+}
+// どこへ 行った？：減七 → 解決（けんばんには 出さない）
+function quizPlay(){
+  const Q=state.quiz; if(!Q) return;
+  stop(); render(); const my=token;
+  const r=readingsOf(state.keyIdx).find(x=>x.key.tpc===Q.ans); if(!r) return;
+  const seq=stagesOf(r);
+  seq.forEach((ns,s)=>setTimeout(()=>{if(my===token)PA.chord(midis(ns),{dur:s===seq.length-1?2.2:1.4});},s*1300));
+}
+const dimMidis=()=>midis(view().r.spelling);
+function pickKey(idx,sound=true){
+  stop(); state.keyIdx=idx; state.fam=famOf(idx); state.res=0; save(); render();
+  if(sound) PA.chord(dimMidis());
+}
+
+/* ===== 操作 ===== */
+PA.mountBar({title:'異名同音の 読みかえ',app:'enharmonic'});
+PA.onSettings=render;
+PA.onPageShow=()=>{stop();render();};
+PA.onStopDown=stop;
+PA.onStopCancel=render; // ⏹ を おしたのに click が 来なかったとき 画面を もどす
+PA.onKeySheet=()=>PA.openKeySheet({minor:true,idx:state.keyIdx,onPick:(minor,idx)=>{
+  if(Number.isInteger(idx)&&idx>=0&&idx<NK){if(famOf(idx)!==state.fam) state.quiz=null; pickKey(idx);}
+}});
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  const a=el.dataset.act, v=el.dataset.v, n=+v;
+  if(a==='fam'){
+    if(![0,1,2].includes(n)) return;
+    if(n===state.fam){stop();render();PA.chord(dimMidis());return;}
+    state.quiz=null; pickKey(easiestIn(n));
+  }
+  else if(a==='pick'){if(Number.isInteger(n)&&n>=0&&n<NK&&famOf(n)===state.fam) pickKey(n);}
+  else if(a==='rplay'){ // その 列の 読みかたを 鳴らすだけ（調は かえない）
+    const i=readingsOf(state.keyIdx).findIndex(r=>r.key.idx===n);
+    if(i>=0) playReading(i);
+  }
+  else if(a==='play'){
+    if(state.anim){PA.chord(dimMidis(),{dur:2});return;} // アニメ中は とめずに 鳴らす
+    stop(); state.res=0; render(); PA.chord(dimMidis(),{dur:2});
+  }
+  else if(a==='resolve'){playResolve();}
+  else if(a==='tour'){runTour();}
+  else if(a==='stop'){stop();render();}
+  else if(a==='gplay'){if(v==='ger'||v==='v7') playGer(v);}
+  else if(a==='qnext'){
+    const rs=readingsOf(state.keyIdx), prev=state.quiz&&state.quiz.ans;
+    let ans; do{ans=rs[Math.floor(Math.random()*rs.length)].key.tpc;}while(ans===prev&&rs.length>1);
+    state.quiz={ans,pick:null}; quizPlay();
+  }
+  else if(a==='qplay'){quizPlay();}
+  else if(a==='qchoose'){
+    const Q=state.quiz; if(!Q||Q.pick!=null) return;
+    if(!readingsOf(state.keyIdx).some(r=>r.key.tpc===n)) return;
+    stop(); Q.pick=n; state.qN++; if(n===Q.ans) state.qOk++; render();
+  }
+  else if(a==='go'){
+    stop(); render();
+    if(v==='minor-family'){PA.store.set('minor-family',{keyIdx:state.keyIdx,fam:'DIM'});PA.go('minor-family.html');}
+    else if(v==='aug6'){PA.store.set('aug6',{minor:true,keyIdx:state.keyIdx,type:'ger'});PA.go('aug6.html');}
+    else if(v==='dim-halfdim'){const p=PA.store.get('dim-halfdim',{});PA.store.set('dim-halfdim',{...(p&&typeof p==='object'?p:{}),minor:true,keyIdx:state.keyIdx});PA.go('dim-halfdim.html');}
+  }
+});
+render();
+// ほかのアプリから「4つの 行き先」を 見に 来たとき：音が 出せるように なってから はじめる
+// （音が とまっている あいだに 音を よやくすると、あとで いっぺんに 鳴ってしまう）
+if(PA.store.get('enharmonic-auto',false)) (async()=>{
+  PA.store.set('enharmonic-auto',false);
+  const t0=token; // まっている あいだに ほかの 操作を したら やめる
+  if(PA.settings.sound){
+    PA.audio();
+    for(let i=0;i<5&&!PA.audioRunning();i++) await PA.sleep(30);
+  }
+  if(token!==t0) return;
+  if(!PA.settings.sound||!PA.audio()||PA.audioRunning()){runTour();return;} // 音が 出せない ブラウザでは 待たずに はじめる
+  state.autoWait=true; render();
+  const EV=['pointerup','touchend','keydown'];
+  let busy=false;
+  const off=()=>EV.forEach(t=>document.removeEventListener(t,go,true));
+  async function go(e){
+    if(!state.autoWait){off();return;}
+    // ボタン・リンク・シート・けんばんは それぞれの 操作に まかせる
+    const t=e&&e.target;
+    if(t&&t.closest&&t.closest('button,a,dialog,summary,.appbar,[data-act],[data-pa],[data-m]')) return;
+    if(busy) return; busy=true;
+    PA.audio();
+    for(let i=0;i<15&&PA.settings.sound&&!PA.audioRunning();i++) await PA.sleep(30);
+    busy=false;
+    if(!state.autoWait){off();return;}
+    if(PA.settings.sound&&PA.audio()&&!PA.audioRunning()) return; // まだ 音が 出せない：つぎの タッチを まつ
+    off(); runTour();
+  }
+  EV.forEach(t=>document.addEventListener(t,go,true));
+})();
+</script>
+</body>
+</html>

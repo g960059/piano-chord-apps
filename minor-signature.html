@@ -50,6 +50,12 @@
   .khead,.krow{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,1.4fr)}
   .kname b{font-size:16px}
 }
+/* 📖 ことばメモ（本や 楽譜で 見かける 名前。ふだんは とじておく） */
+.terms dl{margin:0}
+.terms dt{font-weight:800;margin:12px 0 2px}
+.terms dt:first-child{margin-top:2px}
+.terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
+.terms .yomi{font-weight:400;font-size:12px;color:var(--sub)}
 </style>
 </head>
 <body>
@@ -92,13 +98,36 @@ function ltKeyboard(key){
   marks.set(ton,{fill:'#3b4fa8',label:PA.nm(key.nat[0]),focus:true});
   return PA.kbSVG(whiteDown(lt-5),whiteUp(ton+4),marks);
 }
+// 📖 ことばメモ：本や 楽譜で 見かける 名前を、やさしい ことばで（いまの 調の 音を れいに）。よみかたは 小さく
+function termsHTML(key){
+  const rel=key.rel, par=key.par, pi=PA.MAJOR_KEYS.findIndex(([l,a])=>l===par.l&&a===par.a);
+  // おなじ 主音の 長調が 調の リストに ない（嬰ハ・嬰ト・嬰ニ長調）ときは、おなじ けんばんの 長調の 名前を そえる
+  // 嬰ハ長調は ♯7つの ほんとうの 調。嬰ト・嬰ニ長調は 調号に x が いる 調
+  const ei=PA.MAJOR_KEYS.findIndex(([l,a])=>PA.mod(PA.NAT[l]+a,12)===par.tpc), eq=ei>=0?PA.majorKey(ei):null;
+  const parDbl=par.scale.some(n=>Math.abs(n.acc)>1), parN=par.scale.filter(n=>n.acc>0).length;
+  const parTxt=pi>=0?`${PA.keyName(par)}（${PA.sigLabel(PA.majorKey(pi))}）`
+    :parDbl?`${PA.keyName(par)}（調号に ${PA.H('𝄪')} が いるので、ふつうは おなじ けんばんの ${PA.keyName(eq)}で 書く）`
+    :`${PA.keyName(par)}（♯${parN}つ。おなじ けんばんの ${PA.keyName(eq)}（${PA.sigLabel(eq)}）で 書くことも 多い）`;
+  const si=PA.sigInfo(key), mine=new Set(si.letters);
+  const ord=(acc,ls)=>ls.map(L=>{const t=PA.nmH({letter:L,acc});return si.type===acc&&mine.has(L)?`<b style="color:var(--night)">${t}</b>`:t;}).join('・');
+  return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary><dl>
+    <dt>平行調<span class="yomi">（へいこうちょう）</span></dt>
+      <dd>調号が おなじ 長調と 短調の ペア（${PA.keyName(key)}と ${PA.keyName(rel)}）。短調の 主音は、長調の 音階の 6ばんめ。</dd>
+    <dt>同主調<span class="yomi">（どうしゅちょう）</span></dt>
+      <dd>主音が おなじ 長調と 短調の ペア。${PA.keyName(key)}（${PA.sigLabel(key)}）と 主音が おなじ 長調は ${parTxt}。短調の 調号は、主音が おなじ 長調から ♯を 3つ へらした 形（♯が たりない ぶんは ♭を ふやす。ニ長調 ♯2つ → ニ短調 ♭1つ）。</dd>
+    <dt>臨時記号<span class="yomi">（りんじきごう）</span></dt>
+      <dd>楽譜の とちゅうで、音符の すぐ前に つける ♯・♭・♮・${PA.H('𝄪')}・${PA.H('𝄫')}。その 小節の 中だけ、おなじ 線・間の 音に きく（つぎの 小節では 調号の とおりに もどる）。調号は 曲 ぜんぶに きく。</dd>
+    <dt>調号の 順番<span class="yomi">（ちょうごう の じゅんばん）</span></dt>
+      <dd>♯は ${ord(1,PA.SHARP_ORDER)}、♭は その ぎゃくの ${ord(-1,[...PA.SHARP_ORDER].reverse())} の じゅんに、左から ふえていく。${si.letters.length?`${PA.keyName(key)}（${PA.sigLabel(key)}）は 太字の 音。`:`${PA.keyName(key)}は 調号なし。`}</dd>
+  </dl></details>`;
+}
 function render(){
   const key=curKey(), rel=key.rel, harm8=harm8Of(key);
   const demoSc=state.sigDemo?relWrongOf(key):rel.scale, demo8=demoSc.concat([PA.at(demoSc,7)]);
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}・平行調は ${PA.keyName(rel)}</span></div>
     <section class="card"><h2>${PA.keyName(key)}と ${PA.keyName(rel)}は 調号が おなじ<small>こういう 2つの調を「平行調」と いうよ</small></h2>
-      <p class="cap"><b>${PA.keyName(key)}の 和声的短音階</b>（7ばんめを 上げたもの）</p>
+      <p class="cap"><b>${PA.keyName(key)}の 音階</b>（7ばんめを 上げたもの）</p>
       <div class="scroll staffbox" data-sk="harm">${PA.staffSVG(key,harm8.map(n=>({notes:[n],color:n.raised?'#d1495b':'#3b4fa8',accColor:'#d1495b',accRing:true})),{colW:40,minW:380})}</div>
       <p class="note">赤い ${PA.H(MARK[key.ltType])} が 臨時記号。調号には 書かずに、使う音の すぐ前に 書くよ。</p>
       <p class="cap" style="margin-top:12px"><b>🎹 けんばんで 見ると</b>（さわると 音が出るよ）</p>
@@ -143,10 +172,11 @@ function render(){
   <section class="card"><h2>🔗 つぎは</h2><div class="links">
     <a class="btn" href="minor-why.html">❓ なぜ 7ばんめを 上げるの？</a>
     <a class="btn" href="minor-quiz.html">🎯 短調クイズ（臨時記号を えらぶ）</a>
-  </div></section></div>`;
+  </div></section>
+  ${termsHTML(key)}</div>`;
   PA.paint(document.getElementById('view'),h,String(state.keyIdx));
   PA.paint(document.getElementById('actions'),
-    `<button class="btn" data-act="harmplay" aria-label="${PA.keyName(key)}の 和声的短音階を きく">🎶 ${PA.keyName(key)}</button>`+
+    `<button class="btn" data-act="harmplay" aria-label="${PA.keyName(key)}の 7ばんめを 上げた 音階を きく">🎶 ${PA.keyName(key)}</button>`+
     `<button class="btn ${state.sigDemo?'warn':'night'}" data-act="sigdemo" aria-pressed="${state.sigDemo}">${state.sigDemo?'🙈 もどす':'🧪 ためす'}</button>`+
     `<button class="btn" data-act="relplay" aria-label="${state.sigDemo?`調号を かえた ${PA.keyName(key.rel)}の へんな 音階を きく`:`${PA.keyName(key.rel)}の 音階を きく`}">${state.sigDemo?'🎶 へんな音階':'🎶 '+PA.keyName(key.rel)}</button>`,'bar');
 }

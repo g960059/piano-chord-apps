@@ -1,6 +1,6 @@
 # ピアノ和音アプリ
 
-ピアノ教室の生徒（小中学生）向けに、和音を「見て・聴いて・さわって」おぼえる小さな Web アプリ集です。
+ピアノを習う人（小学生から高校生まで）向けに、和音を「見て・聴いて・さわって」おぼえる小さな Web アプリ集です。
 スマホで使いやすいように、ひとつひとつのアプリをタブなしの1画面にしています。入口は `index.html` です。
 
 ## アプリ
@@ -15,9 +15,16 @@
 | | 調号と 臨時記号 | `minor-signature.html` |
 | | Ⅴの家族（Ⅴ・Ⅴ7・Ⅴ9・減七） | `minor-family.html` |
 | | 短調クイズ | `minor-quiz.html` |
-| ドッペルドミナントと 増六 | Ⅱ7と ドッペルドミナント | `doppel.html` |
+| おわりかた（終止形） | おわりかた（完全・不完全・半・変格・偽・フリギア終止） | `ending.html` |
+| | おわりかたクイズ（聴いて／見て 当てる・4レベル） | `ending-quiz.html` |
+| 変化和音 | Ⅱ7と ドッペルドミナント | `doppel.html` |
+| | 副属和音 | `secondary.html` |
 | | 増六の和音（イタリア・フランス・ドイツの6） | `aug6.html` |
-| | ドッペル・増六クイズ | `chroma-quiz.html` |
+| | ナポリの六 | `neapolitan.html` |
+| | 準固有和音（借用和音） | `borrowed.html` |
+| | 減七と 半減七 | `dim-halfdim.html` |
+| | 異名同音の 読みかえ | `enharmonic.html` |
+| | 変化和音クイズ | `chroma-quiz.html` |
 | つかってみる | 伴奏づけ | `accompaniment.html` |
 | 耳をきたえる | 和音の 聴きわけ（10種類・8レベル・チャレンジ） | `ear.html` |
 | | 和音ききわけ（ランキングつきの単体アプリ） | https://waon-kikiwake.g960059.workers.dev/ （[g960059/waon-kikiwake](https://github.com/g960059/waon-kikiwake)） |

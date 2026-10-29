@@ -17,7 +17,7 @@
 .scard{border-radius:14px;padding:6px 2px;background:var(--l);color:var(--c);border:3px solid var(--c);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:72px;min-width:0}
 .scard .num{font-size:24px;font-weight:800;line-height:1.15}
 .scard .nm{font-size:11.5px;font-weight:700;line-height:1.3;text-align:center;display:flex;flex-direction:column-reverse;align-items:center} /* 1音1行。がくふと おなじく 下が ひくい音 */
-.scard .nm span{display:block;white-space:nowrap}
+.scard .nm>span{display:block;white-space:nowrap} /* 𝄪 の span は 1行に */
 .scard.on{background:var(--c);color:#fff;transform:translateY(-3px);box-shadow:0 4px 10px rgba(40,30,50,.15)}
 .hero{border-top:6px solid var(--c)}
 .hero-top{display:flex;gap:12px;align-items:center}
@@ -44,6 +44,14 @@
 }
 .more ul{margin:0;padding-left:1.3em}
 .more li{margin:6px 0}
+/* 📖 ことばメモ（くわしく 知りたい人むけ。ふだんは とじておく） */
+.terms dl{margin:0}
+.terms dt{font-weight:800;margin:12px 0 2px}
+.terms dt:first-child{margin-top:2px}
+.terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
+.terms dd ul{margin:4px 0 0}
+.terms dd li{margin:4px 0}
+.terms rt{font-weight:400;font-size:.6em;color:var(--sub)}
 @media (min-width:600px){
   .seq{gap:8px}
   .scard .nm{font-size:13px}
@@ -108,6 +116,32 @@ function staffMinW(key){
   const ns=PA.sigInfo(key).letters.length, nx=50+ns*10+(ns?24:14), W=nx+SEQ.length*66+8;
   return Math.round(W*0.64);
 }
+/* 📖 ことばメモ：本や 楽譜で 見かける 名前を やさしく（いまの 調・和音の 音を れいに） */
+const yomi=(w,y)=>`<ruby>${w}<rt>${y}</rt></ruby>`; // ふりがな
+const ROOT_DEG={I:0,IV:3,V7:4};
+const ROLE={0:'根音',2:'第3音',4:'第5音',6:'第7音'};
+function termsHTML(key,data,step,form){
+  const cur=data[step], lab=LABEL[cur.ch], lo=cur.rh[0], role=ROLE[PA.mod(lo.k-ROOT_DEG[cur.ch],7)];
+  const INV={'第3音':'第1転回形','第5音':'第2転回形','第7音':'第3転回形'};
+  const dg=d=>`「${PA.nmH(PA.at(key.scale,d))}」`;
+  const rhNow=role==='根音'
+    ?`いまの ${lab} は、右手も いちばん下が 根音「${PA.nmH(lo)}」。`
+    :`いまの ${lab} の 右手だけを 見ると、いちばん下が ${role}「${PA.nmH(lo)}」なので ${INV[role]}と おなじ ならび。`;
+  return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary><dl>
+    <dt>カデンツ</dt>
+    <dd>Ⅰ で はじまって Ⅰ に もどる、和音の ひとまとまり。この ページの Ⅰ→Ⅳ→Ⅰ→Ⅴ7→Ⅰ も その ひとつ。</dd>
+    <dt>${yomi('終止','しゅうし')}（おわりかたの 名前）</dt>
+    <dd><ul>
+      <li><b>${yomi('全終止','ぜんしゅうし')}</b> … Ⅴ（Ⅴ7）→ Ⅰ。Ⅰ に もどって おわる 感じ。この ページの さいごの Ⅴ7 → Ⅰ。</li>
+      <li><b>${yomi('半終止','はんしゅうし')}</b> … Ⅴ で ひと休み。まだ つづく 感じ。</li>
+      <li><b>${yomi('変格終止','へんかくしゅうし')}</b> … Ⅳ → Ⅰ。やわらかく おわる（「アーメン」の ひびき）。</li>
+    </ul>6つの おわりかたは <a href="ending.html">🏁 おわりかた</a> で 聴けるよ。</dd>
+    <dt>${yomi('基本形','きほんけい')}・${yomi('転回形','てんかいけい')}</dt>
+    <dd>いちばん 低い音が 根音なら <b>基本形</b>。音の じゅんばんを 入れかえて、いちばん下が 第3音なら <b>第1転回形</b>、第5音なら <b>第2転回形</b>（Ⅴ7 の 第7音なら <b>第3転回形</b>）。この ページでは 左手が 根音を ひくので、🤲 なめらかな形 も 和音ぜんたいでは 基本形。${form==='inv'?rhNow+`なめらかな形の Ⅴ7 は ${dg(1)}を はぶいて いるよ。`:''}</dd>
+    <dt>${yomi('共通音','きょうつうおん')}</dt>
+    <dd>となりあう 2つの和音の どちらにも ある 音（🟡 の わく）。うごかさずに のこすと なめらかに つながる。Ⅰ と Ⅳ では ${dg(0)}、Ⅰ と Ⅴ7 では ${dg(4)}。</dd>
+  </dl></details>`;
+}
 let lastStep=-1;
 function render(){
   const key=curKey(), data=cadData(key,state.form), step=state.step, cur=data[step], col=PA.COL[cur.ch], lab=LABEL[cur.ch];
@@ -115,7 +149,7 @@ function render(){
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
     ${PA.seg('form',[['inv','🤲 なめらかな形<small>伴奏の形</small>'],['root','🧱 基本の形<small>ねもと</small>']],state.form,'full formseg')}
-    <p class="note" style="margin:-4px 2px 0">${state.form==='inv'?'ならびかたが かわっても（転回形）、つかう音は おなじ 和音の音だよ。':'基本の形は、どれも 根音（いちばん下）から ひとつとばしで つんだ形。'}</p>
+    <p class="note" style="margin:-4px 2px 0">${state.form==='inv'?'右手の 音の じゅんばんが かわっても、つかう音は おなじ 和音の音だよ。':'基本の形は、どれも 根音（いちばん下）から ひとつとばしで つんだ形。'}</p>
     <p class="seqlabel">Ⅰ → Ⅳ → Ⅰ → Ⅴ7 → Ⅰ　タップすると その和音が 鳴るよ</p>
     <div class="seq">`+data.map((d,i)=>`<button class="scard ${i===step?'on':''}" style="--c:${PA.COL[d.ch]};--l:${PA.LCOL[d.ch]}" data-act="step" data-v="${i}" aria-pressed="${i===step}" aria-label="${i+1}つめ ${LABEL[d.ch]}"><span class="num">${LABEL[d.ch]}</span><span class="nm">${notesSpan(d.rh)}</span></button>`).join('')+`</div>
     <section class="card hero" style="--c:${col}">
@@ -141,14 +175,14 @@ function render(){
   const cols=data.map((d,i)=>({notes:d.rh,lh:d.lh,color:PA.COL[d.ch],accColor:'#d1495b',op:i===step?1:0.28,label:LABEL[d.ch],labelColor:PA.COL[d.ch]}));
   h+=`<section class="card"><h2>🎼 がくふ<small>いま ひいている和音が こい色。上が右手、下が左手</small></h2>
     <div class="scroll" data-sk="staff"><div class="staffw" style="min-width:${staffMinW(key)}px">${PA.staffSVG(key,cols,{grand:true,colW:66})}</div></div></section>`;
-  h+=`<details class="more" ${state.more?'open':''}><summary>💡 カデンツの ポイント</summary><ul>
+  h+=`<details class="more" data-d="tips" ${state.more?'open':''}><summary>💡 カデンツの ポイント</summary><ul>
       <li>左手は、和音の <b>根音</b>（基本の形で いちばん下に くる音）を ひくよ。</li>
       <li><b>🤲 なめらかな形</b>：前の和音と おなじ けんばんは <b>そのまま</b>。手が あまり 動かないので、伴奏で よく つかうよ。</li>
       <li>なめらかな形の <b>Ⅴ7</b> は、「${PA.nmH(PA.at(key.scale,1))}」を はぶいて 3つで ひくことが 多いよ。</li>
       <li><b>🧱 基本の形</b>：どれも 根音から <b>ひとつとばし</b>で つんだ形。</li>
       ${key.minor?`<li><b>🌙 短調</b>の Ⅴ7 は、7ばんめの音「${PA.nmH(key.natLT)}」を <b>半音上げて</b>「${PA.nmH(key.lt)}」に する。</li>`:''}
     </ul>
-    <p style="margin:10px 0 0"><button class="btn small" data-act="howto">🐸 ${lab} の つくりかたを 見る</button></p></details></div>`;
+    <p style="margin:10px 0 0"><button class="btn small" data-act="howto">🐸 ${lab} の つくりかたを 見る</button></p></details>${termsHTML(key,data,step,state.form)}</div>`;
   const view=document.getElementById('view');
   PA.paint(view,h,state.minor+':'+state.keyIdx+':'+state.form);
   // 和音が かわったら 右手のけんばんを その和音の まん中へ（左手・がくふの 位置は そのまま）
@@ -183,7 +217,8 @@ PA.onKeySheet=()=>PA.openKeySheet({minor:state.minor,idx:state.keyIdx,both:true,
   stop(); state.minor=minor; state.keyIdx=idx; state.step=0; save(); render(); playStep(0);
 }});
 // 💡の ひらきぐあいを おぼえる（描きかえで とじないように）。toggle は バブルしないので capture
-document.addEventListener('toggle',e=>{if(e.target&&e.target.matches&&e.target.matches('details.more')) state.more=e.target.open;},true);
+// 📖 ことばメモ（data-d="terms"）は べつ（PA.paint が ひらきぐあいを たもつ）
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.dataset&&d.dataset.d==='tips') state.more=d.open;},true);
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-act]'); if(!el) return;
   const a=el.dataset.act, v=el.dataset.v;

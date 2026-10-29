@@ -45,6 +45,12 @@
 .more ul{margin:0;padding-left:1.3em}
 .more li{margin:6px 0}
 @media (prefers-reduced-motion:reduce){.sw .knob,.sw .knob::after{transition:none}}
+/* 📖 ことばメモ（本や 楽譜で 見かける 名前。ふだんは とじておく） */
+.terms dl{margin:0}
+.terms dt{font-weight:800;margin:12px 0 2px}
+.terms dt:first-child{margin-top:2px}
+.terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
+.terms .yomi{font-weight:400;font-size:12px;color:var(--sub)}
 </style>
 </head>
 <body>
@@ -136,6 +142,22 @@ function centerOn(b,midis){
   else b.scrollLeft+=(L+R)/2-(br.left+br.right)/2;
 }
 
+// 📖 ことばメモ：本や 楽譜で 見かける 名前を、やさしい ことばで（いまの 調の 音を れいに）。よみかたは 小さく
+function termsHTML(key){
+  return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary><dl>
+    <dt>自然的短音階<span class="yomi">（しぜんてき たんおんかい）</span></dt>
+      <dd>調号の とおりに ならべた 短音階（${namesH(key.nat)}）。7ばんめと 主音の 間が 1つ あいている。</dd>
+    <dt>和声的短音階<span class="yomi">（わせいてき たんおんかい）</span></dt>
+      <dd>7ばんめを 半音 上げた 短音階（${namesH(key.harm)}）。Ⅴ や Ⅴ7 を つくる ときは この 音階を つかうよ。</dd>
+    <dt>旋律的短音階<span class="yomi">（せんりつてき たんおんかい）</span></dt>
+      <dd>メロディーで 上がって いく ときに、6ばんめと 7ばんめを 上げる 短音階。この アプリでは つかわないよ。</dd>
+    <dt>導音<span class="yomi">（どうおん）</span></dt>
+      <dd>主音の すぐ下（となり）の 音。${PA.keyName(key)}では ${nmH(key.lt)}。主音へ すいこまれるように すすむよ。長調では もともと 音階の 中に あって、短調では 7ばんめを 上げて つくる。</dd>
+    <dt>増2度<span class="yomi">（ぞう 2ど）</span></dt>
+      <dd>7ばんめを 上げた ときに できる、6ばんめ→7ばんめ（${nmH(key.harm[5])} → ${nmH(key.lt)}）の ひろい 間かくの 名前。となりの 文字どうしなのに、少し 遠く 聞こえる。</dd>
+  </dl></details>`;
+}
+
 /* ===== 画面 ===== */
 function render(){
   const key=curKey(), rel=key.rel, raise=state.raise;
@@ -168,7 +190,7 @@ function render(){
       <div class="msg">${raise
         ?`<b>${nmH(key.natLT)}</b> を 半音上げて <b class="lt">${nmH(key.lt)}</b> に すると、主音「${nmH(mnT)}」の <b>すぐ下（となり）</b> になったね。<br>
           Ⅴ の まんなかの音も ${nmH(key.lt)} に かわって <b>${namesH(vHarm)}</b>（明るい ひびき）。「${nmH(mnT)}に もどりたい！」という 力が 強くなるよ。この ${nmH(key.lt)} を <b>導音</b> と いうよ。<br>
-          <span class="note">そのかわり 6ばんめ→7ばんめ（${nmH(key.harm[5])}→${nmH(key.lt)}）が 少し ひろく なる（増2度）。これが「和声的短音階」の とくちょうの ひびき。</span>`
+          <span class="note">そのかわり 6ばんめ→7ばんめ（${nmH(key.harm[5])}→${nmH(key.lt)}）の 間が 少し ひろく なるよ。これが「7ばんめを 上げた 短音階」の とくちょうの ひびき。</span>`
         :`調号のままだと、7ばんめ「${nmH(key.natLT)}」から 主音「${nmH(mnT)}」まで <b>全音</b>（けんばん 1つ あいている）。<br>
           Ⅴ は <b>${namesH(vNat)}</b>（暗い ひびき）。まんなかの「${nmH(key.natLT)}」が 7ばんめ なんだ。主音に もどる 力が 弱いよ。<br>🌙 下の「7ばんめを 上げる」スイッチを おしてみよう！`}</div>
     </section>
@@ -195,10 +217,11 @@ function render(){
   }
   h+=`</section>
     <details class="more"><summary>💡 この ページの 音について</summary><ul>
-      <li>和音は 和声的短音階（7ばんめの音を 半音上げた 音階）で 作っているよ。旋律的短音階は あつかわないよ。</li>
+      <li>和音は、7ばんめの 音を 半音上げた 短音階で 作っているよ。</li>
       <li>ダブルシャープは、楽譜では「<span class="ds">x</span>」のような 形で 書くよ。この画面でも <span class="ds">x</span> で あらわしているよ。</li>
       <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべるよ。</li>
     </ul></details>
+    ${termsHTML(key)}
   </div>`;
   PA.paint(document.getElementById('view'),h,'minor-why:'+state.keyIdx);
   renderActions();

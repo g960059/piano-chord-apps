@@ -26,6 +26,12 @@
 .toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .nw{white-space:nowrap}
 .hn{text-wrap:balance}
+/* 📖 ことばメモ（くわしく 知りたい人むけ。ふだんは とじておく） */
+.terms dl{margin:0}
+.terms dt{font-weight:800;margin:12px 0 2px}
+.terms dt:first-child{margin-top:2px}
+.terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
+.terms rt{font-weight:400;font-size:.6em;color:var(--sub)}
 </style>
 </head>
 <body>
@@ -115,6 +121,30 @@ function tipsHTML(key){
   if(key.minor) li.push(`🌙 <b>短調の Ⅴ・Ⅴ7</b> は、7ばんめの音「${PA.nmH(key.natLT)}」を <b>半音上げて</b>「${PA.nmH(key.lt)}」に する。だから Ⅴ はいつも 明るいひびき。`);
   return `<ol>${li.map(x=>`<li>${x}</li>`).join('')}</ol>`;
 }
+/* 📖 ことばメモ：本や 楽譜で 見かける 名前を やさしく（いまの 調・和音の 音を れいに） */
+const yomi=(w,y)=>`<ruby>${w}<rt>${y}</rt></ruby>`; // ふりがな
+function termsHTML(key,ch,tones){
+  const c=CHORDS[ch], dg=d=>`「${PA.nmH(PA.at(key.scale,d))}」`;
+  const ROLE=['根音','第3音','第5音','第7音'];
+  const roles=tones.map((t,j)=>`${ROLE[j]}「${PA.nmH(t)}」`).join('・');
+  const lt=key.minor
+    ?`音階の 7ばんめの音。主音の すぐ下（となり）に あって、主音へ 行きたがる音。短調では「${PA.nmH(key.natLT)}」を 半音上げて「${PA.nmH(key.lt)}」に するよ。`
+    :`音階の 7ばんめの音${dg(6)}。主音の すぐ下（となり）に あって、主音へ 行きたがる音。`;
+  return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary><dl>
+    <dt>${yomi('主音','しゅおん')}</dt>
+    <dd>音階の 1ばんめの音。いまの 調では ${dg(0)}。調の 名前にも なる 音だよ。</dd>
+    <dt>${yomi('主和音','しゅわおん')}・${yomi('下属和音','かぞくわおん')}・${yomi('属和音','ぞくわおん')}</dt>
+    <dd>Ⅰ・Ⅳ・Ⅴ の べつの よびかた。いまの 調では Ⅰ は ${dg(0)}、Ⅳ は ${dg(3)}、Ⅴ は ${dg(4)} から つくる 和音。</dd>
+    <dt>${yomi('属七の和音','ぞくしちの わおん')}</dt>
+    <dd>Ⅴ7 の べつの よびかた。Ⅴ に もうひとつ とばして 音を のせた、4つの音の 和音。</dd>
+    <dt>${yomi('根音','こんおん')}・第3音・第5音・第7音</dt>
+    <dd>ひとつとばしで つんだ 和音の 音の 名前。いちばん下が <b>根音</b>、2つめが <b>第3音</b>、3つめが <b>第5音</b>、Ⅴ7 の 4つめが <b>第7音</b>。いまの ${c.label} は ${roles}。</dd>
+    <dt>${yomi('導音','どうおん')}</dt>
+    <dd>${lt}</dd>${key.minor?`
+    <dt>${yomi('和声的短音階','わせいてき たんおんかい')}</dt>
+    <dd>7ばんめの音を 半音上げた 短調の 音階。🪜 かいだんの 短調は この 音階だよ。</dd>`:''}
+  </dl></details>`;
+}
 function render(){
   const key=curKey(), ch=state.chord, c=CHORDS[ch], tones=chordTones(key,ch), A=state.anim, col=PA.COL[ch];
   let h=`<div class="stack">
@@ -141,7 +171,7 @@ function render(){
   let staffNote='';
   if(shown.length){const st=PA.stepOf(shown[0]);staffNote=`ひとつとばし だから、この和音は <b>${(st-30)%2===0?'線・線・線':'間・間・間'}</b> に ならぶよ。`;}
   h+=`<section class="card"><h2>🎼 がくふ</h2><div class="scroll" data-sk="staff">${PA.staffSVG(key,[{notes:shown,color:col,ltColor:'#d1495b',accColor:'#d1495b'}],{minW:220})}</div><p class="note">${staffNote}</p></section>`;
-  h+=`<details class="more tips"><summary>💡 おぼえかたの コツ</summary>${tipsHTML(key)}</details></div>`;
+  h+=`<details class="more tips"><summary>💡 おぼえかたの コツ</summary>${tipsHTML(key)}</details>${termsHTML(key,ch,tones)}</div>`;
   PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx);
   if(state.anim) PA.follow(document.getElementById('view')); // アニメで 光る鍵が 見えるように
   PA.paint(document.getElementById('actions'),

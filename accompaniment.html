@@ -32,6 +32,13 @@
 .tag{font-size:12px;font-weight:800;padding:1px 8px;border-radius:999px;background:var(--l);color:var(--c)}
 .toprow{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap}
 .toprow .note{margin:0;flex:1 1 200px;font-size:14px}
+/* 調の ボタンと 🎲（せまい 画面では 2つで 1行、メモは その下） */
+.keyrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
+.dice{padding-inline:14px;font-size:15px;white-space:nowrap}
+.toprow .note.keymsg{color:var(--ink)}
+.randset{margin-top:8px}
+.randset>summary{font-size:15px}
+.randset .note{margin:6px 0 0}
 /* がくふ */
 .scorehead{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:flex-start;justify-content:space-between}
 .scorehead h2{margin:0;flex:1 1 220px}
@@ -121,6 +128,7 @@ input[type=checkbox]{flex:none;width:22px;height:22px;accent-color:var(--ink)}
 <body>
 <header class="appbar" id="appbar"></header>
 <main class="page" id="view"></main>
+<p id="live" aria-live="polite" style="position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;margin:0"></p>
 <script src="assets/core.js"></script>
 <script>
 /* 伴奏づけ：知っている曲の メロディーに Ⅰ・Ⅳ・Ⅴ・Ⅴ7 を つける（長調のみ） */
@@ -254,12 +262,12 @@ function beatsJa(b){
 }
 
 /* ===== 状態（音の名前・基準の音・音あり なしは 共通の設定） ===== */
-const state={songId:'mary',keyIdx:0,tempo:88,style:'oompah',
+const state={songId:'mary',keyIdx:0,randTier:'all',randKey:null,randSeen:[],diceUsed:false,tempo:88,style:'oompah',
   melOn:true,accOn:true,hint:true,autoPlay:true,choices:{},sel:0,checked:false,reveal:false,play:null,clearArm:false,tipsOpen:false};
 const STORE='accompaniment';
 function save(){
   PA.store.set(STORE,{tempo:state.tempo,style:state.style,melOn:state.melOn,accOn:state.accOn,hint:state.hint,autoPlay:state.autoPlay,
-    choices:state.choices,songId:state.songId,keyIdx:state.keyIdx});
+    choices:state.choices,songId:state.songId,keyIdx:state.keyIdx,randTier:state.randTier,randSeen:state.randSeen});
 }
 function load(){
   try{
@@ -269,6 +277,8 @@ function load(){
     ['melOn','accOn','hint','autoPlay'].forEach(k=>{if(typeof d[k]==='boolean')state[k]=d[k];});
     if(SONGS.some(s=>s.id===d.songId)) state.songId=d.songId;
     if(Number.isInteger(d.keyIdx)&&KEYS[d.keyIdx]) state.keyIdx=d.keyIdx;
+    if(PA.keyDeck.TIERS.some(t=>t.id===d.randTier)) state.randTier=d.randTier;
+    if(Array.isArray(d.randSeen)) state.randSeen=[...new Set(d.randSeen.filter(x=>Number.isInteger(x)&&x>=0&&x<12))];
     if(d.choices&&typeof d.choices==='object'){
       for(const s of SONGS){
         const c=d.choices[s.id];
@@ -279,6 +289,29 @@ function load(){
 }
 const curSong=()=>SONGS.find(s=>s.id===state.songId);
 const curKey=()=>KEYS[state.keyIdx];
+/* 🎲 ランダム：長調だけの くじの ふくろ（ぜんぶ 1回ずつ 出るまで おなじ 調は 出ない）。きろくは つけない
+ * 嬰ヘ長調と 変ト長調は おなじ 音なので 1つと かぞえる（state.randSeen＝この まわりで 出た 主音の 音、0〜11）。
+ * randSeen は 保存するので、ページを ひらきなおしても まわりの とちゅうから つづく */
+let deck=null;
+const randDeck=()=>deck||(deck=PA.keyDeck.create({quiz:'accompaniment',tier:state.randTier,modes:['major'],weak:false}));
+const randTierOf=id=>PA.keyDeck.TIERS.find(t=>t.id===id)||PA.keyDeck.TIERS[3];
+// いまの 調と ちがう 長調に かえる。えらんだ 和音（Ⅰ・Ⅳ・Ⅴ・Ⅴ7）は そのまま
+const pcOf=idx=>PA.mod(KEYS[idx].tonicMidi,12);
+function randomKey(){
+  const cur=pcOf(state.keyIdx), d=randDeck();
+  const ok=x=>!x.minor&&!!KEYS[x.idx]&&pcOf(x.idx)!==cur; // おなじ 音に きこえる 調には しない
+  let k=d.draw(x=>ok(x)&&!state.randSeen.includes(pcOf(x.idx)));
+  if(!k){state.randSeen=[];k=d.draw(ok);} // ぜんぶ 出た：つぎの まわりへ
+  if(!k||!KEYS[k.idx]) return;
+  state.randSeen.push(pcOf(k.idx));
+  stopPlay(); state.keyIdx=k.idx; state.randKey=k.idx; state.diceUsed=true; save(); render(); playChordNow(curKey(),'I');
+  announce(`${PA.keyName(curKey())}に したよ`);
+}
+// 読み上げ：#view の 外の 1つの 場所に、🎲 を おしたときだけ 書く
+function announce(t){
+  const el=document.getElementById('live'); if(!el) return;
+  el.textContent=''; setTimeout(()=>{el.textContent=t;},60);
+}
 function choices(){
   const s=curSong();
   let c=state.choices[s.id];
@@ -625,7 +658,10 @@ function view(){
   let h=`<div class="stack">
     <p class="lead">メロディーに Ⅰ・Ⅳ・Ⅴ・Ⅴ7 をつけて、伴奏を作ってみよう</p>
     <div><p class="lbl">① 曲をえらぶ <span class="cnt">ぜんぶで ${SONGS.length}曲<span class="swipe">・よこに うごかせるよ</span></span></p>${songsHTML()}</div>
-    <div><p class="lbl">② 調をえらぶ</p><div class="toprow">${PA.keyChip(key)}<p class="note">調を かえても、えらんだ 和音は そのまま。音の 高さだけが かわるよ</p></div></div>
+    <div><p class="lbl">② 調をえらぶ</p><div class="toprow"><div class="keyrow">${PA.keyChip(key)}<button class="btn dice" data-act="randkey" aria-label="ランダムに ほかの 調に する">🎲 ランダム</button></div>
+      ${state.randKey===state.keyIdx?`<p class="note keymsg">🎲 <b>${PA.keyName(key)}</b>に したよ。えらんだ 和音は そのまま。音の 高さだけが かわるよ</p>`:`<p class="note">調を かえても、えらんだ 和音は そのまま。音の 高さだけが かわるよ</p>`}</div>
+      ${state.diceUsed||state.randSeen.length||state.randTier!=='all'?`<details class="more randset" id="randset"><summary>🎲 ランダムで 出す 調：${randTierOf(state.randTier).emoji} ${randTierOf(state.randTier).name}</summary>${PA.keyDeck.tierSeg('randtier',state.randTier)}
+        <p class="note">長調の 中から 出すよ。ぜんぶの 調が 1回ずつ 出るまで、おなじ 調は 出ないよ。嬰ヘ長調と 変ト長調は おなじ 音で 書きかたが ちがうだけ なので、1つと かぞえるよ。</p></details>`:''}</div>
     <section class="card scorecard">
       <div class="scorehead"><h2>③ 和音をえらぶ<small>${song.tip(key)}</small></h2>
         <div class="progress"><b>${filled}</b> / ${N} マス えらんだ</div></div>
@@ -765,8 +801,10 @@ document.addEventListener('click',e=>{
   const a=el.dataset.act, v=el.dataset.v;
   if(a!=='clear'&&state.clearArm){state.clearArm=false;clearTimeout(clearTimer);}
   switch(a){
-    case 'song': if(v===state.songId) break; stopPlay(); state.songId=v; state.sel=0; state.checked=false; state.reveal=false; save(); break;
+    case 'song': if(v===state.songId) break; stopPlay(); state.songId=v; state.randKey=null; state.sel=0; state.checked=false; state.reveal=false; save(); break;
     case 'pick': pick(v); return;
+    case 'randkey': randomKey(); return;
+    case 'randtier': if(v===state.randTier||!PA.keyDeck.TIERS.some(t=>t.id===v)) break; state.randTier=v; state.randSeen=[]; state.diceUsed=true; randDeck().setOptions({tier:v}); save(); break;
     case 'playall': playRange(0,curSong().slots.length-1,false,true); return;
     case 'playsel': playRange(state.sel,state.sel); return;
     case 'stop': stopPlay(); break;
@@ -834,7 +872,7 @@ PA.onStopDown=()=>stopPlay(); // 描きなおしは click 側で（ボタンが�
 // ⏹ を おして そのまま スクロールした・指が ずれた（click が 来ない）：音は もう 止まっているので 画面を もどす
 PA.onStopCancel=()=>render();
 PA.onKeySheet=()=>PA.openKeySheet({minor:false,both:false,idx:state.keyIdx,onPick:(minor,idx)=>{
-  stopPlay(); state.keyIdx=idx; save(); render(); playChordNow(curKey(),'I');
+  stopPlay(); state.keyIdx=idx; state.randKey=null; save(); render(); playChordNow(curKey(),'I');
 }});
 load(); render();
 </script>
