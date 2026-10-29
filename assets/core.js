@@ -1042,7 +1042,7 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
  *     ふくろの 中から つぎに 合う 調を とる（合わない 調は ふくろに のこる）。
  *     weak：まちがいの 多い 調は、新しい ふくろに 1〜2こ よぶんに 入れる（となりどうしに ならないように）
  *   deck.record(id, ok) … 答えを きろく（PA.store('keystats-<quiz>') に {id:{right, wrong, last(さいごに 答えた 時刻 ms)}}）
- *   deck.stats() / deck.reset()（きろくを けす）/ deck.setOptions({tier, modes, weak})（ふくろを つくりなおす）
+ *   deck.stats() / deck.reset()（きろくを けす）/ deck.setOptions({tier, modes, weak})（えらべる 調が かわれば ふくろを つくりなおす。かわらなければ のこりは そのまま）
  *   deck.state() → {bag, last}（ほぞん用）/ deck.restore(state) → true（ふくろを その まま もどす。形が ちがえば false）
  * PA.keyDeck.tierSeg(act, cur) … 4つの むずかしさの ボタン（PA.seg）
  * PA.keyDeck.checkTableHTML(quiz, {modes}) … 24調 チェック表（けすボタン data-act="keystats-reset" data-v=quiz は ページで あつかう）
@@ -1178,7 +1178,8 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
       },
       stats(){return D.stats(o.quiz);},
       reset(){D.reset(o.quiz);bag=[];},
-      setOptions(p){setOpt({...opt,...p});}
+      // えらべる 調が かわらない とき（にがてな調を 多めに だけ など）は、ふくろの のこりを そのまま（新しい 重みは つぎの ふくろから）
+      setOptions(p){const was=eligible.join(), keep={bag:[...bag],last};setOpt({...opt,...p});if(eligible.join()===was){bag=keep.bag;last=keep.last;}}
     };
     return deck;
   };

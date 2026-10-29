@@ -265,3 +265,11 @@ test('state / restore：ふくろの のこりと last を その まま もど�
   // setOptions の あと、おなじ 調の はんいなら のこりを もどせる
   const d=mk(); d.draw(); const ds=d.state(); d.setOptions({weak:false}); d.restore(ds); eq(d.state(),ds);
 });
+
+test('setOptions：えらべる 調が かわらなければ ふくろの のこりは そのまま、かわれば つくりなおす',()=>{
+  const d=D.create({quiz:q(),tier:'normal',modes:['major'],weak:true,rng:mulberry(9)});
+  d.draw(); d.draw(); const s=d.state();
+  d.setOptions({weak:false}); eq(d.state(),s,'weak だけ');
+  d.setOptions({tier:'normal',modes:['major']}); eq(d.state(),s,'おなじ せってい');
+  d.setOptions({tier:'easy'}); eq(d.bag,[],'むずかしさが かわった'); assert.equal(d.last,s.last);
+});
