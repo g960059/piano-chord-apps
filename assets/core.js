@@ -232,7 +232,8 @@ PA.accGlyph=(x,y,a,color='#3a3245')=>{
 PA.gClef=(x,y0)=>`<g transform="translate(${x} ${y0})" fill="none" stroke="#3a3245" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3 C8 3 7 -5 13 -7 C21 -9 25 0 20 7 C14 14 2 10 2 0 C2 -10 12 -17 17 -27 C20 -34 19 -44 15 -44 C10 -44 8 -34 10 -24 L16 24 C17 31 11 33 8 29"/><circle cx="9.5" cy="27.5" r="3.2" fill="#3a3245" stroke="none"/></g>`;
 PA.fClef=(x,y0)=>`<g transform="translate(${x} ${y0})"><circle cx="5" cy="0" r="4" fill="#3a3245"/><path d="M3 -2 C4 -10 14 -12 19 -7 C25 -1 22 10 14 17 C9 21 4 24 -1 26" fill="none" stroke="#3a3245" stroke-width="2.8" stroke-linecap="round"/><circle cx="27" cy="-5" r="2.2" fill="#3a3245"/><circle cx="27" cy="5" r="2.2" fill="#3a3245"/></g>`;
 /* cols: [{notes:[...ト音記号], lh:[...ヘ音記号], color, ltColor(導音の色), accColor, accRing, label, sub(和音名の 下の 小さな字), labelColor, op, noAcc, carry:{文字:変化記号}}]
- * opts: {grand, colW, minW, arrows:[{c1,i1,c2,i2,color,text,dash,dy}], sigOverride:{letter,acc}, noSig, maxScale} */
+ * opts: {grand, colW, minW, arrows:[{c1,i1,c2,i2,color,text,dash,dy}], sigOverride:{letter,acc}, noSig, maxScale, autoCarry}
+ * autoCarry：ぜんぶの 列を 1つの 小節と みて、前の 臨時記号を もどす 音に ♮ など（おなじ 段・高さは きまりどおり、音名が おなじなら ねんのため も。c.carry は つかわない） */
 PA.staffSVG=(key,cols,o={})=>{
   const sig=o.noSig?{type:1,letters:[]}:PA.sigInfo(key), ov=o.sigOverride, grand=!!o.grand;
   const TSs=[38,35,39,36,33,37,34], TSf=[34,37,33,36,32,35,31];
@@ -269,7 +270,19 @@ PA.staffSVG=(key,cols,o={})=>{
     if(grand) svg+=PA.accGlyph(sx+i*10,by(d.st-14),d.a,d.red?'#d1495b':'#3a3245');
   });
   const pos=[];
+  // autoCarry：列ごとに「その 前までの 臨時記号」を おぼえる。
+  //   at＝おなじ 段・おなじ 高さ（きまり：この 音に もどすなら かならず 書く）
+  //   any＝音名だけ（べつの 段・べつの オクターブでも、かわった 音名には ねんのため 書く。生徒が まよわないように）
+  const auto=o.autoCarry?(()=>{
+    const at={}, any={}, out=[];
+    const put=(st,n)=>{const sa=o.noSig?0:(key.sig[n.letter]||0),k=st+PA.stepOf(n);
+      if(n.acc!==sa||at[k]!==undefined) at[k]=n.acc;
+      if(n.acc!==sa||any[n.letter]!==undefined) any[n.letter]=n.acc;};
+    cols.forEach(c=>{out.push({at:{...at},any:{...any}});(c.notes||[]).forEach(n=>put('t',n));if(grand)(c.lh||[]).forEach(n=>put('b',n));});
+    return out;
+  })():null;
   const drawNotes=(ci,c,arr,yf,lo,hi)=>{
+    const st=yf===ty?'t':'b', A=auto&&auto[ci];
     if(!arr||!arr.length) return '';
     const x=nx+ci*cw+cw/2;
     const P=arr.map((n,i)=>({n,i,s:PA.stepOf(n)})).sort((a,b)=>a.s-b.s);
@@ -281,7 +294,8 @@ PA.staffSVG=(key,cols,o={})=>{
     const accCols=[];
     [...P].reverse().forEach(p=>{
       const sigAcc=o.noSig?0:(key.sig[p.n.letter]||0);
-      const need=(p.n.acc!==sigAcc)||(c.carry&&c.carry[p.n.letter]!==undefined&&c.carry[p.n.letter]!==p.n.acc);
+      const was=A?[A.at[st+p.s],A.any[p.n.letter]]:[c.carry&&c.carry[p.n.letter]];
+      const need=(p.n.acc!==sigAcc)||was.some(w=>w!==undefined&&w!==p.n.acc);
       const hx=x+(p.off?13:0), hy=yf(p.s);
       if(need&&!c.noAcc){
         let k=0; while(accCols.some(q=>q.k===k&&Math.abs(q.s-p.s)<6)) k++;
@@ -1264,7 +1278,7 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
     half:      [['I',[0,2,4]],['IV',[0,3,5]],['I',[0,2,4]],['V',[-1,1,4]]],
     plagal:    [['I',[0,2,4]],['VI',[0,2,5]],['IV',[0,3,5]],['I',[0,2,4]]],
     deceptive: [['I',[0,2,4]],['IV',[0,3,5]],['V7',[-1,3,4]],['VI',[0,2,7]]],
-    phrygian:  [['I',[-3,0,2]],['VI',[0,2,5]],['IV',[0,3,7],5],['V',[1,4,6]]] // さいごは 左手が 半音 下がり、いちばん上は 1つ となりへ（反対むき）
+    phrygian:  [['I',[0,2,4]],['VI',[0,2,5]],['IV',[0,3,7],5],['V',[1,4,6]]] // さいごは 左手が 半音 下がり、まん中の 4ばんめ→5ばんめが 反対むきに 上がる（いちばん上は 左手と いっしょに 半音 下がる）
   };
   E.PATTERNS=[
     {id:'perfect',type:'perfect',variant:null},{id:'imperfectA',type:'imperfect',variant:'A'},{id:'imperfectB',type:'imperfect',variant:'B'},

@@ -614,14 +614,13 @@ const sigStaff=key=>PA.staffSVG(key,[],{minW:130,maxScale:1}).replace(/viewBox="
 // 変化和音（t）は 赤＝半音上げた音、青＝半音下げた音（どちらか 一方しか 出ない）。矢印も 青い音から 出す
 function progStaff(key,chord,label,color,steps,t){
   const nw=isNew(t), mark=n=>nw?hl(key,t,n):(isRed(n)?'red':null), red=!nw||chord.some(n=>mark(n)==='red'), hc=red?LT_C:LOW_C;
-  const all=[{label,notes:chord,first:true},...steps], carry={}, cols=[], idx=[];
+  const all=[{label,notes:chord,first:true},...steps], cols=[], idx=[];
   all.forEach((c,ci)=>{
     const ns=c.notes.map(n=>({...n,raised:c.first&&!!mark(n)}));
     const tr=[],lh=[],map=[];
     ns.forEach(n=>{if(n.midi>=60){map.push(['t',tr.length]);tr.push(n);}else{map.push(['b',lh.length]);lh.push(n);}});
-    cols.push({notes:tr,lh,color:c.first?color:'#3a3245',ltColor:hc,accColor:hc,label:c.label,labelColor:c.first?color:'#3a3245',carry:{...carry}});
+    cols.push({notes:tr,lh,color:c.first?color:'#3a3245',ltColor:hc,accColor:hc,label:c.label,labelColor:c.first?color:'#3a3245'});
     idx.push(map);
-    ns.forEach(n=>{if(n.acc!==(key.sig[n.letter]||0)||carry[n.letter]!==undefined) carry[n.letter]=n.acc;});
   });
   const arrows=[];
   chord.forEach((n,i)=>{
@@ -630,7 +629,7 @@ function progStaff(key,chord,label,color,steps,t){
     const a=idx[0][i], b=idx[1]&&idx[1][i];
     if(a&&b&&a[0]==='t'&&b[0]==='t'&&(!nw||chord[i].midi!==steps[0].notes[i].midi)) arrows.push({c1:0,i1:a[1],c2:1,i2:b[1],color:n.tag==='lt'||m==='red'?LT_C:LOW_C});
   });
-  return PA.staffSVG(key,cols,{grand:true,colW:84,minW:260,arrows,maxScale:1.3});
+  return PA.staffSVG(key,cols,{grand:true,autoCarry:true,colW:84,minW:260,arrows,maxScale:1.3});
 }
 const rolesHTML=(ns,key,t)=>`<div class="chips roles">${ns.map(n=>{const m=hl(key,t,n);return `<span class="chip ${m==='red'?'lt':m==='blue'?'lo':''}">${PA.nmH(n)}<small>${n.role}</small></span>`;}).join('')}</div>`;
 // がくふの 見出しの 色の せつめい（変化和音）

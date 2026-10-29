@@ -244,8 +244,8 @@ function render(){
   });
   // ヘ音記号に 左手の ベース（「Ⅰへ 解決」で いっしょに 鳴らす音）
   const cols=A?[{notes:shown,lh:[],color:NIGHT,ltColor:LT,accColor:LT,accRing:true}]
-    :[{notes:info.t,lh:bassOf(key,f,'V'),color:NIGHT,ltColor:LT,accColor:LT,accRing:true,label:FAM[f].label,labelColor:NIGHT},{notes:res,lh:bassOf(key,f,'I'),color:ICOL,label:'Ⅰ',labelColor:ICOL,carry:{[key.lt.letter]:key.lt.acc}}];
-  h+=`<section class="card"><h2>🎼 がくふ<small>${A?'':'左：'+FAM[f].label+'　右：Ⅰ（おちつく 和音）'}</small></h2>${staffBox(PA.staffSVG(key,cols,{grand:true,colW:150,minW:340,arrows}),'staff')}
+    :[{notes:info.t,lh:bassOf(key,f,'V'),color:NIGHT,ltColor:LT,accColor:LT,accRing:true,label:FAM[f].label,labelColor:NIGHT},{notes:res,lh:bassOf(key,f,'I'),color:ICOL,label:'Ⅰ',labelColor:ICOL}];
+  h+=`<section class="card"><h2>🎼 がくふ<small>${A?'':'左：'+FAM[f].label+'　右：Ⅰ（おちつく 和音）'}</small></h2>${staffBox(PA.staffSVG(key,cols,{grand:true,autoCarry:true,colW:150,minW:340,arrows}),'staff')}
     ${A?'':`<p class="note"><b style="color:${LT}">導音は 半音 上へ</b>（主音へ）、<b style="color:${NIGHT}">第7音・第9音は 下へ</b> すすむと、きれいに おわるよ。「Ⅰへ すすむ」では 左手の ベース（ヘ音記号の 音）も いっしょに 鳴らすよ。</p>`}</section>`;
 
   h+=`<section class="card">${shapeCard(key,f)}</section>`;

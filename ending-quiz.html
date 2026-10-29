@@ -310,10 +310,21 @@ function renderActions(){
   if(a!==lastActions){PA.paint(document.getElementById('actions'),a,'bar');lastActions=a;}
 }
 // あたらしい もんだいの 見せかた：よこむきの スマホは 問題の 行から。👂 は こたえの ボタンが ⬇の バーに かくれない ところまで
+// あたらしい 問題：1回の スクロールで、問題の 行と こたえの ボタンが 見える ところへ
+// （👂 は こたえの ボタンを ⬇の バーの 上まで。でも たての 画面では 問題の 行を 上の バーに かくさない。
+//   よこの ひくい 画面は 問題の 行を 上に、入りきらなければ ボタンを 優先）
 function showQ(){
-  const t=document.querySelector('.qtitle');
-  if(t&&matchMedia('(max-height:500px) and (orientation:landscape)').matches){t.scrollIntoView({block:'start',behavior:PA.reduceMotion()?'auto':'smooth'});return;}
-  if(Q.mode==='ear'){window.scrollTo(0,0);reveal(document.querySelector('.echoices'));} else PA.scrollTop();
+  const t=document.querySelector('.qtitle'), g=document.querySelector('.echoices');
+  const ab=document.getElementById('actions'), hb=document.getElementById('appbar');
+  const land=matchMedia('(max-height:500px) and (orientation:landscape)').matches;
+  const abs=el=>scrollY+el.getBoundingClientRect().top;
+  const hbB=hb?hb.getBoundingClientRect().bottom:0, view=innerHeight-(ab?ab.offsetHeight:0);
+  let y=land&&t?abs(t)-hbB-6:0;
+  if(Q.mode==='ear'&&g&&t){
+    const need=scrollY+g.getBoundingClientRect().bottom+24-view; // ボタンの 下はしを バーの 上に
+    y=land?Math.max(y,need):Math.max(0,Math.min(need,abs(t)-hbB-8));
+  }
+  window.scrollTo(0,Math.max(0,y)); // すぐに 1回（音を ながす あいだ 描きなおすので、なめらかな スクロールは とちゅうで とまる）
 }
 function reveal(el){
   if(!el||!el.getBoundingClientRect) return;
@@ -324,7 +335,7 @@ function reveal(el){
 /* ===== 操作 ===== */
 PA.mountBar({title:'おわりかたクイズ',app:'ending-quiz'});
 PA.onSettings=render;
-PA.onPageShow=render;
+PA.onPageShow=()=>{stop();location.reload();}; // 「もどる」で もどったら 読みなおす（べつの ページで すすめた きろくを 古い きろくで 上書きしない）
 PA.onStopDown=()=>{if(!freshPlay()) stop();};
 PA.onStopCancel=render;
 // 聴く：きいて 当てる で こたえる まえは、2回め から 回数を へらす。音が オフの ときは へらさずに おしえるだけ
@@ -343,7 +354,7 @@ document.addEventListener('click',e=>{
   const a=el.dataset.act, v=el.dataset.v;
   switch(a){
     case 'qmode': if(Q.mode===v||!['ear','see'].includes(v)) return; stop(); Q.mode=v; newQ(); break;
-    case 'qlevel': {const lv=+v; if(lv===Q.level||!isInt(lv,1,LEVELS.length)) return; stop(); Q.level=lv; cBag=[]; deck.setOptions({modes:LV(lv).modes}); newQ(); break;}
+    case 'qlevel': {const lv=+v; if(lv===Q.level||!isInt(lv,1,LEVELS.length)) return; stop(); const same=LV(lv).modes.join()===LV(Q.level).modes.join(); Q.level=lv; cBag=[]; if(!same) deck.setOptions({modes:LV(lv).modes}); newQ(); break;} // 長調だけ どうしなら 調の ふくろは そのまま
     case 'qtier': if(Q.tier===v||!TIER_IDS.includes(v)) return; stop(); Q.tier=v; deck.setOptions({tier:v}); newQ(); break;
     case 'qweak': {Q.weak=!Q.weak; const s=deckState(); deck.setOptions({weak:Q.weak}); restoreDeck(s); break;} // 今の もんだいも ふくろの のこりも そのまま。つぎの ふくろから
     case 'qreset': Q.sc[Q.mode]={right:0,total:0,streak:0}; break;
@@ -369,8 +380,9 @@ document.addEventListener('click',e=>{
       reveal(document.getElementById('fb')); return;
     }
     case 'enew': {
-      stop(); newQ(); save(); askedAt=Date.now(); render(); showQ();
+      stop(); newQ(); save(); askedAt=Date.now(); render();
       if(Q.mode==='ear') listen();
+      showQ();
       return;
     }
     case 'howto': {

@@ -262,6 +262,7 @@ const playLT=k=>{PA.playNote(k.lt.midi,0,0.9,0.24);PA.playNote(k.lt.midi+1,0.8,1
 
 /* ===== 操作 ===== */
 PA.mountBar({title:'短調クイズ',app:'minor-quiz'});
+PA.onPageShow=()=>{PA.stopSound();location.reload();}; // 「もどる」で もどったら 読みなおす（べつの ページで すすめた きろくを 古い きろくで 上書きしない）
 PA.onSettings=render;
 PA.onKey=m=>{ // 音は core が 鳴らす
   if(Q.type!=='chord'||Q.checked) return;

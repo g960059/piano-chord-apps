@@ -215,15 +215,6 @@ function staffBox(svg,name){
   const m=svg.match(/viewBox="0 0 ([\d.]+) /), W=m?+m[1]:400;
   return `<div class="scroll" data-sk="${name}"><div style="min-width:${Math.round(W*0.66)}px">${svg}</div></div>`;
 }
-// 前の和音で つけた 臨時記号を おぼえて、もどすときは ♮ を 書く（noSig の ときは 調号なしとして）
-function withCarry(key,cols,noSig){
-  const mem={};
-  cols.forEach(c=>{
-    c.carry={...mem};
-    [...(c.notes||[]),...(c.lh||[])].forEach(n=>{const sa=noSig?0:(key.sig[n.letter]||0);if(n.acc!==sa||(mem[n.letter]!==undefined&&mem[n.letter]!==n.acc)) mem[n.letter]=n.acc;});
-  });
-  return cols;
-}
 // ヘ音記号の 矢印（PA.staffSVG の 矢印は ト音記号だけなので、おなじ 位置を ここで 計算する）
 function bassArrows(svg,key,cols,o,arrows){
   const ns=o.noSig?0:PA.sigInfo(key).letters.length, nx=50+ns*10+(ns?24:14), cw=o.colW||70, BT=96+82;
@@ -240,10 +231,10 @@ function bassArrows(svg,key,cols,o,arrows){
 // ならべた 形（調号なし）：ちがう 音だけ 赤むらさきの 音符と 臨時記号
 function cmpStaff(P){
   const mark=s=>s.stack.map(n=>n===s.six?{...n,raised:true}:{...n,raised:false});
-  const cols=withCarry(P.majK,[
+  const cols=[
     {notes:mark(P.maj),color:SUN,ltColor:DIFF,accColor:DIFF,accRing:true,label:'長調 Ⅶ7',labelColor:SUN},
-    {notes:mark(P.min),color:NIGHT,ltColor:DIFF,accColor:DIFF,accRing:true,label:'短調 Ⅶ7',labelColor:NIGHT}],true);
-  const cw=130, svg=PA.staffSVG(P.majK,cols,{noSig:true,colW:cw,minW:320});
+    {notes:mark(P.min),color:NIGHT,ltColor:DIFF,accColor:DIFF,accRing:true,label:'短調 Ⅶ7',labelColor:NIGHT}];
+  const cw=130, svg=PA.staffSVG(P.majK,cols,{noSig:true,autoCarry:true,colW:cw,minW:320});
   // 矢印は ここで 描く（♭♭ のような 2つぶんの 臨時記号に かさならないように、手前で 止める）。ト音記号だけ（TB＝110）・調号なし
   const nx=64, a=P.maj.six, y=110-(PA.stepOf(a)-30)*5, x1=nx+cw/2+12, x2=nx+cw+cw/2-34;
   const arrow=`<path d="M${x1} ${y} L${x2} ${y}" stroke="${DIFF}" stroke-width="2.2" fill="none" marker-end="url(#dh-cmp)"/>`+
@@ -255,8 +246,8 @@ function cmpStaff(P){
 function resStaff(s){
   const k=s.k, noSig=!sigOK(k);
   const col=(ns,o)=>({notes:ns.slice(1).map(n=>({...n,raised:n.tag==='lt'})),lh:[{...ns[0],raised:ns[0].tag==='lt'}],color:o.color,ltColor:LT,accColor:LT,label:o.label,labelColor:o.color});
-  const cols=withCarry(k,[col(s.ch,{color:s.col,label:s.label}),col(s.res,{color:ICOL,label:'Ⅰ'})],noSig);
-  const o={grand:true,colW:150,minW:340,noSig,arrows:[
+  const cols=[col(s.ch,{color:s.col,label:s.label}),col(s.res,{color:ICOL,label:'Ⅰ'})];
+  const o={grand:true,autoCarry:true,colW:150,minW:340,noSig,arrows:[
     {c1:0,i1:0,c2:1,i2:0,color:s.col},
     {c1:0,i1:1,c2:1,i2:1,color:DIFF},
     {c1:0,i1:2,c2:1,i2:2,color:'#b3a99c',dash:'4 4'}]};

@@ -357,6 +357,7 @@ function showFeedback(){
 
 /* ===== 操作 ===== */
 PA.mountBar({title:'和音クイズ',app:'chord-quiz'});
+PA.onPageShow=()=>{PA.stopSound();location.reload();}; // 「もどる」で もどったら 読みなおす（べつの ページで すすめた きろくを 古い きろくで 上書きしない）
 PA.onSettings=render;
 PA.onKey=m=>{ // 音は core が 鳴らす
   if(Q.type!=='keys'||Q.checked) return;

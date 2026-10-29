@@ -186,21 +186,19 @@ function keyRange(key){
 const prep=(n,c)=>({letter:n.letter,acc:n.acc,midi:n.midi,raised:(c.hl?c.hl(n):n.tag==='lt')||undefined});
 // cols:[{notes,color,label,op,hl,hlColor}]、arrows:[{c1,n1,c2,n2,color,text,dash,dy}]（n1・n2 は cols の 音そのもの）
 function staff(key,cols,arrows=[],o={}){
-  const cw=o.cw||110, carry={};
+  const cw=o.cw||110;
   const sc=cols.map(c=>{
     const lo=c.notes.length?c.notes.reduce((a,b)=>b.midi<a.midi?b:a):null;
     const lh=c.notes.filter(n=>n===lo||n.midi<60), tr=c.notes.filter(n=>!lh.includes(n));
     const hc=c.hlColor||LT;
-    const col={notes:tr.map(n=>prep(n,c)),lh:lh.map(n=>prep(n,c)),color:c.color,ltColor:hc,accColor:hc,label:c.label,labelColor:c.color,op:c.op,carry:{...carry}};
-    // おなじ 小節の 中では、まえの 臨時記号が つづく（もどすときは ♮）
-    c.notes.forEach(n=>{if(n.acc!==sigAcc(key,n.letter)||carry[n.letter]!==undefined) carry[n.letter]=n.acc;});
+    const col={notes:tr.map(n=>prep(n,c)),lh:lh.map(n=>prep(n,c)),color:c.color,ltColor:hc,accColor:hc,label:c.label,labelColor:c.color,op:c.op};
     return {col,tr,lh};
   });
   // 矢印（ヘ音記号の 音にも つけられるように、core の がくふと おなじ 位置を 計算する）
   const ns=PA.sigInfo(key).letters.length, nx=50+ns*10+(ns?24:14);
   const tw=t=>[...(t||'')].reduce((w,ch)=>w+(ch.charCodeAt(0)>255?14:8.5),0);
   const pad=Math.max(44,...arrows.filter(a=>!a.mid).map(a=>tw(a.text)-cw/2+22));
-  let svg=PA.staffSVG(key,sc.map(s=>s.col),{grand:true,colW:cw,minW:Math.max(o.minW||0,arrows.length?nx+cols.length*cw+pad:0)});
+  let svg=PA.staffSVG(key,sc.map(s=>s.col),{grand:true,autoCarry:true,colW:cw,minW:Math.max(o.minW||0,arrows.length?nx+cols.length*cw+pad:0)});
   const posOf=(ci,n)=>{
     const s=sc[ci]; if(!s) return null;
     const inT=s.tr.includes(n), arr=inT?s.tr:s.lh.includes(n)?s.lh:null; if(!arr) return null;

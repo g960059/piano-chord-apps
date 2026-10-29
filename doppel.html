@@ -178,15 +178,6 @@ function voiceMarks(ns,col,redUp){
 /* ===== がくふ ===== */
 // 4声：ト音記号に 上の2つ（アルト・ソプラノ）、ヘ音記号に 下の2つ（ベース・テノール）
 const staffCol=(ns,o)=>({notes:[ns[2],ns[3]].map(o.mark||(n=>n)),lh:[ns[0],ns[1]].map(o.mark||(n=>n)),color:o.color,ltColor:RED,accColor:RED,label:o.label,labelColor:o.color,op:o.op});
-// 前の和音で つけた 臨時記号を おぼえて、もどすときは ♮ を 書く
-function withCarry(key,cols){
-  const mem={};
-  cols.forEach(c=>{
-    c.carry={...mem};
-    [...c.notes,...c.lh].forEach(n=>{const sa=key.sig[n.letter]||0;if(n.acc!==sa||(mem[n.letter]!==undefined&&mem[n.letter]!==n.acc)) mem[n.letter]=n.acc;});
-  });
-  return cols;
-}
 // ヘ音記号の 矢印（PA.staffSVG の 矢印は ト音記号だけなので、おなじ 形を ここで 足す）
 function bassArrows(svg,key,cols,o,arrows){
   const ns=PA.sigInfo(key).letters.length, nx=50+ns*10+(ns?24:14), cw=o.colW||70, BT=96+82;
@@ -208,8 +199,8 @@ function staffBox(svg,name){
 const redMark=n=>isUp(n)?{...n,raised:true}:n;
 function mainStaff(key){
   const r=state.raised, X=chordOf(key,r), V=C.toV(key), col=colOf(r);
-  const cols=withCarry(key,[staffCol(X,{color:col,label:label(r),mark:redMark}),staffCol(V,{color:V_COL,label:'Ⅴ'})]);
-  const o={grand:true,colW:150,minW:340,arrows:[
+  const cols=[staffCol(X,{color:col,label:label(r),mark:redMark}),staffCol(V,{color:V_COL,label:'Ⅴ'})];
+  const o={grand:true,autoCarry:true,colW:150,minW:340,arrows:[
     {c1:0,i1:1,c2:1,i2:1,color:r?RED:col,text:r?'半音↑':'↑'},
     {c1:0,i1:0,c2:1,i2:0,color:col,text:'↓'}]};
   let svg=PA.staffSVG(key,cols,o);
@@ -218,8 +209,8 @@ function mainStaff(key){
 }
 function cadStaff(key,seq){
   const cur=state.cad?state.cad.i:-1;
-  const cols=withCarry(key,seq.map((s,i)=>staffCol(s.ns,{color:s.col,label:s.lab,mark:i===1?redMark:null,op:cur<0||cur===i?1:.35})));
-  return staffBox(PA.staffSVG(key,cols,{grand:true,colW:76,minW:340}),'cadstaff');
+  const cols=seq.map((s,i)=>staffCol(s.ns,{color:s.col,label:s.lab,mark:i===1?redMark:null,op:cur<0||cur===i?1:.35}));
+  return staffBox(PA.staffSVG(key,cols,{grand:true,autoCarry:true,colW:76,minW:340}),'cadstaff');
 }
 
 /* ===== 画面 ===== */
