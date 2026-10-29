@@ -1,0 +1,10 @@
+{
+  "name": "piano-chord-apps",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test test/*.test.mjs",
+    "build:meta": "node tools/build-meta.mjs",
+    "check": "node tools/build-meta.mjs --check && node --test test/*.test.mjs"
+  }
+}

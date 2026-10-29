@@ -10,7 +10,8 @@ const eq=(a,b,m)=>assert.deepStrictEqual(J(a),J(b),m);
 const raw=new Map();
 PA.store={
   get(k,d){try{const v=raw.get('pianoapps.'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
-  set(k,v){raw.set('pianoapps.'+k,JSON.stringify(v));}
+  set(k,v){raw.set('pianoapps.'+k,JSON.stringify(v));},
+  keys(){return [...raw.keys()].filter(k=>k.startsWith('pianoapps.')).map(k=>k.slice(10));}
 };
 const mulberry=seed=>()=>{seed|=0;seed=seed+0x6D2B79F5|0;let t=Math.imul(seed^seed>>>15,1|seed);t=t+Math.imul(t^t>>>7,61|t)^t;return ((t^t>>>14)>>>0)/4294967296;};
 const TIERS=['easy','normal','hard','all'], MODES=[['major'],['minor'],['major','minor']];
@@ -166,10 +167,11 @@ test('きろく：record・stats・reset と、こわれた きろく',()=>{
   const quiz=q(), sk='pianoapps.keystats-'+quiz;
   let t=1000; const deck=D.create({quiz,now:()=>t});
   eq(deck.stats(),{});
-  eq(deck.record('m5',true),{right:1,wrong:0,last:1000});
+  // hint（ヒントで できた）と recent（さいごの 8回）も きろくする
+  eq(deck.record('m5',true),{right:1,wrong:0,hint:0,last:1000,recent:'o'});
   t=2000; deck.record('m5',false); t=3000; deck.record('M12',false);
-  eq(deck.stats(),{m5:{right:1,wrong:1,last:2000},M12:{right:0,wrong:1,last:3000}});
-  eq(JSON.parse(raw.get(sk)),{m5:{right:1,wrong:1,last:2000},M12:{right:0,wrong:1,last:3000}});
+  eq(deck.stats(),{m5:{right:1,wrong:1,hint:0,last:2000,recent:'ox'},M12:{right:0,wrong:1,hint:0,last:3000,recent:'x'}});
+  eq(JSON.parse(raw.get(sk)),{m5:{right:1,wrong:1,hint:0,last:2000,recent:'ox'},M12:{right:0,wrong:1,hint:0,last:3000,recent:'x'}});
   // べつの deck・べつの quiz
   eq(D.create({quiz}).stats(),deck.stats());
   eq(D.stats(quiz),deck.stats());
@@ -181,14 +183,17 @@ test('きろく：record・stats・reset と、こわれた きろく',()=>{
   // こわれた きろく
   for(const bad of ['nope','[1,2]','null','42','"s"','{"M0":7}','{"M0":[1,2]}']){
     raw.set(sk,bad); eq(D.stats(quiz),{},bad);
-    eq(D.create({quiz,now:()=>5}).record('M0',true),{right:1,wrong:0,last:5},bad);
+    eq(D.create({quiz,now:()=>5}).record('M0',true),{right:1,wrong:0,hint:0,last:5,recent:'o'},bad);
   }
   raw.set(sk,JSON.stringify({
     M0:{right:-1,wrong:'3',last:'x'}, M1:{right:2.7,wrong:1e12,last:-4}, M99:{right:1,wrong:1}, X:{right:1}, m01:{right:1},
-    m3:{right:4,wrong:1,last:123,extra:'zzz'}, m4:{right:0,wrong:0}, M2:null
+    m3:{right:4,wrong:1,last:123,extra:'zzz'}, m4:{right:0,wrong:0}, M2:null,
+    m5:{right:1,wrong:0,hint:2,recent:'zzohhqoxoxoxoxo'}, m6:{hint:1,recent:5}
   }));
-  eq(D.stats(quiz),{M1:{right:2,wrong:1e6,last:0},m3:{right:4,wrong:1,last:123}});
-  eq(deck.record('M1',false),{right:2,wrong:1e6,last:deck.stats().M1.last});
+  // recent は o・x・h だけ、さいごの 8つ。数字で ない recent は すてる。hint だけでも のこす
+  eq(D.stats(quiz),{M1:{right:2,wrong:1e6,hint:0,last:0},m3:{right:4,wrong:1,hint:0,last:123},m5:{right:1,wrong:0,hint:2,last:0,recent:'xoxoxoxo'},m6:{right:0,wrong:0,hint:1,last:0}});
+  // recent の ない 古い きろく：それまでの ようす（にがて）から 'xx' を つくって つづける
+  eq(deck.record('M1',false),{right:2,wrong:1e6,hint:0,last:deck.stats().M1.last,recent:'xxx'});
   const draws=D.create({quiz,weak:true,rng:mulberry(1)});
   for(let i=0;i<40;i++) assert.ok(draws.draw());
   // quiz の 名前は 英小文字・数字・-
@@ -196,7 +201,8 @@ test('きろく：record・stats・reset と、こわれた きろく',()=>{
   assert.doesNotThrow(()=>D.create({quiz:'minor-quiz'}));
 });
 
-test('mastery：まだ・にがて・れんしゅう中・できた',()=>{
+test('mastery（recent の ない 古い きろく）：まだ・にがて・れんしゅう中・できた',()=>{
+  // recent が ない きろく（このまえまでの きろく）は まえの きまりの まま
   assert.equal(D.mastery(undefined),'none');
   assert.equal(D.mastery({right:0,wrong:0}),'none');
   assert.equal(D.mastery({right:0,wrong:1}),'weak');
@@ -217,33 +223,36 @@ test('tierSeg：4つの ボタン（PA.seg）',()=>{
   assert.match(D.tierSeg('tier','???'),/class="on" data-act="tier" data-v="all"/);
 });
 
-test('checkTableHTML：24調 チェック表',()=>{
+test('checkTableHTML：24調 チェック表（merge:false＝26の ます）',()=>{
   const quiz=q(), deck=D.create({quiz});
-  [['M0',true],['M0',true],['M0',true],['M1',false],['m6',true],['m12',false],['m12',true]].forEach(([id,ok])=>deck.record(id,ok));
-  const h=D.checkTableHTML(quiz);
+  [['M0',true],['M0',true],['M0',true],['M1',false],['M1',false],['m6',true],['m12',false],['m12',true]].forEach(([id,ok])=>deck.record(id,ok));
+  const h=D.checkTableHTML(quiz,{merge:false});
   assert.ok(h.includes('24調 チェック表'));
   const cells=[...h.matchAll(/<li data-key="(\w+)" data-mastery="(\w+)"/g)].map(m=>[m[1],m[2]]);
   assert.equal(cells.length,26);
   const ms=Object.fromEntries(cells);
-  assert.equal(ms.M0,'good'); assert.equal(ms.M1,'weak'); assert.equal(ms.m6,'learning'); assert.equal(ms.m12,'weak'); assert.equal(ms.M5,'none');
+  // さいごの 3回で きめる：M1 は ✗✗ で にがて。m12 は ✗○ なので（まえの きまりでは にがて）いまは れんしゅう中
+  assert.equal(ms.M0,'good'); assert.equal(ms.M1,'weak'); assert.equal(ms.m6,'learning'); assert.equal(ms.m12,'learning'); assert.equal(ms.M5,'none');
   // ならび：調号の 少ない じゅん（♯ → ♭）
   eq(cells.slice(0,13).map(c=>name(c[0])),['ハ長調','ト長調','ヘ長調','ニ長調','変ロ長調','イ長調','変ホ長調','ホ長調','変イ長調','ロ長調','変ニ長調','嬰ヘ長調','変ト長調']);
   eq(cells.slice(13).map(c=>name(c[0])),['イ短調','ホ短調','ニ短調','ロ短調','ト短調','嬰ヘ短調','ハ短調','嬰ハ短調','ヘ短調','嬰ト短調','変ロ短調','嬰ニ短調','変ホ短調']);
   // ✓・✗ の 数と 読み上げ
-  assert.ok(h.includes('ハ長調（調号なし）：できた。せいかい 3、まちがい 0'));
-  assert.ok(h.includes('変ホ短調（♭6つ）：にがて。せいかい 1、まちがい 1'));
-  assert.ok(h.includes('✓3</span>')&&h.includes('✗1</span>'));
+  assert.ok(h.includes('ハ長調（調号なし）：できた。じぶんで できた 3、まちがい 0'));
+  assert.ok(h.includes('変ホ短調（♭6つ）：れんしゅう中。じぶんで できた 1、まちがい 1'));
+  assert.ok(h.includes('✓3</span>')&&h.includes('✗2</span>'));
   assert.ok(h.includes('できた 調：1 ／ 26'));
-  assert.match(h,/<button class="btn small" data-act="keystats-reset" data-v="[^"]+">/);
+  assert.match(h,/<button class="btn small" data-act="keystats-reset" data-v="[^"]+" data-confirm="[^"]+">/);
+  assert.ok(!D.checkTableHTML(quiz,{confirm:false}).includes('data-confirm'));
   // 375px：横に はみださない（はばの 決まった 大きい 要素が ない、grid は 54px から）
   assert.ok(!/(?:^|[^-])width:\s*(?:[1-9]\d{2,})px/.test(h),'固定の はば');
   assert.ok(!/min-width:\s*[1-9]\d{2,}px/.test(h));
   assert.match(h,/grid-template-columns:repeat\(auto-fill,minmax\(54px,1fr\)\)/);
   assert.ok(!/𝄪|𝄫/.test(h));
   // 長調だけ
-  const hm=D.checkTableHTML(quiz,{modes:['major']});
+  const hm=D.checkTableHTML(quiz,{modes:['major'],merge:false});
   assert.equal((hm.match(/<li /g)||[]).length,13);
   assert.ok(hm.includes('できた 調：1 ／ 13')&&!hm.includes('🌙 短調'));
+  assert.ok(hm.includes('📋 長調 チェック表'));
   // reset の あとは ぜんぶ「まだ」
   deck.reset();
   assert.ok([...D.checkTableHTML(quiz).matchAll(/data-mastery="(\w+)"/g)].every(m=>m[1]==='none'));
@@ -272,4 +281,103 @@ test('setOptions：えらべる 調が かわらなければ ふくろの のこ
   d.setOptions({weak:false}); eq(d.state(),s,'weak だけ');
   d.setOptions({tier:'normal',modes:['major']}); eq(d.state(),s,'おなじ せってい');
   d.setOptions({tier:'easy'}); eq(d.bag,[],'むずかしさが かわった'); assert.equal(d.last,s.last);
+});
+
+test('ヒント：こたえる まえに 見て できた は ×に しない（right・wrong は ふえず hint と recent の h）',()=>{
+  const quiz=q(); let t=10; const deck=D.create({quiz,now:()=>t});
+  eq(deck.record('M2',true,{hint:true}),{right:0,wrong:0,hint:1,last:10,recent:'h'});
+  assert.equal(D.mastery(deck.stats().M2),'learning','ヒントだけでも「まだ」では ない');
+  // ヒントを 見ても まちがえたら ×
+  t=11; eq(deck.record('M2',false,{hint:true}),{right:0,wrong:1,hint:1,last:11,recent:'hx'});
+  t=12; deck.record('M2',true,{hint:false});
+  eq(deck.stats().M2,{right:1,wrong:1,hint:1,last:12,recent:'hxo'});
+  // recent は さいごの 8つまで
+  for(let i=0;i<10;i++) deck.record('M3',i%2===0);
+  assert.equal(deck.stats().M3.recent,'oxoxoxox');
+  assert.equal(PA.HINT_NOTE,'こたえる まえに 見ても ×には ならないよ。「ヒントで できた」に なるよ');
+});
+
+test('mastery（recent）：さいごの 3回で きめる',()=>{
+  const m=(right,wrong,recent,hint=0)=>D.mastery({right,wrong,hint,recent});
+  assert.equal(m(3,0,'ooo'),'good');
+  assert.equal(m(10,9,'xxooo'),'good','まえに まちがえても、さいご 3回 ○ なら できた');
+  assert.equal(m(2,0,'oo'),'learning','3回 いじょう じぶんで できて いない');
+  assert.equal(m(3,0,'ooh'),'learning','さいご 3つに h が ある');
+  assert.equal(m(5,1,'ooxoo'),'learning');
+  assert.equal(m(5,2,'ooxox'),'weak','さいご 3つに x が 2つ');
+  assert.equal(m(0,1,'x'),'learning','x 1つだけでは にがてに しない');
+  assert.equal(m(0,2,'xx'),'weak');
+  assert.equal(m(9,3,'xxx'),'weak');
+  assert.equal(m(0,0,'hh',2),'learning');
+  assert.equal(m(0,0,'',0),'none');
+  // よぶんの 数：さいご 3つの x（2まで）
+  assert.equal(D.extraCopies({right:9,wrong:0,recent:'ooo'}),0);
+  assert.equal(D.extraCopies({right:0,wrong:1,recent:'oox'}),1);
+  assert.equal(D.extraCopies({right:9,wrong:9,recent:'xox'}),2);
+  assert.equal(D.extraCopies({right:9,wrong:9,recent:'xxx'}),2);
+  assert.equal(D.extraCopies({right:0,wrong:5,recent:'xxooo'}),0,'さいごが できていれば ふやさない');
+  // 古い きろく（できた）を ひきつぐ：○ 1つで「れんしゅう中」に もどらない
+  const quiz=q(); raw.set('pianoapps.keystats-'+quiz,JSON.stringify({M0:{right:6,wrong:0,last:1}}));
+  assert.equal(D.mastery(D.stats(quiz).M0),'good');
+  D.create({quiz}).record('M0',true);
+  eq(D.stats(quiz).M0.recent,'oooo'); assert.equal(D.mastery(D.stats(quiz).M0),'good');
+});
+
+test('checkTableHTML：merge（ふつう）で おなじ 音の 調を 1つの ますに → 12＋12＝24',()=>{
+  const quiz=q(); let t=1; const deck=D.create({quiz,now:()=>t++});
+  // 嬰ヘ長調 ○○、変ト長調 ○ → あわせて ○○○（できた）
+  deck.record('M6',true); deck.record('M6',true); deck.record('M12',true);
+  deck.record('m6',false); deck.record('m12',false); // 嬰ニ短調・変ホ短調 ✗✗ → にがて
+  const h=D.checkTableHTML(quiz);
+  const cells=[...h.matchAll(/<li data-key="(\w+)" data-mastery="(\w+)"( data-ids="([^"]+)")?/g)];
+  assert.equal(cells.length,24);
+  const M6=cells.find(c=>c[1]==='M6'), m6=cells.find(c=>c[1]==='m6');
+  assert.equal(M6[2],'good'); assert.equal(M6[4],'M6 M12');
+  assert.equal(m6[2],'weak'); assert.equal(m6[4],'m6 m12');
+  assert.ok(!cells.some(c=>c[1]==='M12'||c[1]==='m12'));
+  assert.ok(h.includes('できた 調：1 ／ 24')&&h.includes('📋 24調 チェック表'));
+  assert.ok(h.includes('嬰ヘ長調・変ト長調（♯6つ・♭6つ）：できた。じぶんで できた 3、まちがい 0'));
+  assert.ok(h.includes('嬰ヘ<br>変ト'));
+  eq(D.tally(quiz),{total:24,good:1,learning:0,weak:1,none:22});
+  eq(D.tally(quiz,{modes:['major'],merge:false}),{total:13,good:0,learning:2,weak:0,none:11});
+  const hm=D.checkTableHTML(quiz,{modes:['minor']});
+  assert.equal((hm.match(/<li /g)||[]).length,12);
+  assert.ok(hm.includes('📋 短調 チェック表')&&hm.includes('できた 調：0 ／ 12'));
+  assert.ok(hm.includes('嬰ニ短調と 変ホ短調')&&!hm.includes('嬰ヘ長調と'));
+  assert.ok(D.checkTableHTML(quiz,{title:'📋 しらべ'}).includes('<h2>📋 しらべ<small>'));
+  assert.ok(D.checkTableHTML(quiz,{note:'メモ'}).includes('<p class="note">メモ</p>'));
+  // ページが 題を とりかえる ための 形（<h2>…</h2>）は そのまま
+  assert.match(h,/<h2>[\s\S]*?<\/h2>/);
+  // mergeStats：時刻の じゅんに recent を つなぐ
+  eq(D.mergeStats([{right:1,wrong:0,hint:0,last:5,recent:'o'},{right:0,wrong:2,hint:1,last:3,recent:'xhx'}]),{right:1,wrong:2,hint:1,last:5,recent:'xhxo'});
+  eq(D.mergeStats([{right:3,wrong:0,last:5},{right:0,wrong:1,last:3,recent:'x'}]),{right:3,wrong:1,hint:0,last:5},'古い きろくが まざると recent は つけない');
+  assert.equal(D.mergeStats([undefined,undefined]),undefined);
+});
+
+test('checkTableHTML：pickable で ますが ボタン（data-act="kd-pick"）',()=>{
+  const quiz=q(), deck=D.create({quiz}); deck.record('M1',false);
+  const h=D.checkTableHTML(quiz,{pickable:true});
+  const bs=[...h.matchAll(/<button type="button" class="kd-cell" data-act="kd-pick" data-v="(\w+)" aria-label="([^"]+)"/g)];
+  assert.equal(bs.length,24);
+  assert.ok(bs.find(b=>b[1]==='M1')[2].startsWith('ト長調 を 3もん れんしゅう'));
+  assert.ok(bs.find(b=>b[1]==='M6')[2].startsWith('嬰ヘ長調・変ト長調 を 3もん れんしゅう'));
+  assert.ok(h.includes('ますを おすと'));
+  assert.ok(!/(?:^|[^-])width:\s*(?:[1-9]\d{2,})px/.test(h));
+});
+
+test('weakList・weakSummary：にがてな じゅん',()=>{
+  const quiz='zz-'+(qn++); let t=100; const d2=D.create({quiz,now:()=>t++});
+  d2.record('M0',true); d2.record('M0',true); d2.record('M0',true);   // できた
+  d2.record('M1',false); d2.record('M1',false);                        // にがて（x2）
+  d2.record('M2',false); d2.record('M2',false); d2.record('M2',false); // にがて（x3）
+  d2.record('m0',true); d2.record('m0',false); d2.record('m0',true);   // れんしゅう中（x あり）
+  d2.record('m1',true);                                               // れんしゅう中（x なし）
+  eq(D.weakList(quiz),['M2','M1','m0']);
+  const ws=PA.weakSummary(1e4).filter(w=>w.quiz===quiz); // ほかの テストの きろくも あるので 多めに
+  eq(ws.map(w=>[w.id,w.name,w.mastery]),[['M2','ニ長調','weak'],['M1','ト長調','weak'],['m0','イ短調','learning']]);
+  assert.ok(PA.weakSummary(2).length<=2);
+  // アプリの 名前
+  D.create({quiz:'chord-quiz'}).record('M4',false); D.create({quiz:'chord-quiz'}).record('M4',false);
+  const c=PA.weakSummary(1e4).find(w=>w.quiz==='chord-quiz');
+  assert.equal(c.title,'和音クイズ'); assert.equal(c.id,'M4');
 });
