@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fdf8f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="和音アプリ">
+<title>ピアノ和音アプリ</title>
+<link rel="stylesheet" href="assets/app.css">
+<style>
+.hello{display:flex;gap:12px;align-items:center}
+.hello .logo{flex:none;width:56px;height:56px;border-radius:16px;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:30px}
+.hello h2{margin:0;font-size:20px}
+.cat{display:flex;flex-direction:column;gap:8px}
+.cat-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;margin:8px 2px 0}
+.cat-head h2{margin:0;font-size:18px}
+.cat-head span{color:var(--sub);font-size:13px}
+.apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px}
+.appcard{display:flex;align-items:center;gap:12px;min-height:76px;padding:12px 14px;border-radius:18px;background:var(--card);text-decoration:none;
+  box-shadow:0 2px 0 #eadfce,0 6px 18px rgba(80,60,30,.06);border-left:6px solid var(--c)}
+.appcard:active{transform:scale(.99)}
+.appcard .ic{flex:none;width:48px;height:48px;border-radius:14px;background:var(--l);display:grid;place-items:center;font-size:26px}
+.appcard .tx{min-width:0;flex:1}
+.appcard b{display:block;font-size:17px;line-height:1.3}
+.appcard .d{display:block;color:var(--sub);font-size:13px;line-height:1.45;margin-top:2px}
+.appcard .ty{display:inline-block;font-size:11.5px;font-weight:800;padding:1px 8px;border-radius:999px;background:var(--l);color:var(--c);margin-bottom:2px}
+.appcard::after{content:"›";flex:none;color:var(--sub);font-size:24px}
+.cont{border-left-color:var(--ink)}
+</style>
+</head>
+<body>
+<header class="appbar" id="appbar"></header>
+<main class="page wide" id="view"></main>
+<script src="assets/core.js"></script>
+<script>
+/* 入口：すべてのアプリを カテゴリごとに ならべる */
+const TYPES={learn:{label:'しくみ',c:'#3b4fa8',l:'#e6eafb'},quiz:{label:'クイズ',c:'#e8553d',l:'#fde5df'},play:{label:'れんしゅう',c:'#22a06b',l:'#daf3e6'},ref:{label:'いちらん',c:'#8a4fe0',l:'#ece2fb'},ear:{label:'耳',c:'#c98500',l:'#fff1cc'}};
+const CATS=[
+  {title:'🎹 長調・短調の Ⅰ・Ⅳ・Ⅴ・Ⅴ7',sub:'まずは ここから',apps:[
+    {id:'chord-build',ic:'🐸',title:'和音のしくみ',d:'音階の なんばんめから「ひとつとばし」で 和音を つくる',type:'learn'},
+    {id:'chord-quiz',ic:'🎯',title:'和音クイズ',d:'「ト長調のⅤ7は？」を けんばんで おさえる／えらぶ',type:'quiz'},
+    {id:'cadence',ic:'🎵',title:'カデンツ',d:'Ⅰ→Ⅳ→Ⅰ→Ⅴ7→Ⅰ を 聴いて、伴奏の形を 見る',type:'play'},
+    {id:'chord-table',ic:'📋',title:'和音いちらん表',d:'ぜんぶの調の Ⅰ・Ⅳ・Ⅴ・Ⅴ7。かくして れんしゅうも',type:'ref'}]},
+  {title:'🌙 短調と 臨時記号',sub:'Ⅴ・Ⅴ7・Ⅴ9・減七',apps:[
+    {id:'minor-why',ic:'❓',title:'なぜ 7ばんめを 上げるの？',d:'長調と 短調の「7ばんめ→主音」を くらべて 聴く',type:'learn'},
+    {id:'minor-signature',ic:'♮',title:'調号と 臨時記号',d:'調号に 書けない わけ。♯・♮・<span class="ds">x</span> の いちらん',type:'learn'},
+    {id:'minor-family',ic:'🏠',title:'Ⅴの家族',d:'Ⅴ→Ⅴ7→Ⅴ9→減七 と、Ⅰへの 解決',type:'learn'},
+    {id:'minor-quiz',ic:'🎯',title:'短調クイズ',d:'短調の Ⅴの家族を おさえる／臨時記号を えらぶ',type:'quiz'}]},
+  {title:'🎼 つかってみる',sub:'曲に 和音を つける',apps:[
+    {id:'accompaniment',ic:'🎼',title:'伴奏づけ',d:'知っている曲の メロディーに Ⅰ・Ⅳ・Ⅴ7 を つける',type:'play'}]},
+  {title:'👂 耳を きたえる',sub:'聴いて パッと わかる',apps:[
+    {id:'ear',ic:'👂',title:'和音の 聴きわけ',d:'明るい・さびしい・Ⅴ7・減七（ドキドキ）を 音で 当てる',type:'ear'}]}
+];
+const ALL=CATS.flatMap(c=>c.apps);
+function card(a,extra=''){
+  const t=TYPES[a.type];
+  return `<a class="appcard ${extra}" href="${a.id}.html" style="--c:${t.c};--l:${t.l}"><span class="ic">${a.ic}</span><span class="tx"><span class="ty">${t.label}</span><b>${a.title}</b><span class="d">${a.d}</span></span></a>`;
+}
+function render(){
+  const last=PA.store.get('last',null), la=last&&ALL.find(a=>a.id===last.app);
+  let h=`<div class="stack">
+    <section class="card"><div class="hello"><span class="logo">🎹</span><div><h2>ピアノ和音アプリ</h2><p class="lead">Ⅰ・Ⅳ・Ⅴ・Ⅴ7、短調の Ⅴ・減七、伴奏づけを「見て・聴いて・さわって」おぼえよう</p></div></div></section>`;
+  if(la) h+=`<div class="cat"><div class="cat-head"><h2>▶️ つづきから</h2></div>${card(la,'cont')}</div>`;
+  CATS.forEach(c=>{h+=`<div class="cat"><div class="cat-head"><h2>${c.title}</h2><span>${c.sub}</span></div><div class="apps">${c.apps.map(a=>card(a)).join('')}</div></div>`;});
+  h+=`<p class="note">右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべます。どのアプリにも 同じ設定が つかわれます。<br>
+    スマホの ホーム画面に 追加すると、アプリのように すぐ ひらけます。</p></div>`;
+  PA.paint(document.getElementById('view'),h,'home');
+}
+PA.store.set('return-to',null);
+PA.mountBar({title:'ピアノ和音アプリ',back:'#'});
+document.querySelector('#appbar a.iconbtn').outerHTML='<span class="iconbtn" aria-hidden="true">🎹</span>';
+PA.onSettings=render;
+PA.onPageShow=render;
+render();
+</script>
+</body>
+</html>

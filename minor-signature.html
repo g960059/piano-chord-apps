@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fdf8f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>調号と 臨時記号</title>
+<link rel="stylesheet" href="assets/app.css">
+<style>
+.toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.note{font-size:15px}
+.cap{margin:0 0 4px;font-size:15px}
+.staffbox svg{min-width:300px}
+.kbbox .kb{max-width:420px;margin:0 auto}
+.kbleg{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:14px;color:var(--sub);margin-top:4px}
+.kbleg i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px;font-style:normal}
+.t-sharp{background:#fde4e7;color:#a3273a}
+.t-natural{background:#dfeafd;color:#1d4f9a}
+.t-dsharp{background:#ece2fb;color:#5b2fb0}
+.legend3{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 10px}
+.legend3 span{padding:4px 10px;border-radius:12px;font-weight:700;font-size:14px;line-height:1.45}
+.klist{display:grid;gap:6px;margin-top:10px}
+.khead,.krow{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.7fr) minmax(0,1.35fr);gap:6px}
+.khead{font-size:13px;color:var(--sub);font-weight:700;line-height:1.35;padding:0 2px;align-items:end}
+.krow>*{border-radius:12px;min-height:56px;min-width:0}
+.kname{display:flex;flex-direction:column;justify-content:center;align-items:flex-start;padding:6px 8px;background:var(--soft2);text-align:left;line-height:1.3;border:2px solid transparent}
+.kname b{font-size:15px}
+.kname small{font-size:13px;color:var(--sub)}
+.krow.sel .kname{border-color:var(--night);background:var(--nightl)}
+.knat{display:flex;align-items:center;justify-content:center;gap:4px;font-weight:800;font-size:17px;background:var(--soft2)}
+.knat .ar{color:var(--sub);font-weight:400;font-size:15px}
+.kans{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:4px;line-height:1.25;text-align:center}
+.kans .top{display:flex;align-items:baseline;gap:8px;justify-content:center;flex-wrap:wrap}
+.kans .ln{font-size:17px;font-weight:800}
+.kans .mk{font-size:22px;font-weight:800}
+.kans small{font-size:13px;font-weight:700}
+.kans .hint{font-weight:400;font-size:13px;opacity:.9}
+.kans.hid{background:#f1ece4;color:#b3a99c;font-size:24px;font-weight:800;border:2px dashed #ddd2c4}
+.kans.hid small{font-size:13px;font-weight:400}
+.hidebar{display:grid;gap:6px;margin-top:8px}
+.hidebar .note{margin:0}
+.hidebar .btn{justify-self:start}
+#demo{scroll-margin-top:calc(68px + env(safe-area-inset-top,0px))}
+#done{scroll-margin-bottom:90px}
+.links{display:grid;gap:8px}
+.links .btn{justify-content:flex-start}
+@media (min-width:560px){
+  .khead,.krow{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,1.4fr)}
+  .kname b{font-size:16px}
+}
+</style>
+</head>
+<body>
+<header class="appbar" id="appbar"></header>
+<main class="page" id="view"></main>
+<div class="actionbar" id="actions"></div>
+<script src="assets/core.js"></script>
+<script>
+/* 調号と 臨時記号：短調の「7ばんめを 上げる」ぶんは、平行調と共通の 調号に 書けないので 臨時記号になる */
+const MARK={1:'♯',0:'♮',2:'𝄪'};
+const MARK_NAME={1:'シャープ',0:'ナチュラル',2:'ダブルシャープ'};
+const MARK_CLS={1:'t-sharp',0:'t-natural',2:'t-dsharp'};
+const NKEYS=PA.keyCount(true);
+const saved=PA.store.get('minor-signature',{})||{};
+const state={keyIdx:0,hide:saved.hide===true,sigDemo:false,revealed:new Set()};
+if(Number.isInteger(saved.keyIdx)&&saved.keyIdx>=0&&saved.keyIdx<NKEYS) state.keyIdx=saved.keyIdx;
+const save=()=>PA.store.set('minor-signature',{keyIdx:state.keyIdx,hide:state.hide});
+const KEYS=Array.from({length:NKEYS},(_,i)=>PA.minorKey(i)); // 主音は ラ3〜ソ♯4、平行調（長調）は ド4〜シ4
+const curKey=()=>KEYS[state.keyIdx];
+// けんばんの 名前（白鍵は そのまま、黒鍵は ♯で）
+const kbNote=m=>{const pc=PA.mod(m,12), L=PA.NAT.indexOf(pc); return L>=0?{letter:L,acc:0}:{letter:PA.NAT.indexOf(pc-1),acc:1};};
+const whiteDown=m=>{while(PA.BLACK.has(PA.mod(m,12)))m--;return m;};
+const whiteUp=m=>{while(PA.BLACK.has(PA.mod(m,12)))m++;return m;};
+// 「ためしてみる」：平行調（長調）の 音階で、導音と おなじ文字の音まで 上げてしまう
+const relWrongOf=key=>key.rel.scale.map(n=>n.letter===key.lt.letter?{...n,acc:key.lt.acc,midi:n.midi+(key.lt.acc-n.acc),wrong:true}:n);
+const harm8Of=key=>[...key.harm,{...PA.at(key.harm,7),raised:false}];
+const playScale=notes=>{PA.stopSound();notes.forEach((n,i)=>PA.playNote(n.midi,i*0.36,0.7,0.22));};
+const playLT=k=>{PA.stopSound();PA.playNote(k.lt.midi,0,0.9,0.24);PA.playNote(k.lt.midi+1,0.8,1.4,0.24);}; // 導音 → 主音（すぐ上）
+
+function demoQuestion(key){
+  if(key.ltType===0) return `もし 調号の ${PA.nmH(key.natLT)} から ♭ を とったら…？`;
+  if(key.ltType===2) return `もし 調号の ${PA.nmH(key.natLT)} を ${PA.nmH(key.lt)} に したら…？`;
+  return `もし 調号に ${PA.nmH(key.lt)} を 書いたら…？`;
+}
+function ltKeyboard(key){
+  const lt=key.lt.midi, nat=key.natLT.midi, ton=lt+1;
+  const marks=new Map();
+  marks.set(nat,{fill:'#fff',ring:'#857c8f',tc:'#5b5266',label:PA.nm(key.natLT),light:true});
+  marks.set(lt,{fill:'#d1495b',label:PA.nm(key.lt),focus:true});
+  marks.set(ton,{fill:'#3b4fa8',label:PA.nm(key.nat[0]),focus:true});
+  return PA.kbSVG(whiteDown(lt-5),whiteUp(ton+4),marks);
+}
+function render(){
+  const key=curKey(), rel=key.rel, harm8=harm8Of(key);
+  const demoSc=state.sigDemo?relWrongOf(key):rel.scale, demo8=demoSc.concat([PA.at(demoSc,7)]);
+  let h=`<div class="stack">
+    <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}・平行調は ${PA.keyName(rel)}</span></div>
+    <section class="card"><h2>${PA.keyName(key)}と ${PA.keyName(rel)}は 調号が おなじ<small>こういう 2つの調を「平行調」と いうよ</small></h2>
+      <p class="cap"><b>${PA.keyName(key)}の 和声的短音階</b>（7ばんめを 上げたもの）</p>
+      <div class="scroll staffbox" data-sk="harm">${PA.staffSVG(key,harm8.map(n=>({notes:[n],color:n.raised?'#d1495b':'#3b4fa8',accColor:'#d1495b',accRing:true})),{colW:40,minW:380})}</div>
+      <p class="note">赤い ${PA.H(MARK[key.ltType])} が 臨時記号。調号には 書かずに、使う音の すぐ前に 書くよ。</p>
+      <p class="cap" style="margin-top:12px"><b>🎹 けんばんで 見ると</b>（さわると 音が出るよ）</p>
+      <div class="scroll kbbox" data-sk="kb">${ltKeyboard(key)}</div>
+      <div class="kbleg"><span><i style="background:#fff;border:2px solid #857c8f"></i>調号のまま「${PA.nmH(key.natLT)}」</span><span><i style="background:#d1495b"></i>上げた 7ばんめ「${PA.nmH(key.lt)}」</span><span><i style="background:#3b4fa8"></i>主音「${PA.nmH(key.nat[0])}」</span></div>
+      <div class="row" style="margin-top:8px"><button class="btn small" data-act="lt">🔔 ${PA.nmH(key.lt)} → ${PA.nmH(key.nat[0])}</button><span class="note" style="margin:0">主音の すぐ下（となり）</span></div>
+    </section>
+    <section class="card" id="demo"><h2>🧪 ${demoQuestion(key)}${state.sigDemo?'<small>下の「🙈 もどす」で もとに もどるよ</small>':''}</h2>
+      <p class="cap"><b>${PA.keyName(rel)}の 音階</b>${state.sigDemo?'（調号を かえたとき）':''}</p>
+      <div class="scroll staffbox" data-sk="demo">${PA.staffSVG(key,demo8.map(n=>({notes:[n],color:n.wrong?'#d1495b':'#e8553d',noAcc:true})),{colW:40,minW:380,sigOverride:state.sigDemo?{letter:key.lt.letter,acc:key.lt.acc}:null})}</div>
+      <div class="${state.sigDemo?'fb bad':'msg'}" style="margin-top:8px">${state.sigDemo
+        ?`${PA.keyName(rel)}の「${PA.nmH(rel.scale.find(n=>n.letter===key.lt.letter))}」まで「${PA.nmH(key.lt)}」に なって、へんな 音階に なっちゃう！ だから 調号には 書けないんだ。`
+        :`調号は ${PA.keyName(rel)}と いっしょに 使っている。下の「🧪 ためす」を おしてみよう。`}</div>
+    </section>
+    <div class="rule">調号は 平行調（${PA.keyName(rel)}と ${PA.keyName(key)}）で 共通。だから 短調で「7ばんめを 上げる」ぶんは、調号に 書けず <b>臨時記号</b>に なる。</div>`;
+  // ぜんぶの 短調
+  const nRev=state.revealed.size;
+  h+=`<section class="card" id="list"><h2>📋 どの記号を つける？（ぜんぶの 短調）<small>7ばんめを「主音の 半音下」に するための 記号</small></h2>
+    <div class="legend3"><span class="t-sharp">♯ シャープ：調号に 何もない音を 上げる</span><span class="t-natural">♮ ナチュラル：♭ を とって 上げる</span><span class="t-dsharp"><span class="ds">x</span> ダブルシャープ：♯ が ついた音を もっと 上げる</span></div>
+    ${PA.seg('hide',[['0','👀 ぜんぶ 見せる'],['1','🙈 かくして れんしゅう']],state.hide?'1':'0','full')}
+    ${state.hide?`<div class="hidebar"><p class="note">「？」を タップすると こたえが 出るよ（${nRev}/${NKEYS}）</p><button class="btn small" data-act="rehide" ${nRev?'':'disabled'}>🔁 もういちど かくす</button></div>`
+      :`<p class="note">短調の 名前を タップすると、上の がくふ・けんばんが その調に かわるよ。右の こたえを タップすると 音が出るよ。</p>`}
+    <div class="klist" role="list">
+      <div class="khead" aria-hidden="true"><span>短調</span><span>7ばんめ<br>（調号のまま）</span><span>上げると・つける記号</span></div>`;
+  KEYS.forEach((k,i)=>{
+    const show=!state.hide||state.revealed.has(i), cls=MARK_CLS[k.ltType];
+    const hint=(k.ltType===2||(k.lt.acc===1&&(k.lt.letter===2||k.lt.letter===6)))?`<span class="hint">けんばんは ${PA.nmH(kbNote(k.lt.midi))}</span>`:'';
+    h+=`<div class="krow ${i===state.keyIdx?'sel':''}" role="listitem">
+      <button class="kname" data-act="key" data-v="${i}" aria-pressed="${i===state.keyIdx}"><b>${PA.keyName(k)}</b><small>${PA.keyEn(k)}・${PA.sigLabel(k)}</small></button>
+      <div class="knat">${PA.nmH(k.natLT)}<span class="ar">→</span></div>`;
+    h+=show
+      ?`<button class="kans ${cls}" data-act="ltrow" data-v="${i}" aria-label="${PA.keyName(k)}：${PA.nm(k.lt).replace('𝄪','ダブルシャープ')}、${MARK_NAME[k.ltType]}。音を きく"><span class="top"><span class="ln">${PA.nmH(k.lt)}</span><span class="mk">${PA.H(MARK[k.ltType])}</span></span><small>${MARK_NAME[k.ltType]}</small>${hint}</button>`
+      :`<button class="kans hid" data-act="reveal" data-v="${i}" aria-label="${PA.keyName(k)}の こたえを 見る">？<small>タップで こたえ</small></button>`;
+    h+=`</div>`;
+  });
+  h+=`</div>
+    ${state.hide&&nRev===NKEYS?`<div class="fb good" id="done" style="margin-top:10px">🎉 ぜんぶ ひらいたよ！ いくつ わかったかな？</div>`:''}
+    <div class="rule" style="margin-top:12px">記号の 形は ちがっても、やっていることは ぜんぶ おなじ。<br>「7ばんめを <b>主音の すぐ下（となり）</b> に する」</div>
+    <details class="more" style="margin-top:12px"><summary>💡 ${PA.nmH({letter:2,acc:1})} や ${PA.nmH({letter:3,acc:2})} は どこを ひくの？</summary>
+      <p class="note" style="margin-top:0">${PA.nmH({letter:2,acc:1})} は ${PA.nmH({letter:3,acc:0})}の けんばん、${PA.nmH({letter:3,acc:2})} は ${PA.nmH({letter:4,acc:0})}の けんばんで ひくよ。でも 7ばんめは 主音の すぐ下の 線・間の まま なので、名前は かえずに 記号を つけて 書く（音階では ${PA.nmH({letter:0,acc:0})}〜${PA.nmH({letter:6,acc:0})}を 1回ずつ 使う）。</p></details>
+  </section>
+  <section class="card"><h2>🔗 つぎは</h2><div class="links">
+    <a class="btn" href="minor-why.html">❓ なぜ 7ばんめを 上げるの？</a>
+    <a class="btn" href="minor-quiz.html">🎯 短調クイズ（臨時記号を えらぶ）</a>
+  </div></section></div>`;
+  PA.paint(document.getElementById('view'),h,String(state.keyIdx));
+  PA.paint(document.getElementById('actions'),
+    `<button class="btn" data-act="harmplay" aria-label="${PA.keyName(key)}の 和声的短音階を きく">🎶 ${PA.keyName(key)}</button>`+
+    `<button class="btn ${state.sigDemo?'warn':'night'}" data-act="sigdemo" aria-pressed="${state.sigDemo}">${state.sigDemo?'🙈 もどす':'🧪 ためす'}</button>`+
+    `<button class="btn" data-act="relplay" aria-label="${state.sigDemo?`調号を かえた ${PA.keyName(key.rel)}の へんな 音階を きく`:`${PA.keyName(key.rel)}の 音階を きく`}">${state.sigDemo?'🎶 へんな音階':'🎶 '+PA.keyName(key.rel)}</button>`,'bar');
+}
+
+/* ===== 操作 ===== */
+PA.mountBar({title:'調号と 臨時記号',app:'minor-signature'});
+PA.onSettings=render;
+PA.onKeySheet=()=>PA.openKeySheet({minor:true,idx:state.keyIdx,onPick:(minor,idx)=>{
+  PA.stopSound(); state.keyIdx=idx; state.sigDemo=false; save(); render();
+}});
+const showDemo=()=>{const d=document.getElementById('demo');if(!d)return;const r=d.getBoundingClientRect(),
+    top=document.getElementById('appbar').getBoundingClientRect().bottom, bot=document.getElementById('actions').getBoundingClientRect().top;
+  if(r.top<top+4||r.bottom>bot) d.scrollIntoView({block:'start',behavior:PA.reduceMotion()?'auto':'smooth'});};
+// 描きかえで 上の高さが かわっても、タップした行が 指の下から にげないように
+const keepRow=(el,sel,fn)=>{const y0=el&&el.getBoundingClientRect?el.getBoundingClientRect().top:null; fn();
+  if(y0==null) return; const n=document.querySelector(sel); if(n) window.scrollBy(0,n.getBoundingClientRect().top-y0);};
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  const a=el.dataset.act, v=el.dataset.v, key=curKey();
+  if(a==='key'){PA.stopSound();state.keyIdx=+v;state.sigDemo=false;save();keepRow(el,`[data-act="key"][data-v="${+v}"]`,render);}
+  else if(a==='sigdemo'){state.sigDemo=!state.sigDemo;render();showDemo();}
+  else if(a==='relplay'){const sc=state.sigDemo?relWrongOf(key):key.rel.scale;playScale([...sc,PA.at(sc,7)]);}
+  else if(a==='harmplay'){playScale(harm8Of(key));}
+  else if(a==='lt'){playLT(key);}
+  else if(a==='hide'){const h=v==='1';if(h!==state.hide||h){state.hide=h;state.revealed=new Set();save();render();}}
+  else if(a==='rehide'){state.revealed=new Set();render();}
+  else if(a==='reveal'){const i=+v;if(KEYS[i]){state.revealed.add(i);keepRow(el,`[data-act="ltrow"][data-v="${i}"]`,render);playLT(KEYS[i]);
+    const dn=document.getElementById('done'); if(dn&&dn.scrollIntoView) dn.scrollIntoView({block:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});}}
+  else if(a==='ltrow'){const i=+v;if(KEYS[i])playLT(KEYS[i]);}
+});
+render();
+</script>
+</body>
+</html>

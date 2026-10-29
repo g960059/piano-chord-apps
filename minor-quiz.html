@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fdf8f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>短調クイズ</title>
+<link rel="stylesheet" href="assets/app.css">
+<style>
+.toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.score{font-size:17px}
+.stars{font-size:14px;letter-spacing:-.05em}
+details.more>summary{flex-wrap:wrap;column-gap:8px;padding-block:6px}
+details.more>summary small{font-weight:400;color:var(--sub);font-size:13px}
+.optlabel{font-size:14px;color:var(--sub);font-weight:700;margin:6px 0 4px}
+.seg.grid4{display:grid;grid-template-columns:repeat(4,1fr);border-radius:18px}
+.seg.grid4 button{padding:6px 4px;border-radius:16px}
+.hero{border-top:6px solid var(--night)}
+.qtitle{font-size:clamp(20px,6vw,28px);font-weight:800;display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;line-height:1.3}
+.qkey{background:var(--soft);border-radius:12px;padding:2px 12px}
+.qsig{font-size:16px;color:var(--sub);font-weight:700}
+.qbadge{--c:var(--night);min-width:56px;height:48px;font-size:24px;border-radius:14px}
+.qtext{font-size:18px;margin:8px 0}
+.qstaff{max-width:340px;margin:4px auto 0}
+.qhead{display:flex;align-items:center;justify-content:space-between;gap:4px 10px;flex-wrap:wrap}
+.qhead .qtitle{flex:1 1 150px}
+.sigstaff{width:130px;flex:0 0 auto;margin-left:auto}
+.inst{margin:8px 0 6px;font-size:15px}
+.picked{font-size:17px;margin:8px 0 0}
+.fb{margin-top:10px;scroll-margin-bottom:90px;scroll-margin-top:70px}
+.choices{margin-top:10px}
+.choice .cn{display:block;font-size:13px;font-weight:700}
+.tips ul{margin:0;padding-left:1.2em}
+.tips li{margin:6px 0}
+.actionbar .btn.wide{flex-grow:1.6}
+</style>
+</head>
+<body>
+<header class="appbar" id="appbar"></header>
+<main class="page" id="view"></main>
+<div class="actionbar" id="actions"></div>
+<script src="assets/core.js"></script>
+<script>
+/* 短調クイズ：短調の Ⅴの家族（Ⅴ・Ⅴ7・Ⅴ9・減七）を けんばんで おさえる ／ 7ばんめに つける 記号を えらぶ */
+// Ⅴの家族：和声的短音階の なんばんめ を ひとつとばしで（4＝第5音から）
+const FAM={
+  V:{label:'Ⅴ',ks:[4,6,8],title:'Ⅴ（属和音）'},
+  V7:{label:'Ⅴ7',ks:[4,6,8,10],title:'Ⅴ7（属七の和音）'},
+  V9:{label:'Ⅴ9',ks:[4,6,8,10,12],title:'Ⅴ9（属九の和音）'},
+  DIM:{label:'減七',ks:[6,8,10,12],title:'Ⅴ9の根音省略形（減七の和音）'}
+};
+const FAM_KEYS=['V','V7','V9','DIM'];
+// 主音が高い調では、和音を1オクターブ下に置いて 五線の中に おさめる
+const famShift=key=>key.tonicMidi+7>70?-7:0;
+const famTones=(key,f)=>FAM[f].ks.map(k=>PA.at(key.harm,k+famShift(key)));
+const MARK={1:'♯',0:'♮',2:'𝄪'};
+const MARK_NAME={1:'シャープ',0:'ナチュラル',2:'ダブルシャープ'};
+const LEVELS=[[0,'なし'],[1,'1つまで'],[2,'2つまで'],[3,'3つまで'],[4,'4つまで'],[5,'5つまで'],[7,'ぜんぶ']];
+const KEYS=Array.from({length:PA.keyCount(true)},(_,i)=>PA.minorKey(i)); // 主音は ラ3〜ソ♯4
+const KB_LO=53, KB_HI=86; // ファ3〜レ6（こたえは ぜんぶ この中）
+const mod=PA.mod;
+
+/* ===== 状態 ===== */
+const Q={type:'chord',level:2,fams:{V:true,V7:true,V9:false,DIM:false},q:null,id:0,picked:new Set(),checked:false,result:null,lastOk:null,right:0,total:0,streak:0,chosen:null};
+const isInt=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
+const saved=(d=>d&&typeof d==='object'?d:{})(PA.store.get('minor-quiz',{}));
+(function(){
+  const d=saved;
+  if(['chord','mark'].includes(d.type)) Q.type=d.type;
+  if(LEVELS.some(([v])=>v===d.level)) Q.level=d.level;
+  if(d.fams&&typeof d.fams==='object'){
+    FAM_KEYS.forEach(f=>{if(typeof d.fams[f]==='boolean')Q.fams[f]=d.fams[f];});
+    if(!FAM_KEYS.some(f=>Q.fams[f])) Q.fams.V7=true;
+  }
+  if(isInt(d.total,0,1e6)&&isInt(d.right,0,d.total)&&isInt(d.streak,0,d.right)){Q.total=d.total;Q.right=d.right;Q.streak=d.streak;}
+})();
+// スコアと、まだ こたえていない もんだいも 保存する（「つくりかたを 見る」から もどったとき つづけられるように）
+const save=()=>PA.store.set('minor-quiz',{type:Q.type,level:Q.level,fams:Q.fams,right:Q.right,total:Q.total,streak:Q.streak,
+  q:Q.q?{keyIdx:Q.q.keyIdx,fam:Q.q.fam}:null,answered:Q.result!==null});
+const openD={}; // ひらいている <details>（描きなおしても とじないように）
+
+/* ===== もんだい ===== */
+const quizPool=()=>KEYS.map((k,i)=>({k,i})).filter(x=>PA.sigInfo(x.k).letters.length<=Q.level);
+function newQuestion(){
+  const pool=quizPool(), fams=FAM_KEYS.filter(f=>Q.fams[f]);
+  const many=Q.type==='mark'?pool.length>1:pool.length*fams.length>1;
+  let q,tries=0;
+  do{
+    const x=pool[Math.floor(Math.random()*pool.length)];
+    q={keyIdx:x.i,fam:fams[Math.floor(Math.random()*fams.length)]};
+  }while(Q.q&&many&&q.keyIdx===Q.q.keyIdx&&(Q.type==='mark'||q.fam===Q.q.fam)&&++tries<30);
+  Object.assign(Q,{q,id:Q.id+1,picked:new Set(),checked:false,result:null,lastOk:null,chosen:null});
+}
+(function(){ // まだ こたえていない もんだいを そのまま つづける
+  const q=saved.q;
+  if(q&&typeof q==='object'&&!saved.answered&&isInt(q.keyIdx,0,KEYS.length-1)&&FAM_KEYS.includes(q.fam)&&Q.fams[q.fam]
+     &&quizPool().some(x=>x.i===q.keyIdx)){Q.q={keyIdx:q.keyIdx,fam:q.fam};Q.id++;}
+})();
+// 調号だけの 小さな 五線（こたえる前に ヒーローの 中で 見せる）。上下の あきを けずって 低くする
+const sigStaff=key=>PA.staffSVG(key,[],{minW:130,maxScale:1}).replace(/viewBox="0 0 (\d+(?:\.\d+)?) \d+(?:\.\d+)?"/,'viewBox="0 38 $1 100"');
+const nameForMidi=(m,key)=>PA.nm(PA.spellMidi(m,key));
+function checkChord(){
+  const key=KEYS[Q.q.keyIdx], f=Q.q.fam, t=famTones(key,f);
+  const ans=new Set(t.map(n=>mod(n.midi,12))), pk=new Set([...Q.picked].map(m=>mod(m,12)));
+  const extra=[...pk].filter(p=>!ans.has(p)), missing=t.filter(n=>!pk.has(mod(n.midi,12)));
+  const ok=!extra.length&&!missing.length;
+  Q.checked=true; Q.lastOk=ok;
+  if(Q.result===null){Q.result=ok;Q.total++;if(ok){Q.right++;Q.streak++;}else Q.streak=0;}
+  if(ok) PA.chord(t.map(n=>n.midi));
+}
+// こたえあわせの メッセージ（描くたびに つくるので、音名の 設定を かえても あう）
+function chordMsg(key,f,t){
+  const ans=new Set(t.map(n=>mod(n.midi,12))), pk=new Set([...Q.picked].map(m=>mod(m,12)));
+  const extra=[...pk].filter(p=>!ans.has(p)), missing=t.filter(n=>!pk.has(mod(n.midi,12)));
+  if(Q.lastOk) return `🎉 せいかい！ ${PA.keyName(key)}の ${FAM[f].label} は <b>${PA.namesH(t)}</b>`;
+  const hints=[];
+  if(missing.some(n=>n.raised)&&extra.includes(mod(key.natLT.midi,12)))
+    hints.push(`7ばんめ「${PA.nmH(key.natLT)}」を 半音上げるのを わすれていない？ ${PA.keyName(key)}では <b>${PA.nmH(key.lt)}</b>（${PA.H(MARK[key.ltType])} ${MARK_NAME[key.ltType]}）だよ。`);
+  else if(missing.some(n=>n.raised)){
+    let m=`導音（7ばんめを 上げた音）は <b>${PA.nmH(key.lt)}</b>（${PA.H(MARK[key.ltType])} ${MARK_NAME[key.ltType]}）だよ。主音「${PA.nmH(key.nat[0])}」の すぐ下（となり）。`;
+    if(extra.includes(mod(key.nat[0].midi,12))) m+=`<br>上げるのは すぐ上の けんばんまで。主音まで 上げすぎて いない？`;
+    hints.push(m);
+  }
+  const root=PA.at(key.harm,4), nin=PA.at(key.harm,12), pnin=PA.at(key.par.scale,12);
+  if(f==='DIM'&&pk.has(mod(root.midi,12))) hints.push(`減七は Ⅴ9 から 根音「${PA.nmH(root)}」を <b>はぶいた</b> 和音だよ。`);
+  if((f==='V9'||f==='DIM')&&!pk.has(mod(nin.midi,12))&&extra.includes(mod(pnin.midi,12)))
+    hints.push(`短調の 第9音は 6ばんめ「${PA.nmH(nin)}」（調号どおり）。「${PA.nmH(pnin)}」は ${PA.keyName(key.par)}（長調）の 音だよ。`);
+  if(pk.size!==t.length) hints.push(`${FAM[f].label} は <b>${t.length}つ</b>の音だよ（いま ${pk.size}つ）。`);
+  return `🤔 おしい！ こたえは <b>${PA.namesH(t)}</b><br>`+(hints.join('<br>')||(f==='DIM'?`導音「${PA.nmH(key.lt)}」から ひとつとばしで 4つ（根音「${PA.nmH(root)}」は はぶく）。`:`音階の 5ばんめ「${PA.nmH(root)}」から ひとつとばしで かさねてみよう。`));
+}
+const markGlyph=a=>a===2?'<span class="ds">x</span>':a===1?'♯':a===0?'♮':'♭';
+const markWord=a=>a===2?'ダブルシャープ':a===1?'シャープ':a===0?'ナチュラル':'フラット';
+
+/* ===== 画面 ===== */
+function settingsHTML(){
+  const famTxt=FAM_KEYS.filter(f=>Q.fams[f]).map(f=>FAM[f].label).join('／');
+  const lvTxt=Q.level===0?'調号なし':Q.level===7?'ぜんぶの調':'調号 '+LEVELS.find(([v])=>v===Q.level)[1];
+  let h=`<details class="more" data-d="set" ${openD.set?'open':''}><summary>⚙️ もんだいの えらびかた<small>${lvTxt}${Q.type==='chord'?'・'+famTxt:''}</small></summary>
+    <div class="optlabel">調号の数</div>${PA.seg('qlevel',LEVELS,Q.level,'grid4')}`;
+  if(Q.type==='chord') h+=`<div class="optlabel">和音（いくつでも）</div><div class="seg grid4" role="group">${FAM_KEYS.map(k=>`<button class="${Q.fams[k]?'on':''}" data-act="qfam" data-v="${k}" aria-pressed="${Q.fams[k]}">${Q.fams[k]?'✅':'⬜'} ${FAM[k].label}</button>`).join('')}</div>`;
+  return h+`<div class="row" style="margin-top:10px"><button class="btn small" data-act="qreset">スコアを 0 に もどす</button></div></details>`;
+}
+function tipsHTML(){
+  return `<details class="more tips" data-d="tips" ${openD.tips?'open':''}><summary>💡 おぼえておこう</summary><ul>
+    <li><b>Ⅴ</b> は 音階の 5ばんめ（根音）から ひとつとばしで 3つ。<b>Ⅴ7</b> は もうひとつ とばして 4つ、<b>Ⅴ9</b> は さらに のせて 5つ。</li>
+    <li><b>減七</b> は Ⅴ9 から いちばん下の 根音を <b>はぶいた</b> 4つの音。</li>
+    <li>短調の 和音は <b>和声的短音階</b>（7ばんめの音を 半音上げた 音階）で つくるよ。上げた音（導音）は 主音の すぐ下（となり）。</li>
+    <li>短調の 第9音は 6ばんめの音（調号どおり）。</li>
+    <li>調号の ♭ が ついた音は ♮ で、何も ついていない音は ♯ で、調号の ♯ が ついた音は ダブルシャープ（<span class="ds">x</span>）で 上げるよ。</li>
+  </ul><p class="note">くわしくは <a href="minor-family.html">Ⅴの家族</a>・<a href="minor-signature.html">調号と 臨時記号</a> で。</p></details>`;
+}
+function markView(key){
+  let h=`<section class="card hero"><div class="qtitle"><span class="qkey">${PA.keyName(key)}</span><span class="qsig">（${PA.sigLabel(key)}）</span></div>
+    <p class="qtext">7ばんめ「<b>${PA.nmH(key.natLT)}</b>」を 主音の 半音下に するには、どの 記号を つける？</p>
+    <div class="qstaff">${PA.staffSVG(key,[{notes:[Q.chosen!=null?key.lt:key.natLT],color:Q.chosen!=null?'#d1495b':'#3b4fa8',accColor:'#d1495b',accRing:true},{notes:[PA.at(key.nat,7)],color:'#3b4fa8'}],{minW:220,colW:70})}</div>
+    <div class="choices">`+[1,0,2,-1].map(a=>{
+      let cls=''; if(Q.chosen!=null){if(a===key.ltType)cls='right';else if(a===Q.chosen)cls='wrong';}
+      return `<button class="choice ${cls}" data-act="qmark" data-v="${a}" ${Q.chosen!=null?'disabled':''}>${markGlyph(a)}<span class="cn">${markWord(a)}</span></button>`;
+    }).join('')+`</div>`;
+  if(Q.chosen!=null){
+    const sacc=key.sig[key.natLT.letter]||0, d=Q.chosen-sacc, cn=PA.nmH({letter:key.natLT.letter,acc:Q.chosen});
+    const why=Q.result?'':d>=2?`「${cn}」だと 主音「${PA.nmH(key.nat[0])}」と おなじ 高さ（か それより上）に なっちゃう。上げるのは すぐ上の けんばんまで。<br>`:d===0?`その記号だと「${PA.nmH(key.natLT)}」の まま。上がらないよ。<br>`:`それだと「${cn}」で 下がっちゃう。<br>`;
+    h+=`<div class="fb ${Q.result?'good':'bad'}">${Q.result?'🎉 せいかい！':'🤔 おしい！'} ${why}${PA.keyName(key)}では「${PA.nmH(key.natLT)}」に ${PA.H(MARK[key.ltType])} を つけて <b>${PA.nmH(key.lt)}</b>。
+      ${key.ltType===0?'調号の ♭ を とると 半音 上がるよ。':key.ltType===2?'調号で もう ♯ が ついているので、もう1つ 上げて ダブルシャープ。':'調号に 何も ついていない音なので、♯ で 上げるよ。'}</div>
+      <div class="row" style="margin-top:10px"><button class="btn small" data-act="qexplain">🐸 つくりかたを 見る</button></div>`;
+  }
+  return h+`</section>`;
+}
+function chordView(key){
+  const f=Q.q.fam, t=famTones(key,f), marks=new Map();
+  if(!Q.checked) Q.picked.forEach(m=>marks.set(m,{fill:'#ffd66b',label:nameForMidi(m,key),tc:'#3a3245'}));
+  else{
+    const ans=new Set(t.map(n=>mod(n.midi,12)));
+    Q.picked.forEach(m=>{const ok=ans.has(mod(m,12));marks.set(m,{fill:ok?'#22a06b':'#d1495b',label:nameForMidi(m,key)});});
+    const pk=new Set([...Q.picked].map(m=>mod(m,12)));
+    t.forEach(n=>{if(!pk.has(mod(n.midi,12))&&!marks.has(n.midi)) marks.set(n.midi,{fill:'#fff',label:PA.nm(n),tc:'#3b4fa8',ring:'#3b4fa8'});});
+  }
+  // はじめに見せる位置：こたえの音の あたり（色は つけない）
+  [t[0].midi,t[t.length-1].midi].forEach(m=>marks.set(m,{...(marks.get(m)||{}),focus:true}));
+  const names=[...Q.picked].sort((a,b)=>a-b).map(m=>PA.H(nameForMidi(m,key)));
+  return `<section class="card hero"><div class="qhead"><div class="qtitle"><span class="qkey">${PA.keyName(key)}</span>の <span class="badge qbadge">${FAM[f].label}</span>は？</div>
+    ${Q.checked?'':`<div class="sigstaff">${sigStaff(key)}</div>`}</div>
+    <p class="note">${PA.sigLabel(key)}・${t.length}つの音${f==='DIM'?'（Ⅴ9の 根音省略形）':''}</p>
+    <p class="inst">${Q.checked?'<b style="color:#22a06b">緑</b>＝あっている、<b style="color:#d1495b">赤</b>＝ちがう、<b style="color:#3b4fa8">青わく</b>＝たりない音':`けんばんを タップして <b>${t.length}つ</b>の音を おさえよう（もういちど タップで けせる）`}</p>
+    <div class="scroll" data-sk="kb">${PA.kbSVG(KB_LO,KB_HI,marks)}</div>
+    <div class="picked">おさえた音： <b>${names.length?names.join('・'):'まだ なし'}</b></div>
+    ${Q.checked?`<div class="fb ${Q.lastOk?'good':'bad'}">${chordMsg(key,f,t)}</div>`:''}
+    <div class="row" style="margin-top:10px"><button class="btn small" data-act="qexplain">🐸 つくりかたを 見る</button></div>
+  </section>
+  ${Q.checked?`<section class="card"><h2>🎼 がくふ<small>${PA.keyName(key)}の ${FAM[f].label}（赤い音＝導音）</small></h2>
+    <div class="qstaff">${PA.staffSVG(key,[{notes:t,color:'#3b4fa8',ltColor:'#d1495b',accColor:'#d1495b'}],{minW:200,maxScale:1.3})}</div></section>`:''}`;
+}
+function render(){
+  if(!Q.q) newQuestion();
+  const key=KEYS[Q.q.keyIdx];
+  let h=`<div class="stack">${PA.seg('qtype',[['chord','🎹 和音を おさえる'],['mark','✋ 記号を えらぶ']],Q.type,'full')}
+    <div class="toprow"><div class="score">⭐ ${Q.right} / ${Q.total}　<span>れんぞく ${Q.streak}</span> <span class="stars">${'🌟'.repeat(Math.min(Q.streak,10))}</span></div></div>
+    ${settingsHTML()}
+    ${Q.type==='mark'?markView(key):chordView(key)}
+    ${tipsHTML()}</div>`;
+  PA.paint(document.getElementById('view'),h,Q.type+':'+Q.id);
+  renderActions(key);
+  save();
+}
+function renderActions(key){
+  const bar=document.getElementById('actions');
+  let h='';
+  if(Q.type==='mark'){
+    if(Q.chosen!=null) h=`<button class="btn primary wide" data-act="qnext">➡️ つぎの もんだい</button><button class="btn" data-act="qplaylt">🔊 ${PA.nmH(key.lt)}→${PA.nmH(key.nat[0])}</button>`;
+  }else if(!Q.checked){
+    h=`<button class="btn ok wide" data-act="qcheck" ${Q.picked.size?'':'disabled'}>✅ こたえあわせ</button><button class="btn" data-act="qtry" ${Q.picked.size?'':'disabled'}>🔊 きく</button><button class="btn" data-act="qclear" ${Q.picked.size?'':'disabled'}>🧽 けす</button>`;
+  }else{
+    h=`<button class="btn primary" data-act="qnext">➡️ つぎへ</button>${Q.lastOk?'':`<button class="btn wide" data-act="qretry">🔁 もういちど</button>`}<button class="btn" data-act="qplay">🔊 こたえ</button>`;
+  }
+  PA.paint(bar,h,'bar'); bar.hidden=!h; // フォーカスの もどし先は core が きめる
+}
+const showFb=()=>{const fb=document.querySelector('#view .fb'); if(fb&&fb.scrollIntoView) fb.scrollIntoView({block:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});};
+const playLT=k=>{PA.playNote(k.lt.midi,0,0.9,0.24);PA.playNote(k.lt.midi+1,0.8,1.4,0.24);};
+
+/* ===== 操作 ===== */
+PA.mountBar({title:'短調クイズ',app:'minor-quiz'});
+PA.onSettings=render;
+PA.onKey=m=>{ // 音は core が 鳴らす
+  if(Q.type!=='chord'||Q.checked) return;
+  Q.picked.has(m)?Q.picked.delete(m):Q.picked.add(m);
+  render();
+};
+document.addEventListener('toggle',e=>{const d=e.target; if(d&&d.dataset&&d.dataset.d) openD[d.dataset.d]=d.open;},true);
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]'); if(!el||el.disabled) return;
+  const a=el.dataset.act, v=el.dataset.v;
+  switch(a){
+    case 'qtype': if(Q.type===v) return; PA.stopSound(); Q.type=v; save(); newQuestion(); break;
+    case 'qlevel': if(Q.level===+v) return; PA.stopSound(); Q.level=+v; save(); newQuestion(); break;
+    case 'qfam': if(!FAM[v]) return; if(Q.fams[v]&&FAM_KEYS.filter(f=>Q.fams[f]).length===1) return; PA.stopSound(); Q.fams[v]=!Q.fams[v]; save(); newQuestion(); break;
+    case 'qreset': Q.right=Q.total=Q.streak=0; break;
+    case 'qcheck': if(Q.checked||!Q.picked.size) return; checkChord(); render(); showFb(); return;
+    case 'qclear': Q.picked=new Set(); break;
+    case 'qtry': PA.chord([...Q.picked].sort((x,y)=>x-y)); return;
+    case 'qnext': PA.stopSound(); newQuestion(); render(); PA.scrollTop(); return;
+    case 'qretry': Q.picked=new Set(); Q.checked=false; Q.lastOk=null; break;
+    case 'qplay': PA.chord(famTones(KEYS[Q.q.keyIdx],Q.q.fam).map(n=>n.midi)); return;
+    case 'qplaylt': playLT(KEYS[Q.q.keyIdx]); return;
+    case 'qmark': {
+      if(Q.chosen!=null) return;
+      const k=KEYS[Q.q.keyIdx], ch=+v; Q.chosen=ch; const ok=ch===k.ltType;
+      Q.result=ok; Q.total++; if(ok){Q.right++;Q.streak++;}else Q.streak=0;
+      playLT(k); render(); showFb(); return;
+    }
+    case 'qexplain': { // Ⅴの家族で、この調・和音の「つくりかた」を はじめから
+      PA.stopSound();
+      const prev=PA.store.get('minor-family',{});
+      PA.store.set('minor-family',{...(prev&&typeof prev==='object'?prev:{}),keyIdx:Q.q.keyIdx,fam:Q.type==='chord'?Q.q.fam:'V'});
+      PA.store.set('minor-family-auto',true);
+      PA.go('minor-family.html'); return;
+    }
+    default: return;
+  }
+  render();
+});
+render();
+</script>
+</body>
+</html>

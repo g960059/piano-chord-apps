@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fdf8f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>和音のしくみ</title>
+<link rel="stylesheet" href="assets/app.css">
+<style>
+.chords{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.cbtn{border-radius:16px;padding:6px 2px;background:var(--l);color:var(--c);border:3px solid var(--c);display:flex;flex-direction:column;align-items:center;min-height:64px;justify-content:center}
+.cbtn .num{font-size:26px;font-weight:800;line-height:1.1}
+.cbtn .nm{font-size:12px;font-weight:700;line-height:1.3}
+.cbtn.on{background:var(--c);color:#fff}
+.hero{border-top:6px solid var(--c)}
+.hero-top{display:flex;gap:12px;align-items:center}
+.hn{font-size:clamp(24px,7vw,36px);font-weight:800;color:var(--c);line-height:1.2}
+.hk{font-weight:700;font-size:15px}
+.hs{font-size:13px;color:var(--sub)}
+.msg b.big{font-size:20px;color:var(--c)}
+.ladder{min-width:600px}
+.tips ol{margin:0;padding-left:1.3em}
+.tips li{margin:6px 0}
+.toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.nw{white-space:nowrap}
+.hn{text-wrap:balance}
+</style>
+</head>
+<body>
+<header class="appbar" id="appbar"></header>
+<main class="page" id="view"></main>
+<div class="actionbar" id="actions"></div>
+<script src="assets/core.js"></script>
+<script>
+/* 和音のしくみ：各調の Ⅰ・Ⅳ・Ⅴ・Ⅴ7 を「音階の なんばんめ」から「ひとつとばし」で つくる */
+const CHORDS={I:{deg:0,n:3,label:'Ⅰ'},IV:{deg:3,n:3,label:'Ⅳ'},V:{deg:4,n:3,label:'Ⅴ'},V7:{deg:4,n:4,label:'Ⅴ7'}};
+const ROM=['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ'];
+const saved=PA.store.get('chord-build',{})||{};
+const state={minor:!!saved.minor,keyIdx:0,chord:'I',speed:saved.speed==='slow'?'slow':'normal',anim:null,msg:null,autoWait:false};
+if(Number.isInteger(saved.keyIdx)&&saved.keyIdx>=0&&saved.keyIdx<PA.keyCount(state.minor)) state.keyIdx=saved.keyIdx;
+if(Object.prototype.hasOwnProperty.call(CHORDS,saved.chord)) state.chord=saved.chord;
+const save=()=>PA.store.set('chord-build',{minor:state.minor,keyIdx:state.keyIdx,chord:state.chord,speed:state.speed});
+const curKey=()=>PA.keyOf(state.minor,state.keyIdx,60); // 主音は ド4〜シ4
+const chordTones=(key,ch)=>{const c=CHORDS[ch];return Array.from({length:c.n},(_,j)=>PA.at(key.scale,c.deg+2*j));};
+// 名前ごとに 改行しないように（「フ|ァ」「ド|♯」と われない）
+const namesW=(ns,sep)=>ns.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join(sep);
+// 白鍵どうしが となりの ところ（音の名前の せっていに あわせる）
+const mifaH=()=>PA.nmH({letter:2,acc:0})+PA.nmH({letter:3,acc:0})+'・'+PA.nmH({letter:6,acc:0})+PA.nmH({letter:0,acc:0});
+const skipsOf=ch=>{const c=CHORDS[ch];return Array.from({length:c.n-1},(_,j)=>c.deg+2*j+1);};
+function chordSym(t){
+  const r=PA.LET_EN[t[0].letter]+PA.ACC[t[0].acc];
+  if(t.length===4) return PA.H(r+'7');
+  return PA.H(r+((t[1].midi-t[0].midi)===3?'m':''));
+}
+function sigSentence(key){
+  const s=PA.sigInfo(key);
+  if(!s.letters.length) return key.minor?`調号なし → 白いけんばんで できるよ。でも 7ばんめ「${PA.nmH(key.natLT)}」を 半音上げた <b>「${PA.nmH(key.lt)}」</b>だけは 黒いけんばん。`:'調号なし → <b>白いけんばんだけ</b> で できるよ。';
+  return `調号は ${s.type>0?'♯':'♭'}${s.letters.length}つ → <b>${s.letters.map(L=>PA.nmH({letter:L,acc:0})).join('・')}</b> には いつも ${s.type>0?'♯':'♭'} がつくよ。`;
+}
+
+/* ===== 音階のかいだん ===== */
+function ladderSVG(key,o){
+  const CW=58,G=5,CH=50,R=7,X0=8,BASE=220,N=14;
+  const W=X0*2+N*(CW+G)-G, H=BASE+30, tones=o.tones||[], skips=o.skips||[], counts=o.counts||[];
+  let s=`<svg viewBox="0 0 ${W} ${H}" class="ladder" role="img" aria-label="音階のかいだん">`;
+  const dx=X0+7*(CW+G)-G/2, dTop=BASE-CH-7*R-56;
+  s+=`<line x1="${dx}" y1="8" x2="${dx}" y2="${BASE+6}" stroke="#d9cfc2" stroke-width="1.5" stroke-dasharray="4 4"/>`;
+  s+=`<text x="${dx+6}" y="24" font-size="17" fill="#a99f93">ここから 1オクターブ上 →</text>`; // スマホでは 約0.67倍に なるので 大きめ
+  const pos=k=>({x:X0+k*(CW+G),y:BASE-CH-k*R});
+  for(let k=0;k<N-1;k++){ // となりどうし（半音）の目印
+    if(PA.at(key.scale,k+1).midi-PA.at(key.scale,k).midi===1){const p=pos(k);s+=`<rect x="${p.x+CW+G/2-2.5}" y="${p.y+CH-22}" width="5" height="20" rx="2.5" fill="#f4a100"/>`;}
+  }
+  for(let k=0;k<N;k++){
+    const {x,y}=pos(k), n=PA.at(key.scale,k), d=k%7;
+    const isT=tones.includes(k), lit=!o.lit||o.lit.has(k);
+    s+=`<g opacity="${lit||isT?1:0.4}">`;
+    s+=`<rect x="${x}" y="${y}" width="${CW}" height="${CH}" rx="10" fill="${isT?o.color:(lit?'#fff':'#f4efe8')}" stroke="${isT?o.color:(d===0?'#bfb3a5':'#ddd2c4')}" stroke-width="2"/>`;
+    s+=`<text x="${x+CW/2}" y="${y+CH/2+(n.raised?2:6)}" text-anchor="middle" font-size="${PA.nm(n).length>3?15:19}" font-weight="800" fill="${isT?'#fff':'#3a3245'}">${PA.Svg(PA.nm(n))}</text>`;
+    if(n.raised) s+=`<text x="${x+CW/2}" y="${y+CH-3}" text-anchor="middle" font-size="14" font-weight="800" fill="${isT?'#fff':'#d1495b'}">半音上げ</text>`;
+    const big=[0,3,4].includes(d), rc=d===0?PA.COL.I:d===3?PA.COL.IV:d===4?PA.COL.V:'#b0a597';
+    s+=`<text x="${x+CW/2}" y="${y+CH+19}" text-anchor="middle" font-size="${big?18:15}" font-weight="${big?800:400}" fill="${rc}" opacity="${k<7?1:.55}">${ROM[d]}</text>`;
+    s+=`</g>`;
+    if(skips.includes(k)) s+=`<text x="${x+CW/2}" y="${y-7}" text-anchor="middle" font-size="17" font-weight="700" fill="#a99f93">とばす</text>`;
+    const ci=counts.indexOf(k);
+    if(ci>=0) s+=`<circle cx="${x+CW/2}" cy="${y-15}" r="13" fill="#ffc93c"/><text x="${x+CW/2}" y="${y-10}" text-anchor="middle" font-size="15" font-weight="800" fill="#3a3245">${ci+1}</text>`;
+  }
+  for(let i=1;i<tones.length;i++){
+    const a=pos(tones[i-1]), b=pos(tones[i]), ax=a.x+CW/2, bx=b.x+CW/2, top=Math.min(a.y,b.y)-38;
+    s+=`<path d="M${ax+6} ${a.y-2} Q${(ax+bx)/2} ${top} ${bx-6} ${b.y-2}" fill="none" stroke="${o.color}" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 7"/>`;
+  }
+  if(o.frog!=null){const p=pos(o.frog);s+=`<text x="${p.x+CW/2}" y="${p.y-32}" text-anchor="middle" font-size="28">🐸</text>`;}
+  return s+'</svg>';
+}
+
+/* ===== 画面 ===== */
+function staticMsg(key,ch,tones){
+  const c=CHORDS[ch];
+  let m=`${PA.keyName(key)}の <b>${c.label}</b> は、音階の <b>${c.deg+1}ばんめ「${PA.nmH(tones[0])}」</b>から ひとつとばしで ${c.n}つ → <b class="big">${PA.namesH(tones)}</b>`;
+  const r=tones.find(t=>t.raised);
+  if(r) m+=`<br>🌙 短調なので、7ばんめの音は 半音上げて <b>「${PA.nmH(r)}」</b>にするよ。`;
+  return m;
+}
+function tipsHTML(key){
+  const s=PA.sigInfo(key);
+  const li=[
+    `<b>ローマ数字 ＝ 音階の なんばんめ</b>。Ⅰは1ばんめ、Ⅳは4ばんめ、Ⅴは5ばんめの音から はじまる。`,
+    `<b>ひとつとばし</b>で 3つ かさねる（だんご3きょうだい 🍡）。がくふでは <b>線・線・線</b> か <b>間・間・間</b> になる。`,
+    `<b>Ⅴ7</b> は、Ⅴ に もうひとつ とばして のせた <b>4つの音</b>。`,
+    s.letters.length?`<b>♯・♭は 調号の音だけ</b>。この調では <b>${s.letters.map(L=>PA.nmH({letter:L,acc:0})).join('・')}</b> が いつも ${s.type>0?'♯':'♭'}。まず 白いけんばんで 作って、調号の音だけ となりの けんばんに ずらそう。`
+      :`<b>${PA.keyName(key)}は 調号なし</b>。${key.minor?'Ⅰ・Ⅳ は 白いけんばん だけで できるよ。Ⅴ・Ⅴ7 は いちばん下の 🌙 を 見てね。':'白いけんばん だけで できるよ。'}`,
+    `けんばんの <b style="color:#c98500">オレンジの印</b>は ${mifaH()}（白鍵どうしが となり）。`
+  ];
+  if(key.minor) li.push(`🌙 <b>短調の Ⅴ・Ⅴ7</b> は、7ばんめの音「${PA.nmH(key.natLT)}」を <b>半音上げて</b>「${PA.nmH(key.lt)}」に する。だから Ⅴ はいつも 明るいひびき。`);
+  return `<ol>${li.map(x=>`<li>${x}</li>`).join('')}</ol>`;
+}
+function render(){
+  const key=curKey(), ch=state.chord, c=CHORDS[ch], tones=chordTones(key,ch), A=state.anim, col=PA.COL[ch];
+  let h=`<div class="stack">
+    <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
+    <div class="chords">`+Object.keys(CHORDS).map(k=>`<button class="cbtn ${k===ch?'on':''}" style="--c:${PA.COL[k]};--l:${PA.LCOL[k]}" data-act="chord" data-v="${k}" aria-pressed="${k===ch}"><span class="num">${CHORDS[k].label}</span><span class="nm">${namesW(chordTones(key,k),'<wbr>')}</span></button>`).join('')+`</div>
+    <section class="card hero" style="--c:${col}">
+      <div class="hero-top"><span class="badge" style="--c:${col}">${c.label}</span>
+        <div style="min-width:0"><div class="hk">${PA.keyName(key)}の ${c.label}</div><div class="hn">${namesW(tones,'&nbsp;・ ')}</div><div class="hs">コードネーム ${chordSym(tones)}</div></div></div>
+      <div class="msg" style="margin-top:10px">${A?A.msg:state.autoWait?'👆 どこかを タッチすると <b>つくりかた</b>が はじまるよ':(state.msg||staticMsg(key,ch,tones))}</div>
+      <div class="row" style="margin-top:10px">${PA.seg('speed',[['normal','🐇 ふつう'],['slow','🐢 ゆっくり']],state.speed)}</div>
+    </section>`;
+  const shown=A?tones.filter(t=>A.tones.includes(t.k)):tones;
+  const lad=A?{lit:A.scaleLit,counts:A.count,tones:A.tones,skips:A.skips,frog:A.frog,color:col}:{lit:null,counts:[],tones:tones.map(t=>t.k),skips:skipsOf(ch),color:col};
+  h+=`<section class="card"><h2>🪜 音階のかいだん<small>下のローマ数字は「音階の なんばんめ」。オレンジの印＝となりどうし（半音）</small></h2><div class="scroll" data-sk="ladder" data-start="0%">${ladderSVG(key,lad)}</div></section>`;
+  const marks=new Map();
+  shown.forEach(t=>marks.set(t.midi,{fill:col,label:PA.nm(t),focus:true}));
+  if(A&&A.ghost) marks.set(A.ghost.midi,{fill:'#fff',ring:col,tc:col,label:PA.nm(A.ghost.note),focus:true});
+  if(A) A.scaleLit.forEach(k=>{const m=PA.at(key.scale,k).midi;if(!marks.has(m))marks.set(m,{fill:PA.BLACK.has(m%12)?'#8a7440':'#fff3c4'});});
+  h+=`<section class="card"><h2>🎹 けんばん<small>さわると 音が出るよ</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(60,88,marks)}</div></section>`;
+  let staffNote='';
+  if(shown.length){const st=PA.stepOf(shown[0]);staffNote=`ひとつとばし だから、この和音は <b>${(st-30)%2===0?'線・線・線':'間・間・間'}</b> に ならぶよ。`;}
+  h+=`<section class="card"><h2>🎼 がくふ</h2><div class="scroll" data-sk="staff">${PA.staffSVG(key,[{notes:shown,color:col,ltColor:'#d1495b',accColor:'#d1495b'}],{minW:220})}</div><p class="note">${staffNote}</p></section>`;
+  h+=`<details class="more tips"><summary>💡 おぼえかたの コツ</summary>${tipsHTML(key)}</details></div>`;
+  PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx);
+  PA.paint(document.getElementById('actions'),
+    (A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
+    `<button class="btn" data-act="play">🔊 いっしょに</button><button class="btn" data-act="arp">🎶 ひとつずつ</button>`,'bar');
+}
+
+/* ===== つくりかたアニメ ===== */
+let token=0;
+function stop(){token++;state.anim=null;state.autoWait=false;PA.stopSound();}
+async function build(){
+  stop(); const my=token, alive=()=>my===token;
+  const key=curKey(), ch=state.chord, c=CHORDS[ch], tones=chordTones(key,ch), D=state.speed==='slow'?1.6:1;
+  const A={scaleLit:new Set(),count:[],tones:[],skips:[],frog:null,ghost:null,msg:''};
+  state.anim=A; state.msg=null;
+  const upd=m=>{if(m!==undefined)A.msg=m;render();};
+  upd(`<b>①</b> まず ${PA.keyName(key)}の 音階（スケール）を ならべるよ。<br>${sigSentence(key)}${key.minor&&PA.sigInfo(key).letters.length?'<br>🌙 短調の 7ばんめは 半音上げておくよ。':''}`);
+  await PA.sleep(1300*D); if(!alive())return;
+  for(let k=0;k<8;k++){A.scaleLit.add(k);upd();PA.playNote(PA.at(key.scale,k).midi,0,0.7,0.2);await PA.sleep(360*D);if(!alive())return;}
+  for(let k=8;k<14;k++) A.scaleLit.add(k);
+  upd(`<b>②</b> ${c.label} は、音階の <b>${c.deg+1}ばんめ</b> の音から はじまるよ。いっしょに かぞえよう！`);
+  await PA.sleep(1300*D); if(!alive())return;
+  for(let k=0;k<=c.deg;k++){A.count.push(k);A.frog=k;upd();PA.playNote(PA.at(key.scale,k).midi,0,0.5,0.17);await PA.sleep(620*D);if(!alive())return;}
+  for(let j=0;j<c.n;j++){
+    const t=tones[j];
+    if(j===0){A.count=[];upd(`<b>③</b> ${c.deg+1}ばんめは <b>「${PA.nmH(t)}」</b>。ここが 和音の いちばん下（根音）だよ。`);}
+    else{
+      const sk=c.deg+2*j-1; A.skips.push(sk); A.frog=sk;
+      upd(`<b>${j===3?'⑤':'④'}</b> ひとつ <b>とばして</b>…`);
+      await PA.sleep(800*D); if(!alive())return;
+      A.frog=t.k;
+      upd(j===3?`<b>⑤</b> Ⅴ7 は、もうひとつ とばして 4つめの <b>「${PA.nmH(t)}」</b> を のせる！`:`<b>④</b> ひとつ とばして <b>「${PA.nmH(t)}」</b> を のせる！`);
+    }
+    if(t.raised||t.acc!==0){
+      const from=t.raised?{letter:t.letter,acc:key.sig[t.letter]}:{letter:t.letter,acc:0};
+      A.ghost={midi:t.midi-(t.acc-from.acc),note:from}; render();
+      await PA.sleep(900*D); if(!alive())return;
+      A.msg+=t.raised?`<br>🌙「${PA.nmH(from)}」は 短調なので 半音上げて <b>「${PA.nmH(t)}」</b>！`:`<br>⚠️「${PA.nmH(from)}」は 調号で <b>「${PA.nmH(t)}」</b> になるよ！`;
+      A.ghost=null;
+    }
+    A.tones.push(t.k); upd(); PA.playNote(t.midi,0,1.1,0.22);
+    await PA.sleep(1300*D); if(!alive())return;
+  }
+  A.frog=null;
+  upd(`🎉 <b>できあがり！</b> ${PA.keyName(key)}の ${c.label} は <b class="big">${PA.namesH(tones)}</b>`);
+  PA.chord(tones.map(t=>t.midi));
+  await PA.sleep(1500*D); if(!alive())return;
+  state.msg=A.msg; state.anim=null; render();
+}
+
+/* ===== 操作 ===== */
+PA.mountBar({title:'和音のしくみ',app:'chord-build'});
+PA.onSettings=render;
+PA.onStopDown=stop;
+PA.onStopCancel=render; // ⏹ を おしたのに 指が ずれたとき 画面を もどす
+PA.onKeySheet=()=>PA.openKeySheet({minor:state.minor,idx:state.keyIdx,both:true,onPick:(minor,idx)=>{
+  stop(); state.minor=minor; state.keyIdx=idx; state.msg=null; save(); render(); PA.chord(chordTones(curKey(),state.chord).map(t=>t.midi));
+}});
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  const a=el.dataset.act, v=el.dataset.v, tones=()=>chordTones(curKey(),state.chord).map(t=>t.midi);
+  if(a==='chord'){stop();state.chord=v;state.msg=null;save();render();PA.chord(tones());}
+  else if(a==='play'){PA.chord(tones());}
+  else if(a==='arp'){PA.chord(tones(),{arp:true});}
+  else if(a==='build'){build();}
+  else if(a==='stop'){stop();render();}
+  else if(a==='speed'){state.speed=v;save();render();}
+});
+render();
+// ほかのアプリの「つくりかたを見る」から来たとき：えらばれた調・和音で アニメを はじめる
+// iPhone などでは この ページを タッチするまで 音が 出ないので、音が 出せるように なってから はじめる
+// （音が とまっている あいだに 音を よやくすると、あとで いっぺんに 鳴ってしまう）
+if(PA.store.get('chord-build-auto',false)) (async()=>{
+  PA.store.set('chord-build-auto',false);
+  const t0=token; // まっている あいだに ほかの 操作を したら やめる
+  if(PA.settings.sound){ // パソコンなどで すぐ 音が 出せるなら そのまま はじめる
+    PA.audio();
+    for(let i=0;i<5&&!PA.audioRunning();i++) await PA.sleep(30);
+  }
+  if(token!==t0) return;
+  if(!PA.settings.sound||PA.audioRunning()){build();return;}
+  state.autoWait=true; render();
+  const EV=['pointerup','touchend','keydown'];
+  let busy=false;
+  const off=()=>EV.forEach(t=>document.removeEventListener(t,go,true));
+  async function go(e){
+    if(!state.autoWait){off();return;}
+    // ボタン・リンク・シートは それぞれの 操作に まかせる（つくりかた／調・和音を かえる と 待ちは おわる）
+    const t=e&&e.target;
+    if(t&&t.closest&&t.closest('button,a,dialog,.appbar,[data-act],[data-pa],[data-m]')) return;
+    if(busy) return; busy=true;
+    PA.audio(); // core も この タッチで 音を 起こすので、動きだすのを 少し まつ
+    for(let i=0;i<15&&PA.settings.sound&&!PA.audioRunning();i++) await PA.sleep(30);
+    busy=false;
+    if(!state.autoWait){off();return;}
+    if(PA.settings.sound&&!PA.audioRunning()) return; // まだ 音が 出せない：つぎの タッチを まつ
+    off(); build();
+  }
+  EV.forEach(t=>document.addEventListener(t,go,true));
+})();
+</script>
+</body>
+</html>

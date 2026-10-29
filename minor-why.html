@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fdf8f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>なぜ 7ばんめを 上げるの？</title>
+<link rel="stylesheet" href="assets/app.css">
+<style>
+.toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.ptitle{margin:2px 2px 0;font-size:18px;line-height:1.4;text-wrap:balance}
+.ptitle small{display:block;font-weight:400;color:var(--sub);font-size:14px;margin-top:2px}
+.panel{border-top:6px solid var(--pc)}
+.panel h2{color:var(--pc)}
+.panel .sub{font-size:15px;color:var(--sub);margin:0 0 6px}
+.stair{min-width:480px}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
+.trio .btn{padding-inline:4px;font-size:15px}
+.panel .msg{margin-top:12px}
+.msg b.lt{color:var(--red)}
+.rule a.btn{margin-top:10px;background:var(--card);color:#24316f}
+.ab{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.ab .btn{font-size:17px}
+.askline{margin:12px 0 0;font-weight:700}
+.fb{margin-top:12px}
+.sw{gap:8px;background:var(--card);border:2px solid var(--red);color:var(--red);font-size:clamp(13px,3.8vw,15px)}
+.actionbar .btn.sw{flex:1.6 1 0;max-width:340px}
+.sw .knob{width:40px;height:24px;border-radius:12px;background:#d8cfc4;position:relative;flex:none;transition:background .2s}
+.sw .knob::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .2s}
+.sw.on{background:var(--redl)}
+.sw.on .knob{background:var(--red)}
+.sw.on .knob::after{left:19px}
+.more ul{margin:0;padding-left:1.3em}
+.more li{margin:6px 0}
+@media (prefers-reduced-motion:reduce){.sw .knob,.sw .knob::after{transition:none}}
+</style>
+</head>
+<body>
+<header class="appbar" id="appbar"></header>
+<main class="page wide" id="view"></main>
+<div class="actionbar" id="actions"></div>
+<script src="assets/core.js"></script>
+<script>
+/* なぜ 7ばんめを 上げるの？：長調と 短調の「7ばんめ → 主音」を かいだんで くらべ、聴きくらべる */
+const MAJ_C='#e8553d', MIN_C='#3b4fa8', LT_C='#d1495b';
+const saved=PA.store.get('minor-why',{})||{};
+const state={keyIdx:0,raise:false,last:null,ab:null,busy:false};
+if(Number.isInteger(saved.keyIdx)&&saved.keyIdx>=0&&saved.keyIdx<PA.keyCount(true)) state.keyIdx=saved.keyIdx;
+const save=()=>PA.store.set('minor-why',{keyIdx:state.keyIdx});
+const curKey=()=>PA.minorKey(state.keyIdx); // 主音は ラ3〜ソ♯4、平行調（長調）の主音は ド4〜シ4
+const at=PA.at, nmH=PA.nmH, namesH=PA.namesH;
+
+/* ===== 音のかいだん（段の高さ＝音の高さ） ===== */
+function stairSVG(notes,o){
+  const CW=60,G=18,CH=48,U=9,X0=8,BASE=40+12*U+CH+26;
+  const W=X0*2+notes.length*(CW+G)-G+6, H=BASE+48; // +6：右はしの「8(1)ばんめ」が はみ出ないように
+  const base=notes[0].midi;
+  const pos=i=>({x:X0+i*(CW+G),y:BASE-CH-(notes[i].midi-base)*U});
+  let s=`<svg viewBox="0 0 ${W} ${H}" class="stair" role="img" aria-label="音のかいだん">`;
+  for(let i=0;i<notes.length;i++){
+    const {x,y}=pos(i), n=notes[i], hl=o.hl&&o.hl.includes(i), lt=n.raised&&o.showRaised, name=PA.nm(n);
+    const fill=lt?'#fde4e7':hl?o.hlFill:'#fff', stroke=lt?LT_C:hl?o.hlColor:'#cfc4b6';
+    s+=`<rect x="${x}" y="${y}" width="${CW}" height="${CH}" rx="9" fill="${fill}" stroke="${stroke}" stroke-width="${hl||lt?3:2}"/>`;
+    s+=`<text x="${x+CW/2}" y="${y+CH/2+7}" text-anchor="middle" font-size="${[...name].length>2?16:20}" font-weight="800" fill="${lt?'#a3273a':'#3a3245'}">${PA.Svg(name)}</text>`;
+    s+=`<text x="${x+CW/2}" y="${BASE+40}" text-anchor="middle" font-size="15" fill="#a99f93">${i+1===8?'8(1)':i+1}ばんめ</text>`;
+    if(i>0){
+      const p=pos(i-1), d=n.midi-notes[i-1].midi;
+      const label=d===1?'となり':d===2?'1つとび':d===3?'ひろい':'';
+      const big=o.gapHl&&o.gapHl.includes(i), c=big?o.gapColor:'#a99f93';
+      s+=`<text x="${x-G/2}" y="${p.y+CH+(big?18:17)}" text-anchor="middle" font-size="${big?17:15}" font-weight="${big?800:400}" fill="${c}">${label}</text>`;
+    }
+  }
+  (o.brackets||[]).forEach(b=>{
+    const p=pos(b.i), q=pos(b.j), yy=Math.min(p.y,q.y)-14, fs=16;
+    const tw=[...b.text].reduce((w,ch)=>w+(ch===' '?fs*.35:/[\x20-\x7e]/.test(ch)?fs*.6:fs),0);
+    const mid=(p.x+q.x)/2+CW/2, tx=Math.max(4+tw/2,Math.min(mid,W-4-tw/2)); // はみ出さないように
+    s+=`<path d="M${p.x+CW/2} ${p.y-4} L${p.x+CW/2} ${yy} L${q.x+CW/2} ${yy} L${q.x+CW/2} ${q.y-4}" fill="none" stroke="${b.color}" stroke-width="2.5"/>`;
+    s+=`<text x="${tx}" y="${yy-6}" text-anchor="middle" font-size="${fs}" font-weight="800" fill="${b.color}">${b.text}</text>`;
+  });
+  return s+'</svg>';
+}
+
+/* ===== 音のデータ ===== */
+const relNotes=key=>[...key.rel.scale,at(key.rel.scale,7)];
+const minNotes=key=>{const sc=state.raise?key.harm:key.nat;return [...sc.map(n=>({...n,raised:state.raise&&n.deg===7})),{...at(sc,7),raised:false}];};
+// Ⅴ（なめらかな形）→ Ⅰ
+function cadNotes(key,which){
+  if(which==='rel'){
+    const sc=key.rel.scale;
+    return {v:[at(sc,-3),at(sc,-1),at(sc,1),at(sc,4)].map(n=>({...n,raised:false})),i:[at(sc,-7),at(sc,0),at(sc,2),at(sc,4)]};
+  }
+  const sc=state.raise?key.harm:key.nat;
+  const v=[at(sc,-3),at(sc,-1),at(sc,1),at(sc,4)].map(n=>({...n,raised:state.raise&&n.deg===7}));
+  return {v,i:[at(key.nat,-7),at(key.nat,0),at(key.nat,2),at(key.nat,4)]};
+}
+const ltPair=(key,which)=>which==='rel'?[key.rel.scale[6],at(key.rel.scale,7)]:[{...(state.raise?key.harm:key.nat)[6],raised:state.raise},at(key.nat,7)];
+
+/* ===== けんばん（さいごに 鳴った音） ===== */
+function lastMarks(){
+  const m=new Map(); if(!state.last) return m;
+  state.last.notes.forEach(n=>m.set(n.midi,{fill:n.raised?LT_C:state.last.color,label:PA.nm(n),focus:true}));
+  return m;
+}
+const kbCaption=()=>state.last?state.last.cap():'ボタンを おすと、鳴った音が ここに 出るよ';
+function updateKb(recenter){
+  const b=document.querySelector('[data-sk="kb"]'), cap=document.getElementById('kbcap'); if(!b) return;
+  const sl=b.scrollLeft; PA.paint(b,PA.kbSVG(45,84,lastMarks()),'kb'); b.scrollLeft=sl; // PA.paint：鍵に フォーカスが あっても 失わない
+  if(cap) cap.innerHTML=kbCaption();
+  if(recenter&&state.last){
+    const all=state.last.all.map(n=>n.midi), cur=state.last.notes.map(n=>n.midi);
+    centerOn(b,spanOf(b,all)<=b.clientWidth?all:cur); // ぜんぶ 入らないときは 今 鳴っている音に あわせる
+  }
+}
+const keyRects=(b,midis)=>midis.map(m=>b.querySelector(`[data-m="${m}"]`)).filter(Boolean).map(r=>r.getBoundingClientRect());
+function spanOf(b,midis){const rs=keyRects(b,midis);return rs.length?Math.max(...rs.map(r=>r.right))-Math.min(...rs.map(r=>r.left)):0;}
+// 鳴らす音が ぜんぶ 見えるように 横スクロール（もう 見えていれば 動かさない）
+function centerOn(b,midis){
+  if(b.scrollWidth<=b.clientWidth+1) return;
+  const rs=keyRects(b,midis); if(!rs.length) return;
+  const br=b.getBoundingClientRect();
+  const L=Math.min(...rs.map(r=>r.left)), R=Math.max(...rs.map(r=>r.right));
+  if(L>=br.left&&R<=br.right) return;
+  if(R-L>br.width) b.scrollLeft+=R-br.right+4; // はばが 足りないときは 上の音（7→8）が 見えるように 右に そろえる
+  else b.scrollLeft+=(L+R)/2-(br.left+br.right)/2;
+}
+
+/* ===== 画面 ===== */
+function render(){
+  const key=curKey(), rel=key.rel, raise=state.raise;
+  const mn=minNotes(key), relLT=rel.scale[6], relT=rel.scale[0], mn7=mn[6], mnT=key.nat[0];
+  const vNat=[4,6,8].map(k=>at(key.nat,k)), vHarm=[4,6,8].map(k=>at(key.harm,k));
+  let h=`<div class="stack">
+    <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
+    <h2 class="ptitle">長調と 短調の「7ばんめ → 主音」を くらべよう<small>${PA.keyName(rel)} と ${PA.keyName(key)} は 調号が おなじ（${PA.sigLabel(key)}）</small></h2>
+    <div class="grid2">
+    <section class="card panel" style="--pc:${MAJ_C}">
+      <h2>☀️ ${PA.keyName(rel)}（長調）</h2>
+      <p class="sub">かいだんの 高さ＝音の高さ。7ばんめ「${nmH(relLT)}」と 主音「${nmH(relT)}」は…</p>
+      <div class="scroll" data-sk="stair-rel" data-start="end">${stairSVG(relNotes(key),{hl:[6,7],hlColor:MAJ_C,hlFill:'#fde5df',gapHl:[7],gapColor:MAJ_C,brackets:[{i:6,j:7,color:MAJ_C,text:'半音！となりどうし'}]})}</div>
+      <div class="trio">
+        <button class="btn small" data-act="wscale" data-v="rel">🎶 音階</button>
+        <button class="btn small" data-act="wcad" data-v="rel">🔔 Ⅴ→Ⅰ</button>
+        <button class="btn small" data-act="wlt" data-v="rel">${nmH(relLT)}→${nmH(relT)}</button>
+      </div>
+    </section>
+    <section class="card panel" style="--pc:${MIN_C}">
+      <h2>🌙 ${PA.keyName(key)}（短調）</h2>
+      <p class="sub">調号のまま ならべると、7ばんめ「${nmH(key.natLT)}」と 主音「${nmH(mnT)}」は…</p>
+      <div class="scroll" data-sk="stair-min" data-start="end">${stairSVG(mn,{hl:[6,7],hlColor:MIN_C,hlFill:'#e6eafb',showRaised:raise,gapHl:raise?[6,7]:[7],gapColor:raise?LT_C:MIN_C,
+        brackets:[{i:6,j:7,color:raise?LT_C:MIN_C,text:raise?'半音に なった！':'全音（1つ あいている）'}]})}</div>
+      <div class="trio">
+        <button class="btn small" data-act="wscale" data-v="min">🎶 音階</button>
+        <button class="btn small" data-act="wcad" data-v="min">🔔 Ⅴ→Ⅰ</button>
+        <button class="btn small" data-act="wlt" data-v="min">${nmH(mn7)}→${nmH(mnT)}</button>
+      </div>
+      <div class="msg">${raise
+        ?`<b>${nmH(key.natLT)}</b> を 半音上げて <b class="lt">${nmH(key.lt)}</b> に すると、主音「${nmH(mnT)}」の <b>すぐ下（となり）</b> になったね。<br>
+          Ⅴ の まんなかの音も ${nmH(key.lt)} に かわって <b>${namesH(vHarm)}</b>（明るい ひびき）。「${nmH(mnT)}に もどりたい！」という 力が 強くなるよ。この ${nmH(key.lt)} を <b>導音</b> と いうよ。<br>
+          <span class="note">そのかわり 6ばんめ→7ばんめ（${nmH(key.harm[5])}→${nmH(key.lt)}）が 少し ひろく なる（増2度）。これが「和声的短音階」の とくちょうの ひびき。</span>`
+        :`調号のままだと、7ばんめ「${nmH(key.natLT)}」から 主音「${nmH(mnT)}」まで <b>全音</b>（けんばん 1つ あいている）。<br>
+          Ⅴ は <b>${namesH(vNat)}</b>（暗い ひびき）。まんなかの「${nmH(key.natLT)}」が 7ばんめ なんだ。主音に もどる 力が 弱いよ。<br>🌙 下の「7ばんめを 上げる」スイッチを おしてみよう！`}</div>
+    </section>
+    </div>
+    <section class="card"><h2>🎹 けんばん<small id="kbcap">${kbCaption()}</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(45,84,lastMarks())}</div></section>
+    <div class="rule">長調は もともと「7ばんめ→主音」が となり（半音）。短調は 1つ あいているので、Ⅴ を 使うときに 7ばんめを 半音上げる。<br>
+      でも 調号は ${PA.keyName(rel)}と 共通なので、上げた音は 調号に 書けず <b>臨時記号</b> で 書く。<br>
+      <a class="btn small" href="minor-signature.html" data-go="sig">♮ 調号と 臨時記号 へ ›</a></div>`;
+  // 聴きくらべ
+  const ab=state.ab;
+  h+=`<section class="card"><h2>👂 聴きくらべクイズ<small>どっちが「おわった！」感じ？</small></h2>
+    <p class="note" style="margin-top:0">A と B の どちらかは 7ばんめを 上げた Ⅴ、もう一方は 上げない Ⅴ。どちらも そのあとに ${PA.keyName(key)}の Ⅰ を 鳴らすよ。</p>`;
+  if(!ab) h+=`<div class="ab" style="grid-template-columns:1fr"><button class="btn night" data-act="abnew">🎲 もんだいを 出す</button></div>`;
+  else{
+    h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ A を きく</button><button class="btn" data-act="abplay" data-v="B">▶️ B を きく</button></div>`;
+    if(ab.answer==null) h+=`<p class="askline">「おわった！」と 感じたのは？</p><div class="ab"><button class="btn night" data-act="abans" data-v="A">A</button><button class="btn night" data-act="abans" data-v="B">B</button></div>`;
+    else{
+      const ok=ab.answer===ab.raised;
+      h+=`<div class="fb ${ok?'good':'bad'}">${ok?'🎉 そのとおり！':'🤔 こんどは もう一方を よく きいてみよう。'}
+        <b>${ab.raised}</b> が 7ばんめを 上げた Ⅴ（${namesH(vHarm)}）、<b>${ab.raised==='A'?'B':'A'}</b> が 上げない Ⅴ（${namesH(vNat)}）だよ。
+        <br>${nmH(key.lt)} は ${nmH(mnT)} の 半音下なので、${nmH(mnT)} に すいこまれるように 聞こえるんだ。</div>
+        <div class="ab" style="grid-template-columns:1fr"><button class="btn night" data-act="abnew">🎲 つぎの もんだい</button></div>`;
+    }
+  }
+  h+=`</section>
+    <details class="more"><summary>💡 この ページの 音について</summary><ul>
+      <li>和音は 和声的短音階（7ばんめの音を 半音上げた 音階）で 作っているよ。旋律的短音階は あつかわないよ。</li>
+      <li>ダブルシャープは、楽譜では「<span class="ds">x</span>」のような 形で 書くよ。この画面でも <span class="ds">x</span> で あらわしているよ。</li>
+      <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべるよ。</li>
+    </ul></details>
+  </div>`;
+  PA.paint(document.getElementById('view'),h,'minor-why:'+state.keyIdx);
+  renderActions();
+}
+function renderActions(){
+  const r=state.raise;
+  const html=`<button class="btn sw ${r?'on':''}" data-act="raise" role="switch" aria-checked="${r}"><span class="knob"></span>7ばんめを 上げる</button>`+
+    (state.busy?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="wcad" data-v="min">🌙 Ⅴ→Ⅰ</button>`);
+  const el=document.getElementById('actions');
+  if(el.dataset.h===html) return;
+  const ae=document.activeElement, had=ae&&el.contains(ae)?ae.dataset.act:null;
+  el.innerHTML=html; el.dataset.h=html;
+  if(had){const n=el.querySelector(`[data-act="${had}"]`)||el.querySelector('[data-act="stop"],[data-act="wcad"]'); if(n) n.focus({preventScroll:true});} // キーボード操作で フォーカスを 失わない
+}
+
+/* ===== 鳴らす ===== */
+let token=0;
+function stopAll(){token++;state.busy=false;PA.stopSound();}
+function startPlay(){stopAll();state.busy=true;renderActions();return token;}
+async function endPlay(my,ms){await PA.sleep(ms);if(my===token){state.busy=false;renderActions();}}
+const setLast=(notes,all,color,cap)=>{state.last={notes,all,color,cap};};
+async function playScale(which){
+  const key=curKey(), notes=which==='rel'?relNotes(key):[...minNotes(key).slice(0,7),at(key.nat,7)];
+  const color=which==='rel'?MAJ_C:MIN_C, name=PA.keyName(which==='rel'?key.rel:key), cap=()=>`${name}の 音階`;
+  const my=startPlay();
+  for(let i=0;i<notes.length;i++){
+    setLast([notes[i]],notes,color,cap); updateKb(i===0); PA.playNote(notes[i].midi,0,0.7,0.22);
+    await PA.sleep(380); if(my!==token) return;
+  }
+  setLast(notes,notes,color,cap); updateKb(false);
+  endPlay(my,500);
+}
+async function playCad(which){
+  const key=curKey(), c=cadNotes(key,which), color=which==='rel'?MAJ_C:MIN_C, all=[...c.v,...c.i];
+  const my=startPlay();
+  setLast(c.v,all,color,()=>`Ⅴ：${namesH(c.v)}`); updateKb(true);
+  PA.chord(c.v.map(n=>n.midi),{dur:1.3});
+  await PA.sleep(1200); if(my!==token) return;
+  setLast(c.i,all,color,()=>`Ⅴ → Ⅰ：${namesH(c.i)}`); updateKb(true);
+  PA.chord(c.i.map(n=>n.midi),{dur:2.2});
+  endPlay(my,2000);
+}
+function playLT(which){
+  const key=curKey(), pair=ltPair(key,which), near=pair[1].midi-pair[0].midi===1;
+  const my=startPlay();
+  setLast(pair,pair,which==='rel'?MAJ_C:MIN_C,()=>`7ばんめ → 主音：${namesH(pair)}（${near?'となり':'1つ あいている'}）`); updateKb(true);
+  PA.playNote(pair[0].midi,0,0.9,0.24); PA.playNote(pair[1].midi,0.8,1.4,0.24);
+  endPlay(my,2200);
+}
+// 聴きくらべ：答えが わからないように、けんばんには 出さない
+function playAB(v){
+  if(!state.ab) return;
+  const key=curKey(), sc=v===state.ab.raised?key.harm:key.nat;
+  const vv=[at(sc,-3),at(sc,-1),at(sc,1),at(sc,4)], ii=[at(key.nat,-7),at(key.nat,0),at(key.nat,2),at(key.nat,4)];
+  const my=startPlay();
+  PA.chord(vv.map(n=>n.midi),{dur:1.3}); PA.chord(ii.map(n=>n.midi),{when:1.25,dur:2.2});
+  endPlay(my,3400);
+}
+
+/* ===== 操作 ===== */
+// 短調の かいだんが アプリバーと 下の ボタン列の あいだに 見えて いなければ、短調の パネルを 上に そろえる
+function revealMin(){
+  const st=document.querySelector('[data-sk="stair-min"]'), p=st&&st.closest('.panel'); if(!p||!st.getBoundingClientRect) return;
+  const bar=document.getElementById('appbar'), ab=document.getElementById('actions');
+  const top=(bar&&bar.offsetHeight)||0, bottom=innerHeight-((ab&&ab.offsetHeight)||0), r=st.getBoundingClientRect();
+  if(r.top>=top&&r.bottom<=bottom) return;
+  window.scrollBy({top:p.getBoundingClientRect().top-top-8,behavior:PA.reduceMotion()?'auto':'smooth'});
+}
+PA.mountBar({title:'なぜ 7ばんめを 上げるの？',app:'minor-why'});
+PA.onSettings=render;
+PA.onStopDown=stopAll;
+PA.onStopCancel=renderActions; // ⏹ を おしたのに click が 来なかったとき、ボタン列を もどす
+PA.onKeySheet=()=>PA.openKeySheet({minor:true,idx:state.keyIdx,both:false,onPick:(minor,idx)=>{
+  stopAll(); state.keyIdx=idx; state.last=null; state.ab=null; save(); render();
+}});
+document.addEventListener('click',e=>{
+  if(e.target.closest('[data-go="sig"]')){ // おなじ 短調を ひらく（リンクは そのまま 進む）
+    const p=PA.store.get('minor-signature',{});
+    PA.store.set('minor-signature',{...(p&&typeof p==='object'?p:{}),keyIdx:state.keyIdx});
+    return;
+  }
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  const a=el.dataset.act, v=el.dataset.v;
+  if(a==='raise'){stopAll();state.raise=!state.raise;render();playCad('min');revealMin();}
+  else if(a==='wscale') playScale(v);
+  else if(a==='wcad'){const inBar=!!el.closest('#actions');playCad(v);if(inBar) revealMin();} // playCad で ボタン列が 書きかわるので 先に しらべる
+  else if(a==='wlt') playLT(v);
+  else if(a==='abnew'){stopAll();state.ab={raised:Math.random()<0.5?'A':'B',answer:null};render();}
+  else if(a==='abplay') playAB(v);
+  else if(a==='abans'){if(state.ab){state.ab.answer=v;render();}}
+  else if(a==='stop'){stopAll();renderActions();}
+});
+render();
+</script>
+</body>
+</html>

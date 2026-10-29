@@ -1,0 +1,175 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fdf8f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>和音いちらん表</title>
+<link rel="stylesheet" href="assets/app.css">
+<style>
+/* スマホ：調ごとに 1まい（上に調の名前、下に Ⅰ・Ⅳ・Ⅴ・Ⅴ7 の 4マス）。広い画面：左に調の名前 */
+.list{display:flex;flex-direction:column;gap:8px}
+.colhead,.krow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
+.colhead{position:sticky;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:5;background:var(--bg);padding:6px 6px 4px}
+.colhead span{display:flex;align-items:center;justify-content:center;min-height:34px;border-radius:10px;background:var(--l);color:var(--c);font-size:20px;font-weight:800;line-height:1}
+.colhead .k0{display:none}
+.krow{background:var(--card);border-radius:16px;padding:6px;box-shadow:0 2px 0 #eadfce,0 6px 18px rgba(80,60,30,.06)}
+.khead{grid-column:1/-1;display:flex;align-items:center;gap:8px;min-height:44px;padding:4px 8px;border-radius:10px;background:var(--soft2);text-align:left;line-height:1.25}
+.khead b{font-size:17px}
+.khead .ks{color:var(--sub);font-size:13px;white-space:nowrap}
+.khead .go{margin-left:auto;color:var(--sub);font-size:13px;white-space:nowrap}
+.khead .go::after{content:" ›";font-size:18px}
+.cell{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:64px;padding:6px 2px;border-radius:12px;
+  background:var(--l);color:var(--c);border:2px solid transparent;font-weight:800;font-size:15px;line-height:1.3;text-align:center;min-width:0}
+/* 音の名前は 1つずつ たてに かさねる（いちばん低い音が 下＝楽譜と おなじ）。和音の とちゅうで 改行しない */
+.cell .ns{display:flex;flex-direction:column-reverse;align-items:center;line-height:1.2}
+.cell .ns>span{display:block;white-space:nowrap}
+.cell .ns>span>i{display:none}
+.cell small{display:block;font-weight:700;font-size:12.5px;opacity:.8;margin-top:2px}
+.cell.hid{background:#f1ece4;color:#b3a99c;font-size:24px}
+.cell.sel{border-color:var(--c);box-shadow:0 0 0 2px var(--c) inset}
+.sep{font-size:13px;color:var(--sub);margin:6px 4px -2px;font-weight:700}
+.toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.count{font-weight:700;font-size:15px}
+.actionbar .btn.wide{flex-grow:1.4}
+/* スマホでは「🐸 つくりかた」だけ（えらんだ マスは わくで わかる）。広い画面では「Ⅴ7 の」も 出す */
+.lbl-w{display:none}
+@media (min-width:420px){.lbl-w{display:inline}}
+.more ul{margin:0;padding-left:1.3em}
+.more li{margin:6px 0}
+@media (max-width:359px){.actionbar .btn{font-size:14px}.cell{font-size:14px}}
+@media (min-width:620px){
+  .colhead,.krow{grid-template-columns:minmax(150px,1.3fr) repeat(4,minmax(0,1fr));gap:5px}
+  .colhead .k0{display:flex;background:none;color:var(--sub);font-size:14px}
+  .khead{grid-column:auto;flex-direction:column;align-items:flex-start;justify-content:center;gap:2px;padding:6px 10px}
+  .khead .go{margin-left:0}
+  .cell{min-height:68px}
+}
+</style>
+</head>
+<body>
+<header class="appbar" id="appbar"></header>
+<main class="page" id="view"></main>
+<div class="actionbar" id="actions"></div>
+<script src="assets/core.js"></script>
+<script>
+/* 和音いちらん表：ぜんぶの調の Ⅰ・Ⅳ・Ⅴ・Ⅴ7。「かくして れんしゅう」では「？」をタップして こたえを たしかめる */
+const CHORDS={I:{deg:0,n:3,label:'Ⅰ'},IV:{deg:3,n:3,label:'Ⅳ'},V:{deg:4,n:3,label:'Ⅴ'},V7:{deg:4,n:4,label:'Ⅴ7'}};
+const CH=Object.keys(CHORDS);
+const saved=PA.store.get('chord-table',{})||{};
+// ひらいた マスも おぼえておく（ほかのページへ 行って もどっても つづきから）
+const okId=id=>typeof id==='string'&&/^[01]-(\d|1[0-2])-(I|IV|V|V7)$/.test(id);
+// えらんだ マス（{minor,i,ch}）も おぼえる。「和音のしくみ」から ‹ で もどっても えらんだまま
+const okSel=s=>!!s&&typeof s==='object'&&typeof s.minor==='boolean'&&Number.isInteger(s.i)&&s.i>=0&&s.i<PA.keyCount(s.minor)&&CH.includes(s.ch);
+const state={minor:!!saved.minor,hide:!!saved.hide,revealed:new Set((Array.isArray(saved.revealed)?saved.revealed:[]).filter(okId)),
+  sel:okSel(saved.sel)?{minor:saved.sel.minor,i:saved.sel.i,ch:saved.sel.ch}:null};
+const save=()=>PA.store.set('chord-table',{minor:state.minor,hide:state.hide,revealed:[...state.revealed],sel:state.sel});
+// 「和音のしくみ」へ 行くとき、もどってきたら その マスまで スクロールする しるし（この タブの あいだだけ）
+const BACK_KEY='pianoapps.chord-table-back';
+const ss={get(){try{return JSON.parse(sessionStorage.getItem(BACK_KEY));}catch(e){return null;}},set(v){try{sessionStorage.setItem(BACK_KEY,JSON.stringify(v));}catch(e){}},
+  clear(){try{sessionStorage.removeItem(BACK_KEY);}catch(e){}}};
+const keyAt=(minor,i)=>PA.keyOf(minor,i,60); // 主音は ド4〜シ4（「和音のしくみ」と おなじ高さ）
+const chordTones=(key,ch)=>{const c=CHORDS[ch];return Array.from({length:c.n},(_,j)=>PA.at(key.scale,c.deg+2*j));};
+function chordSymT(t){
+  const r=PA.LET_EN[t[0].letter]+PA.ACC[t[0].acc];
+  if(t.length===4) return r+'7';
+  return r+((t[1].midi-t[0].midi)===3?'m':'');
+}
+const chordSym=t=>PA.H(chordSymT(t));
+// 音の名前は 名前の とちゅうで 改行しないように 1つずつ まとめる
+const namesCell=t=>t.map((n,j)=>`<span>${PA.nmH(n)}${j<t.length-1?'<i>・</i>':''}</span>`).join('');
+const cellId=(minor,i,ch)=>`${minor?1:0}-${i}-${ch}`;
+const total=()=>PA.keyCount(state.minor)*CH.length;
+const openedCount=()=>{let n=0;state.revealed.forEach(id=>{if(id.startsWith((state.minor?1:0)+'-'))n++;});return n;};
+
+function render(){
+  const minor=state.minor, n=PA.keyCount(minor), flatFrom=minor?PA.MINOR_FLAT_FROM:PA.MAJOR_FLAT_FROM, sel=state.sel;
+  let h=`<div class="stack">
+    ${PA.seg('mode',[['0','☀️ 長調'],['1','🌙 短調']],minor?'1':'0','full')}
+    <div class="msg">${state.hide
+      ?'🙈「？」をタップすると こたえが出るよ。言えたら タップして たしかめよう！'
+      :'マスをタップすると 音が出るよ。えらんだ マスの 作り方は <b>🐸 つくりかた</b> で 見られるよ。調の名前をタップすると その調の「和音のしくみ」へ。'}</div>`;
+  if(state.hide) h+=`<div class="toprow"><span class="count">ひらいた マス：${openedCount()} / ${total()}</span></div>`;
+  h+=`<div class="list" role="list" aria-label="${minor?'短調':'長調'}の いちらん表">
+    <div class="colhead" aria-hidden="true"><span class="k0">調</span>${CH.map(k=>`<span style="--c:${PA.COL[k]};--l:${PA.LCOL[k]}">${CHORDS[k].label}</span>`).join('')}</div>`;
+  for(let i=0;i<n;i++){
+    if(i===0) h+=`<div class="sep">調号なし・♯の調</div>`;
+    if(i===flatFrom) h+=`<div class="sep">♭の調</div>`;
+    const k=keyAt(minor,i);
+    const kin=`<b>${PA.keyName(k)}</b><span class="ks">${PA.keyEn(k)}・${PA.sigLabel(k)}</span>`;
+    // かくして れんしゅう中は 調の名前を おしても ほかのページへ 行かない（まちがって さわっても だいじょうぶ）
+    h+=`<div class="krow" role="listitem">${state.hide
+      ?`<div class="khead">${kin}</div>`
+      :`<button class="khead" data-act="tkey" data-v="${i}" aria-label="${PA.keyName(k)}を 和音のしくみで ひらく">${kin}<span class="go">しくみ</span></button>`}`;
+    CH.forEach(ch=>{
+      const id=cellId(minor,i,ch), t=chordTones(k,ch);
+      if(state.hide&&!state.revealed.has(id)) h+=`<button class="cell hid" data-act="cell" data-v="${i}|${ch}" aria-label="${PA.keyName(k)}の ${CHORDS[ch].label}（かくれている）">？</button>`;
+      else{
+        const on=!state.hide&&sel&&sel.minor===minor&&sel.i===i&&sel.ch===ch;
+        h+=`<button class="cell${on?' sel':''}" style="--c:${PA.COL[ch]};--l:${PA.LCOL[ch]}" data-act="cell" data-v="${i}|${ch}" aria-pressed="${!!on}" aria-label="${PA.keyName(k)}の ${CHORDS[ch].label}：${PA.namesT(t,'、')}（${chordSymT(t)}）"><span class="ns">${namesCell(t)}</span><small>${chordSym(t)}</small></button>`;
+      }
+    });
+    h+=`</div>`;
+  }
+  h+=`</div>
+    <details class="more"><summary>💡 表の 見かた</summary><ul>
+      <li><b>Ⅰ・Ⅳ・Ⅴ</b> は、音階の <b>1・4・5ばんめ</b> の音から <b>ひとつとばし</b>で 3つ かさねた和音。</li>
+      <li><b>Ⅴ7</b> は、Ⅴ に もうひとつ とばして のせた <b>4つの音</b>。</li>
+      <li>マスの下の 小さな字は <b>コードネーム</b>（Am の m は さびしいひびきの「マイナー」）。</li>
+      <li>🌙 <b>短調の Ⅴ・Ⅴ7</b> は、7ばんめの音を <b>半音上げる</b>。だから 短調でも Ⅴ は 明るいひびき。</li>
+      <li>🙈 <b>かくして れんしゅう</b>：「？」の 和音を 先に 声に出して 言ってから タップ。音と 名前で たしかめよう。</li>
+    </ul></details>
+  </div>`;
+  PA.paint(document.getElementById('view'),h,'table:'+minor);
+  const hasSel=!!(sel&&sel.minor===minor);
+  PA.paint(document.getElementById('actions'),state.hide
+    ?`<button class="btn" data-act="thide">👀 ぜんぶ見せる</button><button class="btn primary wide" data-act="treset">🔄 もういちど かくす</button>`
+    :`<button class="btn primary wide" data-act="thide">🙈 かくして れんしゅう</button><button class="btn night" data-act="tbuild" ${hasSel?'':'disabled'} aria-label="${hasSel?PA.keyName(keyAt(sel.minor,sel.i))+'の '+CHORDS[sel.ch].label+'の ':''}つくりかたを見る">🐸 ${hasSel?`<span class="lbl-w">${CHORDS[sel.ch].label} の </span>`:''}つくりかた</button>`,'bar');
+}
+
+/* ほかのページを ひらく：「和音のしくみ」の 状態を 先に 書いておく */
+function openBuild(minor,i,ch,auto){
+  const cb=PA.store.get('chord-build',{})||{};
+  PA.store.set('chord-build',{minor,keyIdx:i,chord:ch,speed:cb.speed==='slow'?'slow':'normal'});
+  PA.store.set('chord-build-auto',!!auto);
+  ss.set({minor,i,ch});
+  PA.go('chord-build.html'); // ‹ で この表に もどれる
+}
+
+/* ===== 操作 ===== */
+PA.mountBar({title:'和音いちらん表',app:'chord-table'});
+PA.onSettings=render;
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]'); if(!el||el.disabled) return;
+  const a=el.dataset.act, v=el.dataset.v;
+  if(a==='mode'){const m=v==='1';if(m!==state.minor){state.minor=m;save();PA.stopSound();render();}}
+  else if(a==='thide'){state.hide=!state.hide;state.revealed=new Set();state.sel=null;save();render();}
+  else if(a==='treset'){state.revealed=new Set();state.sel=null;save();render();}
+  else if(a==='cell'){
+    const [si,ch]=v.split('|'), i=+si; if(!CHORDS[ch]||!(i>=0&&i<PA.keyCount(state.minor))) return;
+    if(state.hide) state.revealed.add(cellId(state.minor,i,ch));
+    state.sel={minor:state.minor,i,ch}; save();
+    render();
+    PA.stopSound(); PA.chord(chordTones(keyAt(state.minor,i),ch).map(t=>t.midi));
+  }
+  else if(a==='tkey'){
+    const i=+v, sel=state.sel;
+    openBuild(state.minor,i,(sel&&sel.minor===state.minor&&sel.i===i)?sel.ch:'I',false);
+  }
+  else if(a==='tbuild'){const s=state.sel;if(s) openBuild(s.minor,s.i,s.ch,true);}
+});
+// 「もどる」で 画面が そのまま もどってきたとき（bfcache）は スクロールも そのままなので しるしだけ けす
+PA.onPageShow=()=>ss.clear();
+render();
+// 「和音のしくみ」から もどってきたら、ひらいていた マスを まん中に
+(function(){
+  const b=ss.get(); ss.clear();
+  if(!b||b.minor!==state.minor||!Number.isInteger(b.i)||!CH.includes(b.ch)) return;
+  const c=document.querySelector(`[data-act="cell"][data-v="${b.i}|${b.ch}"]`);
+  if(c&&c.scrollIntoView) c.scrollIntoView({block:'center'});
+})();
+</script>
+</body>
+</html>

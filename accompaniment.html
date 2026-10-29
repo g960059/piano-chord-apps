@@ -1,0 +1,695 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fdf8f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>伴奏づけ</title>
+<link rel="stylesheet" href="assets/app.css">
+<style>
+:root{--model:#efe6ff;--modelink:#5b2fb0}
+.lbl{font-size:14px;font-weight:700;color:var(--sub);margin:0 2px 4px}
+/* 曲：横に ならべて スクロール */
+.songs{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
+  margin-inline:-16px;padding:2px 16px 6px;scroll-padding-inline:16px;scrollbar-width:thin}
+.song{flex:none;width:168px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;
+  min-height:76px;padding:8px 12px;border-radius:14px;background:var(--card);border:2px solid var(--line)}
+.song.on{border-color:var(--ink);box-shadow:0 2px 0 #eadfce}
+.song b{font-size:15px;line-height:1.3}
+.song .lv{font-size:12px;color:#c98500;letter-spacing:.1em;line-height:1.2}
+.song .used{display:flex;gap:4px;flex-wrap:wrap}
+.tag{font-size:12px;font-weight:800;padding:1px 8px;border-radius:999px;background:var(--l);color:var(--c)}
+.toprow{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap}
+.toprow .note{margin:0;flex:1 1 200px;font-size:14px}
+/* がくふ */
+.scorehead{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:flex-start;justify-content:space-between}
+.scorehead h2{margin:0;flex:1 1 220px}
+.progress{font-size:15px;color:var(--sub);white-space:nowrap}
+.progress b{color:var(--ink);font-size:18px}
+.scorecard svg{margin:4px 0}
+.hit{cursor:pointer;scroll-margin-top:calc(72px + env(safe-area-inset-top,0px));scroll-margin-bottom:calc(185px + env(safe-area-inset-bottom,0px))}
+.banner{background:var(--model);color:var(--modelink);border-radius:12px;padding:6px 12px;font-weight:700;font-size:15px;margin-top:8px}
+.btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.btns .btn{padding-inline:8px;font-size:15px;white-space:normal;line-height:1.25}
+.btns .wide{grid-column:1/-1}
+.btn.reveal{background:var(--model);color:var(--modelink)}
+.fb{margin-top:10px}
+.fb ul{margin:6px 0 0;padding-left:1.2em}
+.fb li{margin:3px 0}
+.legend{font-size:14px;margin-top:4px;opacity:.85}
+/* なかま表 */
+.fit{width:100%;border-collapse:separate;border-spacing:3px}
+.fit th,.fit td{text-align:center;padding:6px 3px;border-radius:10px;font-size:15px;line-height:1.3}
+.fit thead th{background:var(--soft2);font-weight:800;min-width:34px}
+.fit thead th small{display:block;font-weight:400;font-size:11px;color:var(--sub)}
+.fit thead th.first{background:#fff0c9}
+.fit thead th.blank{background:none;min-width:0}
+.fit thead th.cnth{font-size:11.5px;color:var(--sub);font-weight:400;white-space:nowrap}
+.fit tbody th{text-align:left;white-space:nowrap;background:var(--l);color:var(--c);font-weight:800;padding-inline:8px}
+.fit tbody th small{display:block;font-weight:700;font-size:11.5px;white-space:normal}
+.fit tbody th small .nw{white-space:nowrap}
+.fit td.y{background:#dcf5e8;color:#137a4f;font-weight:800}
+.fit td.n{background:#f6f1ea;color:#b3a99c}
+.fit td.cnt{font-weight:800;white-space:nowrap}
+.fit tr.chosen th{outline:3px solid var(--c)}
+/* 伴奏の形・はやさ */
+.ctrl{display:flex;flex-direction:column;gap:6px}
+.ctrl .seg button{padding:6px 4px;font-size:14px}
+.ctrl label{display:flex;gap:8px;align-items:center;font-size:15px;min-height:44px;cursor:pointer}
+.tempo{display:flex;align-items:center;gap:10px;min-height:44px;font-size:15px}
+.tempo input{flex:1;min-width:0}
+input[type=range]{accent-color:var(--ink);height:32px}
+input[type=checkbox]{flex:none;width:22px;height:22px;accent-color:var(--ink)}
+/* パレット（いつも 下に くっつく。親指で えらべる） */
+.palbar{position:sticky;bottom:0;z-index:20;margin-inline:-16px;padding:6px 12px calc(8px + env(safe-area-inset-bottom,0px));
+  background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  box-shadow:0 -4px 12px rgba(80,60,30,.10);border-radius:16px 16px 0 0;border-top:1px solid var(--line)}
+.selrow{display:flex;align-items:center;gap:6px}
+.selinfo{flex:1;min-width:0;margin:0;font-size:15px;line-height:1.35}
+.pbtn{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:4px 12px;border-radius:999px;
+  background:var(--soft);font-weight:700;font-size:14px;white-space:nowrap}
+.pbtn.primary{background:var(--ink);color:#fff}
+.palette{display:grid;grid-template-columns:repeat(4,1fr) auto;gap:6px;margin-top:6px}
+.cbtn{border-radius:16px;padding:4px 2px;min-height:52px;background:var(--l);color:var(--c);border:3px solid var(--c);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.cbtn .num{font-size:24px;font-weight:800;line-height:1.15}
+.cbtn .nm,.cbtn .sym{display:none}
+.cbtn.on{background:var(--c);color:#fff}
+.cbtn.clear{--c:#857c8f;--l:#f4efe8;padding:4px 10px}
+.cbtn.clear .nm{display:block;font-size:12px;font-weight:700}
+/* せまい画面：アイコンの下に 小さな字を のこす（タッチでは title が 見えないので） */
+@media (max-width:420px){.selinfo .pre{display:none}.pbtn{flex-direction:column;width:auto;min-width:52px;padding:2px 6px;gap:0;font-size:18px;line-height:1.1}.pbtn .t{display:block;font-size:10.5px}}
+@media (min-width:600px){
+  .palette{gap:8px}
+  .cbtn{padding:6px 4px}
+  .cbtn .num{font-size:28px}
+  .cbtn .nm{display:block;font-size:13px;font-weight:700}
+  .cbtn .sym{display:block;font-size:12px;opacity:.85}
+}
+.tips ol{margin:0;padding-left:1.4em}
+.tips li{margin:6px 0}
+</style>
+</head>
+<body>
+<header class="appbar" id="appbar"></header>
+<main class="page" id="view"></main>
+<script src="assets/core.js"></script>
+<script>
+/* 伴奏づけ：知っている曲の メロディーに Ⅰ・Ⅳ・Ⅴ・Ⅴ7 を つける（長調のみ） */
+const CHORDS={I:{deg:0,n:3,label:'Ⅰ'},IV:{deg:3,n:3,label:'Ⅳ'},V:{deg:4,n:3,label:'Ⅴ'},V7:{deg:4,n:4,label:'Ⅴ7'}};
+const CH_KEYS=['I','IV','V','V7'];
+const CH_DEGS={I:[1,3,5],IV:[4,6,1],V:[5,7,2],V7:[5,7,2,4]};
+const COL=PA.COL, LCOL=PA.LCOL;
+// 伴奏の形（なめらかな形）と根音：音階の何番目か（0＝主音）
+const VOICE={I:[0,2,4],IV:[0,3,5],V:[-1,1,4],V7:[-1,3,4]};
+const ROOTK={I:0,IV:3,V:4,V7:4};
+const KEYS=PA.MAJOR_KEYS.map((_,i)=>PA.majorKey(i)); // 主音は ド4〜シ4
+const noteAt=(key,k)=>PA.at(key.scale,k);
+function chordTones(key,ch){const c=CHORDS[ch];return Array.from({length:c.n},(_,j)=>noteAt(key,c.deg+2*j));}
+function voicing(key,ch){
+  const chord=VOICE[ch].map(k=>{const n=noteAt(key,k);return {...n,midi:n.midi-12};});
+  const r=noteAt(key,ROOTK[ch]);
+  return {chord,bass:{...r,midi:key.tonicMidi-24+PA.mod(r.midi-key.tonicMidi,12)}};
+}
+
+/* ===== 曲データ =====
+   音の書き方：音階の何番目(1〜7)、「,」で1オクターブ下、「'」で1オクターブ上、「:」のあとは拍の長さ（省略＝1拍）
+   マスの書き方：[メロディー, おてほんの和音, ほかに合う和音..., 「!」つき＝音は入っていても ×にする和音] */
+function P(str){
+  return str.trim().split(/\s+/).map(tok=>{
+    const m=tok.match(/^([1-7])([,']*)(?::([\d.]+))?$/);
+    if(!m) throw new Error('曲データの書きまちがい: '+tok);
+    const oct=(m[2].match(/'/g)||[]).length-(m[2].match(/,/g)||[]).length;
+    return {deg:+m[1],oct,k:(+m[1]-1)+7*oct,beats:m[3]?parseFloat(m[3]):1};
+  });
+}
+const TW_A=[['1 1','I','!IV'],['5 5','I'],['6 6','IV'],['5:2','I'],['4 4','IV','V7'],['3 3','I'],['2 2','V7','V'],['1:2','I','!IV']];
+const TW_B=[['5 5','I'],['4 4','IV','V7'],['3 3','I'],['2:2','V7','V']];
+const OD_P=[['3 3 4 5','I'],['5 4 3 2','V7','I'],['1 1 2 3','I']];
+const OD_4=['3:1.5 2:.5 2:2','V7'], OD_8=['2:1.5 1:.5 1:2','I'];
+const OD_B=[['2 2 3 1','V7'],['2 3:.5 4:.5 3 1','V7','I'],['2 3:.5 4:.5 3 2','V7'],["1 2 5,:2",'V7','I']];
+const JB_1=[['3 3 3:2','I'],['3 3 3:2','I'],['3 5 1:1.5 2:.5','I'],['3:4','I'],['4 4 4:1.5 4:.5','IV'],['4 3 3 3:.5 3:.5','I']];
+const LB_1=['5:1.5 6:.5 5 4','I','!V','!V7'];
+const SONGS=[
+  {id:'mary',title:'メリーさんのひつじ',level:1,slotBeats:4,
+   tip:k=>`Ⅰ と Ⅴ7 の 2つだけで できるよ。「${PA.nmH(noteAt(k,1))}」が多い小節は どっちかな？`,
+   slots:[['3 2 1 2','I'],['3 3 3:2','I'],['2 2 2:2','V7','V'],['3 5 5:2','I'],['3 2 1 2','I'],['3 3 3 3','I'],['2 2 3 2','V7','V'],['1:4','I']]},
+  {id:'london',title:'ロンドン橋',level:1,slotBeats:4,
+   tip:()=>'これも Ⅰ と Ⅴ7 だけ。長い音を よく見よう。',
+   slots:[LB_1,['3 4 5:2','I'],['2 3 4:2','V7','V'],['3 4 5:2','I'],LB_1,['3 4 5:2','I'],['2:2 5:2','V7','V'],['3 1:3','I']]},
+  {id:'twinkle',title:'きらきら星',level:2,slotBeats:2,
+   tip:()=>'2拍ごとに 和音を かえるよ。Ⅳ が はじめて出てくる曲。',
+   slots:[...TW_A,...TW_B,...TW_B,...TW_A]},
+  {id:'ode',title:'よろこびの歌（ベートーヴェン）',level:2,slotBeats:4,
+   tip:()=>'Ⅰ と Ⅴ7 で できるよ。まん中の部分は Ⅴ7 が つづくよ。',
+   slots:[...OD_P,OD_4,...OD_P,OD_8,...OD_B,...OD_P,OD_8]},
+  {id:'jingle',title:'ジングルベル（サビ）',level:3,slotBeats:4,
+   tip:k=>`Ⅰ・Ⅳ・Ⅴ7 を ぜんぶ使うよ。「${PA.nmH(noteAt(k,3))}」が多い小節は どの和音？`,
+   slots:[...JB_1,['3 2 2 3','V7','I'],['2:2 5:2','V7','V'],...JB_1,['5 5 4 2','V7'],['1:4','I']]}
+];
+SONGS.forEach(s=>{
+  s.meter=4;
+  s.slots=s.slots.map(([n,ans,...ok])=>({notes:P(n),ans,ok:ok.filter(c=>c[0]!=='!'),ng:ok.filter(c=>c[0]==='!').map(c=>c.slice(1))}));
+  s.slots[0].start=true;
+  s.slots[s.slots.length-1].cadence=true;
+  s.slots.forEach((sl,i)=>{const b=sl.notes.reduce((a,n)=>a+n.beats,0);if(Math.abs(b-s.slotBeats)>1e-9)console.error(`${s.title} ${i+1}マスめ: ${b}拍`);});
+  s.used=CH_KEYS.filter(c=>s.slots.some(sl=>sl.ans===c));
+});
+
+/* ===== 名前 ===== */
+const namesH=(ns,sep='・')=>PA.namesH(ns,sep);
+function chordSym(key,ch){ // 文字だけ（HTML では PA.H、SVG では PA.Svg を とおす）
+  const r=noteAt(key,CHORDS[ch].deg);
+  return PA.LET_EN[r.letter]+PA.ACC[r.acc]+(ch==='V7'?'7':'');
+}
+// 「ドソミソ」の形を いまの調の Ⅰ の音で（ト長調なら ソレシレ）
+function albertiName(key){const I=chordTones(key,'I');return [I[0],I[2],I[1],I[2]].map(PA.nmH).join('');}
+function beatsJa(b){
+  const w=Math.floor(b+1e-9), half=b-w>1e-9;
+  if(!w&&half) return '半拍';
+  return w+(half?'拍半':'拍');
+}
+
+/* ===== 状態（音の名前・基準の音・音あり なしは 共通の設定） ===== */
+const state={songId:'mary',keyIdx:0,tempo:88,style:'oompah',
+  melOn:true,accOn:true,hint:true,autoPlay:true,choices:{},sel:0,checked:false,reveal:false,play:null,clearArm:false,tipsOpen:false};
+const STORE='accompaniment';
+function save(){
+  PA.store.set(STORE,{tempo:state.tempo,style:state.style,melOn:state.melOn,accOn:state.accOn,hint:state.hint,autoPlay:state.autoPlay,
+    choices:state.choices,songId:state.songId,keyIdx:state.keyIdx});
+}
+function load(){
+  try{
+    const d=PA.store.get(STORE,null); if(!d||typeof d!=='object') return;
+    if(['block','oompah','alberti'].includes(d.style)) state.style=d.style;
+    if(Number.isFinite(d.tempo)&&d.tempo>=50&&d.tempo<=140) state.tempo=d.tempo;
+    ['melOn','accOn','hint','autoPlay'].forEach(k=>{if(typeof d[k]==='boolean')state[k]=d[k];});
+    if(SONGS.some(s=>s.id===d.songId)) state.songId=d.songId;
+    if(Number.isInteger(d.keyIdx)&&KEYS[d.keyIdx]) state.keyIdx=d.keyIdx;
+    if(d.choices&&typeof d.choices==='object'){
+      for(const s of SONGS){
+        const c=d.choices[s.id];
+        if(Array.isArray(c)&&c.length===s.slots.length) state.choices[s.id]=c.map(x=>CH_KEYS.includes(x)?x:null);
+      }
+    }
+  }catch(e){}
+}
+const curSong=()=>SONGS.find(s=>s.id===state.songId);
+const curKey=()=>KEYS[state.keyIdx];
+function choices(){
+  const s=curSong();
+  let c=state.choices[s.id];
+  if(!Array.isArray(c)||c.length!==s.slots.length) c=state.choices[s.id]=Array(s.slots.length).fill(null);
+  return c;
+}
+const slotsPerMeasure=song=>song.meter/song.slotBeats;
+const firstBeat=(song,si)=>(si%slotsPerMeasure(song))*song.slotBeats+1;
+function whereLabel(song,si){
+  const spm=slotsPerMeasure(song), m=Math.floor(si/spm)+1;
+  return spm>1?`${m}小節目の ${si%spm===0?'前半':'後半'}`:`${m}小節目`;
+}
+
+/* ===== 判定 ===== */
+function fitInfo(slot,ch){
+  const set=CH_DEGS[ch], total=slot.notes.reduce((a,n)=>a+n.beats,0);
+  const inBeats=slot.notes.filter(n=>set.includes(n.deg)).reduce((a,n)=>a+n.beats,0);
+  return {strong:set.includes(slot.notes[0].deg),frac:inBeats/total,inBeats,total,count:slot.notes.filter(n=>set.includes(n.deg)).length};
+}
+function grade(slot,ch){
+  if(!ch) return null;
+  if(slot.ans===ch) return 'best';
+  if(slot.ok.includes(ch)) return 'good';
+  if(slot.start||slot.cadence||slot.ng.includes(ch)) return 'bad';
+  if((ch==='V'&&slot.ans==='V7')||(ch==='V7'&&slot.ans==='V')) return 'good';
+  const f=fitInfo(slot,ch);
+  return f.strong&&f.frac>0.5?'good':'bad';
+}
+function whyBad(key,song,si,ch){
+  const slot=song.slots[si];
+  if(slot.cadence) return 'さいごは Ⅰ で おわると「おしまい」の感じが 出るよ';
+  if(slot.start) return '曲の はじめは Ⅰ で はじめると、何調か よく わかるよ';
+  if(slot.ng.includes(ch)) return `${CHORDS[ch].label} の音も 入っているけれど、ここでは 曲の流れに 合わないよ`;
+  const f=fitInfo(slot,ch), first=noteAt(key,slot.notes[0].k), names=namesH(chordTones(key,ch));
+  if(!f.strong) return `${firstBeat(song,si)}拍目の「${PA.nmH(first)}」が ${CHORDS[ch].label}（${names}）に 入っていないよ`;
+  return `${CHORDS[ch].label}（${names}）に 入っている音は、${beatsJa(f.total)}のうち ${beatsJa(f.inBeats)}だけ`;
+}
+
+/* ===== 音（共通の PA.playNote：平均律・A4＝設定の基準ピッチ） ===== */
+// 伴奏のきざみ方：t＝マスの中の拍、d＝長さ（拍）
+function accEvents(key,ch,L){
+  const v=voicing(key,ch), ch3=v.chord.map(n=>n.midi).sort((a,b)=>a-b), bass=v.bass.midi, ev=[];
+  if(state.style==='block') ev.push({t:0,d:L,ms:[bass,...ch3],vel:0.1});
+  else if(state.style==='oompah'){
+    for(let b=0;b<L;b++) ev.push(b%2===0?{t:b,d:1,ms:[bass],vel:0.17}:{t:b,d:0.9,ms:ch3,vel:0.085});
+  }else{
+    const pat=[ch3[0],ch3[2],ch3[1],ch3[2]];
+    ev.push({t:0,d:L,ms:[bass],vel:0.13});
+    for(let i=0;i<L*2;i++) ev.push({t:i/2,d:0.6,ms:[pat[i%4]],vel:0.09});
+  }
+  return ev;
+}
+let playToken=0,playTimers=[];
+function stopPlay(){
+  const was=!!state.play;
+  playToken++; playTimers.forEach(clearTimeout); playTimers=[];
+  if(was) PA.stopSound();
+  state.play=null;
+}
+function playRange(from,to,model=false){
+  stopPlay();
+  const my=playToken, song=curSong(), key=curKey(), chs=model?song.slots.map(s=>s.ans):choices().slice();
+  const spb=60/state.tempo, snd=PA.settings.sound&&!!PA.audio(), lead=0.3;
+  state.play={slot:from,note:0,model,from,to};
+  for(let si=from;si<=to;si++){
+    const sl=song.slots[si], rel=(si-from)*song.slotBeats, ch=chs[si];
+    if(ch&&state.accOn&&snd) accEvents(key,ch,song.slotBeats).forEach(e=>e.ms.forEach(m=>PA.playNote(m,lead+(rel+e.t)*spb,e.d*spb+0.35,e.vel)));
+    let b=rel;
+    sl.notes.forEach((n,ni)=>{
+      if(state.melOn&&snd) PA.playNote(noteAt(key,n.k).midi,lead+b*spb,n.beats*spb+0.3,0.27);
+      const at=b;
+      playTimers.push(setTimeout(()=>{if(my!==playToken)return;const prev=state.play.slot;state.play.slot=si;state.play.note=ni;renderPlayback();if(si!==prev)followSlot(si);},(lead+at*spb)*1000));
+      b+=n.beats;
+    });
+  }
+  const total=(to-from+1)*song.slotBeats;
+  playTimers.push(setTimeout(()=>{
+    if(my!==playToken)return;
+    state.play=null;
+    if(renderSafe()) return;
+    // はやさを うごかしている とちゅう：スライダーは そのまま、がくふ・けんばん・ボタンだけ もどす
+    renderPlayback();
+    const st=document.querySelector('[data-act="stop"]'); if(st) st.outerHTML=playBtnHTML(false);
+    const bn=document.querySelector('.banner'); if(bn) bn.remove();
+  },(lead+total*spb)*1000+300));
+  render();
+}
+function playChordNow(key,ch){
+  const v=voicing(key,ch);
+  [v.bass,...v.chord].forEach((n,i)=>PA.playNote(n.midi,i*0.012,1.8,0.14));
+}
+
+/* ===== がくふ SVG ===== */
+let lastPerRow=4;
+function perRowNow(song,key){
+  const ns=PA.sigInfo(key).letters.length, MW=16+song.meter*32+8, HW=46+ns*10+30, W4=HW+4*MW+6;
+  const box=document.querySelector('[data-sk="score"]'), view=document.getElementById('view');
+  const avail=(box&&box.clientWidth)?box.clientWidth:((view&&view.clientWidth?view.clientWidth:window.innerWidth)-64);
+  return avail>=W4*0.95?4:2;
+}
+function scoreRows(){
+  const song=curSong(), key=curKey(), chs=choices(), P=state.play;
+  const modelShown=P&&P.model&&state.reveal;
+  const showChs=modelShown?song.slots.map(s=>s.ans):chs;
+  const perRow=lastPerRow=perRowNow(song,key), big=perRow===2;
+  const spm=slotsPerMeasure(song), nMeasures=song.slots.length/spm;
+  const sig=PA.sigInfo(key), ns=sig.letters.length;
+  const TS=sig.type>0?[38,35,39,36,33,37,34]:[34,37,33,36,32,35,31];
+  const TB=90, BW=32, PADL=16, MW=PADL+song.meter*BW+8, HW=46+ns*10+30;
+  const CHH=big?46:34, CFS=big?26:20, UFS=big?15:12, H=TB+40+CHH+(big?34:26);
+  const W=HW+perRow*MW+6;
+  const ty=s=>TB-(s-30)*5;
+  let out='';
+  for(let r=0;r*perRow<nMeasures;r++){
+    let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="がくふ ${r*perRow+1}小節目から">`;
+    const mCount=Math.min(perRow,nMeasures-r*perRow), endX=HW+mCount*MW;
+    for(let i=0;i<5;i++) s+=`<line x1="6" x2="${endX}" y1="${TB-i*10}" y2="${TB-i*10}" stroke="#6b6273" stroke-width="1.2"/>`;
+    s+=`<line x1="6" x2="6" y1="${TB-40}" y2="${TB}" stroke="#6b6273" stroke-width="1.2"/>`;
+    s+=PA.gClef(10,TB-10);
+    sig.letters.forEach((L,i)=>{s+=PA.accGlyph(50+i*10,ty(TS[i]),sig.type);});
+    if(r===0){
+      const tx=50+ns*10+12;
+      s+=`<text x="${tx}" y="${TB-21}" text-anchor="middle" font-size="22" font-weight="800" fill="#3a3245" font-family="Georgia,serif">4</text>`;
+      s+=`<text x="${tx}" y="${TB-1}" text-anchor="middle" font-size="22" font-weight="800" fill="#3a3245" font-family="Georgia,serif">4</text>`;
+    }
+    const hits=[];
+    for(let mi=0;mi<mCount;mi++){
+      const m=r*perRow+mi, mx=HW+mi*MW, last=m===nMeasures-1, cw=(MW-12)/spm;
+      s+=`<line x1="${mx+MW}" x2="${mx+MW}" y1="${TB-40}" y2="${TB}" stroke="#6b6273" stroke-width="1.2"/>`;
+      if(last) s+=`<line x1="${mx+MW+4}" x2="${mx+MW+4}" y1="${TB-40}" y2="${TB}" stroke="#3a3245" stroke-width="4"/>`;
+      s+=`<text x="${mx+3}" y="${TB-48}" font-size="${big?13:10}" fill="#a99f93">${m+1}</text>`;
+      if(!P){
+        for(let k=0;k<spm;k++) if(state.sel===m*spm+k) s+=`<rect x="${mx+6+k*cw}" y="${TB-56}" width="${cw}" height="94" rx="10" fill="#fff6d6"/>`;
+      }
+      // 音符（同じマスの中で8分音符2つを連桁にする）
+      const items=[];
+      for(let k=0;k<spm;k++){
+        const si=m*spm+k, sl=song.slots[si];
+        let b=k*song.slotBeats;
+        sl.notes.forEach((n,ni)=>{items.push({si,ni,n,b,ch:showChs[si]});b+=n.beats;});
+      }
+      items.forEach(it=>{
+        const nt=noteAt(key,it.n.k);
+        it.st=PA.stepOf(nt); it.x=mx+PADL+it.b*BW+8; it.y=ty(it.st);
+        it.color=it.ch&&state.hint?(CH_DEGS[it.ch].includes(it.n.deg)?COL[it.ch]:'#b9aea2'):'#3a3245';
+        it.playing=P&&P.slot===it.si&&P.note===it.ni;
+      });
+      for(let i=0;i<items.length-1;i++){
+        const a=items[i], b=items[i+1];
+        if(a.n.beats===0.5&&b.n.beats===0.5&&Math.abs(a.b%1)<1e-9&&Math.abs(b.b-a.b-0.5)<1e-9&&b.si===a.si){a.beamWith=b;b.beamed=true;}
+      }
+      const head=(it)=>{
+        let g='';
+        if(it.playing) g+=`<circle cx="${it.x}" cy="${it.y}" r="14" fill="#ffd66b" opacity=".85"/>`;
+        for(let q=28;q>=it.st;q-=2) g+=`<line x1="${it.x-11}" x2="${it.x+11}" y1="${ty(q)}" y2="${ty(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
+        for(let q=40;q<=it.st;q+=2) g+=`<line x1="${it.x-11}" x2="${it.x+11}" y1="${ty(q)}" y2="${ty(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
+        const hollow=it.n.beats>=2;
+        g+=`<ellipse cx="${it.x}" cy="${it.y}" rx="6.4" ry="4.7" fill="${hollow?'#fff':it.color}" stroke="${it.color}" stroke-width="${hollow?2.4:1}" transform="rotate(-20 ${it.x} ${it.y})"/>`;
+        if(it.n.beats===1.5||it.n.beats===3) g+=`<circle cx="${it.x+11}" cy="${it.st%2===0?it.y-4:it.y}" r="2.2" fill="${it.color}"/>`;
+        return g;
+      };
+      items.forEach(it=>{
+        if(it.beamed) return; // 連桁の2つめは1つめといっしょに描く
+        const {x,y,st,color,n}=it;
+        s+=head(it);
+        if(n.beats>=4) return;
+        if(it.beamWith){
+          const o=it.beamWith, up=(st+o.st)/2<34, ys=up?Math.min(y,o.y)-30:Math.max(y,o.y)+30, dx=up?6:-6;
+          s+=head(o);
+          s+=`<line x1="${x+dx}" x2="${x+dx}" y1="${y}" y2="${ys}" stroke="${color}" stroke-width="1.6"/>`;
+          s+=`<line x1="${o.x+dx}" x2="${o.x+dx}" y1="${o.y}" y2="${ys}" stroke="${o.color}" stroke-width="1.6"/>`;
+          s+=`<line x1="${x+dx}" x2="${o.x+dx}" y1="${ys}" y2="${ys}" stroke="#3a3245" stroke-width="5"/>`;
+          return;
+        }
+        if(st<34){
+          s+=`<line x1="${x+6}" x2="${x+6}" y1="${y}" y2="${y-32}" stroke="${color}" stroke-width="1.6"/>`;
+          if(n.beats===0.5) s+=`<path d="M${x+6} ${y-32} q4 9 10 13 q-3 -6 -10 -7" fill="${color}" stroke="${color}" stroke-width="1.4"/>`;
+        }else{
+          s+=`<line x1="${x-6}" x2="${x-6}" y1="${y}" y2="${y+32}" stroke="${color}" stroke-width="1.6"/>`;
+          if(n.beats===0.5) s+=`<path d="M${x-6} ${y+32} q4 -9 10 -13 q-3 6 -10 7" fill="${color}" stroke="${color}" stroke-width="1.4"/>`;
+        }
+      });
+      // 和音のマス
+      for(let k=0;k<spm;k++){
+        const si=m*spm+k, ch=showChs[si], sl=song.slots[si];
+        const cx=mx+6+k*cw, cy=TB+40;
+        const isSel=state.sel===si&&!P, playing=P&&P.slot===si;
+        const g=state.checked&&!modelShown?grade(sl,ch):null;
+        s+=`<rect x="${cx+2}" y="${cy}" width="${cw-4}" height="${CHH}" rx="10" fill="${ch?LCOL[ch]:'#f4efe8'}" stroke="${playing?'#e9a800':isSel?'#3a3245':ch?COL[ch]:'#cfc4b6'}" stroke-width="${playing||isSel?3.5:2}" ${ch?'':'stroke-dasharray="5 4"'}/>`;
+        s+=`<text x="${cx+cw/2}" y="${cy+CHH/2+CFS*0.36}" text-anchor="middle" font-size="${CFS}" font-weight="800" fill="${ch?COL[ch]:'#b3a99c'}">${ch?CHORDS[ch].label:'？'}</text>`;
+        if(g){
+          const gc=g==='bad'?'#d1495b':'#22a06b', gt=g==='best'?'◎':g==='good'?'○':'×', rr=big?12:10;
+          s+=`<circle cx="${cx+cw-8}" cy="${cy+2}" r="${rr}" fill="${gc}" pointer-events="none"/><text x="${cx+cw-8}" y="${cy+2+rr*0.45}" text-anchor="middle" font-size="${big?15:13}" font-weight="800" fill="#fff">${gt}</text>`;
+        }
+        let under=ch?PA.Svg(chordSym(key,ch)):'', uc='#a99f93';
+        if(state.checked&&!modelShown){
+          if(!ch){under='まだ';uc='#b3a99c';}
+          else if(g==='bad'&&state.reveal){under='→ '+CHORDS[sl.ans].label;uc='#d1495b';}
+        }
+        if(under) s+=`<text x="${cx+cw/2}" y="${cy+CHH+UFS+5}" text-anchor="middle" font-size="${UFS}" font-weight="700" fill="${uc}">${under}</text>`;
+        hits.push(`<rect class="hit" data-slot="${si}" x="${cx}" y="${TB-56}" width="${cw}" height="${cy+CHH-(TB-56)}" fill="transparent"><title>${whereLabel(song,si)}</title></rect>`);
+      }
+    }
+    out+=s+hits.join('')+'</svg>';
+  }
+  return out;
+}
+
+/* ===== けんばんの 印 ===== */
+// 黄色＝メロディー、こい色＝ベース、うすい色＝左手の和音
+function kbMarks(){
+  const song=curSong(), key=curKey(), chs=choices(), P=state.play, marks=new Map();
+  const showSlot=P?P.slot:state.sel;
+  let showCh=P?(P.model?(state.reveal?song.slots[showSlot].ans:null):chs[showSlot]):chs[showSlot];
+  if(P&&!state.accOn) showCh=null;
+  const black=m=>PA.BLACK.has(PA.mod(m,12));
+  if(showCh){
+    const v=voicing(key,showCh), c=COL[showCh];
+    v.chord.forEach(n=>marks.set(n.midi,black(n.midi)?{fill:c,light:true,label:PA.nm(n),tc:'#fff',focus:true}:{fill:LCOL[showCh],label:PA.nm(n),tc:c,focus:true}));
+    // ベースは 左に はなれているので focus に 入れない（和音と メロディーが いっしょに 見えるように）
+    marks.set(v.bass.midi,{fill:c,label:PA.nm(v.bass),sub:'ベース',subColor:c});
+  }
+  const melNotes=P?[song.slots[P.slot].notes[P.note]]:song.slots[showSlot].notes;
+  melNotes.forEach(n=>{
+    const nt=noteAt(key,n.k), had=marks.get(nt.midi);
+    if(had&&had.pick) return;
+    const mk={fill:black(nt.midi)?'#e9a800':'#ffd66b',bubble:'#ffd66b',tc:'#3a3245',label:PA.nm(nt),focus:true,pick:true}; // 黒鍵の メロディーは こい黄色の鍵＋うすい黄色の ふきだし
+    if(had) mk.ring=COL[showCh];
+    marks.set(nt.midi,mk);
+  });
+  return marks;
+}
+const kbHTML=()=>PA.kbSVG(36,84,kbMarks());
+
+/* ===== 画面 ===== */
+function songsHTML(){
+  return `<div class="songs" data-sk="songs" role="group" aria-label="曲">`+SONGS.map(s=>`<button class="song ${s.id===state.songId?'on':''}" data-act="song" data-v="${s.id}" aria-pressed="${s.id===state.songId}" ${s.id===state.songId?'data-focus="1"':''}>
+    <b>${s.title}</b><span class="lv" aria-label="むずかしさ ${s.level}">${'★'.repeat(s.level)}${'☆'.repeat(3-s.level)}</span>
+    <span class="used">${s.used.map(c=>`<span class="tag" style="--c:${COL[c]};--l:${LCOL[c]}">${CHORDS[c].label}</span>`).join('')}</span></button>`).join('')+`</div>`;
+}
+function fitTableHTML(song,key,si,cur){
+  const sl=song.slots[si], notes=sl.notes.map(n=>noteAt(key,n.k)), total=sl.notes.reduce((a,n)=>a+n.beats,0);
+  // 「あう拍」は 和音の名前の すぐ右（せまい画面でも 見えるように）
+  let h=`<table class="fit"><thead><tr><th class="blank"></th><th class="blank cnth">あう拍<br>（${beatsJa(total)}中）</th>`+
+    notes.map((n,i)=>`<th class="${i===0?'first':''}">${PA.nmH(n)}<small>${i===0?`${firstBeat(song,si)}拍目・`:''}${beatsJa(sl.notes[i].beats)}</small></th>`).join('')+`</tr></thead><tbody>`;
+  CH_KEYS.forEach(ch=>{
+    const set=CH_DEGS[ch], f=fitInfo(sl,ch);
+    h+=`<tr class="${cur===ch?'chosen':''}" style="--c:${COL[ch]};--l:${LCOL[ch]}"><th>${CHORDS[ch].label}<small>${chordTones(key,ch).map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}</small></th><td class="cnt">${f.inBeats?beatsJa(f.inBeats):'0拍'}</td>`+
+      sl.notes.map(n=>set.includes(n.deg)?`<td class="y">○</td>`:`<td class="n">×</td>`).join('')+`</tr>`;
+  });
+  return h+`</tbody></table>`;
+}
+function feedbackHTML(song,key,chs){
+  const gs=song.slots.map((sl,i)=>grade(sl,chs[i]));
+  const best=gs.filter(g=>g==='best').length, good=gs.filter(g=>g==='good').length, bad=gs.filter(g=>g==='bad').length, empty=gs.filter(g=>!g).length;
+  const items=[];
+  song.slots.forEach((sl,i)=>{
+    if(gs[i]==='bad') items.push(`<b>${whereLabel(song,i)}</b>：${whyBad(key,song,i,chs[i])}${state.reveal?`。おてほんは <b>${CHORDS[sl.ans].label}</b>`:''}`);
+  });
+  song.slots.forEach((sl,i)=>{
+    if(gs[i]==='good') items.push(`<b>${whereLabel(song,i)}</b>：${CHORDS[chs[i]].label} でも 合うよ${state.reveal?`（おてほんは ${CHORDS[sl.ans].label}）`:''}`);
+  });
+  const allOk=!bad&&!empty;
+  let h=`<div class="fb ${allOk?'good':'bad'}" role="status">`;
+  h+=allOk?`🎉 ぜんぶ 合っているよ！（◎ ${best}・○ ${good}）「▶️ はじめから」で 自分の伴奏を きいてみよう。`
+          :`◎ ${best}　○ ${good}　× ${bad}${empty?`　まだ ${empty}マス`:''}　<span style="font-size:14px">（×の マスを なおすと、その場で ◎○ に かわるよ）</span>`;
+  h+=`<div class="legend">◎＝おてほんと おなじ　○＝これでも 合う　×＝合わない</div>`;
+  if(items.length){
+    h+=`<ul>${items.slice(0,8).map(x=>`<li>${x}</li>`).join('')}`;
+    if(items.length>8) h+=`<li>ほかに ${items.length-8}こ（がくふの ◎○× を 見てね）</li>`;
+    h+=`</ul>`;
+  }
+  return h+`</div>`;
+}
+const playBtnHTML=playing=>playing?`<button class="pbtn primary" data-act="stop" aria-label="とめる" title="とめる">⏹<span class="t">とめる</span></button>`:`<button class="pbtn primary" data-act="playall" aria-label="はじめから きく" title="はじめから きく">▶️<span class="t">はじめから</span></button>`;
+function view(){
+  const song=curSong(), key=curKey(), chs=choices(), P=state.play;
+  const filled=chs.filter(Boolean).length, N=song.slots.length, si=state.sel, sl=song.slots[si], cur=chs[si];
+  let h=`<div class="stack">
+    <p class="lead">メロディーに Ⅰ・Ⅳ・Ⅴ・Ⅴ7 をつけて、伴奏を作ってみよう</p>
+    <div><p class="lbl">① 曲をえらぶ</p>${songsHTML()}</div>
+    <div><p class="lbl">② 調をえらぶ</p><div class="toprow">${PA.keyChip(key)}<p class="note">調を かえても、えらんだ 和音は そのまま。音の 高さだけが かわるよ</p></div></div>
+    <section class="card scorecard">
+      <div class="scorehead"><h2>③ 和音をえらぶ<small>${song.tip(key)}</small></h2>
+        <div class="progress"><b>${filled}</b> / ${N} マス えらんだ</div></div>
+      ${P&&P.model?`<div class="banner">🎧 おてほんを ながしているよ。${state.reveal?'マスには おてほんの 和音を 出しています。':'よく きいて、自分の 和音と くらべてみよう。'}</div>`:''}
+      <div class="scroll" data-sk="score">${scoreRows()}</div>
+      <p class="note" style="margin-top:2px">マスを タップして、下の Ⅰ・Ⅳ・Ⅴ・Ⅴ7 から えらんでね。</p>
+      <div class="btns">
+        <button class="btn ok ${state.checked&&!state.reveal?'':'wide'}" data-act="check">✅ こたえあわせ</button>
+        ${state.checked&&!state.reveal?`<button class="btn reveal" data-act="reveal">👀 こたえを見る</button>`:''}
+        <button class="btn" data-act="model">🎧 おてほんを きく</button>
+        <button class="btn ${state.clearArm?'warn':''}" data-act="clear">${state.clearArm?'ほんとうに けす？':'🧽 ぜんぶ けす'}</button>
+      </div>
+      ${state.checked?feedbackHTML(song,key,chs):''}
+    </section>`;
+  h+=`<section class="card"><h2>🔍 なかま表<small>メロディーの音が、どの和音に 入っているかな？</small></h2>`;
+  if(state.hint){
+    h+=`<p class="note" style="margin-top:0;color:var(--ink)"><b>長い音</b>・<b>何回も出てくる音</b>が いちばん大事。「あう拍」が いちばん多い和音を ためしてみよう。マスの はじめの音も 大事だよ。</p><div class="scroll" data-sk="fit">${fitTableHTML(song,key,si,cur)}</div>`;
+  }else{
+    h+=`<p class="note">ヒントは オフに なっています。「ヒント」に チェックを入れると 表が出るよ。</p>`;
+  }
+  h+=`</section>`;
+  h+=`<section class="card"><h2>🎹 けんばん<small>${P?'いま 鳴っている音':'えらんでいるマスの音'}　黄色＝メロディー、色つき＝左手の伴奏</small></h2><div class="scroll kbbox" data-sk="kb">${kbHTML()}</div></section>`;
+  h+=`<section class="card"><h2>🎛 きき方</h2><div class="ctrl">
+      <div><p class="lbl" style="margin-bottom:4px">伴奏の形</p>${PA.seg('style',[['block','🧱 のばす'],['oompah','🥁 ズン・チャ'],['alberti','🌊 '+albertiName(key)]],state.style,'full')}</div>
+      <label class="tempo" for="tempo"><span style="white-space:nowrap">はやさ ♩＝<b id="tempoVal">${state.tempo}</b></span><input id="tempo" type="range" min="50" max="140" step="2" value="${state.tempo}"></label>
+      <label><input type="checkbox" id="melOn" ${state.melOn?'checked':''}> メロディー</label>
+      <label><input type="checkbox" id="accOn" ${state.accOn?'checked':''}> 伴奏</label>
+      <label><input type="checkbox" id="hint" ${state.hint?'checked':''}> ヒント（合う音を色で見せる・なかま表）</label>
+      <label><input type="checkbox" id="autoPlay" ${state.autoPlay?'checked':''}> えらんだら そのマスを鳴らす</label>
+    </div></section>`;
+  // パレット：いつも 画面の下に くっつく（このページの ただ一つの 下のバー）
+  h+=`<div class="palbar" role="group" aria-label="和音を えらぶ">
+      <div class="selrow">
+        <p class="selinfo"><span class="pre">いま えらんでいるマス： </span><b>${whereLabel(song,si)}</b>　メロディー <b>${namesH(sl.notes.map(n=>noteAt(key,n.k)),' ')}</b></p>
+        <button class="pbtn" data-act="playsel" aria-label="このマスだけ きく" title="このマスだけ きく">🔁<span class="t">このマス</span></button>
+        ${playBtnHTML(!!P)}
+      </div>
+      <div class="palette">`+CH_KEYS.map((c,i)=>`<button class="cbtn ${cur===c?'on':''}" style="--c:${COL[c]};--l:${LCOL[c]}" data-act="pick" data-v="${c}" aria-pressed="${cur===c}" aria-label="${CHORDS[c].label}（キー ${[1,4,5,7][i]}）"><span class="num">${CHORDS[c].label}</span><span class="nm">${namesH(chordTones(key,c))}</span><span class="sym">${PA.H(chordSym(key,c))}</span></button>`).join('')+
+      `<button class="cbtn clear" data-act="pick" data-v="" aria-label="けす"><span class="num">？</span><span class="nm">けす</span></button></div>
+    </div>`;
+  const mi=PA.nmH(noteAt(key,2)), la=PA.nmH(noteAt(key,5)), re_si=namesH([noteAt(key,1),noteAt(key,6)]), shared=namesH([noteAt(key,0),noteAt(key,3),noteAt(key,4)]);
+  h+=`<details class="more tips" ${state.tipsOpen?'open':''}><summary>💡 伴奏づけの コツ</summary><p class="note" style="margin:0 0 6px">${PA.keyName(key)}の 音名で 書いているよ</p><ol>
+    <li>マスの <b>はじめの音</b> と <b>長い音</b> を見る。</li>
+    <li>その音が 入っている和音（Ⅰ・Ⅳ・Ⅴ7）を えらぶ。なかま表の「あう拍」が 多いほど 合いやすい。</li>
+    <li><b>${mi}</b> が 長く鳴れば Ⅰ、<b>${la}</b> なら Ⅳ、<b>${re_si}</b> なら Ⅴ7。<b>${shared}</b> は 2つの和音に 入っているので、ほかの音で きめよう。</li>
+    <li>曲の <b>はじめ</b> と <b>さいご</b> は Ⅰ。さいごの 前は Ⅴ7 が 多いよ。</li>
+    <li>えらんだら きいてみよう。にごって きこえたら、べつの和音を ためそう。</li></ol>
+    <p class="note">※ キーボードでも操作できます：1＝Ⅰ、4＝Ⅳ、5＝Ⅴ、7＝Ⅴ7、←→＝マスの移動、Delete＝けす、スペース＝再生／停止。<br>※ 曲はどれも古くから歌われている曲や、作曲者が亡くなって長い年月がたった曲のメロディーです。</p></details>`;
+  return h+`</div>`;
+}
+
+let lastCenterKey='', rendering=false;
+// えらんだマスの メロディーが けんばんの 外なら まん中へ（見えていれば 動かさない）
+function centerKb(){
+  const box=document.querySelector('[data-sk="kb"]');
+  if(!box||box.scrollWidth<=box.clientWidth) return;
+  const keys=[...box.querySelectorAll('[data-focus]')]; if(!keys.length) return;
+  const br=box.getBoundingClientRect();
+  const L=Math.min(...keys.map(r=>r.getBoundingClientRect().left)), R=Math.max(...keys.map(r=>r.getBoundingClientRect().right));
+  if(L>=br.left&&R<=br.right) return;
+  box.scrollLeft+=(L+R)/2-(br.left+br.right)/2;
+}
+function render(){
+  const viewEl=document.getElementById('view');
+  deferRender=false;
+  const ae=document.activeElement, focusId=ae&&ae.id, fa=ae&&ae.dataset?ae.dataset.act:null, wasBtn=!!ae&&ae.tagName==='BUTTON';
+  try{
+    PA.paint(viewEl,view(),state.songId+':'+state.keyIdx);
+  }catch(err){
+    console.error(err);
+    if(rendering) throw err;
+    rendering=true;
+    PA.store.set(STORE,null);
+    state.choices={}; state.sel=0; state.checked=false; state.reveal=false; stopPlay();
+    try{render();}finally{rendering=false;} return;
+  }
+  // フォーカスを もどす（チェックボックス・スライダー、再生⇔停止、こたえを見る→こたえあわせ）
+  const lost=document.activeElement===document.body||document.activeElement==null||!document.contains(document.activeElement);
+  if(lost){
+    if(focusId&&document.getElementById(focusId)) document.getElementById(focusId).focus({preventScroll:true});
+    else if(wasBtn&&fa){
+      const act=fa==='stop'?'playall':fa==='playall'?'stop':fa==='reveal'?'check':fa;
+      const el=viewEl.querySelector(`[data-act="${act}"]`);
+      if(el) el.focus({preventScroll:true});
+    }
+  }
+  const ck=state.songId+'|'+state.sel+'|'+state.keyIdx;
+  if(!state.play&&ck!==lastCenterKey){lastCenterKey=ck;centerKb();}
+}
+// 再生中は、がくふと けんばんだけを 書きかえる（ボタンや スライダーは そのまま）
+function renderPlayback(){
+  const sb=document.querySelector('[data-sk="score"]'), kb=document.querySelector('[data-sk="kb"]');
+  if(!sb||!kb) return render();
+  const l=kb.scrollLeft;
+  sb.innerHTML=scoreRows();
+  kb.innerHTML=kbHTML();
+  kb.scrollLeft=l;
+}
+// 再生中、光っている マスが 画面の外（上の バーや 下の パレットの うら）に 出たら 見える所へ。がくふを 見ていないときは 動かさない
+function followSlot(si){
+  const box=document.querySelector('[data-sk="score"]'), r=box&&box.querySelector(`[data-slot="${si}"]`); if(!r) return;
+  const top=70, bot=window.innerHeight-170, bb=box.getBoundingClientRect();
+  if(bb.bottom<top||bb.top>bot) return;
+  const b=r.getBoundingClientRect();
+  if(b.top<top||b.bottom>bot){try{r.scrollIntoView({block:'center',inline:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});}catch(e){}}
+}
+// はやさの スライダーを ゆびで うごかしている間は ぜんたいを 書きかえない（つまみが はなれないように）。はなしたら 書きかえる
+let tempoDrag=false, deferRender=false;
+function renderSafe(){if(tempoDrag){deferRender=true;return false;}render();return true;}
+function scrollSelIntoView(){
+  const el=document.querySelector(`[data-sk="score"] [data-slot="${state.sel}"]`);
+  if(!el) return;
+  try{el.scrollIntoView({block:'nearest',inline:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});}catch(e){}
+}
+
+/* ===== 操作 ===== */
+function pick(ch){
+  const song=curSong(), chs=choices();
+  stopPlay();
+  const si=state.sel;
+  chs[si]=ch||null; save();
+  if(ch&&state.sel<song.slots.length-1) state.sel++;
+  if(ch&&state.autoPlay&&PA.settings.sound) playRange(si,si); else render();
+  scrollSelIntoView();
+}
+let clearTimer=null;
+document.addEventListener('click',e=>{
+  const hit=e.target.closest('[data-slot]');
+  if(hit){
+    if(state.play) stopPlay();
+    state.sel=+hit.dataset.slot; render();
+    const ch=choices()[state.sel];
+    if(ch) playChordNow(curKey(),ch);
+    return;
+  }
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  const a=el.dataset.act, v=el.dataset.v;
+  if(a!=='clear'&&state.clearArm){state.clearArm=false;clearTimeout(clearTimer);}
+  switch(a){
+    case 'song': if(v===state.songId) break; stopPlay(); state.songId=v; state.sel=0; state.checked=false; state.reveal=false; save(); break;
+    case 'pick': pick(v); return;
+    case 'playall': playRange(0,curSong().slots.length-1); return;
+    case 'playsel': playRange(state.sel,state.sel); return;
+    case 'stop': stopPlay(); break;
+    case 'model': playRange(0,curSong().slots.length-1,true); return;
+    case 'check': stopPlay(); state.checked=true; break;
+    case 'reveal': state.reveal=true; break;
+    case 'style': state.style=v; save(); break;
+    case 'clear':
+      if(!state.clearArm){state.clearArm=true;clearTimeout(clearTimer);clearTimer=setTimeout(()=>{
+        state.clearArm=false;
+        if(renderSafe()) return;
+        const b=document.querySelector('[data-act="clear"]'); if(b){b.classList.remove('warn');b.textContent='🧽 ぜんぶ けす';}
+      },3000);break;}
+      clearTimeout(clearTimer); state.clearArm=false; stopPlay();
+      state.choices[curSong().id]=Array(curSong().slots.length).fill(null); state.sel=0; state.checked=false; state.reveal=false; save(); break;
+    default: return;
+  }
+  render();
+});
+document.addEventListener('change',e=>{
+  const t=e.target;
+  if(['melOn','accOn','hint','autoPlay'].includes(t.id)){state[t.id]=t.checked;save();render();}
+  else if(t.id==='tempo'){state.tempo=+t.value;save();}
+});
+document.addEventListener('input',e=>{
+  if(e.target.id==='tempo'){state.tempo=+e.target.value;save();const tv=document.getElementById('tempoVal');if(tv)tv.textContent=state.tempo;}
+});
+document.addEventListener('pointerdown',e=>{if(e.target&&e.target.id==='tempo')tempoDrag=true;});
+function endTempoDrag(){
+  if(!tempoDrag) return;
+  tempoDrag=false;
+  if(deferRender) setTimeout(()=>{if(tempoDrag||!deferRender)return;deferRender=false;render();},0); // change の あとで
+}
+document.addEventListener('pointerup',endTempoDrag);
+document.addEventListener('pointercancel',()=>{
+  endTempoDrag();
+});
+// コツの ひらき方を おぼえておく（toggle は 上に つたわらないので capture で）
+document.addEventListener('toggle',e=>{if(e.target&&e.target.matches&&e.target.matches('details.tips'))state.tipsOpen=e.target.open;},true);
+document.addEventListener('keydown',e=>{
+  if(e.ctrlKey||e.metaKey||e.altKey||e.isComposing) return;
+  if(e.target.closest&&e.target.closest('input,select,textarea,dialog')) return;
+  if(document.querySelector('dialog[open]')) return; // 調や せっていの シートが ひらいているときは 何もしない
+  const song=curSong(), map={'1':'I','4':'IV','5':'V','7':'V7'};
+  if(e.repeat&&(map[e.key]||e.key===' '||e.key==='Delete'||e.key==='Backspace')){e.preventDefault();return;}
+  if(map[e.key]){pick(map[e.key]);e.preventDefault();}
+  else if(e.key==='ArrowRight'){if(state.play)stopPlay();state.sel=Math.min(song.slots.length-1,state.sel+1);render();scrollSelIntoView();e.preventDefault();}
+  else if(e.key==='ArrowLeft'){if(state.play)stopPlay();state.sel=Math.max(0,state.sel-1);render();scrollSelIntoView();e.preventDefault();}
+  else if(e.key==='Delete'||e.key==='Backspace'){pick('');e.preventDefault();}
+  else if(e.key===' '&&!(e.target.closest&&e.target.closest('button,summary,a,[role="button"]'))){state.play?(stopPlay(),render()):playRange(0,song.slots.length-1);e.preventDefault();}
+});
+// 画面の幅で 1行の小節数（4か2）が かわったら 書きなおす
+let resizeTimer=null;
+window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(perRowNow(curSong(),curKey())!==lastPerRow) state.play?renderPlayback():render();},120);});
+
+PA.mountBar({title:'伴奏づけ',app:'accompaniment'});
+let lastPitch=PA.settings.pitchA;
+PA.onSettings=()=>{
+  // 音を消した・基準の音を かえたときは 再生を とめる（鳴っている音と 表示を そろえる）
+  if(state.play&&(!PA.settings.sound||PA.settings.pitchA!==lastPitch)) stopPlay();
+  lastPitch=PA.settings.pitchA;
+  render();
+};
+PA.onStopDown=()=>stopPlay(); // 描きなおしは click 側で（ボタンが入れかわって再生し直さないように）
+// ⏹ を おして そのまま スクロールした・指が ずれた（click が 来ない）：音は もう 止まっているので 画面を もどす
+PA.onStopCancel=()=>render();
+PA.onKeySheet=()=>PA.openKeySheet({minor:false,both:false,idx:state.keyIdx,onPick:(minor,idx)=>{
+  stopPlay(); state.keyIdx=idx; save(); render(); playChordNow(curKey(),'I');
+}});
+load(); render();
+</script>
+</body>
+</html>
