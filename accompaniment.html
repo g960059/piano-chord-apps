@@ -11,19 +11,23 @@
 <style>
 :root{--model:#efe6ff;--modelink:#5b2fb0}
 .lbl{font-size:14px;font-weight:700;color:var(--sub);margin:0 2px 4px}
-/* 曲：横に ならべて スクロール */
+.lbl .cnt{font-weight:400;font-size:13px}
+/* 曲：やさしい順に 横に ならべて スクロール（スマホ） */
 .songs{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
   margin-inline:-16px;padding:2px 16px 6px;scroll-padding-inline:16px;scrollbar-width:thin}
-.song{flex:none;width:168px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;
-  min-height:76px;padding:8px 12px;border-radius:14px;background:var(--card);border:2px solid var(--line)}
+.song{flex:none;width:160px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;
+  min-height:72px;padding:7px 8px;border-radius:14px;background:var(--card);border:2px solid var(--line)}
 .song.on{border-color:var(--ink);box-shadow:0 2px 0 #eadfce}
 .song b{font-size:15px;line-height:1.3;word-break:keep-all;overflow-wrap:anywhere}
+.song .meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .song .lv{font-size:12px;color:#c98500;letter-spacing:.1em;line-height:1.2}
+.song .mt{font-size:11.5px;font-weight:800;line-height:1.5;padding:0 6px;border-radius:6px;background:#fff0c9;color:#8a5a00}
 .song .used{display:flex;gap:4px;flex-wrap:wrap}
-/* iPad など：5曲を 3れつに ならべて、ぜんぶ 見えるように（横スクロールで 切れた カードを のこさない）。スマホの 横向きは 1行の まま */
+/* iPad など：ぜんぶの曲を ならべて 見せる（横スクロールで 切れた カードを のこさない）。スマホの 横向きは 1行の まま */
 @media (min-width:700px) and (min-height:501px){
-  .songs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));overflow:visible;margin-inline:0;padding:2px 0 4px}
+  .songs{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));overflow:visible;margin-inline:0;padding:2px 0 4px}
   .song{width:auto}
+  .lbl .swipe{display:none}
 }
 .tag{font-size:12px;font-weight:800;padding:1px 8px;border-radius:999px;background:var(--l);color:var(--c)}
 .toprow{display:flex;align-items:center;gap:6px 10px;flex-wrap:wrap}
@@ -138,15 +142,23 @@ function voicing(key,ch){
 
 /* ===== 曲データ =====
    音の書き方：音階の何番目(1〜7)、「,」で1オクターブ下、「'」で1オクターブ上、「:」のあとは拍の長さ（省略＝1拍）
-   マスの書き方：[メロディー, おてほんの和音, ほかに合う和音..., 「!」つき＝音は入っていても ×にする和音] */
+   休み：「r」（r:1＝4分休符、r:2＝2分休符…）。鳴らさない・和音えらびの 音にも 入れない
+   マスの書き方：[メロディー, おてほんの和音, ほかに合う和音..., 「!」つき＝音は入っていても ×にする和音]
+   曲：meter＝拍子（4か3。ないときは 4）、pickup＝1小節目の 前の 弱起（アウフタクト）の メロディー（和音の マスは なし） */
 function P(str){
+  if(!str||!str.trim()) return [];
   return str.trim().split(/\s+/).map(tok=>{
+    const r=tok.match(/^r(?::([\d.]+))?$/);
+    if(r) return {rest:true,beats:r[1]?parseFloat(r[1]):1};
     const m=tok.match(/^([1-7])([,']*)(?::([\d.]+))?$/);
     if(!m) throw new Error('曲データの書きまちがい: '+tok);
     const oct=(m[2].match(/'/g)||[]).length-(m[2].match(/,/g)||[]).length;
     return {deg:+m[1],oct,k:(+m[1]-1)+7*oct,beats:m[3]?parseFloat(m[3]):1};
   });
 }
+const sounding=ns=>ns.filter(n=>!n.rest); // 休みを のぞいた 鳴る音
+const sumBeats=ns=>ns.reduce((a,n)=>a+n.beats,0);
+const REST_BEATS=[0.5,0.75,1,1.5,2,3,4]; // がくふに 描ける 休符の 長さ
 const TW_A=[['1 1','I','!IV'],['5 5','I'],['6 6','IV'],['5:2','I'],['4 4','IV','V7'],['3 3','I'],['2 2','V7','V'],['1:2','I','!IV']];
 const TW_B=[['5 5','I'],['4 4','IV','V7'],['3 3','I'],['2:2','V7','V']];
 const OD_P=[['3 3 4 5','I'],['5 4 3 2','V7','I'],['1 1 2 3','I']];
@@ -154,6 +166,12 @@ const OD_4=['3:1.5 2:.5 2:2','V7'], OD_8=['2:1.5 1:.5 1:2','I'];
 const OD_B=[['2 2 3 1','V7'],['2 3:.5 4:.5 3 1','V7','I'],['2 3:.5 4:.5 3 2','V7'],["1 2 5,:2",'V7','I']];
 const JB_1=[['3 3 3:2','I'],['3 3 3:2','I'],['3 5 1:1.5 2:.5','I'],['3:4','I'],['4 4 4:1.5 4:.5','IV'],['4 3 3 3:.5 3:.5','I']];
 const LB_1=['5:1.5 6:.5 5 4','I','!V','!V7'];
+const HC_P=[['3 2','I','!V','!V7'],['1:2','I','!IV']];
+const KA_2=['3 2 1:2','I','!IV','!V','!V7'], KA_5=['1 r:1 1 r:1','I','IV'];
+const CH_1=[['5 3','I','!V','!V7'],['3:2','I'],['4 2','V7','V','!IV'],['2:2','V7','V']];
+const MK_1=['1 1 1 5,','I','!IV','!V','!V7'], MK_23=[['6, 6, 5,:2','IV','I','!V','!V7'],['3 3 2 2','V7','V','I']];
+const KK_1=['5:2 3','I','!V','!V7'];
+const AL_1=['1 1 2 3','I','!IV','!V'], AL_9=['6 7 6 5','IV','!I'];
 const SONGS=[
   {id:'mary',title:'メリーさんのひつじ',level:1,slotBeats:4,
    tip:k=>`Ⅰ と Ⅴ7 の 2つだけで できるよ。「${PA.nmH(noteAt(k,1))}」が多い小節は どっちかな？`,
@@ -169,16 +187,57 @@ const SONGS=[
    slots:[...OD_P,OD_4,...OD_P,OD_8,...OD_B,...OD_P,OD_8]},
   {id:'jingle',title:'ジングルベル（サビ）',level:3,slotBeats:4,
    tip:k=>`Ⅰ・Ⅳ・Ⅴ7 を ぜんぶ使うよ。「${PA.nmH(noteAt(k,3))}」が多い小節は どの和音？`,
-   slots:[...JB_1,['3 2 2 3','V7','I'],['2:2 5:2','V7','V'],...JB_1,['5 5 4 2','V7'],['1:4','I']]}
+   slots:[...JB_1,['3 2 2 3','V7','I'],['2:2 5:2','V7','V'],...JB_1,['5 5 4 2','V7'],['1:4','I']]},
+  {id:'hotcross',title:'ホットクロスバン',level:1,slotBeats:2,
+   tip:()=>'Ⅰ と Ⅴ だけ。3小節目は 前半と 後半で 音が かわるね。',
+   slots:[...HC_P,...HC_P,['1:.5 1:.5 1:.5 1:.5','I','!IV'],['2:.5 2:.5 2:.5 2:.5','V','V7'],...HC_P]},
+  {id:'kaeru',title:'かえるのうた',level:1,slotBeats:4,
+   tip:k=>`「${namesH([noteAt(k,0),noteAt(k,2),noteAt(k,4)],'・')}」が たくさん 出てくるよ。休みの ところは 鳴らないよ。`,
+   slots:[['1 2 3 4','I','!IV','!V7'],KA_2,['3 4 5 6','I','IV','!V','!V7'],['5 4 3:2','I','!IV','!V','!V7'],KA_5,KA_5,
+     ['1:.5 1:.5 2:.5 2:.5 3:.5 3:.5 4:.5 4:.5','I','V7','!IV'],KA_2]},
+  {id:'chocho',title:'ちょうちょう',level:2,slotBeats:2,
+   tip:k=>`Ⅰ と Ⅴ7 で できるよ。2拍ごとに えらぼう。「${PA.nmH(noteAt(k,1))}」が 多い ところは どっちかな？`,
+   slots:[...CH_1,['1 2','I','!IV','!V','!V7'],['3 4','I','!IV','!V7'],['5 5','I'],['5:2','I','V','V7'],
+     ['5 3','I','!V','!V7'],['3 3','I'],['4 2','V7','V','!IV'],['2 2','V7','V'],['1 3','I','!IV'],['5 5','I','!V','!V7'],['3 3','I'],['3:2','I'],
+     ['2 2','V7','V'],['2 2','V7','V'],['2 3','V7','V','!I'],['4:2','V7','V','!IV'],['3 3','I'],['3 3','I'],['3 4','I','!IV','!V7'],['5:2','I','V'],
+     ['5 3','I','!V','!V7'],['3 3','I'],['4 2','V7','V','!IV'],['2:2','V7','V'],['1 3','I','!IV'],['5 5','I'],['3 2','V7','V','!I'],['1:2','I','!IV']]},
+  {id:'makiba',title:'ゆかいな牧場',level:2,slotBeats:4,
+   tip:k=>`Ⅰ・Ⅳ・Ⅴ7 を 使うよ。まん中の「チッチッチッ」は ずっと「${PA.nmH(noteAt(k,0))}」だね。`,
+   slots:[MK_1,...MK_23,['1:3 5,','I','!IV'],MK_1,...MK_23,['1:3 5,:.5 5,:.5','I','!IV'],
+     ['1 1 1 5,:.5 5,:.5','I','!IV'],['1 1 1:2','I','!IV'],['1:.5 1:.5 1 1:.5 1:.5 1','I','!IV'],['1:.5 1:.5 1:.5 1:.5 1 1','I','!IV'],
+     MK_1,...MK_23,['1:4','I','!IV']]},
+  {id:'kakko',title:'かっこう',level:2,meter:3,slotBeats:3,
+   tip:()=>'3拍子の曲。1小節に 和音は 1つ。Ⅰ と Ⅴ7 で できるよ。',
+   slots:[KK_1,KK_1,['2 1 2','V7','V','!I','!IV'],['1:3','I','!IV'],['2 2 3','V7','V','!I'],['4:2 2','V7','V','!IV'],['3 3 4','I','!IV','!V7'],
+     KK_1,KK_1,KK_1,['4 3 2','V7','V','!IV','!I'],['1:3','I','!IV']]},
+  {id:'alps',title:'アルプス一万尺',level:3,slotBeats:4,
+   tip:()=>'Ⅰ・Ⅳ・Ⅴ7 を ぜんぶ 使うよ。うしろの「ランラララ」は Ⅳ から はじまるよ。',
+   slots:[AL_1,['1 3 2 5,','I','V','V7','!IV'],AL_1,['1:2 7,:2','V7','V','!I','!IV'],AL_1,['4 3 2 1','IV','V7','!I'],['7, 5, 6, 7,','V7','V','!I','!IV'],['1:2 1:2','I','!IV'],
+     AL_9,["6 7 1':2",'I','IV'],['5 6 5 4','V7','V','!I'],['3:2 1:2','I','!IV'],AL_9,["6 7 1' 6",'I','IV'],["5 1' 7 2'",'V7','V','!I'],["1':2 1':2",'I','!IV']]}
 ];
 SONGS.forEach(s=>{
-  s.meter=4;
+  s.meter=s.meter||4;
+  s.pickupNotes=P(s.pickup||'');
+  s.pickupBeats=sumBeats(s.pickupNotes);
   s.slots=s.slots.map(([n,ans,...ok])=>({notes:P(n),ans,ok:ok.filter(c=>c[0]!=='!'),ng:ok.filter(c=>c[0]==='!').map(c=>c.slice(1))}));
   s.slots[0].start=true;
   s.slots[s.slots.length-1].cadence=true;
-  s.slots.forEach((sl,i)=>{const b=sl.notes.reduce((a,n)=>a+n.beats,0);if(Math.abs(b-s.slotBeats)>1e-9)console.error(`${s.title} ${i+1}マスめ: ${b}拍`);});
+  if(s.meter%s.slotBeats) console.error(`${s.title}: ${s.meter}拍子に ${s.slotBeats}拍の マスは 入らない`);
+  if(s.meter/s.slotBeats>2) console.error(`${s.title}: 1小節に マスは 2つまで（「前半・後半」で よぶため）`);
+  // 弱起の 曲でも さいごの 小節は 1小節 まるごと（マスは みな slotBeats 拍）
+  if(s.slots.length%(s.meter/s.slotBeats)) console.error(`${s.title}: さいごの 小節が とちゅうで おわっている`);
+  if(s.pickupBeats>=s.meter-1e-9) console.error(`${s.title} 弱起: ${s.pickupBeats}拍（1小節より 短くする）`);
+  const badRest=(ns,where)=>ns.forEach(n=>{if(n.rest&&!REST_BEATS.includes(n.beats))console.error(`${s.title} ${where}: ${n.beats}拍の 休符は 描けない`);});
+  badRest(s.pickupNotes,'弱起');
+  s.slots.forEach((sl,i)=>{
+    const b=sumBeats(sl.notes);
+    if(Math.abs(b-s.slotBeats)>1e-9) console.error(`${s.title} ${i+1}マスめ: ${b}拍`);
+    if(!sounding(sl.notes).length) console.error(`${s.title} ${i+1}マスめ: 鳴る音が ない`);
+    badRest(sl.notes,`${i+1}マスめ`);
+  });
   s.used=CH_KEYS.filter(c=>s.slots.some(sl=>sl.ans===c));
 });
+SONGS.sort((a,b)=>a.level-b.level); // やさしい順（同じ むずかしさの中は 上の ならびの まま）
 
 /* ===== 名前 ===== */
 const namesH=(ns,sep='・')=>PA.namesH(ns,sep);
@@ -186,8 +245,8 @@ function chordSym(key,ch){ // 文字だけ（HTML では PA.H、SVG では PA.Sv
   const r=noteAt(key,CHORDS[ch].deg);
   return PA.LET_EN[r.letter]+PA.ACC[r.acc]+(ch==='V7'?'7':'');
 }
-// 「ドソミソ」の形を いまの調の Ⅰ の音で（ト長調なら ソレシレ）
-function albertiName(key){const I=chordTones(key,'I');return [I[0],I[2],I[1],I[2]].map(PA.nmH).join('');}
+// 「ドソミソ」の形を いまの調の Ⅰ の音で（ト長調なら ソレシレ）。3拍子は 鳴らす とおり「ドソミソミソ」
+function albertiName(key,meter=4){const I=chordTones(key,'I');return (meter===3?[I[0],I[2],I[1],I[2],I[1],I[2]]:[I[0],I[2],I[1],I[2]]).map(PA.nmH).join('');}
 function beatsJa(b){
   const w=Math.floor(b+1e-9), half=b-w>1e-9;
   if(!w&&half) return '半拍';
@@ -234,10 +293,17 @@ function whereLabel(song,si){
 }
 
 /* ===== 判定 ===== */
+// 休みは 数えない。マスの はじめに 鳴る音が「つよい音」
 function fitInfo(slot,ch){
-  const set=CH_DEGS[ch], total=slot.notes.reduce((a,n)=>a+n.beats,0);
-  const inBeats=slot.notes.filter(n=>set.includes(n.deg)).reduce((a,n)=>a+n.beats,0);
-  return {strong:set.includes(slot.notes[0].deg),frac:inBeats/total,inBeats,total,count:slot.notes.filter(n=>set.includes(n.deg)).length};
+  const set=CH_DEGS[ch], ns=sounding(slot.notes), total=sumBeats(ns), hit=ns.filter(n=>set.includes(n.deg)), inBeats=sumBeats(hit);
+  return {strong:!!ns.length&&set.includes(ns[0].deg),frac:total?inBeats/total:0,inBeats,total,count:hit.length};
+}
+// マスの はじめに 鳴る音が 何拍目か（休みから はじまる マスでも）
+function strongBeatJa(song,si){
+  let b=firstBeat(song,si)-1;
+  for(const n of song.slots[si].notes){if(!n.rest)break;b+=n.beats;}
+  const w=Math.floor(b+1e-9);
+  return b-w>1e-9?`${w+1}拍目の うら`:`${w+1}拍目`;
 }
 function grade(slot,ch){
   if(!ch) return null;
@@ -253,22 +319,27 @@ function whyBad(key,song,si,ch){
   if(slot.cadence) return 'さいごは Ⅰ で おわると「おしまい」の感じが 出るよ';
   if(slot.start) return '曲の はじめは Ⅰ で はじめると、何調か よく わかるよ';
   if(slot.ng.includes(ch)) return `${CHORDS[ch].label} の音も 入っているけれど、ここでは 曲の流れに 合わないよ`;
-  const f=fitInfo(slot,ch), first=noteAt(key,slot.notes[0].k), names=namesH(chordTones(key,ch));
-  if(!f.strong) return `${firstBeat(song,si)}拍目の「${PA.nmH(first)}」が ${CHORDS[ch].label}（${names}）に 入っていないよ`;
+  const f=fitInfo(slot,ch), ns=sounding(slot.notes), names=namesH(chordTones(key,ch));
+  if(!ns.length) return 'このマスは 休みだけだよ';
+  const first=noteAt(key,ns[0].k);
+  if(!f.strong) return `${strongBeatJa(song,si)}の「${PA.nmH(first)}」が ${CHORDS[ch].label}（${names}）に 入っていないよ`;
   return `${CHORDS[ch].label}（${names}）に 入っている音は、${beatsJa(f.total)}のうち ${beatsJa(f.inBeats)}だけ`;
 }
 
 /* ===== 音（共通の PA.playNote：平均律・A4＝設定の基準ピッチ） ===== */
 // 伴奏のきざみ方：t＝マスの中の拍、d＝長さ（拍）
-function accEvents(key,ch,L){
+// meter＝拍子、off＝マスが 小節の 何拍目から はじまるか（0から）。3拍子は ズン・チャッ・チャッ、ドソミソミソ
+function accEvents(key,ch,L,meter=4,off=0){
   const v=voicing(key,ch), ch3=v.chord.map(n=>n.midi).sort((a,b)=>a-b), bass=v.bass.midi, ev=[];
   if(state.style==='block') ev.push({t:0,d:L,ms:[bass,...ch3],vel:0.1});
   else if(state.style==='oompah'){
-    for(let b=0;b<L;b++) ev.push(b%2===0?{t:b,d:1,ms:[bass],vel:0.17}:{t:b,d:0.9,ms:ch3,vel:0.085});
+    const down=b=>meter===3?(off+b)%3===0:b%2===0;
+    for(let b=0;b<L;b++) ev.push(down(b)?{t:b,d:1,ms:[bass],vel:0.17}:{t:b,d:0.9,ms:ch3,vel:0.085});
   }else{
-    const pat=[ch3[0],ch3[2],ch3[1],ch3[2]];
+    const pat=meter===3?[ch3[0],ch3[2],ch3[1],ch3[2],ch3[1],ch3[2]]:[ch3[0],ch3[2],ch3[1],ch3[2]];
+    const o=meter===3?off*2:0;
     ev.push({t:0,d:L,ms:[bass],vel:0.13});
-    for(let i=0;i<L*2;i++) ev.push({t:i/2,d:0.6,ms:[pat[i%4]],vel:0.09});
+    for(let i=0;i<L*2;i++) ev.push({t:i/2,d:0.6,ms:[pat[(o+i)%pat.length]],vel:0.09});
   }
   return ev;
 }
@@ -279,23 +350,30 @@ function stopPlay(){
   if(was) PA.stopSound();
   state.play=null;
 }
-function playRange(from,to,model=false){
+// withPickup：はじめから きくときは 弱起の メロディーを 先に（slot＝-1 の あいだは 弱起）。「このマスだけ」は マスだけ
+function playRange(from,to,model=false,withPickup=false){
   stopPlay();
   const my=playToken, song=curSong(), key=curKey(), chs=model?song.slots.map(s=>s.ans):choices().slice();
   const spb=60/state.tempo, snd=PA.settings.sound&&!!PA.audio(), lead=0.3;
-  state.play={slot:from,note:0,model,from,to};
-  for(let si=from;si<=to;si++){
-    const sl=song.slots[si], rel=(si-from)*song.slotBeats, ch=chs[si];
-    if(ch&&state.accOn&&snd) accEvents(key,ch,song.slotBeats).forEach(e=>e.ms.forEach(m=>PA.playNote(m,lead+(rel+e.t)*spb,e.d*spb+0.35,e.vel)));
-    let b=rel;
-    sl.notes.forEach((n,ni)=>{
-      if(state.melOn&&snd) PA.playNote(noteAt(key,n.k).midi,lead+b*spb,n.beats*spb+0.3,0.27);
+  const pk=withPickup&&from===0?song.pickupNotes:[], pre=sumBeats(pk);
+  state.play={slot:pk.length?-1:from,note:0,model,from,to};
+  // メロディー：休みは 鳴らさない（光る 場所だけ うごかす）
+  const mel=(si,notes,start)=>{
+    let b=start;
+    notes.forEach((n,ni)=>{
+      if(!n.rest&&state.melOn&&snd) PA.playNote(noteAt(key,n.k).midi,lead+b*spb,n.beats*spb+0.3,0.27);
       const at=b;
-      playTimers.push(setTimeout(()=>{if(my!==playToken)return;const prev=state.play.slot;state.play.slot=si;state.play.note=ni;renderPlayback();if(si!==prev)followSlot(si);},(lead+at*spb)*1000));
+      playTimers.push(setTimeout(()=>{if(my!==playToken)return;const prev=state.play.slot;state.play.slot=si;state.play.note=ni;renderPlayback();if(si!==prev)followSlot(Math.max(si,0));},(lead+at*spb)*1000));
       b+=n.beats;
     });
+  };
+  mel(-1,pk,0);
+  for(let si=from;si<=to;si++){
+    const sl=song.slots[si], rel=pre+(si-from)*song.slotBeats, ch=chs[si];
+    if(ch&&state.accOn&&snd) accEvents(key,ch,song.slotBeats,song.meter,firstBeat(song,si)-1).forEach(e=>e.ms.forEach(m=>PA.playNote(m,lead+(rel+e.t)*spb,e.d*spb+0.35,e.vel)));
+    mel(si,sl.notes,rel);
   }
-  const total=(to-from+1)*song.slotBeats;
+  const total=pre+(to-from+1)*song.slotBeats;
   playTimers.push(setTimeout(()=>{
     if(my!==playToken)return;
     state.play=null;
@@ -314,11 +392,25 @@ function playChordNow(key,ch){
 
 /* ===== がくふ SVG ===== */
 let lastPerRow=4;
+// 弱起の ところの 幅（ないときは 0）
+const pickupW=(song,PADL=16,BW=32)=>song.pickupNotes.length?PADL+song.pickupBeats*BW+8:0;
 function perRowNow(song,key){
-  const ns=PA.sigInfo(key).letters.length, MW=16+song.meter*32+8, HW=46+ns*10+30, W4=HW+4*MW+6;
+  const ns=PA.sigInfo(key).letters.length, MW=16+song.meter*32+8, HW=46+ns*10+30, W4=HW+pickupW(song)+4*MW+6;
   const box=document.querySelector('[data-sk="score"]'), view=document.getElementById('view');
   const avail=(box&&box.clientWidth)?box.clientWidth:((view&&view.clientWidth?view.clientWidth:window.innerWidth)-64);
   return avail>=W4*0.95?4:2;
+}
+// 休符（x＝その拍の 位置、TB＝いちばん下の線、whole＝1小節 まるごとの 休み）
+function restSVG(x,beats,TB,whole){
+  const c='#3a3245';
+  if(whole||beats===4) return `<rect x="${x-7}" y="${TB-30}" width="14" height="6" fill="${c}"/>`; // 全休符：第4線から ぶらさがる
+  const dotted=[3,1.5,0.75].includes(beats), base=dotted?beats/1.5:beats;
+  let g='';
+  if(base===2) g=`<rect x="${x-7}" y="${TB-26}" width="14" height="6" fill="${c}"/>`; // 2分休符：第3線の 上に のる
+  else if(base===1){const y=TB-36;g=`<path d="M${x-3} ${y} L${x+4} ${y+8} L${x-2} ${y+15} L${x+4} ${y+22} C${x-3} ${y+19} ${x-5} ${y+26} ${x+1} ${y+30}" fill="none" stroke="${c}" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>`;}
+  else g=`<circle cx="${x-3}" cy="${TB-26}" r="2.8" fill="${c}"/><path d="M${x-5} ${TB-25} Q${x} ${TB-21} ${x+4} ${TB-28} L${x-1} ${TB-8}" fill="none" stroke="${c}" stroke-width="1.8" stroke-linecap="round"/>`; // 8分休符
+  if(dotted) g+=`<circle cx="${x+10}" cy="${TB-25}" r="2.2" fill="${c}"/>`;
+  return g;
 }
 function scoreRows(){
   const song=curSong(), key=curKey(), chs=choices(), P=state.play;
@@ -328,80 +420,105 @@ function scoreRows(){
   const spm=slotsPerMeasure(song), nMeasures=song.slots.length/spm;
   const sig=PA.sigInfo(key), ns=sig.letters.length;
   const TS=sig.type>0?[38,35,39,36,33,37,34]:[34,37,33,36,32,35,31];
-  const TB=90, BW=32, PADL=16, MW=PADL+song.meter*BW+8, HW=46+ns*10+30;
+  const TB=90, BW=32, PADL=16, MW=PADL+song.meter*BW+8, HW=46+ns*10+30, PW=pickupW(song,PADL,BW);
   const CHH=big?46:34, CFS=big?26:20, UFS=big?15:12, H=TB+40+CHH+(big?34:26);
-  const W=HW+perRow*MW+6;
+  const W=HW+PW+perRow*MW+6;
   const ty=s=>TB-(s-30)*5;
+  // 音符と 休符を 描く（同じ マスの中で 8分音符2つを 連桁にする）。it：{si,ni,n,x,ch}
+  const drawItems=items=>{
+    let s='';
+    items.forEach(it=>{
+      it.playing=P&&P.slot===it.si&&P.note===it.ni;
+      if(it.n.rest) return;
+      const nt=noteAt(key,it.n.k);
+      it.st=PA.stepOf(nt); it.y=ty(it.st);
+      it.color=it.ch&&state.hint?(CH_DEGS[it.ch].includes(it.n.deg)?COL[it.ch]:'#b9aea2'):'#3a3245';
+    });
+    for(let i=0;i<items.length-1;i++){
+      const a=items[i], b=items[i+1];
+      if(!a.n.rest&&!b.n.rest&&a.n.beats===0.5&&b.n.beats===0.5&&Math.abs((a.mb??a.b)%1)<1e-9&&Math.abs(b.b-a.b-0.5)<1e-9&&b.si===a.si){a.beamWith=b;b.beamed=true;}
+    }
+    const head=(it)=>{
+      let g='';
+      if(it.playing) g+=`<circle cx="${it.x}" cy="${it.y}" r="14" fill="#ffd66b" opacity=".85"/>`;
+      for(let q=28;q>=it.st;q-=2) g+=`<line x1="${it.x-11}" x2="${it.x+11}" y1="${ty(q)}" y2="${ty(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
+      for(let q=40;q<=it.st;q+=2) g+=`<line x1="${it.x-11}" x2="${it.x+11}" y1="${ty(q)}" y2="${ty(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
+      const hollow=it.n.beats>=2;
+      g+=`<ellipse cx="${it.x}" cy="${it.y}" rx="6.4" ry="4.7" fill="${hollow?'#fff':it.color}" stroke="${it.color}" stroke-width="${hollow?2.4:1}" transform="rotate(-20 ${it.x} ${it.y})"/>`;
+      if(it.n.beats===1.5||it.n.beats===3) g+=`<circle cx="${it.x+11}" cy="${it.st%2===0?it.y-4:it.y}" r="2.2" fill="${it.color}"/>`;
+      return g;
+    };
+    items.forEach(it=>{
+      if(it.n.rest){
+        const rx=it.whole?it.wx:it.x;
+        if(it.playing) s+=`<circle cx="${rx}" cy="${TB-20}" r="14" fill="#ffd66b" opacity=".85"/>`;
+        s+=restSVG(rx,it.n.beats,TB,it.whole);
+        return;
+      }
+      if(it.beamed) return; // 連桁の2つめは1つめといっしょに描く
+      const {x,y,st,color,n}=it;
+      s+=head(it);
+      if(n.beats>=4) return;
+      if(it.beamWith){
+        const o=it.beamWith, up=(st+o.st)/2<34, ys=up?Math.min(y,o.y)-30:Math.max(y,o.y)+30, dx=up?6:-6;
+        s+=head(o);
+        s+=`<line x1="${x+dx}" x2="${x+dx}" y1="${y}" y2="${ys}" stroke="${color}" stroke-width="1.6"/>`;
+        s+=`<line x1="${o.x+dx}" x2="${o.x+dx}" y1="${o.y}" y2="${ys}" stroke="${o.color}" stroke-width="1.6"/>`;
+        s+=`<line x1="${x+dx}" x2="${o.x+dx}" y1="${ys}" y2="${ys}" stroke="#3a3245" stroke-width="5"/>`;
+        return;
+      }
+      if(st<34){
+        s+=`<line x1="${x+6}" x2="${x+6}" y1="${y}" y2="${y-32}" stroke="${color}" stroke-width="1.6"/>`;
+        if(n.beats===0.5) s+=`<path d="M${x+6} ${y-32} q4 9 10 13 q-3 -6 -10 -7" fill="${color}" stroke="${color}" stroke-width="1.4"/>`;
+      }else{
+        s+=`<line x1="${x-6}" x2="${x-6}" y1="${y}" y2="${y+32}" stroke="${color}" stroke-width="1.6"/>`;
+        if(n.beats===0.5) s+=`<path d="M${x-6} ${y+32} q4 -9 10 -13 q-3 6 -10 7" fill="${color}" stroke="${color}" stroke-width="1.4"/>`;
+      }
+    });
+    return s;
+  };
   let out='';
   for(let r=0;r*perRow<nMeasures;r++){
     let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="がくふ ${r*perRow+1}小節目から">`;
-    const mCount=Math.min(perRow,nMeasures-r*perRow), endX=HW+mCount*MW;
+    const mCount=Math.min(perRow,nMeasures-r*perRow), X0=HW+(r===0?PW:0), endX=X0+mCount*MW;
     for(let i=0;i<5;i++) s+=`<line x1="6" x2="${endX}" y1="${TB-i*10}" y2="${TB-i*10}" stroke="#6b6273" stroke-width="1.2"/>`;
     s+=`<line x1="6" x2="6" y1="${TB-40}" y2="${TB}" stroke="#6b6273" stroke-width="1.2"/>`;
     s+=PA.gClef(10,TB-10);
     sig.letters.forEach((L,i)=>{s+=PA.accGlyph(50+i*10,ty(TS[i]),sig.type);});
     if(r===0){
       const tx=50+ns*10+12;
-      s+=`<text x="${tx}" y="${TB-21}" text-anchor="middle" font-size="22" font-weight="800" fill="#3a3245" font-family="Georgia,serif">4</text>`;
+      s+=`<text x="${tx}" y="${TB-21}" text-anchor="middle" font-size="22" font-weight="800" fill="#3a3245" font-family="Georgia,serif">${song.meter}</text>`;
       s+=`<text x="${tx}" y="${TB-1}" text-anchor="middle" font-size="22" font-weight="800" fill="#3a3245" font-family="Georgia,serif">4</text>`;
+      // 弱起：さいしょの 小節線の 前（和音の マス・小節の 番号は なし）
+      if(PW){
+        let b=0;
+        const items=song.pickupNotes.map((n,ni)=>{const it={si:-1,ni,n,b,mb:song.meter-song.pickupBeats+b,x:HW+PADL+b*BW+8,ch:null};b+=n.beats;return it;});
+        s+=drawItems(items);
+        s+=`<line x1="${X0}" x2="${X0}" y1="${TB-40}" y2="${TB}" stroke="#6b6273" stroke-width="1.2"/>`;
+      }
     }
     const hits=[];
     for(let mi=0;mi<mCount;mi++){
-      const m=r*perRow+mi, mx=HW+mi*MW, last=m===nMeasures-1, cw=(MW-12)/spm;
+      const m=r*perRow+mi, mx=X0+mi*MW, last=m===nMeasures-1, cw=(MW-12)/spm;
       s+=`<line x1="${mx+MW}" x2="${mx+MW}" y1="${TB-40}" y2="${TB}" stroke="#6b6273" stroke-width="1.2"/>`;
       if(last) s+=`<line x1="${mx+MW+4}" x2="${mx+MW+4}" y1="${TB-40}" y2="${TB}" stroke="#3a3245" stroke-width="4"/>`;
-      s+=`<text x="${mx+3}" y="${TB-48}" font-size="${big?13:10}" fill="#a99f93">${m+1}</text>`;
       if(!P){
         for(let k=0;k<spm;k++) if(state.sel===m*spm+k) s+=`<rect x="${mx+6+k*cw}" y="${TB-56}" width="${cw}" height="94" rx="10" fill="#fff6d6"/>`;
       }
-      // 音符（同じマスの中で8分音符2つを連桁にする）
       const items=[];
       for(let k=0;k<spm;k++){
         const si=m*spm+k, sl=song.slots[si];
         let b=k*song.slotBeats;
-        sl.notes.forEach((n,ni)=>{items.push({si,ni,n,b,ch:showChs[si]});b+=n.beats;});
+        sl.notes.forEach((n,ni)=>{
+          // 1小節 まるごとの 休みは 全休符を まん中に
+          const whole=n.rest&&b===0&&n.beats===song.meter;
+          items.push({si,ni,n,b,x:mx+PADL+b*BW+8,ch:showChs[si],whole,wx:mx+MW/2});b+=n.beats;
+        });
       }
-      items.forEach(it=>{
-        const nt=noteAt(key,it.n.k);
-        it.st=PA.stepOf(nt); it.x=mx+PADL+it.b*BW+8; it.y=ty(it.st);
-        it.color=it.ch&&state.hint?(CH_DEGS[it.ch].includes(it.n.deg)?COL[it.ch]:'#b9aea2'):'#3a3245';
-        it.playing=P&&P.slot===it.si&&P.note===it.ni;
-      });
-      for(let i=0;i<items.length-1;i++){
-        const a=items[i], b=items[i+1];
-        if(a.n.beats===0.5&&b.n.beats===0.5&&Math.abs(a.b%1)<1e-9&&Math.abs(b.b-a.b-0.5)<1e-9&&b.si===a.si){a.beamWith=b;b.beamed=true;}
-      }
-      const head=(it)=>{
-        let g='';
-        if(it.playing) g+=`<circle cx="${it.x}" cy="${it.y}" r="14" fill="#ffd66b" opacity=".85"/>`;
-        for(let q=28;q>=it.st;q-=2) g+=`<line x1="${it.x-11}" x2="${it.x+11}" y1="${ty(q)}" y2="${ty(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
-        for(let q=40;q<=it.st;q+=2) g+=`<line x1="${it.x-11}" x2="${it.x+11}" y1="${ty(q)}" y2="${ty(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
-        const hollow=it.n.beats>=2;
-        g+=`<ellipse cx="${it.x}" cy="${it.y}" rx="6.4" ry="4.7" fill="${hollow?'#fff':it.color}" stroke="${it.color}" stroke-width="${hollow?2.4:1}" transform="rotate(-20 ${it.x} ${it.y})"/>`;
-        if(it.n.beats===1.5||it.n.beats===3) g+=`<circle cx="${it.x+11}" cy="${it.st%2===0?it.y-4:it.y}" r="2.2" fill="${it.color}"/>`;
-        return g;
-      };
-      items.forEach(it=>{
-        if(it.beamed) return; // 連桁の2つめは1つめといっしょに描く
-        const {x,y,st,color,n}=it;
-        s+=head(it);
-        if(n.beats>=4) return;
-        if(it.beamWith){
-          const o=it.beamWith, up=(st+o.st)/2<34, ys=up?Math.min(y,o.y)-30:Math.max(y,o.y)+30, dx=up?6:-6;
-          s+=head(o);
-          s+=`<line x1="${x+dx}" x2="${x+dx}" y1="${y}" y2="${ys}" stroke="${color}" stroke-width="1.6"/>`;
-          s+=`<line x1="${o.x+dx}" x2="${o.x+dx}" y1="${o.y}" y2="${ys}" stroke="${o.color}" stroke-width="1.6"/>`;
-          s+=`<line x1="${x+dx}" x2="${o.x+dx}" y1="${ys}" y2="${ys}" stroke="#3a3245" stroke-width="5"/>`;
-          return;
-        }
-        if(st<34){
-          s+=`<line x1="${x+6}" x2="${x+6}" y1="${y}" y2="${y-32}" stroke="${color}" stroke-width="1.6"/>`;
-          if(n.beats===0.5) s+=`<path d="M${x+6} ${y-32} q4 9 10 13 q-3 -6 -10 -7" fill="${color}" stroke="${color}" stroke-width="1.4"/>`;
-        }else{
-          s+=`<line x1="${x-6}" x2="${x-6}" y1="${y}" y2="${y+32}" stroke="${color}" stroke-width="1.6"/>`;
-          if(n.beats===0.5) s+=`<path d="M${x-6} ${y+32} q4 -9 10 -13 q-3 6 -10 7" fill="${color}" stroke="${color}" stroke-width="1.4"/>`;
-        }
-      });
+      s+=drawItems(items);
+      // 小節の 番号（1拍目の 音に 上の 加線が あるときは その上に）
+      const f0=items[0], numY=f0&&!f0.n.rest&&f0.b===0&&f0.st>=40?Math.min(TB-48,f0.y-10):TB-48;
+      s+=`<text x="${mx+3}" y="${numY}" font-size="${big?13:10}" fill="#a99f93">${m+1}</text>`;
       // 和音のマス
       for(let k=0;k<spm;k++){
         const si=m*spm+k, ch=showChs[si], sl=song.slots[si];
@@ -431,10 +548,10 @@ function scoreRows(){
 /* ===== けんばんの 印 ===== */
 // 黄色＝メロディー、こい色＝ベース、うすい色＝左手の和音
 function kbMarks(){
-  const song=curSong(), key=curKey(), chs=choices(), P=state.play, marks=new Map();
-  const showSlot=P?P.slot:state.sel;
+  const song=curSong(), key=curKey(), chs=choices(), P=state.play, marks=new Map(), inPick=!!P&&P.slot<0;
+  const showSlot=P?Math.max(P.slot,0):state.sel;
   let showCh=P?(P.model?(state.reveal?song.slots[showSlot].ans:null):chs[showSlot]):chs[showSlot];
-  if(P&&!state.accOn) showCh=null;
+  if(P&&(!state.accOn||inPick)) showCh=null; // 弱起には 和音が ない
   const black=m=>PA.BLACK.has(PA.mod(m,12));
   if(showCh){
     const v=voicing(key,showCh), c=COL[showCh];
@@ -442,7 +559,7 @@ function kbMarks(){
     // ベースは 左に はなれているので focus に 入れない（和音と メロディーが いっしょに 見えるように）
     marks.set(v.bass.midi,{fill:c,label:PA.nm(v.bass),sub:'ベース',subColor:c});
   }
-  const melNotes=P?[song.slots[P.slot].notes[P.note]]:song.slots[showSlot].notes;
+  const melNotes=sounding((P?[(inPick?song.pickupNotes:song.slots[P.slot].notes)[P.note]]:song.slots[showSlot].notes).filter(Boolean)); // 休みの あいだは メロディーの 印なし
   melNotes.forEach(n=>{
     const nt=noteAt(key,n.k), had=marks.get(nt.midi);
     if(had&&had.pick) return;
@@ -452,23 +569,30 @@ function kbMarks(){
   });
   return marks;
 }
-const kbHTML=()=>PA.kbSVG(36,84,kbMarks());
+// けんばんの 右はし：ふつうは 84（高いド）。曲の メロディーが もっと 高い 調では その音まで（白鍵で おわる）
+function kbHi(){
+  const s=curSong(), k=curKey(); let hi=84;
+  [...s.pickupNotes,...s.slots.flatMap(x=>x.notes)].forEach(n=>{if(!n.rest) hi=Math.max(hi,noteAt(k,n.k).midi);});
+  if(PA.BLACK.has(PA.mod(hi,12))) hi++;
+  return hi;
+}
+const kbHTML=()=>PA.kbSVG(36,kbHi(),kbMarks());
 
 /* ===== 画面 ===== */
 function songsHTML(){
   return `<div class="songs" data-sk="songs" role="group" aria-label="曲">`+SONGS.map(s=>`<button class="song ${s.id===state.songId?'on':''}" data-act="song" data-v="${s.id}" aria-pressed="${s.id===state.songId}" ${s.id===state.songId?'data-focus="1"':''}>
-    <b>${s.title.replace('（','<wbr>（')}</b><span class="lv" aria-label="むずかしさ ${s.level}">${'★'.repeat(s.level)}${'☆'.repeat(3-s.level)}</span>
+    <b>${s.title.replace('（','<wbr>（')}</b><span class="meta"><span class="lv" aria-label="むずかしさ ${s.level}">${'★'.repeat(s.level)}${'☆'.repeat(3-s.level)}</span>${s.meter===3?'<span class="mt" aria-label="4分の3拍子">3/4</span>':''}</span>
     <span class="used">${s.used.map(c=>`<span class="tag" style="--c:${COL[c]};--l:${LCOL[c]}">${CHORDS[c].label}</span>`).join('')}</span></button>`).join('')+`</div>`;
 }
 function fitTableHTML(song,key,si,cur){
-  const sl=song.slots[si], notes=sl.notes.map(n=>noteAt(key,n.k)), total=sl.notes.reduce((a,n)=>a+n.beats,0);
+  const sl=song.slots[si], sn=sounding(sl.notes), notes=sn.map(n=>noteAt(key,n.k)), total=sumBeats(sn); // 休みは 表に 入れない
   // 「あう拍」は 和音の名前の すぐ右（せまい画面でも 見えるように）
   let h=`<table class="fit"><thead><tr><th class="blank"></th><th class="blank cnth">あう拍<br>（${beatsJa(total)}中）</th>`+
-    notes.map((n,i)=>`<th class="${i===0?'first':''}">${PA.nmH(n)}<small>${i===0?`${firstBeat(song,si)}拍目・`:''}${beatsJa(sl.notes[i].beats)}</small></th>`).join('')+`</tr></thead><tbody>`;
+    notes.map((n,i)=>`<th class="${i===0?'first':''}">${PA.nmH(n)}<small>${i===0?`${strongBeatJa(song,si)}・`:''}${beatsJa(sn[i].beats)}</small></th>`).join('')+`</tr></thead><tbody>`;
   CH_KEYS.forEach(ch=>{
     const set=CH_DEGS[ch], f=fitInfo(sl,ch);
     h+=`<tr class="${cur===ch?'chosen':''}" style="--c:${COL[ch]};--l:${LCOL[ch]}"><th>${CHORDS[ch].label}<small>${chordTones(key,ch).map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}</small></th><td class="cnt">${f.inBeats?beatsJa(f.inBeats):'0拍'}</td>`+
-      sl.notes.map(n=>set.includes(n.deg)?`<td class="y">○</td>`:`<td class="n">×</td>`).join('')+`</tr>`;
+      sn.map(n=>set.includes(n.deg)?`<td class="y">○</td>`:`<td class="n">×</td>`).join('')+`</tr>`;
   });
   return h+`</tbody></table>`;
 }
@@ -500,7 +624,7 @@ function view(){
   const filled=chs.filter(Boolean).length, N=song.slots.length, si=state.sel, sl=song.slots[si], cur=chs[si];
   let h=`<div class="stack">
     <p class="lead">メロディーに Ⅰ・Ⅳ・Ⅴ・Ⅴ7 をつけて、伴奏を作ってみよう</p>
-    <div><p class="lbl">① 曲をえらぶ</p>${songsHTML()}</div>
+    <div><p class="lbl">① 曲をえらぶ <span class="cnt">ぜんぶで ${SONGS.length}曲<span class="swipe">・よこに うごかせるよ</span></span></p>${songsHTML()}</div>
     <div><p class="lbl">② 調をえらぶ</p><div class="toprow">${PA.keyChip(key)}<p class="note">調を かえても、えらんだ 和音は そのまま。音の 高さだけが かわるよ</p></div></div>
     <section class="card scorecard">
       <div class="scorehead"><h2>③ 和音をえらぶ<small>${song.tip(key)}</small></h2>
@@ -525,7 +649,7 @@ function view(){
   h+=`</section>`;
   h+=`<section class="card"><h2>🎹 けんばん<small>${P?'いま 鳴っている音':'えらんでいるマスの音'}　黄色＝メロディー、色つき＝左手の伴奏</small></h2><div class="scroll kbbox" data-sk="kb">${kbHTML()}</div></section>`;
   h+=`<section class="card"><h2>🎛 きき方</h2><div class="ctrl">
-      <div><p class="lbl" style="margin-bottom:4px">伴奏の形</p>${PA.seg('style',[['block','🧱 のばす'],['oompah','🥁 ズン・チャ'],['alberti','🌊 '+albertiName(key)]],state.style,'full')}</div>
+      <div><p class="lbl" style="margin-bottom:4px">伴奏の形</p>${PA.seg('style',[['block','🧱 のばす'],['oompah',song.meter===3?'🥁 ズン・チャッ・チャッ':'🥁 ズン・チャ'],['alberti','🌊 '+albertiName(key,song.meter)]],state.style,'full')}</div>
       <label class="tempo" for="tempo"><span style="white-space:nowrap">はやさ ♩＝<b id="tempoVal">${state.tempo}</b></span><input id="tempo" type="range" min="50" max="140" step="2" value="${state.tempo}"></label>
       <label><input type="checkbox" id="melOn" ${state.melOn?'checked':''}> メロディー</label>
       <label><input type="checkbox" id="accOn" ${state.accOn?'checked':''}> 伴奏</label>
@@ -535,7 +659,7 @@ function view(){
   // パレット：いつも 画面の下に くっつく（このページの ただ一つの 下のバー）
   h+=`<div class="palbar" role="group" aria-label="和音を えらぶ">
       <div class="selrow">
-        <p class="selinfo"><span class="pre">いま えらんでいるマス： </span><b>${whereLabel(song,si)}</b>　メロディー <b>${namesH(sl.notes.map(n=>noteAt(key,n.k)),' ')}</b></p>
+        <p class="selinfo"><span class="pre">いま えらんでいるマス： </span><b>${whereLabel(song,si)}</b>　メロディー <b>${namesH(sounding(sl.notes).map(n=>noteAt(key,n.k)),' ')||'（休み）'}</b></p>
         <button class="pbtn" data-act="playsel" aria-label="このマスだけ きく" title="このマスだけ きく">🔁<span class="t">このマス</span></button>
         ${playBtnHTML(!!P)}
       </div>
@@ -643,10 +767,10 @@ document.addEventListener('click',e=>{
   switch(a){
     case 'song': if(v===state.songId) break; stopPlay(); state.songId=v; state.sel=0; state.checked=false; state.reveal=false; save(); break;
     case 'pick': pick(v); return;
-    case 'playall': playRange(0,curSong().slots.length-1); return;
+    case 'playall': playRange(0,curSong().slots.length-1,false,true); return;
     case 'playsel': playRange(state.sel,state.sel); return;
     case 'stop': stopPlay(); break;
-    case 'model': playRange(0,curSong().slots.length-1,true); return;
+    case 'model': playRange(0,curSong().slots.length-1,true,true); return;
     case 'check': stopPlay(); state.checked=true; break;
     case 'reveal': state.reveal=true; break;
     case 'style': state.style=v; save(); break;
@@ -692,7 +816,7 @@ document.addEventListener('keydown',e=>{
   else if(e.key==='ArrowRight'){if(state.play)stopPlay();state.sel=Math.min(song.slots.length-1,state.sel+1);render();scrollSelIntoView();e.preventDefault();}
   else if(e.key==='ArrowLeft'){if(state.play)stopPlay();state.sel=Math.max(0,state.sel-1);render();scrollSelIntoView();e.preventDefault();}
   else if(e.key==='Delete'||e.key==='Backspace'){pick('');e.preventDefault();}
-  else if(e.key===' '&&!(e.target.closest&&e.target.closest('button,summary,a,[role="button"]'))){state.play?(stopPlay(),render()):playRange(0,song.slots.length-1);e.preventDefault();}
+  else if(e.key===' '&&!(e.target.closest&&e.target.closest('button,summary,a,[role="button"]'))){state.play?(stopPlay(),render()):playRange(0,song.slots.length-1,false,true);e.preventDefault();}
 });
 // 画面の幅で 1行の小節数（4か2）が かわったら 書きなおす
 let resizeTimer=null;

@@ -10,8 +10,22 @@
 <link rel="stylesheet" href="assets/app.css">
 <style>
 .lvchips{margin-top:8px}
-.lvchips .chip{font-size:14px;color:var(--c);background:var(--soft2)}
-.big-note{font-size:15.5px}
+.lvchips .chip{font-size:13.5px;color:var(--c);background:var(--soft2)}
+.knobs{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:6px;font-size:13.5px;color:var(--sub)}
+.big-note{font-size:15px}
+.seg.lvseg{display:grid;grid-template-columns:repeat(4,1fr);margin-top:8px}
+.seg.lvseg button{padding:6px 2px;font-size:14.5px;white-space:nowrap}
+.lvhead{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 10px;margin-top:10px;font-weight:800;font-size:17px}
+.lvhead small{font-weight:700;font-size:14px;color:var(--sub)}
+.rec{display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;margin-top:8px;font-size:15px}
+.master{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:999px;background:linear-gradient(135deg,#ffe17a,#ffb84d);color:#6b3d00;font-weight:800;font-size:14px}
+.chtools{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chtools .btn{flex:1 1 140px}
+.confirm{margin-top:10px;padding:10px 12px;border-radius:14px;background:var(--redl);color:#8f2233;font-weight:700}
+.confirm .row{margin-top:8px}
+.confirm .btn{flex:1 1 0}
+/* こたえたあとの 3つの ボタンは、ことばの 長さに あわせて はばを わける（せまい 画面でも 文字が はみ出さない） */
+.actionbar .btn.fit{flex:1 1 auto}
 .hero{border-top:6px solid #c98500;scroll-margin-top:64px}
 .qhead{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:4px 10px}
 .qhead h2{font-size:19px;margin:0;flex:none;white-space:nowrap}
@@ -19,14 +33,27 @@
 .score .sub{font-size:15px;font-weight:400;color:var(--sub);white-space:nowrap}
 .score b{white-space:nowrap}
 .stars{display:block;font-size:13px;letter-spacing:1px}
+.pdots,.rdots{display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
+.pdots i,.rdots i{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--soft);border:2px solid #d9cdbb}
+.pdots i.on{background:#f4a100;border-color:#d68a00}
+.score .pdots{display:flex;justify-content:flex-end;margin-top:3px}
+.rinfo{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:8px;font-size:14px;color:var(--sub);font-weight:700}
+.rdots{gap:4px}
+.rdots i{width:11px;height:11px}
+.rdots i.on{background:var(--night);border-color:var(--night)}
 .echoices{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:10px 0 0}
-.echoices.n3 .echoice:last-child{grid-column:1/-1}
+.echoices.n3 .echoice:last-child,.echoices.n5 .echoice:last-child{grid-column:1/-1}
 .echoice{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:108px;padding:10px 6px;border-radius:18px;
   background:var(--soft2);color:var(--c);border:3px solid transparent;font-weight:800;line-height:1.25;text-align:center}
 .echoice:not([disabled]):active{transform:scale(.97)}
 .echoice .em{font-size:30px;line-height:1.1}
 .echoice .wd{font-size:20px}
 .echoice .lb{font-size:15px;font-weight:700;opacity:.85}
+.echoices.many{gap:8px}
+.echoices.many .echoice{min-height:84px;padding:8px 4px;border-radius:16px}
+.echoices.many .echoice .em{font-size:24px}
+.echoices.many .echoice .wd{font-size:17px}
+.echoices.many .echoice .lb{font-size:13.5px}
 .echoice.right{background:#dcf5e8;border-color:var(--ok);color:#137a4f}
 .echoice.wrong{background:#fde4e7;border-color:var(--ng);color:#a3273a}
 .echoice[disabled]{cursor:default}
@@ -34,20 +61,40 @@
 .fb{margin-top:12px;scroll-margin-top:72px}
 .fb.still{animation:none}
 .fb .sm{font-size:15px}
+.chmsg{margin-top:10px;border-radius:14px;padding:10px 14px;font-size:16px;font-weight:700;background:var(--hint);border:2px dashed var(--hintline)}
+.celebrate{margin-top:10px;border-radius:16px;padding:14px;text-align:center;background:linear-gradient(135deg,#fff3c4,#ffe0ef);font-size:19px;font-weight:800;line-height:1.45;animation:pop .5s ease}
+.celebrate .fx{display:block;font-size:30px;letter-spacing:4px}
+.celebrate.still{animation:none}
 .resrow{margin-top:10px}
 .resrow .btn{width:100%}
 .kbwrap{margin-top:12px}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:14px;color:var(--sub);margin-top:4px}
 .legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px}
 .cmp{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-.cmp .btn{color:var(--c);padding-inline:8px;font-size:15px}
+.cmp .btn{flex-direction:column;gap:0;color:var(--c);padding:6px 6px;font-size:15px;border-radius:16px;min-height:56px}
+.cmp .btn small{font-size:12.5px;font-weight:700;opacity:.8}
+.hints{margin:8px 0 0;padding:0;list-style:none;font-size:15px}
+.hints li{padding:5px 0;border-bottom:1px solid var(--line)}
+.hints li:last-child{border-bottom:none}
 @media (max-width:420px){.echoice{min-height:92px}}
+@media (prefers-reduced-motion:reduce){.celebrate{animation:none}}
 @media (min-width:700px){
+  .seg.lvseg{grid-template-columns:repeat(8,1fr)}
   .echoices.n2{grid-template-columns:repeat(2,1fr)}
   .echoices.n3{grid-template-columns:repeat(3,1fr)}
   .echoices.n3 .echoice:last-child{grid-column:auto}
   .echoices.n4{grid-template-columns:repeat(4,1fr)}
-  .cmp{grid-template-columns:repeat(4,1fr)}
+  /* 5こ：3つ＋2つ（下の2つは まん中に） */
+  .echoices.n5{grid-template-columns:repeat(6,1fr)}
+  .echoices.n5 .echoice,.echoices.n5 .echoice:last-child{grid-column:span 2}
+  .echoices.n5 .echoice:nth-child(4){grid-column:2/span 2}
+  .echoices.n8{grid-template-columns:repeat(4,1fr)}
+  /* 10こ：4つ＋4つ＋2つ（下の2つは まん中に） */
+  .echoices.n10{grid-template-columns:repeat(8,1fr)}
+  .echoices.n10 .echoice{grid-column:span 2}
+  .echoices.n10 .echoice:nth-child(9){grid-column:3/span 2}
+  .echoices.many .echoice{min-height:96px}
+  .cmp{grid-template-columns:repeat(5,1fr)}
 }
 </style>
 </head>
@@ -57,17 +104,36 @@
 <div class="actionbar" id="actions"></div>
 <script src="assets/core.js"></script>
 <script>
-/* 和音の 聴きわけ：長三和音・短三和音・Ⅴ7・減七 を「ひびきの 感じ」で 当てる。
- * 毎回 根音（調）・転回形・高さを かえるので、音名を 計算せずに 耳で 答える れんしゅうになる。 */
-const EAR={
-  maj:{label:'長三和音',word:'明るい',emoji:'☀️',color:'#e8553d'},
-  min:{label:'短三和音',word:'さびしい',emoji:'🌧️',color:'#3b4fa8'},
-  dom7:{label:'Ⅴ7（属七）',word:'つぎへ 行きたい',emoji:'➡️',color:PA.COL.V7},
-  dim7:{label:'減七',word:'ドキドキ',emoji:'😱',color:'#b0307a'}
+/* 和音の 聴きわけ：10しゅるいの 和音を「ひびきの 感じ」で 当てる（レベル1〜8）。
+ * 毎回 根音・転回形・高さを かえるので、音名を 計算せずに 耳で 答える れんしゅうになる。
+ * れんしゅう＝すきな レベルを えらぶ。チャレンジ＝5もん れんぞく 正解で つぎの レベルへ、まちがえたら 1つ前の レベルから コンティニュー。
+ * つづりは 3度ずつ（sus4 は 根音・4度・5度）つみかさねて 正しく 書き、重嬰・重変（x・𝄫）が 出ない 根音だけを つかう。 */
+const mod=PA.mod;
+// ints：[根音からの 文字の かず, 根音からの 高さ]
+const T={
+  maj:{label:'長三和音',word:'明るい',emoji:'☀️',color:'#e8553d',sym:'',desc:'元気で まっすぐな ひびき',ints:[[0,0],[2,4],[4,7]]},
+  min:{label:'短三和音',word:'さびしい',emoji:'🌧️',color:'#3b4fa8',sym:'m',desc:'しずかで さびしい ひびき',ints:[[0,0],[2,3],[4,7]]},
+  dim:{label:'減三和音',word:'きゅうくつ',emoji:'😖',color:'#8a5a2b',sym:'dim',desc:'せまくて きゅうくつ。ちょっと こわい',ints:[[0,0],[2,3],[4,6]]},
+  aug:{label:'増三和音',word:'ふしぎ',emoji:'🌀',color:'#0d7f86',sym:'aug',desc:'ゆめの中みたいに ゆらゆら。どこへ 行くか わからない ふしぎ',ints:[[0,0],[2,4],[4,8]]},
+  sus4:{label:'sus4',word:'ふわっと',emoji:'🎈',color:'#1e8a5a',sym:'sus4',desc:'ういていて、まだ おわらない 感じ',ints:[[0,0],[3,5],[4,7]]},
+  dom7:{label:'Ⅴ7（属七）',word:'つぎへ 行きたい',emoji:'➡️',color:PA.COL.V7,sym:'7',desc:'「つぎの 和音へ 行きたい！」と ひっぱる',ints:[[0,0],[2,4],[4,7],[6,10]],fam:'V7'},
+  maj7:{label:'長七',word:'おしゃれ',emoji:'✨',color:'#a86a00',sym:'M7',desc:'キラキラ おしゃれ。明るくて すこし せつない',ints:[[0,0],[2,4],[4,7],[6,11]]},
+  min7:{label:'短七',word:'やさしい おとな',emoji:'🌙',color:'#2b6cb0',sym:'m7',desc:'やわらかくて おとなっぽい',ints:[[0,0],[2,3],[4,7],[6,10]]},
+  hdim7:{label:'半減七',word:'くもり・なぞ',emoji:'🌫️',color:'#5f6577',sym:'m7(♭5)',desc:'くもり空みたいな なぞめいた ひびき',ints:[[0,0],[2,3],[4,6],[6,10]]},
+  dim7:{label:'減七',word:'ドキドキ',emoji:'😱',color:'#b0307a',sym:'dim7',desc:'あやしくて ドキドキ。もりあがる 場面や こわい 場面で',ints:[[0,0],[2,3],[4,6],[6,9]],fam:'DIM'}
 };
-const EAR_LEVELS={1:['maj','dim7'],2:['maj','min','dim7'],3:['maj','min','dom7','dim7']};
-const ROOTS_MAJ=[[0,0],[1,-1],[1,0],[2,-1],[2,0],[3,0],[3,1],[4,0],[5,-1],[5,0],[6,-1],[6,0]];
-const ROOTS_MIN=[[0,0],[0,1],[1,0],[2,-1],[2,0],[3,0],[3,1],[4,0],[4,1],[5,0],[6,-1],[6,0]];
+const ORDER=['maj','min','dim','aug','sus4','dom7','maj7','min7','hdim7','dim7'];
+/* レベル：replays＝こたえる前に もういちど きける 回数（なし＝なんどでも）、wide＝ひろい 高さと ひらいた 形、arp＝さいしょは ばらばらに 鳴らす */
+const LEVELS=[null,
+  {name:'はじめて',types:['maj','dim7']},
+  {name:'3しゅるい',types:['maj','min','dim7']},
+  {name:'4しゅるい',types:['maj','min','dom7','dim7']},
+  {name:'三和音 4つ',types:['maj','min','dim','aug']},
+  {name:'5しゅるい',types:['maj','min','sus4','dom7','dim7'],replays:3},
+  {name:'七の和音',types:['dom7','maj7','min7','dim7'],replays:3,wide:true},
+  {name:'8しゅるい',types:['maj','min','dim','aug','dom7','maj7','min7','hdim7'],replays:2,wide:true},
+  {name:'ぜんぶ',types:ORDER.slice(),replays:2,wide:true,arp:true}];
+const MAXLV=8, CLEAR=5;
 
 /* ===== 短調の Ⅴ7・減七 と Ⅰへの 解決（Ⅴの家族と おなじ きまり） ===== */
 const FAM={V7:{ks:[4,6,8,10]},DIM:{ks:[6,8,10,12]}};
@@ -77,70 +143,165 @@ const famTones=(key,f)=>FAM[f].ks.map(k=>PA.at(key.harm,k+famShift(key)));
 // 解決：根音はそのまま（Ⅰの第5音）、導音→主音、第5音→主音、第7音→第3音、第9音→第5音
 const RESOLVE={V7:{4:4,6:7,8:7,10:9},DIM:{6:7,8:7,10:9,12:11}};
 const KEYS=PA.MINOR_KEYS.map((_,i)=>PA.minorKey(i)); // 主音は ラ3〜ソ♯4
+// 重嬰（x）が 出る 調（嬰ト短調・嬰ニ短調）は つかわない
+const FAM_KEYS=KEYS.filter(k=>['V7','DIM'].every(f=>famTones(k,f).every(n=>Math.abs(n.acc)<=1))).map(k=>k.idx);
 const FAM_ABC=['Ａ','Ｂ','Ｃ'];
+// 嬰ニ短調（重嬰が 出る）を つかわないので、ミ♭7 だけは 調なしで つくる（根音の 高さ 12こ ぜんぶが 出るように）
+const EB7=[2,-1];
 
-function triadFrom([L,a],ints){
-  const rpc=PA.mod(PA.NAT[L]+a,12), r=55+PA.mod(rpc-55,12);
-  return ints.map((iv,i)=>{const LL=(L+2*i)%7;return {letter:LL,acc:PA.spell(LL,rpc+iv),midi:r+iv};});
+/* ===== 根音から 和音を つくる（つづりは 文字で 3度ずつ） ===== */
+// 根音の こうほ：ド♭・ファ♭・ミ♯・シ♯ は 根音に しない
+const ROOTS=[];
+for(let L=0;L<7;L++) for(const a of [-1,0,1]) if(!((L===0||L===3)&&a<0)&&!((L===2||L===6)&&a>0)) ROOTS.push([L,a]);
+function build([L,a],type,base=55){
+  const rpc=mod(PA.NAT[L]+a,12), r=base+mod(rpc-base,12);
+  return T[type].ints.map(([lo,s])=>{const LL=(L+lo)%7;return {letter:LL,acc:PA.spell(LL,rpc+s),midi:r+s};});
 }
-// くらべて きく：おなじ「ド」から つくった 4しゅるい
-const CMP={
-  maj:triadFrom([0,0],[0,4,7]),
-  min:triadFrom([0,0],[0,3,7]),
-  dom7:triadFrom([0,0],[0,4,7]).concat([{letter:6,acc:-1,midi:70}]),
-  dim7:[{letter:0,acc:0,midi:60},{letter:2,acc:-1,midi:63},{letter:4,acc:-1,midi:66},{letter:6,acc:-2,midi:69}]
-};
+// しゅるいごとに、x・𝄫 が 出ない 根音だけ
+const ROOTS_BY={};
+ORDER.forEach(t=>{ROOTS_BY[t]=ROOTS.filter(rt=>build(rt,t).every(n=>Math.abs(n.acc)<=1));});
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function pickRoot(type){
+  // 高さ（黒鍵・白鍵）を 同じ かくりつで えらんでから、つづりを えらぶ
+  const rs=ROOTS_BY[type], pcs=[...new Set(rs.map(([L,a])=>mod(PA.NAT[L]+a,12)))];
+  const pc=pick(pcs), cs=rs.filter(([L,a])=>mod(PA.NAT[L]+a,12)===pc);
+  // おなじ 高さなら、♯・♭ が すくない つづりを（同じ かずなら ランダム）
+  const nAcc=rt=>build(rt,type).filter(n=>n.acc).length, best=Math.min(...cs.map(nAcc));
+  return pick(cs.filter(rt=>nAcc(rt)===best));
+}
+// くらべて きく：おなじ「ド」から つくった 10しゅるい（音名は 出さない）
+const CMP={}; ORDER.forEach(t=>{CMP[t]=T[t].ints.map(([,s])=>60+s);});
 
-/* ===== 状態（レベル・点数・いまの もんだいは 保存する：和音クイズと おなじ きまり） ===== */
+/* ===== 状態（保存する：和音クイズと おなじ きまり） ===== */
 const isInt=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
-const state={level:1,q:null,answer:null,right:0,total:0,streak:0,resShown:false,qn:0,fresh:false};
-// 保存された もんだいが ただしい 形か たしかめる（音名と 高さが あっていて、えらんだ レベルの しゅるい）
-function validQ(q,level){
-  if(!q||typeof q!=='object'||!EAR_LEVELS[level].includes(q.type)||!Array.isArray(q.notes)) return false;
-  const n=q.notes, fam=q.type==='dom7'||q.type==='dim7';
-  if(n.length!==(fam?4:3)) return false;
-  if(!n.every((x,i)=>x&&isInt(x.letter,0,6)&&isInt(x.acc,-2,2)&&isInt(x.midi,36,96)&&PA.mod(PA.NAT[x.letter]+x.acc-x.midi,12)===0&&(i===0||x.midi>n[i-1].midi))) return false;
-  if(n[n.length-1].midi-n[0].midi>=24) return false;
-  if(fam){
-    if(!isInt(q.keyIdx,0,KEYS.length-1)) return false;
-    const ref=famTones(KEYS[q.keyIdx],q.type==='dom7'?'V7':'DIM');
-    return n.every(x=>ref.some(r=>r.k===x.k&&r.letter===x.letter&&r.acc===x.acc&&PA.mod(r.midi-x.midi,12)===0))
-      &&new Set(n.map(x=>x.k)).size===4;
-  }
-  if(q.keyIdx!=null) return false;
-  const ints=q.type==='maj'?[0,4,7]:[0,3,7];
-  return n.some(r=>{const pcs=new Set(n.map(x=>PA.mod(x.midi-r.midi,12)));return ints.every(i=>pcs.has(i));});
+const state={mode:'free',level:1,q:null,answer:null,left:null,right:0,total:0,streak:0,resShown:false,qn:0,fresh:false,confirmReset:false};
+// チャレンジ：active（とちゅう）、level、run（れんぞく正解）、best（クリアした いちばん上の レベル）、event・next（こたえたあと「つぎ」で うつる レベル）
+// cap：つづきから はじめる レベル（null＝best+1）。いちばん上で まちがえて 1つ下に もどったら、やめて つづきを おしても そこから。
+// q・left：れんしゅうに きりかえた ときに とっておく、まだ こたえて いない チャレンジの もんだい
+const ch={active:false,level:1,run:0,best:0,event:null,next:null,cap:null,q:null,left:null};
+const curLevel=()=>state.mode==='ch'?ch.level:state.level;
+const reach=()=>Math.min(MAXLV,ch.best+1);
+const resumeLv=()=>isInt(ch.cap,1,reach())?ch.cap:reach();
+const replaysOf=lv=>LEVELS[lv].replays??null;
+
+function sameTones(want,notes){
+  return want.length===notes.length&&want.every(w=>notes.filter(n=>n.letter===w.letter&&n.acc===w.acc).length===1);
 }
+// 保存された もんだいが ただしい 形か たしかめる
+function validQ(q,lv){
+  const L=LEVELS[lv];
+  if(!L||!q||typeof q!=='object'||q.lv!==lv||!L.types.includes(q.type)||!Array.isArray(q.notes)) return false;
+  const t=T[q.type], n=q.notes;
+  if(n.length!==t.ints.length) return false;
+  if(!n.every((x,i)=>x&&typeof x==='object'&&isInt(x.letter,0,6)&&isInt(x.acc,-1,1)&&isInt(x.midi,36,96)
+    &&mod(PA.NAT[x.letter]+x.acc-x.midi,12)===0&&(i===0||x.midi>n[i-1].midi))) return false;
+  if(n[n.length-1].midi-n[0].midi>=24) return false;
+  const r=q.root;
+  if(!r||typeof r!=='object'||!isInt(r.letter,0,6)||!isInt(r.acc,-1,1)) return false;
+  if(!sameTones(build([r.letter,r.acc],q.type),n)) return false;
+  if(typeof q.open!=='boolean') return false;
+  if(t.fam&&!(q.type==='dom7'&&q.keyIdx==null&&r.letter===EB7[0]&&r.acc===EB7[1])){
+    if(!FAM_KEYS.includes(q.keyIdx)) return false;
+    const ref=famTones(KEYS[q.keyIdx],t.fam);
+    return n.every(x=>Number.isInteger(x.k)&&ref.some(f=>f.k===x.k&&f.letter===x.letter&&f.acc===x.acc&&mod(f.midi-x.midi,12)===0))
+      &&new Set(n.map(x=>x.k)).size===n.length;
+  }
+  return q.keyIdx==null&&ROOTS_BY[q.type].some(([L,a])=>L===r.letter&&a===r.acc);
+}
+// こたえたあとの チャレンジの ようすが、こたえと あっているか
+function chConsistent(ok){
+  const e=ch.event, lv=ch.level;
+  if(e==='ok') return ok&&ch.next==null&&isInt(ch.run,1,CLEAR-1);
+  if(e==='up') return ok&&lv<MAXLV&&ch.next===lv+1&&ch.run===CLEAR&&ch.best>=lv;
+  if(e==='master') return ok&&lv===MAXLV&&ch.next===MAXLV&&ch.run===CLEAR&&ch.best===MAXLV;
+  if(e==='down') return !ok&&ch.next===Math.max(1,lv-1)&&ch.run===0;
+  return false;
+}
+function applyNext(){
+  if(ch.next!=null) ch.level=ch.next;
+  if(ch.event&&ch.event!=='ok') ch.run=0;
+  ch.next=null; ch.event=null;
+}
+const normQ=(q,lv)=>({type:q.type,lv,mode:q.mode,open:q.open,keyIdx:q.keyIdx??null,root:{letter:q.root.letter,acc:q.root.acc},
+  notes:q.notes.map(x=>({letter:x.letter,acc:x.acc,midi:x.midi,...(x.k!=null?{k:x.k}:{})}))});
 (function load(){
-  const d=PA.store.get('ear',{})||{};
-  if([1,2,3].includes(d.level)) state.level=d.level;
+  const d0=PA.store.get('ear',{}), d=d0&&typeof d0==='object'&&!Array.isArray(d0)?d0:{};
+  if(d.mode==='free'||d.mode==='ch') state.mode=d.mode;
+  if(isInt(d.level,1,MAXLV)) state.level=d.level;
   if(isInt(d.total,0,1e6)&&isInt(d.right,0,d.total)&&isInt(d.streak,0,d.right)){state.right=d.right;state.total=d.total;state.streak=d.streak;}
+  const c=d.ch&&typeof d.ch==='object'&&!Array.isArray(d.ch)?d.ch:{};
+  if(isInt(c.best,0,MAXLV)) ch.best=c.best;
+  if(c.active===true&&isInt(c.level,1,reach())){
+    ch.active=true; ch.level=c.level;
+    if(isInt(c.run,0,CLEAR)) ch.run=c.run;
+    if(['ok','up','master','down'].includes(c.event)) ch.event=c.event;
+    if(c.next===null||isInt(c.next,1,MAXLV)) ch.next=c.next;
+  }
+  if(isInt(c.cap,1,reach())) ch.cap=c.cap;
   // 「Ⅴの家族で 見る」から もどったときも、さっきの もんだいと こたえを そのまま 出す
-  if(validQ(d.q,state.level)){
-    state.q={type:d.q.type,notes:d.q.notes.map(x=>({letter:x.letter,acc:x.acc,midi:x.midi,...(x.k!=null?{k:x.k}:{})})),keyIdx:d.q.keyIdx??null};
-    if(EAR_LEVELS[state.level].includes(d.answer)) state.answer=d.answer;
+  const lv=curLevel();
+  if(validQ(d.q,lv)&&d.q.mode===state.mode&&(state.mode==='free'||ch.active)){
+    state.q=normQ(d.q,lv);
+    if(LEVELS[lv].types.includes(d.answer)) state.answer=d.answer;
+    const R=replaysOf(lv); state.left=R==null?null:isInt(d.left,0,R)?d.left:R;
     state.resShown=!!state.answer&&state.q.keyIdx!=null&&d.resShown===true;
     state.qn=1;
   }
+  if(state.mode==='ch'&&state.q&&state.answer&&!chConsistent(state.answer===state.q.type)){state.q=null;state.answer=null;state.resShown=false;}
+  // こたえて いない もんだいには「つぎ」の よていは ない
+  if(!(state.mode==='ch'&&state.q&&state.answer)){applyNext();if(ch.run>=CLEAR) ch.run=0;}
+  if(ch.level>reach()) ch.level=reach();
+  if(!ch.active){ch.level=1;ch.run=0;ch.event=null;ch.next=null;}
+  // れんしゅうへ きりかえる前の、こたえて いない チャレンジの もんだい
+  if(state.mode==='free'&&ch.active&&ch.event==null&&validQ(c.q,ch.level)&&c.q.mode==='ch'){
+    ch.q=normQ(c.q,ch.level); const R=replaysOf(ch.level); ch.left=R==null?null:isInt(c.left,0,R)?c.left:R;
+  }
 })();
-const save=()=>PA.store.set('ear',{level:state.level,right:state.right,total:state.total,streak:state.streak,
-  q:state.q,answer:state.answer,resShown:state.resShown});
+const save=()=>PA.store.set('ear',{v:2,mode:state.mode,level:state.level,right:state.right,total:state.total,streak:state.streak,
+  ch:{active:ch.active,level:ch.level,run:ch.run,best:ch.best,event:ch.event,next:ch.next,cap:ch.cap,q:ch.q,left:ch.left},
+  q:state.q,answer:state.answer,left:state.left,resShown:state.resShown});
 
-function newEar(){
-  const types=EAR_LEVELS[state.level], pick=a=>a[Math.floor(Math.random()*a.length)];
-  let type=pick(types);
-  if(state.q&&state.q.type===type&&Math.random()<0.5) type=pick(types);
-  let notes,key=null;
-  if(type==='maj') notes=triadFrom(pick(ROOTS_MAJ),[0,4,7]);
-  else if(type==='min') notes=triadFrom(pick(ROOTS_MIN),[0,3,7]);
-  else{key=pick(KEYS);notes=famTones(key,type==='dom7'?'V7':'DIM').map(n=>({...n}));}
-  // 毎回 転回形と 高さを かえる（音名で 計算せず、ひびきで 当てる れんしゅう）
+/* ===== もんだいを つくる ===== */
+// 転回形・高さ（wide のときは ひろい 高さと、ひらいた 形も）を ランダムに
+function voice(notes,lv){
+  const L=LEVELS[lv];
+  notes=notes.map(n=>({...n}));
   const inv=Math.floor(Math.random()*notes.length);
   for(let i=0;i<inv;i++) notes[i].midi+=12;
   notes.sort((a,b)=>a.midi-b.midi);
-  while(notes[0].midi>62) notes.forEach(n=>n.midi-=12);
-  while(notes[0].midi<52) notes.forEach(n=>n.midi+=12);
-  state.q={type,notes,keyIdx:key?key.idx:null}; state.answer=null; state.resShown=false; state.qn++; save();
+  let open=false;
+  // ひらいた 形：下から2ばんめの 音を 1オクターブ 上へ（いちばん下の 音は そのまま）
+  if(L.wide&&Math.random()<0.5){notes[1].midi+=12;notes.sort((a,b)=>a.midi-b.midi);open=true;}
+  const [loMin,loMax,topMax]=L.wide?[45,67,88]:[50,64,79];
+  const lo=notes[0].midi, hi=notes[notes.length-1].midi, opts=[];
+  for(let s=-48;s<=48;s+=12) if(lo+s>=loMin&&lo+s<=loMax&&hi+s<=topMax) opts.push(s);
+  const s=pick(opts); notes.forEach(n=>n.midi+=s);
+  return {notes,open};
+}
+function makeQ(lv,prevType){
+  const types=LEVELS[lv].types;
+  let type=pick(types);
+  if(prevType===type&&Math.random()<0.6) type=pick(types);
+  const t=T[type];
+  let base,keyIdx=null,root;
+  if(type==='dom7'&&Math.floor(Math.random()*(FAM_KEYS.length+1))===FAM_KEYS.length){
+    base=build(EB7,type); root={letter:EB7[0],acc:EB7[1]};
+  }else if(t.fam){
+    keyIdx=pick(FAM_KEYS);
+    base=famTones(KEYS[keyIdx],t.fam).map(n=>({letter:n.letter,acc:n.acc,midi:n.midi,k:n.k}));
+    const rk=t.fam==='V7'?4:6, rn=base.find(n=>mod(n.k,7)===rk);
+    root={letter:rn.letter,acc:rn.acc};
+  }else{
+    const [L,a]=pickRoot(type);
+    base=build([L,a],type); root={letter:L,acc:a};
+  }
+  const v=voice(base,lv);
+  return {type,lv,mode:state.mode,open:v.open,keyIdx,root,notes:v.notes};
+}
+function newEar(){
+  const lv=curLevel();
+  state.q=makeQ(lv,state.q&&state.q.type);
+  state.answer=null; state.resShown=false; state.left=replaysOf(lv); state.qn++; save();
 }
 function playEar(arp=false){
   const q=state.q; if(!q) return;
@@ -149,7 +310,7 @@ function playEar(arp=false){
 // 問題の和音と おなじ高さで 解決する：鳴っている 1つ1つの 音が、その オクターブの まま となりの 音へ すすむ
 function resInfo(){
   const q=state.q; if(!q||q.keyIdx==null) return null;
-  const k=KEYS[q.keyIdx], f=q.type==='dom7'?'V7':'DIM', sh=famShift(k);
+  const k=KEYS[q.keyIdx], f=T[q.type].fam, sh=famShift(k);
   return q.notes.map(n=>{const t=PA.at(k.harm,RESOLVE[f][n.k-sh]+sh);return {...t,midi:t.midi+(n.midi-PA.at(k.harm,n.k).midi)};})
     .sort((a,b)=>a.midi-b.midi);
 }
@@ -158,57 +319,140 @@ function playRes(){
   PA.stopSound(); PA.chord(q.notes.map(n=>n.midi),{dur:1.3}); PA.chord(res.map(n=>n.midi),{when:1.25,dur:2.2});
 }
 
+/* ===== チャレンジ ===== */
+function judge(ok){
+  const top=ch.level>=resumeLv(); // いま いちばん上（つづきの レベル）に いるか
+  if(ok){
+    ch.run++;
+    if(ch.run>=CLEAR){
+      ch.run=CLEAR; ch.best=Math.max(ch.best,ch.level);
+      if(ch.level>=MAXLV){ch.event='master';ch.next=MAXLV;} else {ch.event='up';ch.next=ch.level+1;}
+      if(top&&ch.cap!=null) ch.cap=ch.next;
+    }else{ch.event='ok';ch.next=null;}
+  }else{ch.run=0;ch.event='down';ch.next=Math.max(1,ch.level-1);if(top) ch.cap=ch.next;}
+  if(ch.cap!=null&&ch.cap>=reach()) ch.cap=null;
+}
+function startChallenge(lv){
+  ch.active=true; ch.level=lv; ch.run=0; ch.event=null; ch.next=null; ch.q=null; ch.left=null;
+  state.q=null; state.answer=null; state.resShown=false;
+}
+function quitChallenge(){
+  ch.active=false; ch.level=1; ch.run=0; ch.event=null; ch.next=null; ch.q=null; ch.left=null;
+  state.q=null; state.answer=null; state.resShown=false; state.left=null;
+}
+
 /* ===== 画面 ===== */
+const dots=(n,on,cls)=>`<span class="${cls}" aria-hidden="true">${Array.from({length:n},(_,i)=>`<i class="${i<on?'on':''}"></i>`).join('')}</span>`;
+const symOf=(root,type)=>PA.H(PA.LET_EN[root.letter]+PA.ACC[root.acc]+T[type].sym);
 function choiceHTML(t){
-  const q=state.q, A=state.answer, E=EAR[t];
+  const q=state.q, A=state.answer, E=T[t];
   let cls=''; if(A&&q){if(t===q.type)cls='right';else if(t===A)cls='wrong';}
   return `<button class="echoice ${cls} ${q?'':'wait'}" style="--c:${E.color}" data-act="eans" data-v="${t}" ${A||!q?'disabled':''} aria-label="${E.word}（${E.label}）">
     <span class="em" aria-hidden="true">${E.emoji}</span><span class="wd">${E.word}</span><span class="lb">${E.label}</span></button>`;
 }
+function knobsHTML(lv){
+  const L=LEVELS[lv], R=replaysOf(lv);
+  return `<div class="knobs"><span>🔁 ${R==null?'なんどでも きける':`もういちど きけるのは ${R}回まで`}</span>${L.wide?'<span>🎹 ひろい 高さ・ひらいた 形も</span>':''}${L.arp?'<span>🎶 さいしょは ばらばらに 鳴る</span>':''}</div>`;
+}
+const chipsHTML=lv=>`<div class="chips lvchips">${LEVELS[lv].types.map(t=>`<span class="chip" style="--c:${T[t].color}">${T[t].emoji} ${T[t].word}</span>`).join('')}</div>`;
+function chMsgHTML(){
+  const e=ch.event, lv=ch.level, still=state.fresh?'':' still';
+  if(e==='ok') return `<div class="chmsg">${dots(CLEAR,ch.run,'pdots')} あと <b>${CLEAR-ch.run}もん</b> で レベル${lv} クリア！</div>`;
+  if(e==='up') return `<div class="celebrate${still}" role="status"><span class="fx" aria-hidden="true">🎉🎊🎉</span>レベル${lv} クリア！<br>つぎは <b>レベル${ch.next}</b>（${LEVELS[ch.next].name}）だよ</div>`;
+  if(e==='master') return `<div class="celebrate${still}" role="status"><span class="fx" aria-hidden="true">🏆✨🏆</span>レベル8 クリア！<br>和音の 聴きわけ <span class="master">🏅 マスター</span></div>`;
+  if(e==='down') return `<div class="chmsg">${lv>1
+    ?`だいじょうぶ！ <b>レベル${ch.next}</b> で 耳を ならしてから、また のぼろう 💪`
+    :`だいじょうぶ！ もういちど <b>レベル1</b> で、${CLEAR}もん つづけて 当てよう 💪`}</div>`;
+  return '';
+}
 function feedbackHTML(){
-  const q=state.q, ok=state.answer===q.type, E=EAR[q.type], K=q.keyIdx!=null?KEYS[q.keyIdx]:null;
+  const q=state.q, ok=state.answer===q.type, E=T[q.type], K=q.keyIdx!=null?KEYS[q.keyIdx]:null;
   let h=`<div class="fb ${ok?'good':'bad'}${state.fresh?'':' still'}" role="status">${ok?'🎉 せいかい！':'🤔 おしい！'} これは <b>${E.label}</b>（${E.word}）。音は <b>${PA.namesH(q.notes)}</b>`;
-  if(K) h+=`<br><span class="sm">${PA.keyName(K)}の ${q.type==='dom7'?'Ⅴ7':'減七'} だよ。${q.type==='dim7'?`<b>${FAM_ABC[PA.mod(K.lt.midi,3)]}の家族</b>。`:''}</span>`;
+  h+=`<br><span class="sm">根音は <b>${PA.nmH(q.root)}</b>・コードネーム <b>${symOf(q.root,q.type)}</b>${q.open?'・ひらいた 形':''}</span>`;
+  if(K) h+=`<br><span class="sm">${PA.keyName(K)}の ${q.type==='dom7'?'Ⅴ7':'減七'} だよ。${q.type==='dim7'?`<b>${FAM_ABC[mod(K.lt.midi,3)]}の家族</b>。`:''}</span>`;
   h+=`</div>`;
+  if(state.mode==='ch') h+=chMsgHTML();
   const res=K&&state.resShown?resInfo():null;
   if(K) h+=`<div class="resrow"><button class="btn" data-act="eres">🔔 Ⅰ へ すすむ ひびきも きく</button></div>`;
   if(res) h+=`<div class="msg" style="margin-top:10px">${PA.keyName(K)}の Ⅰ へ：<b>${PA.namesH(q.notes)}</b> → <b style="color:#e8553d">${PA.namesH(res.filter((n,i)=>res.findIndex(x=>x.midi===n.midi)===i))}</b></div>`;
   const marks=new Map();
   if(res) res.forEach(n=>marks.set(n.midi,{fill:'#fff',ring:'#e8553d',tc:'#e8553d',label:PA.nm(n),focus:true}));
   q.notes.forEach(n=>{const r=res&&res.some(x=>x.midi===n.midi);marks.set(n.midi,{fill:E.color,label:PA.nm(n),focus:true,ring:r?'#e8553d':undefined});});
-  h+=`<div class="kbwrap"><div class="scroll" data-sk="kb">${PA.kbSVG(48,84,marks)}</div>
+  const all=[...marks.keys()], mn=Math.min(...all), mx=Math.max(...all);
+  const lo=Math.min(48,mn-mod(mn,12)), hi=Math.max(84,mx+11-mod(mx,12));
+  h+=`<div class="kbwrap"><div class="scroll" data-sk="kb">${PA.kbSVG(lo,hi,marks)}</div>
     <div class="legend"><span><i style="background:${E.color}"></i>この和音</span>${res?`<span><i style="border:3px solid #e8553d"></i>すすんだ先（Ⅰ）</span>`:''}<span>さわると 音が出るよ</span></div></div>`;
   if(K) h+=`<button class="btn small" data-act="efam" style="width:100%;margin-top:10px">🏠 Ⅴの家族で ${q.type==='dim7'?'減七の 3つの家族':'Ⅴ7'}を 見る</button>`;
   return h;
 }
+function topCardHTML(){
+  let h=`<section class="card">${PA.seg('emode',[['free','📝 れんしゅう'],['ch','🏆 チャレンジ']],state.mode,'full')}`;
+  if(state.mode==='free'){
+    const lv=state.level;
+    h+=PA.seg('elevel',Array.from({length:MAXLV},(_,i)=>[i+1,`レベル${i+1}`]),lv,'lvseg');
+    h+=chipsHTML(lv)+knobsHTML(lv);
+    h+=`<p class="note big-note">音名を 考えずに、<b>ひびきの 感じ</b>で 答えよう。毎回 根音と 転回形（音の つみかた）が かわるよ。</p>`;
+  }else{
+    if(ch.active) h+=`<div class="lvhead">🏆 レベル${ch.level}<small>${LEVELS[ch.level].name}</small></div>`+chipsHTML(ch.level)+knobsHTML(ch.level);
+    h+=`<p class="note big-note">${CLEAR}もん つづけて 正解すると つぎの レベルへ。まちがえても、ひとつ前の レベルから <b>コンティニュー</b> できるよ。</p>`;
+    h+=`<div class="rec">📒 きろく：<b>${ch.best?`レベル${ch.best}まで クリア`:'まだ ないよ'}</b>${ch.best>=MAXLV?'<span class="master">🏅 マスター</span>':''}</div>`;
+    h+=`<div class="chtools">${ch.active?'<button class="btn small" data-act="chquit">🏳️ レベルを えらびなおす</button>':''}${ch.best&&!state.confirmReset?'<button class="btn small" data-act="chreset">🗑️ きろくを けす</button>':''}</div>`;
+    if(state.confirmReset) h+=`<div class="confirm" role="alertdialog" aria-label="きろくを けす">きろく（レベル${ch.best}まで クリア${ch.best>=MAXLV?'・マスター':''}）を けして いい？${ch.active?'<br>いまの チャレンジも おわるよ。':''}
+      <div class="row"><button class="btn small" data-act="chresetno">やめる</button><button class="btn small warn" data-act="chresetok">けす</button></div></div>`;
+  }
+  return h+`</section>`;
+}
+function heroHTML(){
+  const q=state.q, inCh=state.mode==='ch';
+  if(inCh&&!ch.active){
+    const r=resumeLv();
+    return `<section class="card hero"><div class="qhead"><h2>🏆 チャレンジ</h2></div>
+      <div class="msg" style="margin-top:10px">下の <b>🚩 レベル1から</b>${r>1?` か つづきの <b>⏩ レベル${r}から</b>`:''} を おして はじめよう。<br>レベル1から 8まで、どこまで 行けるかな？</div></section>`;
+  }
+  const lv=q?q.lv:curLevel(), types=LEVELS[lv].types;
+  let score;
+  if(inCh) score=`<div class="score"><b>レベル${ch.level}</b> <span class="sub">${CLEAR}もん れんぞく</span>${dots(CLEAR,ch.run,'pdots')}</div>`;
+  else score=`<div class="score"><b>⭐ ${state.right} / ${state.total}</b> <span class="sub">れんぞく ${state.streak}</span>${state.streak?`<span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(state.streak,10))}</span>`:''}</div>`;
+  const R=replaysOf(lv);
+  let h=`<section class="card hero"><div class="qhead"><h2>👂 この和音は どれ？</h2>${score}</div>`;
+  if(!q) h+=`<div class="msg" style="margin-top:10px">下の <b>▶️ はじめる</b> を おすと 和音が 鳴るよ。</div>`;
+  else if(!state.answer&&R!=null) h+=`<div class="rinfo" role="status" aria-label="もういちど きけるのは あと${state.left}回">もういちど きける ${dots(R,state.left,'rdots')}${state.left?'':' <span>あとは こたえよう！</span>'}</div>`;
+  h+=`<div class="echoices n${types.length}${types.length>5?' many':''}">${types.map(choiceHTML).join('')}</div>`;
+  if(q&&state.answer) h+=feedbackHTML();
+  return h+`</section>`;
+}
+function actionsHTML(){
+  const q=state.q;
+  if(state.mode==='ch'&&!ch.active){
+    const r=resumeLv();
+    return `<button class="btn ${r>1?'':'night'}" data-act="chstart" data-v="1">🚩 レベル1から</button>${r>1?`<button class="btn night" data-act="chstart" data-v="${r}" aria-label="つづきから：レベル${r}から はじめる">⏩ レベル${r}から</button>`:''}`;
+  }
+  if(!q) return `<button class="btn night" data-act="enew">▶️ はじめる</button>`;
+  if(state.answer){
+    let next='➡️ つぎ';
+    if(state.mode==='ch'){
+      if(ch.event==='up') next=`⬆️ レベル${ch.next}へ`;
+      else if(ch.event==='down') next='➡️ つづける';
+    }
+    return `<button class="btn fit" data-act="eplay">🔁 きく</button><button class="btn fit" data-act="earp">🎶 ばらばら</button><button class="btn primary fit" data-act="enew">${next}</button>`;
+  }
+  const off=state.left===0?' disabled':'';
+  return `<button class="btn night" data-act="eplay"${off}>🔁 もういちど きく</button><button class="btn" data-act="earp"${off}>🎶 ばらばらに きく</button>`;
+}
 function render(){
-  const q=state.q, types=EAR_LEVELS[state.level];
-  let h=`<div class="stack">
+  const h=`<div class="stack">
+    ${topCardHTML()}
+    ${heroHTML()}
     <section class="card">
-      ${PA.seg('elevel',[[1,'レベル1'],[2,'レベル2'],[3,'レベル3']],state.level,'full')}
-      <div class="chips lvchips">${types.map(t=>`<span class="chip" style="--c:${EAR[t].color}">${EAR[t].emoji} ${EAR[t].word}</span>`).join('')}</div>
-      <p class="note big-note">音名を 考えずに、<b>ひびきの 感じ</b>で 答えよう。毎回 調と 転回形（音の つみかた）が かわるよ。</p>
-    </section>
-    <section class="card hero">
-      <div class="qhead"><h2>👂 この和音は どれ？</h2>
-        <div class="score"><b>⭐ ${state.right} / ${state.total}</b> <span class="sub">れんぞく ${state.streak}</span>${state.streak?`<span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(state.streak,10))}</span>`:''}</div></div>
-      ${q?'':`<div class="msg" style="margin-top:10px">下の <b>▶️ はじめる</b> を おすと 和音が 鳴るよ。</div>`}
-      <div class="echoices n${types.length}">${types.map(choiceHTML).join('')}</div>
-      ${q&&state.answer?feedbackHTML():''}
-    </section>
-    <section class="card">
-      <h2>🎧 くらべて きく<small>おなじ「${PA.nmH({letter:0,acc:0})}」から つくった 4しゅるい</small></h2>
-      <div class="cmp">${Object.keys(EAR).map(t=>`<button class="btn" style="--c:${EAR[t].color}" data-act="ecmp" data-v="${t}">${EAR[t].emoji} ${EAR[t].label}</button>`).join('')}</div>
-      <p class="note big-note">減七は「ドキドキ」「あやしい」感じ。ピアノの曲では、もりあがる ところや こわい 場面で よく 出てくるよ。</p>
+      <h2>🎧 くらべて きく<small>おなじ「${PA.nmH({letter:0,acc:0})}」から つくった 10しゅるい</small></h2>
+      <div class="cmp">${ORDER.map(t=>`<button class="btn" style="--c:${T[t].color}" data-act="ecmp" data-v="${t}" aria-label="${T[t].label}（${T[t].word}）を きく"><span>${T[t].emoji} ${T[t].label}</span><small>${T[t].word}</small></button>`).join('')}</div>
+      <details class="more" style="margin-top:10px"><summary>💡 ひびきの ことば ヒント</summary>
+        <ul class="hints">${ORDER.map(t=>`<li>${T[t].emoji} <b style="color:${T[t].color}">${T[t].label}</b>：${T[t].desc}</li>`).join('')}</ul></details>
     </section>
   </div>`;
   PA.paint(document.getElementById('view'),h,'ear:'+state.qn);
   state.fresh=false;
-  PA.paint(document.getElementById('actions'),!q
-    ?`<button class="btn night" data-act="enew">▶️ はじめる</button>`
-    :state.answer
-      ?`<button class="btn" data-act="eplay">🔁 きく</button><button class="btn" data-act="earp">🎶 ばらばら</button><button class="btn primary" data-act="enew">➡️ つぎ</button>`
-      :`<button class="btn night" data-act="eplay">🔁 もういちど きく</button><button class="btn" data-act="earp">🎶 ばらばらに きく</button>`,'bar');
+  PA.paint(document.getElementById('actions'),actionsHTML(),'bar');
 }
 
 /* ===== 操作 ===== */
@@ -219,27 +463,65 @@ function reveal(el,target,bottomOnly){
   const top=bar?bar.offsetHeight:0, bottom=innerHeight-(ab?ab.offsetHeight:0);
   if(r.bottom>bottom||(!bottomOnly&&r.top<top)) target.scrollIntoView({block:'start',behavior:PA.reduceMotion()?'auto':'smooth'});
 }
+function ask(){
+  state.askedAt=Date.now(); newEar(); render(); playEar(!!LEVELS[state.q.lv].arp);
+  reveal(document.querySelector('#view .echoices'),document.querySelector('#view .hero'));
+}
 PA.mountBar({title:'和音の 聴きわけ',app:'ear'});
 PA.onSettings=render;
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-act]'); if(!el) return;
   const a=el.dataset.act, v=el.dataset.v;
-  if(a==='elevel'){const lv=+v;if(lv===state.level)return;PA.stopSound();state.level=lv;state.q=null;state.answer=null;state.resShown=false;save();render();}
-  else if(a==='enew'){newEar();render();playEar();reveal(document.querySelector('#view .echoices'),document.querySelector('#view .hero'));}
-  else if(a==='eplay'){playEar();}
-  else if(a==='earp'){playEar(true);}
+  if(a==='emode'){
+    if((v!=='free'&&v!=='ch')||v===state.mode) return;
+    PA.stopSound();
+    // こたえて いない チャレンジの もんだいは とっておき、もどったら おなじ もんだい（のこりの 回数も そのまま）から
+    if(state.mode==='ch'&&ch.active&&state.q&&!state.answer){ch.q=state.q;ch.left=state.left;}
+    state.mode=v; state.q=null; state.answer=null; state.resShown=false; state.left=null; state.confirmReset=false;
+    if(v==='ch'&&ch.active){applyNext();if(ch.q){state.q=ch.q;state.left=ch.left;state.askedAt=0;state.qn++;}ch.q=null;ch.left=null;}
+    save(); render();
+  }
+  else if(a==='elevel'){
+    const lv=+v; if(!isInt(lv,1,MAXLV)||lv===state.level||state.mode!=='free') return;
+    PA.stopSound(); state.level=lv; state.q=null; state.answer=null; state.resShown=false; state.left=null; save(); render();
+  }
+  else if(a==='chstart'){
+    const lv=+v; if(state.mode!=='ch'||ch.active||(lv!==1&&lv!==resumeLv())) return;
+    state.confirmReset=false; startChallenge(lv); ask();
+  }
+  else if(a==='chquit'){if(state.mode!=='ch'||!ch.active)return;PA.stopSound();quitChallenge();save();render();}
+  else if(a==='chreset'){if(state.mode!=='ch'||!ch.best)return;state.confirmReset=true;render();}
+  else if(a==='chresetno'){state.confirmReset=false;render();}
+  else if(a==='chresetok'){
+    if(!state.confirmReset) return;
+    PA.stopSound(); state.confirmReset=false; ch.best=0; ch.cap=null; quitChallenge(); save(); render();
+  }
+  else if(a==='enew'){
+    if(state.mode==='ch'){if(!ch.active)return;applyNext();}
+    ask();
+  }
+  else if(a==='eplay'||a==='earp'){
+    if(!state.q) return;
+    // 「つぎ」の 2どおしで、その場所に 出た ボタンが おされて 回数が へらないように
+    if(!state.answer&&Date.now()-(state.askedAt||0)<600) return;
+    if(!state.answer&&state.left!=null){if(state.left<=0)return;state.left--;save();render();}
+    playEar(a==='earp');
+  }
   else if(a==='eans'){
-    if(!state.q||state.answer||!EAR_LEVELS[state.level].includes(v)) return;
-    state.answer=v; state.total++; if(v===state.q.type){state.right++;state.streak++;}else state.streak=0;
+    const q=state.q;
+    if(!q||state.answer||!LEVELS[q.lv].types.includes(v)||(state.mode==='ch'&&!ch.active)) return;
+    state.answer=v; const ok=v===q.type;
+    if(state.mode==='free'){state.total++;if(ok){state.right++;state.streak++;}else state.streak=0;}
+    else judge(ok);
     save(); state.fresh=true; render(); playEar();
     const fb=document.querySelector('#view .fb'); reveal(fb,fb,true);
   }
   else if(a==='eres'){if(!state.q||state.q.keyIdx==null)return;state.resShown=true;save();render();playRes();}
   else if(a==='efam'){
     const q=state.q; if(!q||q.keyIdx==null) return;
-    PA.stopSound(); PA.store.set('minor-family',{keyIdx:q.keyIdx,fam:q.type==='dom7'?'V7':'DIM'}); PA.go('minor-family.html');
+    PA.stopSound(); PA.store.set('minor-family',{keyIdx:q.keyIdx,fam:T[q.type].fam}); PA.go('minor-family.html');
   }
-  else if(a==='ecmp'){const c=CMP[v];if(c){PA.stopSound();PA.chord(c.map(n=>n.midi),{dur:2});}}
+  else if(a==='ecmp'){const c=CMP[v];if(c){PA.stopSound();PA.chord(c,{dur:2});}}
 });
 render();
 </script>
