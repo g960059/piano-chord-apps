@@ -99,9 +99,9 @@ PA.nm=n=>{
   if(S.naming==='ja') return (a===1?'嬰':a===-1?'変':a===2?'重嬰':a===-2?'重変':'')+PA.LET_JA[n.letter];
   return PA.LET_SOLFA[n.letter]+PA.ACC[a];
 };
-// 𝄪 は 端末によって 出ないので、楽譜と同じ「x」の形で 出す
-PA.H=s=>String(s).replace(/𝄪/g,'<span class="ds">x</span>');
-PA.Svg=s=>String(s).replace(/𝄪/g,'<tspan font-family="Arial,Helvetica,sans-serif" font-weight="900">x</tspan>');
+// 𝄪 は 端末によって 出ないので、楽譜と同じ「x」の形で 出す。𝄫 も 出ない 端末が あるので ♭♭ で 出す
+PA.H=s=>String(s).replace(/𝄪/g,'<span class="ds">x</span>').replace(/𝄫/g,'<span class="df" style="letter-spacing:-.12em">♭♭</span>');
+PA.Svg=s=>String(s).replace(/𝄪/g,'<tspan font-family="Arial,Helvetica,sans-serif" font-weight="900">x</tspan>').replace(/𝄫/g,'<tspan letter-spacing="-1.5">♭♭</tspan>');
 PA.nmH=n=>PA.H(PA.nm(n));
 PA.namesH=(ns,sep='・')=>ns.map(PA.nmH).join(sep);
 PA.namesT=(ns,sep='・')=>ns.map(PA.nm).join(sep);
@@ -571,6 +571,447 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
     if(type==='dd') return PA.H(nameOf(r)+'7');
     if(type==='dd9') return PA.H(nameOf(r)+'7(♭9)');
     if(type==='ddim') return PA.H(nameOf(t3)+'dim7');
+    return '';
+  };
+})();
+/* ===== 変化和音（芸大和声の 考え方）：ナポリの六・準固有和音・副属和音・減七と半減七・異名同音の読み替え =====
+ * key（PA.majorKey / PA.minorKey）を わたすと、正しい つづりと 高さの 音を かえす。
+ * 音：{letter, acc, midi, role(日本語の役わり), tag}
+ *   tag：'lt'＝導音（上へ すすむ）、'seventh'＝第7音（下へ すすむ）、'b9'／'ninth'＝短9度／長9度（下へ）、
+ *        'low'＝下げた音、'borrowed'＝同主短調から かりた音、'raised'＝短調で 上げた 第6音・第7音、'chrom'＝そのほかの 調にない音
+ *   減七・半減七（Ⅶ7）は 芸大和声どおり Ⅴ9 の 根音省略 として 名前と tag を つける（導音＝第3音、4＝第7音 'seventh'、6＝第9音 'b9'／'ninth'、2＝第5音）。
+ *   vii7・rootless9・borrowed('vii_dim7')・viiCompare・secondary(…,'vii7'|'vii7h')・dimReadings の どれでも、おなじ 音には おなじ tag。
+ * 和音記号：芸大（島岡）の 書きかた。○＝準固有（同主短調から かりた）。転回形は 6・6/4（Ⅱ6、Ⅰ6/4）。
+ *   短調の 目標 Ⅲ・Ⅶ（自然的短音階の 長三和音）は「Ⅲ（自然）」「Ⅶ（自然）」と 書いて、和声的短音階の Ⅲ（増）・Ⅶ（減）と 区別する。
+ *   コードネーム（dim7・m7(♭5) など）は H.symbol だけで つかう。
+ * ならび：[ベース, 上の声（低い→高い）]。解決（すすみ先）は おなじ ならびで、それぞれの 声が どこへ 行くかを かえす。
+ * 高さ：ベース 40〜55、上の声 55〜79（平均律・表示の 音＝鳴らす 音）。すべての 和音が この中（解決先は 2 まで はみだす ことが ある）。
+ * 声の すすみ：連続5度・連続8度、バスを ふくむ 減5度→完全5度、声の 交差、調の 導音の 重複 は つくらない（test/henka.test.mjs で たしかめる）。
+ * 重変（𝄫）は 正しい つづりで どうしても 出る ところだけ（♭の多い 調のナポリ・準固有・副属の減七・Ⅴ7/♭Ⅱ）。PA.H／PA.Svg で ♭♭ と 表示する。
+ * 重嬰（x）は ♯の多い 調の 副属和音と 短調の 導音で 出る（PA.H／PA.Svg で 太い x）。
+ */
+(function(){
+  const H=PA.henka={}, mod=PA.mod;
+  const ROMAN=['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ'];
+  H.ROMAN=ROMAN;
+  // 調の音階（長調＝長音階、短調＝自然的短音階）で 主音から d 番め（0＝主音、負・7以上も可）の 半音の数
+  const semi=(key,d)=>(key.minor?PA.NMIN:PA.MAJ)[mod(d,7)]+12*Math.floor(d/7);
+  // 主音から lo 文字・so 半音 上の 音の つづり
+  const sp=(key,lo,so)=>{const L=mod(key.l+lo,7);return {letter:L,acc:PA.spell(L,key.tpc+so)};};
+  const pcOf=n=>mod(PA.NAT[n.letter]+n.acc,12);
+  H.pcOf=pcOf;
+  // 五線の 位置（PA.stepOf と おなじ 数えかた：ド4＝28）で つみかさねる。♭がついても ♮でも おなじ 位置に なるように
+  const stepAtOrAbove=(n,s0)=>s0+mod(n.letter-s0,7);
+  const midiOfStep=(n,st)=>12*(Math.floor(st/7)+1)+PA.NAT[n.letter]+n.acc;
+  // from の 高さから、つづり n の 音へ：up＝上へ、down＝下へ、leap＝上下 近いほうではなく 中心（center）に 近いほう、near＝いちばん近い
+  const move=(n,from,mv,center)=>{
+    const p=pcOf(n), up=from+mod(p-from-1,12)+1, down=from-(mod(from-p-1,12)+1);
+    if(mv==='up') return up;
+    if(mv==='down') return down;
+    if(mv==='leap') return Math.abs(up-center)<Math.abs(down-center)?up:down;
+    return from+mod(p-from+6,12)-6;
+  };
+  const B_LO=40,B_HI=55,U_LO=55,U_HI=79,B_C=47,U_C=67;
+  const mk=(key,v,midi)=>({...sp(key,v.lo,v.so),midi,role:v.role,tag:v.tag||null});
+  /* 和音の 列（chain）を つくる。chain[0]＝はじめの和音（v＝{lo,so,role,tag}）、chain[1..]＝つぎの和音（v に mv＝動きかた）
+   * はじめの和音：ベースは ファ2 以上、上の声は ラ3 以上から、五線の 位置で 下から じゅんに つみかさねる（♭6 と ♮6 が おなじ 高さに くる）。
+   * そのあと chains ぜんぶを おなじ だけ オクターブで うごかして 音域に おさめる（おなじ 和音は どの 関数から 出しても おなじ 高さ） */
+  const chainOf=(key,chain)=>{
+    const out=[];
+    chain.forEach((ch,ci)=>{
+      const prev=out[ci-1], notes=[];
+      let st=0;
+      ch.forEach((v,i)=>{
+        const s=sp(key,v.lo,v.so);
+        let m;
+        if(!prev){st=i===0?17:i===1?26:st+1;st=stepAtOrAbove(s,st);m=midiOfStep(s,st);}
+        else m=move(s,prev[i].midi,v.mv||'near',i===0?B_C:U_C);
+        notes.push(mk(key,v,m));
+      });
+      out.push(notes);
+    });
+    return out;
+  };
+  const fam=(key,chains)=>{
+    const outs=chains.map(c=>chainOf(key,c)), all=outs.flat();
+    let best=null;
+    for(const sb of [0,-12,12]) for(const su of [0,-12,12]){
+      let pen=0,bs=0,us=0,nb=0,nu=0;
+      all.forEach(ch=>{
+        ch.forEach((n,i)=>{
+          const m=n.midi+(i?su:sb), lo=i?U_LO:B_LO, hi=i?U_HI:B_HI;
+          pen+=Math.max(0,lo-m,m-hi)*10;
+          if(i){us+=m;nu++;}else{bs+=m;nb++;}
+        });
+        if(ch[0].midi+sb>=Math.min(...ch.slice(1).map(n=>n.midi+su))) pen+=1000;
+      });
+      pen+=Math.abs(bs/nb-B_C)+Math.abs(us/nu-U_C);
+      if(!best||pen<best.pen) best={pen,sb,su};
+    }
+    return outs.map(o=>o.map(ch=>ch.map((n,i)=>({...n,midi:n.midi+(i?best.su:best.sb)}))));
+  };
+  const prog=(key,chain)=>fam(key,[chain])[0];
+  // 調の 音か（短調は 自然的短音階。和声的・旋律的に 上げた 第7音・第6音は 'raised'）
+  const inScale=(key,n)=>(key.minor?key.nat:key.scale).some(s=>s.letter===n.letter&&s.acc===n.acc);
+  const isRaised=(key,n)=>key.minor&&[[6,11],[5,9]].some(([lo,so])=>{const s=sp(key,lo,so);return s.letter===n.letter&&s.acc===n.acc;});
+  const tagChrom=(key,ns)=>ns.map(n=>n.tag||inScale(key,n)?n:{...n,tag:isRaised(key,n)?'raised':'chrom'});
+  const V=(lo,so,role,tag,mv)=>({lo,so,role,tag,mv});
+
+  /* ----- 1) ナポリの六（♭Ⅱ の 第1転回形）：♭2・4・♭6。ベース＝第3音（調の 第4音）を 重ねる。根音（♭2）は ソプラノ ----- */
+  const N6=key=>[
+    V(3,5,'第3音（いちばん下）'),
+    V(3,5,'第3音'),
+    V(5,8,'第5音',key.minor?null:'borrowed'),
+    V(1,1,'根音（下げた 第2音）','low')
+  ];
+  const N6TOV=()=>[
+    V(4,7,'Ⅴの根音',null,'up'),
+    V(1,2,'Ⅴの第5音',null,'down'),
+    V(4,7,'Ⅴの根音',null,'down'),
+    V(6,11,'Ⅴの第3音（導音）','lt','down')
+  ];
+  const N6I64=key=>[
+    V(4,7,'Ⅰの第5音（いちばん下）',null,'up'),
+    V(2,semi(key,2),'Ⅰの第3音',null,'down'),
+    V(4,7,'Ⅰの第5音',null,'down'),
+    V(0,0,'Ⅰの根音',null,'down')
+  ];
+  const I64V=()=>[
+    V(4,7,'Ⅴの根音',null,'near'),
+    V(1,2,'Ⅴの第5音',null,'down'),
+    V(4,7,'Ⅴの根音',null,'near'),
+    V(6,11,'Ⅴの第3音（導音）','lt','down')
+  ];
+  const n6fam=key=>fam(key,[[N6(key),N6TOV()],[N6(key),N6I64(key),I64V()]]);
+  H.neapolitan=key=>n6fam(key)[0][0];
+  // N6 → Ⅴ：根音（♭2）は 導音へ 減3度 下へ、第5音（♭6）は Ⅴ の 根音へ、ベースは Ⅴ へ 上へ。上の 第3音は Ⅴ の 第5音へ（平行8度を さける）
+  H.toV=key=>n6fam(key)[0][1];
+  // N6 → Ⅰ6/4 → Ⅴ（[Ⅰ6/4, Ⅴ] を かえす）
+  H.viaI64=key=>{const r=n6fam(key)[1];return [r[1],r[2]];};
+
+  /* ----- 2) 準固有和音（長調で、同主短調から かりる和音。かりた音に tag 'borrowed'） ----- */
+  H.BORROWED_IDS=['iv','ii_dim','ii_hdim7','bVI','V9_b9','vii_dim7'];
+  // label：芸大の 和音記号（○＝準固有）。ii_dim は 第1転回形（ベース＝第3音）で 鳴らすので Ⅱ6
+  H.JUN='○';
+  H.BORROWED={
+    iv:{label:'○Ⅳ',diatonic:'Ⅳ',next:'Ⅰ'},
+    ii_dim:{label:'○Ⅱ6',diatonic:'Ⅱ6',next:'Ⅴ',inv:1},
+    ii_hdim7:{label:'○Ⅱ7',diatonic:'Ⅱ7',next:'Ⅴ7'},
+    bVI:{label:'○Ⅵ',diatonic:'Ⅵ',next:'Ⅴ'},
+    V9_b9:{label:'○Ⅴ9',diatonic:'Ⅴ9',next:'Ⅰ'},
+    vii_dim7:{label:'○Ⅶ7',diatonic:'Ⅶ7',next:'Ⅰ'}
+  };
+  // b＝true で かりた形、false で 長調の ふつうの形（6・3 の ほかは おなじ ならび・おなじ 高さ）
+  const BSPEC={
+    iv:b=>[V(3,5,'根音'),V(0,0,'第5音'),V(3,5,'根音'),b?V(5,8,'第3音（下げた 第6音）','borrowed'):V(5,9,'第3音')],
+    ii_dim:b=>[V(3,5,'第3音（いちばん下）'),V(1,2,'根音'),V(3,5,'第3音'),b?V(5,8,'第5音（下げた 第6音）','borrowed'):V(5,9,'第5音')],
+    ii_hdim7:b=>[V(1,2,'根音'),b?V(5,8,'第5音（下げた 第6音）','borrowed'):V(5,9,'第5音'),V(7,12,'第7音','seventh'),V(3,5,'第3音')],
+    bVI:b=>b?[V(5,8,'根音（下げた 第6音）','borrowed'),V(0,0,'第3音'),V(2,3,'第5音（下げた 第3音）','borrowed'),V(0,0,'第3音')]
+            :[V(5,9,'根音'),V(0,0,'第3音'),V(2,4,'第5音'),V(0,0,'第3音')],
+    V9_b9:b=>[V(4,7,'根音'),V(6,11,'第3音（導音）','lt'),V(3,5,'第7音','seventh'),b?V(5,8,'第9音（下げた 第6音）','borrowed'):V(5,9,'第9音','ninth')],
+    // Ⅶ7＝Ⅴ9 の 根音省略（名前・tag は Ⅴ9 から 見た もの。H.vii7 と おなじ）
+    vii_dim7:b=>[V(6,11,'第3音（導音）','lt'),V(3,5,'第7音','seventh'),b?V(5,8,'第9音（下げた 第6音）','borrowed'):V(5,9,'第9音（長9度）','ninth'),V(1,2,'第5音')]
+  };
+  const NEXT={
+    iv:()=>[V(0,0,'Ⅰの根音',null,'leap'),V(0,0,'Ⅰの根音',null,'near'),V(2,4,'Ⅰの第3音',null,'down'),V(4,7,'Ⅰの第5音',null,'down')],
+    ii_dim:()=>[V(4,7,'Ⅴの根音',null,'up'),V(6,11,'Ⅴの第3音（導音）','lt','down'),V(1,2,'Ⅴの第5音',null,'down'),V(4,7,'Ⅴの根音',null,'down')],
+    ii_hdim7:()=>[V(4,7,'Ⅴの根音',null,'leap'),V(4,7,'Ⅴの根音',null,'down'),V(6,11,'Ⅴの第3音（導音）','lt','down'),V(3,5,'Ⅴの第7音','seventh','near')],
+    bVI:()=>[V(4,7,'Ⅴの根音',null,'down'),V(6,11,'Ⅴの第3音（導音）','lt','down'),V(4,7,'Ⅴの根音',null,'up'),V(1,2,'Ⅴの第5音',null,'up')],
+    V9_b9:()=>[V(0,0,'Ⅰの根音',null,'leap'),V(0,0,'Ⅰの根音',null,'up'),V(2,4,'Ⅰの第3音',null,'down'),V(4,7,'Ⅰの第5音',null,'down')],
+    vii_dim7:()=>[V(0,0,'Ⅰの根音',null,'up'),V(2,4,'Ⅰの第3音',null,'down'),V(4,7,'Ⅰの第5音',null,'down'),V(0,0,'Ⅰの根音',null,'down')]
+  };
+  const bfam=(key,id)=>key.minor||!BSPEC[id]?null:fam(key,[[BSPEC[id](true),NEXT[id]()],[BSPEC[id](false),NEXT[id]()]]);
+  H.borrowed=(key,id)=>{const f=bfam(key,id);return f&&f[0][0];};
+  H.diatonic=(key,id)=>{const f=bfam(key,id);return f&&f[1][0];};
+  // つぎの和音（かりた形・ふつうの形の どちらから すすんでも おなじ 音。b＝false は ふつうの形から すすんだ ばあい）
+  H.nextOf=(key,id,b=true)=>{const f=bfam(key,id);return f&&f[b?0:1][1];};
+
+  /* ----- 3) 副属和音（Ⅴ7/x と Ⅶ7/x） -----
+   * target：目標の 和音の 度数（2〜7）。長調 Ⅱ Ⅲ Ⅳ Ⅴ Ⅵ、短調 Ⅲ Ⅳ Ⅴ Ⅵ Ⅶ（Ⅶ＝自然的短音階の 長三和音）
+   * kind：'V7'＝目標の Ⅴ7（4つの音が そろった形 [根音 | 5, 7, 3]。PA.chroma.dd と おなじ ならび → 第5音を はぶいた 目標の和音）、'vii7'＝目標の 導音の 七の和音＝Ⅴ9 の 根音省略で 短9度の 減七（目標が 長・短 どちらでも。
+   *        PA.chroma の 減七/Ⅴ と おなじ きまり）、'vii7h'＝長9度の 根音省略＝半減七（目標が 長三和音で、長9度が 調の 音の ときだけ。
+   *        短調の Ⅶ7/Ⅴ は 短9度だけ：PA.chroma.ddStack(key,'dd9',true) と おなじ きまりで null）
+   * Ⅶ7/x → x：ならび [導音 | 7, 9, 5] → [根音 | 3, 5, 根音]（根音を 重ねる）。9 は 5 の 完全4度 下に あるので、
+   *   5 → 根音 と 9 → 5 は 平行4度（よい）。連続5度に なるのは 9 が 5 より 上に あるとき だけ。
+   *   目標の 第3音へ 上げると、目標が Ⅴ のとき 調の 導音が 2つに なるので しない */
+  H.targets=key=>key.minor?[3,4,5,6,7]:[2,3,4,5,6];
+  const tgt=(key,t)=>{
+    if(!H.targets(key).includes(t)) return null;
+    const TL=t-1, rs=semi(key,TL);
+    let q3=mod(semi(key,TL+2)-rs,12);
+    const q5=mod(semi(key,TL+4)-rs,12);
+    if(key.minor&&t===5) q3=4; // 短調の Ⅴ は 和声的短音階（導音）で 長三和音
+    const T={TL,rs,q3,q5,minor:q3===3,t};
+    // 長9度（目標の 第6音＝rs+9）・短9度（rs+8）が 調の 音か（長調＝長音階、短調＝自然的短音階）
+    T.maj9InKey=mod(semi(key,TL+5)-rs,12)===9;
+    T.min9InKey=mod(semi(key,TL+5)-rs,12)===8;
+    // 短調の Ⅲ・Ⅶ は 自然的短音階の 長三和音（和声的短音階の Ⅲ＝増三和音、Ⅶ＝減三和音 とは ちがう）
+    T.natural=key.minor&&(t===3||t===7);
+    return T;
+  };
+  const tSpec=(T,mv)=>[V(T.TL,T.rs,'目標の根音',null,mv[0]),V(T.TL,T.rs,'目標の根音',null,mv[1]),V(T.TL+2,T.rs+T.q3,'目標の第3音',null,mv[2]),V(T.TL+4,T.rs+T.q5,'目標の第5音',null,mv[3])];
+  const secSpec=(T,kind)=>{
+    const {TL,rs}=T;
+    if(kind==='V7') return {
+      ch:[V(TL+4,rs+7,'根音'),V(TL+1,rs+2,'第5音'),V(TL+3,rs+5,'第7音','seventh'),V(TL+6,rs+11,'第3音（導音）','lt')],
+      res:[V(TL,rs,'目標の根音',null,'leap'),V(TL,rs,'目標の根音',null,'down'),V(TL+2,rs+T.q3,'目標の第3音',null,'down'),V(TL,rs,'目標の根音',null,'up')]
+    };
+    if(kind==='vii7'||(kind==='vii7h'&&!T.minor&&T.maj9InKey)){
+      const n9=kind==='vii7'?V(TL+5,rs+8,'第9音（短9度）','b9'):V(TL+5,rs+9,'第9音（長9度）','ninth');
+      return {
+        ch:[V(TL+6,rs+11,'第3音（導音）','lt'),V(TL+3,rs+5,'第7音','seventh'),n9,V(TL+1,rs+2,'第5音')],
+        res:[V(TL,rs,'目標の根音',null,'up'),V(TL+2,rs+T.q3,'目標の第3音',null,'down'),V(TL+4,rs+T.q5,'目標の第5音',null,'down'),V(TL,rs,'目標の根音',null,'down')]
+      };
+    }
+    return null;
+  };
+  H.secondary=(key,target,kind='V7')=>{
+    const T=tgt(key,target), s=T&&secSpec(T,kind); if(!s) return null;
+    return tagChrom(key,prog(key,[s.ch,s.res])[0]);
+  };
+  H.resolveSecondary=(key,target,kind='V7')=>{
+    const T=tgt(key,target), s=T&&secSpec(T,kind); if(!s) return null;
+    return prog(key,[s.ch,s.res])[1];
+  };
+  // 目標の 三和音だけ（根音位置・根音を 重ねる）
+  H.targetTriad=(key,target)=>{
+    const T=tgt(key,target); if(!T) return null;
+    return prog(key,[tSpec(T,[])])[0];
+  };
+  H.targetIsMinor=(key,target)=>{const T=tgt(key,target);return T?T.minor:null;};
+  // 短調の Ⅲ・Ⅶ（自然的短音階の 長三和音）か
+  H.targetIsNatural=(key,target)=>{const T=tgt(key,target);return T?T.natural:null;};
+
+  /* ----- 4) 減七と 半減七（Ⅶ7）＝ Ⅴ9 の 根音省略 -----
+   * 長調：半減七（7・2・4・6）、短調：減七（♯7・2・4・♭6）。ならび [導音 | 4, 6, 2]
+   * 名前と tag は Ⅴ9 から 見た もの（導音＝第3音 'lt'、4＝第7音 'seventh'、6＝第9音 'ninth'／'b9'、2＝第5音）。
+   *   H.vii7(key,'vii') だけ、名前を「Ⅶ7 から 見た 名前」（導音＝根音、2＝第3音、4＝第5音、6＝第7音）に する（tag は かわらない）。
+   * Ⅰ へ：導音 → 主音（上へ）、4 → 3（下へ）、6 → 5（下へ）、2 → 主音（下へ）＝根音を 重ねた Ⅰ。
+   *   この ならびでは 6 が 2 の 完全4度（短調は 増4度）下に あるので、6→5 と 2→1 は 平行4度（よい）。
+   *   2 が 6 の 下に あって 5度に なる ならびなら、2→1 は 連続5度（長調）に なる */
+  const VII_VIEW=['根音（導音）','第5音','第7音','第3音'];
+  const viiSpec=(key,six,sixRole,sixTag)=>[
+    V(6,11,'第3音（導音）','lt'),V(3,5,'第7音','seventh'),V(5,six,sixRole,sixTag),V(1,2,'第5音')
+  ];
+  const IRES=key=>[V(0,0,'Ⅰの根音',null,'up'),V(2,semi(key,2),'Ⅰの第3音',null,'down'),V(4,7,'Ⅰの第5音',null,'down'),V(0,0,'Ⅰの根音',null,'down')];
+  const sixOf=key=>semi(key,5); // 長調 ♮6、短調 ♭6
+  // 調の Ⅶ7（＝根音省略の Ⅴ9）・半減七・減七を いっしょに つくって、おなじ 高さに そろえる
+  const vfam=key=>fam(key,[
+    [viiSpec(key,sixOf(key),key.minor?'第9音（短9度）':'第9音（長9度）',key.minor?'b9':'ninth'),IRES(key)],
+    [viiSpec(key,9,key.minor?'第9音（上げた 第6音）':'第9音（長9度）',key.minor?'raised':'ninth'),IRES(key)],
+    [viiSpec(key,8,key.minor?'第9音（短9度）':'第9音（下げた 第6音）',key.minor?'b9':'borrowed'),IRES(key)]
+  ]);
+  H.vii7=(key,view)=>{const v=vfam(key)[0][0];return view==='vii'?v.map((n,i)=>({...n,role:VII_VIEW[i]})):v;};
+  H.vii7ToI=key=>vfam(key)[0][1];
+  // 根音省略の Ⅴ9（H.vii7 と おなじ 音・おなじ 名前。名前を わけて 見せたいときは H.vii7(key,'vii')）
+  H.rootless9=key=>vfam(key)[0][0];
+  // Ⅴ9（根音あり・第5音を はぶく）：[5 | 7, 4, 9]（9 は 長調 ♮6、短調 ♭6）
+  const v9Spec=key=>[V(4,7,'根音'),V(6,11,'第3音（導音）','lt'),V(3,5,'第7音','seventh'),V(5,sixOf(key),key.minor?'第9音（短9度）':'第9音（長9度）',key.minor?'b9':'ninth')];
+  const v9fam=key=>prog(key,[v9Spec(key),[V(0,0,'Ⅰの根音',null,'leap'),V(0,0,'Ⅰの根音',null,'up'),V(2,semi(key,2),'Ⅰの第3音',null,'down'),V(4,7,'Ⅰの第5音',null,'down')]]);
+  H.v9=key=>v9fam(key)[0];
+  H.v9ToI=key=>v9fam(key)[1];
+  // 半減七と 減七の くらべ：ちがうのは 第9音（♮6 と ♭6）だけ。diff＝その 音の ならびの 番号
+  // halfInKey／dimInKey＝その 調の 和音か。短調の half（♮6＝旋律的短音階の 上げた 第6音）は 音の くらべ だけで、
+  //   短調の 和音（和音記号）としては つかわない。長調の dim は 準固有（○Ⅶ7）
+  H.viiCompare=key=>{const f=vfam(key);return {half:f[1][0],dim:f[2][0],diff:2,toI:f[0][1],halfInKey:!key.minor,dimInKey:key.minor};};
+
+  /* ----- 5) 異名同音の 読み替え ----- */
+  const dblCount=ns=>ns.filter(n=>Math.abs(n.acc)>1).length;
+  // 短調（PA.minorKey と おなじ 形）を 主音の 文字と 変化記号から つくる。PA.MINOR_KEYS に ない つづり（変イ短調・変ニ短調・
+  // 変ト短調・嬰イ短調）も つくれる。そのときは enh:true、idx＝おなじ 主音の 高さの PA.MINOR_KEYS の 番号
+  const minorOf=(l,a)=>{
+    const i=PA.MINOR_KEYS.findIndex(([L,A])=>L===l&&A===a);
+    if(i>=0) return PA.minorKey(i);
+    const tpc=mod(PA.NAT[l]+a,12), idx=PA.MINOR_KEYS.findIndex(([L,A])=>mod(PA.NAT[L]+A,12)===tpc), tonicMidi=57+mod(tpc-57,12);
+    const nat=PA.buildScale(l,tpc,tonicMidi,PA.NMIN), harm=PA.buildScale(l,tpc,tonicMidi,PA.HMIN);
+    harm[6].raised=true;
+    const sig={}; nat.forEach(n=>sig[n.letter]=n.acc);
+    const rl=(l+2)%7, rpc=mod(tpc+3,12);
+    const rel={l:rl,a:PA.spell(rl,rpc),minor:false,tpc:rpc,tonicMidi:60+rpc}; rel.scale=PA.buildScale(rl,rpc,60+rpc,PA.MAJ);
+    const par={l,a,minor:false,tpc,tonicMidi,scale:PA.buildScale(l,tpc,tonicMidi,PA.MAJ)};
+    return {idx,l,a,tpc,tonicMidi,minor:true,nat,harm,scale:harm,sig,rel,par,lt:harm[6],natLT:nat[6],ltType:harm[6].acc,enh:true};
+  };
+  H.minorOf=minorOf;
+  /* 減七の 4つの 読みかた：おなじ けんばん（おなじ 高さ）を、4つの 短調の Ⅶ7（Ⅴ9 の 根音省略）として 書く
+   * input：ピッチクラス 4つの 配列／減七の 音（{letter,acc,midi}）の 配列／key（長調なら 同主短調の 減七＝準固有の ○Ⅶ7、短調なら その 調の Ⅶ7）
+   * かえす：[{keyIdx, key, lt, spelling, resolution, given, resInv, ninthInBass, next}]
+   *   given（わたした つづり・調）の 読みが さいしょ、あとは 主音が 短3度ずつ 上へ。
+   *   given の 読みは わたした つづりの まま（必要なら PA.MINOR_KEYS に ない 調：key.enh＝true、keyIdx＝おなじ 高さの 調の 番号）。
+   *   そのほかの 読みは 重嬰・重変の すくない 調（嬰ニ短調より 変ホ短調。嬰ト短調は 変イ短調の かわりに そのまま）。
+   * 名前・tag は Ⅴ9 の 根音省略として：導音＝第3音 'lt'、2＝第5音、4＝第7音 'seventh'、♭6＝第9音（短9度） 'b9'
+   * resolution（Ⅰ）：導音→主音、4→♭3、♭6→5。2 は 上の声なら 主音へ（下へ）。ベースの 2 は ♭3 へ 上がる（Ⅰ6。
+   *   主音へ 下りると ♭6→5 と バスを ふくむ 減5度→完全5度 に なる）。
+   *   resInv：解決の Ⅰ の 形（0＝基本形、1＝Ⅰ6、2＝Ⅰ6/4）。
+   *   ninthInBass：ベースが 第9音（♭6）＝Ⅴ9 の 第4転回形に あたる 形（芸大では ふつう つかわない）。解決は Ⅰ6/4 に なるので、
+   *   next に そのあとの Ⅴ（おなじ ならび）を 入れる（それ以外は next＝null）。ふつうの Ⅶ7→Ⅰ として 見せない こと。
+   *   密集（短3度で となりあう 声が ある）の ときは、その 2つの 声が 同度に なる ことが ある（ほかに よい すすみかたが ない） */
+  const DIM_REL={11:[6,'第3音（導音）','lt'],2:[1,'第5音',null],5:[3,'第7音','seventh'],8:[5,'第9音（短9度）','b9']};
+  H.dimReadings=input=>{
+    let pcs, midis=null, givenKey=null, givenSp=null;
+    if(input&&typeof input==='object'&&!Array.isArray(input)&&input.tpc!=null&&input.l!=null){
+      givenKey=input; pcs=[11,2,5,8].map(x=>mod(input.tpc+x,12));
+    }else if(Array.isArray(input)&&input.length===4&&input.every(n=>n&&typeof n==='object')){
+      midis=input.map(n=>n.midi).sort((a,b)=>a-b); pcs=midis.map(m=>mod(m,12));
+      givenSp=input;
+    }else if(Array.isArray(input)&&input.length===4&&input.every(Number.isFinite)) pcs=input.map(x=>mod(x,12));
+    else return null;
+    const set=[...new Set(pcs)].sort((a,b)=>a-b);
+    if(set.length!==4||set.some((p,i)=>i&&p-set[i-1]!==3)) return null;
+    if(!midis){
+      const a=58+mod(set.find(p=>p===10||p===11||p===0)-10,12);
+      midis=[a-6,a,a+3,a+9];
+    }
+    const reading=key=>({keyIdx:key.idx,key,given:false,spelling:midis.map(m=>{
+      const r=mod(m-key.tpc,12), [lo,role,tag]=DIM_REL[r];
+      return {...sp(key,lo,r),midi:m,role,tag};
+    })});
+    const same=r=>givenSp.every(g=>r.spelling.some(n=>n.midi===g.midi&&n.letter===g.letter&&n.acc===g.acc));
+    const out=set.map(p=>{
+      const t=mod(p+1,12);
+      // わたした 調・つづりの 読み
+      if(givenKey&&givenKey.tpc===t){const r=reading(minorOf(givenKey.l,givenKey.a));r.given=true;return r;}
+      if(givenSp){
+        const g=givenSp.find(n=>pcOf(n)===p), L=(g.letter+1)%7, a=PA.spell(L,t);
+        if(Math.abs(a)<=1){const r=reading(minorOf(L,a));if(same(r)){r.given=true;return r;}}
+      }
+      // そのほか：PA.MINOR_KEYS の 中で 重嬰・重変の すくない 調
+      let best=null;
+      PA.MINOR_KEYS.forEach(([L,A],i)=>{
+        if(mod(PA.NAT[L]+A,12)!==t) return;
+        const r=reading(PA.minorKey(i)), sc=dblCount(r.spelling);
+        if(!best||sc<best.sc) best={r,sc};
+      });
+      return best.r;
+    });
+    out.forEach(r=>{
+      const key=r.key, t=key.tpc, sv=r.spelling;
+      const I=(lo,so,midi,role)=>({...sp(key,lo,so),midi,role,tag:null});
+      const tgt=sv.map(n=>{
+        const rel=mod(n.midi-t,12);
+        if(rel===11) return [I(7,12,n.midi+1,'主音（根音）')];
+        if(rel===5) return [I(2,3,n.midi-2,'第3音')];
+        if(rel===8) return [I(4,7,n.midi-1,'第5音')];
+        return [I(0,0,n.midi-2,'主音（根音）'),I(2,3,n.midi+1,'第3音')];
+      });
+      const res=tgt.map(c=>c[0]);
+      tgt.forEach((c,i)=>{
+        if(c.length<2) return;
+        if(i===0){res[0]=c[1];return;} // ベースの 2 は ♭3 へ（Ⅰ6）
+        // 上の声の 2 は 主音へ（下へ）。となりの 声と 交差する ときだけ ♭3 へ
+        const lo=res[i-1].midi, hi=i<res.length-1?res[i+1].midi:Infinity;
+        res[i]=c.find(x=>x.midi>lo&&x.midi<hi)||c.find(x=>x.midi>=lo&&x.midi<=hi)||c[0];
+      });
+      r.resolution=res;
+      r.lt=sv.find(n=>n.tag==='lt');
+      const bassRel=mod(sv[0].midi-t,12);
+      r.resInv=bassRel===11?0:bassRel===8?2:1;
+      r.ninthInBass=bassRel===8;
+      r.next=r.ninthInBass?i64ToV(key,res):null;
+    });
+    const g=out.find(r=>r.given)||out.find(r=>r.lt.midi===midis[0]), t0=g.key.tpc;
+    out.sort((a,b)=>mod(a.key.tpc-t0,12)-mod(b.key.tpc-t0,12));
+    return out;
+  };
+  // Ⅰ6/4（ベース＝第5音）→ Ⅴ：ベースは そのまま、主音 → 導音（下へ）か 2（上へ）か 5（下へ）、♭3 → 2（下へ）、5 → そのまま。
+  // 導音は 1つだけ、声の 交差・連続5度／8度なし、動きの 合計が いちばん 小さい ものを えらぶ（同度は 密集で さけられない ときだけ）
+  const i64ToV=(key,ch)=>{
+    const t=key.tpc;
+    const O=(lo,so,midi,role,tag)=>({...sp(key,lo,so),midi,role,tag:tag||null});
+    const opts=ch.map((n,i)=>{
+      const rel=mod(n.midi-t,12);
+      if(i===0||rel===7) return [O(4,7,n.midi,'Ⅴの根音')];
+      if(rel===0) return [O(6,11,n.midi-1,'Ⅴの第3音（導音）','lt'),O(1,2,n.midi+2,'Ⅴの第5音'),O(4,7,n.midi-5,'Ⅴの根音')];
+      return [O(1,2,n.midi-1,'Ⅴの第5音')];
+    });
+    let best=null, strict=true;
+    const walk=(i,acc)=>{
+      if(i===opts.length){
+        if(acc.filter(n=>n.tag==='lt').length!==1) return;
+        for(let j=1;j<acc.length;j++) if(strict?acc[j].midi<=acc[j-1].midi:acc[j].midi<acc[j-1].midi) return;
+        for(let a=0;a<acc.length;a++) for(let b=a+1;b<acc.length;b++){
+          const x=mod(ch[b].midi-ch[a].midi,12), y=mod(acc[b].midi-acc[a].midi,12);
+          if(x===y&&(x===0||x===7)&&ch[a].midi!==acc[a].midi&&ch[b].midi!==acc[b].midi) return;
+        }
+        const cost=acc.reduce((s,n,j)=>s+Math.abs(n.midi-ch[j].midi),0);
+        if(!best||cost<best.cost) best={cost,acc:[...acc]};
+        return;
+      }
+      opts[i].forEach(o=>{acc.push(o);walk(i+1,acc);acc.pop();});
+    };
+    walk(0,[]);
+    if(!best){strict=false;walk(0,[]);} // 密集で 同度が さけられない ときだけ
+    return best?best.acc:null;
+  };
+  // ドイツの6 と、おなじ けんばんの Ⅴ7/♭Ⅱ（♯4 を ♭5 と 読みかえる）。PA.chroma の 増六（aug6・gerToI64・aug6ToV）の 音を つかう
+  // かえす：{ger, gerRes:[Ⅰ6/4, Ⅴ], v7, v7Res(♭Ⅱ。第3音と第5音が どちらも 根音へ すすむので 2つの 声が おなじ 音), diff:3, bassShift}
+  // ベースが 55 より 上に なる 調では、ベース（ならびの 0 番）だけを ger・gerRes・v7・v7Res ぜんぶ いっしょに 1オクターブ 下げる
+  //   （bassShift＝-12。増6度は 複音程に なる。上の声は PA.chroma と おなじ 高さ。PA.chroma の 結果は かえない）
+  H.ger6Vs7=key=>{
+    const C=PA.chroma, raw=C.aug6(key,'ger'), sh=raw[0].midi>B_HI?-12:0;
+    const low=ns=>ns.map((n,i)=>({...n,midi:n.midi+(i?0:sh)}));
+    const ger=low(raw);
+    const v7=[
+      {...sp(key,5,8),midi:ger[0].midi,role:'根音',tag:null},
+      {...sp(key,0,0),midi:ger[1].midi,role:'第3音（♭Ⅱへの導音）',tag:'lt'},
+      {...sp(key,2,3),midi:ger[2].midi,role:'第5音',tag:null},
+      {...sp(key,4,6),midi:ger[3].midi,role:'第7音','tag':'seventh'}
+    ];
+    const tn=(lo,so,from,mv,role)=>{const s=sp(key,lo,so);return {...s,midi:move(s,from,mv,B_C),role,tag:null};};
+    const v7Res=[
+      tn(1,1,v7[0].midi,'leap','♭Ⅱの根音'),
+      tn(1,1,v7[1].midi,'up','♭Ⅱの根音'),
+      tn(1,1,v7[2].midi,'down','♭Ⅱの根音'),
+      tn(3,5,v7[3].midi,'down','♭Ⅱの第3音')
+    ];
+    return {ger,gerRes:[low(C.gerToI64(key)),low(C.aug6ToV(key,'ger'))],v7,v7Res,diff:3,bassShift:sh};
+  };
+
+  /* ----- コードネームと 和音記号（めやす） ----- */
+  const nameOf=n=>PA.LET_EN[n.letter]+PA.ACC[n.acc];
+  const cs=(root,suf,bass)=>PA.H(nameOf(root)+suf+(bass?'/'+nameOf(bass):''));
+  H.chordName=cs;
+  const d=(key,lo,so)=>sp(key,lo,so);
+  const BSYM={
+    iv:[k=>cs(d(k,3,5),'m'),k=>cs(d(k,3,5),'')],
+    ii_dim:[k=>cs(d(k,1,2),'dim',d(k,3,5)),k=>cs(d(k,1,2),'m',d(k,3,5))],
+    ii_hdim7:[k=>cs(d(k,1,2),'m7(♭5)'),k=>cs(d(k,1,2),'m7')],
+    bVI:[k=>cs(d(k,5,8),''),k=>cs(d(k,5,9),'m')],
+    V9_b9:[k=>cs(d(k,4,7),'7(♭9)'),k=>cs(d(k,4,7),'9')],
+    vii_dim7:[k=>cs(d(k,6,11),'dim7'),k=>cs(d(k,6,11),'m7(♭5)')]
+  };
+  // what：'N6'｜'borrowed'(a＝id)｜'diatonic'(a＝id)｜'secondary'(a＝target, b＝kind)｜'target'(a＝target)｜'vii7'｜'v9'｜'v7bII'｜'bII'
+  H.symbol=(key,what,a,b)=>{
+    if(what==='N6') return cs(d(key,1,1),'',d(key,3,5));
+    if(what==='bII') return cs(d(key,1,1),'');
+    if(what==='borrowed'||what==='diatonic') return key.minor||!BSYM[a]?'':BSYM[a][what==='borrowed'?0:1](key);
+    if(what==='target'){const T=tgt(key,a);return T?cs(d(key,T.TL,T.rs),T.minor?'m':''):'';}
+    if(what==='secondary'){
+      const T=tgt(key,a), k=b||'V7'; if(!T||!secSpec(T,k)) return '';
+      if(k==='V7') return cs(d(key,T.TL+4,T.rs+7),'7');
+      return cs(d(key,T.TL+6,T.rs+11),k==='vii7'?'dim7':'m7(♭5)');
+    }
+    if(what==='vii7') return cs(d(key,6,11),key.minor?'dim7':'m7(♭5)');
+    if(what==='v9') return cs(d(key,4,7),key.minor?'7(♭9)':'9');
+    if(what==='v7bII') return cs(d(key,5,8),'7');
+    return '';
+  };
+  // 和音記号（ローマ数字。芸大の 書きかた：○＝準固有、和音の 種類（減・半減）は 書かない）
+  //   target：短調の Ⅲ・Ⅶ は「Ⅲ（自然）」「Ⅶ（自然）」（自然的短音階の 長三和音）
+  //   secondary：'V7'＝Ⅴ7/x、'vii7'＝Ⅶ7/x（目標が 長三和音で 短9度が 調にない 音なら 目標の 同主短調から かりた 形なので ○Ⅶ7/x）、'vii7h'＝Ⅶ7/x
+  //   vii7：長調・短調とも その調の Ⅶ7（＝Ⅴ9 の 根音省略）。長調で かりた 減七は label(key,'borrowed','vii_dim7')＝○Ⅶ7
+  const tName=(T,a)=>ROMAN[a-1]+(T.natural?'（自然）':'');
+  H.label=(key,what,a,b)=>{
+    if(what==='N6') return 'N6（♭Ⅱ6）';
+    if(what==='borrowed') return !key.minor&&H.BORROWED[a]?H.BORROWED[a].label:'';
+    if(what==='diatonic') return !key.minor&&H.BORROWED[a]?H.BORROWED[a].diatonic:'';
+    if(what==='target'){const T=tgt(key,a);return T?tName(T,a):'';}
+    if(what==='secondary'){
+      const T=tgt(key,a), k=b||'V7'; if(!T||!secSpec(T,k)) return '';
+      return (k==='V7'?'Ⅴ7':(k==='vii7'&&!T.minor&&!T.min9InKey?H.JUN:'')+'Ⅶ7')+'/'+tName(T,a);
+    }
+    if(what==='vii7') return 'Ⅶ7';
+    if(what==='v9') return 'Ⅴ9';
+    if(what==='v7bII') return 'Ⅴ7/♭Ⅱ';
     return '';
   };
 })();
