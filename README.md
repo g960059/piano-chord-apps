@@ -20,6 +20,7 @@
 | | ドッペル・増六クイズ | `chroma-quiz.html` |
 | つかってみる | 伴奏づけ | `accompaniment.html` |
 | 耳をきたえる | 和音の 聴きわけ（10種類・8レベル・チャレンジ） | `ear.html` |
+| | 和音ききわけ（ランキングつきの単体アプリ） | https://waon-kikiwake.g960059.workers.dev/ （[g960059/waon-kikiwake](https://github.com/g960059/waon-kikiwake)） |
 
 ## 公開先
 

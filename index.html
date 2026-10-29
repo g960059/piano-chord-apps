@@ -55,12 +55,13 @@ const CATS=[
   {title:'🎼 つかってみる',sub:'曲に 和音を つける',apps:[
     {id:'accompaniment',ic:'🎼',title:'伴奏づけ',d:'知っている曲の メロディーに Ⅰ・Ⅳ・Ⅴ7 を つける',type:'play'}]},
   {title:'👂 耳を きたえる',sub:'聴いて パッと わかる',apps:[
-    {id:'ear',ic:'👂',title:'和音の 聴きわけ',d:'10しゅるいの 和音を 音で 当てる。8レベルと チャレンジ',type:'ear'}]}
+    {id:'ear',ic:'👂',title:'和音の 聴きわけ',d:'10しゅるいの 和音を 音で 当てる。8レベルと チャレンジ',type:'ear'},
+    {id:'waon',ic:'🏆',title:'和音ききわけ（ランキング）',d:'聴きわけの 単体アプリ。みんなと ランキングで きそおう',type:'ear',href:'https://waon-kikiwake.g960059.workers.dev/'}]}
 ];
 const ALL=CATS.flatMap(c=>c.apps);
 function card(a,extra=''){
   const t=TYPES[a.type];
-  return `<a class="appcard ${extra}" href="${a.id}.html" style="--c:${t.c};--l:${t.l}"><span class="ic">${a.ic}</span><span class="tx"><span class="ty">${t.label}</span><b>${a.title}</b><span class="d">${a.d}</span></span></a>`;
+  return `<a class="appcard ${extra}" href="${a.href||a.id+'.html'}" style="--c:${t.c};--l:${t.l}"><span class="ic">${a.ic}</span><span class="tx"><span class="ty">${t.label}</span><b>${a.title}</b><span class="d">${a.d}</span></span></a>`;
 }
 function render(){
   const last=PA.store.get('last',null), la=last&&ALL.find(a=>a.id===last.app);
