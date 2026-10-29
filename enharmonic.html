@@ -55,8 +55,7 @@
 .links .btn{justify-content:flex-start;text-align:left;flex-wrap:wrap;row-gap:0}
 .links .btn small{font-weight:400;color:var(--sub);font-size:13px}
 @media (min-width:600px){.rt td{font-size:19px}.rk{font-size:15px}}
-/* 📖 用語メモ（くわしく 知りたい人むけ。ふだんは とじておく） */
-.terms>summary small{font-weight:400;font-size:12px;color:var(--sub);margin-left:8px}
+/* 📖 ことばメモ（本や 楽譜で 見かける 名前。ふだんは とじておく） */
 .terms dl{margin:0}
 .terms dt{font-weight:800;margin:12px 0 2px}
 .terms dt:first-child{margin-top:2px}
@@ -210,15 +209,15 @@ function staticMsg(r){
   const key=r.key, t=tonicOf(key), root=PA.at(key.harm,4);
   let m=`<b>${PA.keyName(key)}</b>として 読むと、${q(r.lt)}が <b class="up">導音</b>。導音は 半音上の${q(t)}へ すすむから、行き先は <b>${PA.keyName(key)}</b>。`;
   m+=`<br>減七は Ⅴ9 から 根音を はぶいた 和音。${PA.keyName(key)}なら、かくれた 根音は${q(root)}だよ。`;
-  if(r.ninthInBass) m+=`<br>※ この 読みかたは、第9音${q(r.spelling[0])}が いちばん下に なる 形。芸大の 和声では ふつう 使わないけれど、おなじ けんばんで くらべるために 鳴らしているよ。${I64H} → Ⅴ → Ⅰ と すすんで、さいごの Ⅰ で 解決するよ。`;
+  if(r.ninthInBass) m+=`<br>※ この 読みかたは、第9音${q(r.spelling[0])}が いちばん下に なる 形。ふつうは あまり 使わない 形だけれど、おなじ けんばんで くらべるために 鳴らしているよ。${I64H} → Ⅴ → Ⅰ と すすんで、さいごの Ⅰ に おちつくよ。`;
   return m;
 }
-// 書くと 1か所だけ 増2度（第9音–導音）。おなじ 2つの けんばんを 短3度 上の 調の 名前で 書くと 短3度（第7音–第9音）
+// 書くと 1か所だけ となりの 文字（増2度：第9音–導音）。おなじ 2つの けんばんを 主音が 短3度 上の 調の 名前で 書くと ひとつとばしの 文字（第7音–第9音）
 function aug2Msg(rs,r){
   const b9=r.spelling.find(n=>n.tag==='b9'), lt=r.lt, up=rs.find(x=>x.key.tpc===PA.mod(r.key.tpc+3,12));
   const s7=up&&up.spelling.find(n=>n.midi===b9.midi), n2=up&&up.spelling.find(n=>n.midi===lt.midi);
   if(!b9||!s7||!n2) return '';
-  return `減七の 4つの 音は、けんばんの 上では おなじ 間かくで ならんでいる。でも 書くと、どこか 1か所が <b>増2度</b>に なるよ（${PA.keyName(r.key)}なら${q(b9)}と${q(lt)}）。おなじ 2つの けんばんを ${PA.keyName(up.key)}の 名前で 書くと${q(s7)}と${q(n2)}で <b>短3度</b>。名前の 書き方で 増2度の 場所が かわるから、<b>4つの 短調の 減七</b>として 読めるんだ。`;
+  return `減七の 4つの 音は、けんばんの 上では おなじ 間かくで ならんでいる。でも 名前で 書くと、どこか 1か所だけ <b>となりの 文字どうし</b>に なるよ（${PA.keyName(r.key)}なら${q(b9)}と${q(lt)}）。おなじ 2つの けんばんを ${PA.keyName(up.key)}の 名前で 書くと${q(s7)}と${q(n2)}で、ほかと おなじ <b>ひとつとばしの 文字</b>。どこが「となりの 文字」に なるかが 書き方で かわるから、<b>4つの 短調の 減七</b>として 読めるんだ。`;
 }
 // おなじ けんばんで 名前が ちがう 例（名前の 種類が いちばん 多い けんばん。おなじ 数なら 上の けんばん）
 function enhExample(rs){
@@ -243,7 +242,7 @@ function heroCard(){
   });
   h+='<tr>'+rs.map((x,i)=>`<td class="dest" style="--rc:${RCOL[i]}">→ ${PA.nmH(tonicOf(x.key))}${x.next?'<sup>※</sup>':''}<small>${resLabel(x)}${x.next?' → Ⅴ → Ⅰ':''}</small></td>`).join('')+'</tr>';
   const pi=state.play?state.play.i:-1;
-  h+='<tr>'+rs.map((x,i)=>`<td class="pl"><button class="pbtn ${i===pi?'on':''}" style="--rc:${RCOL[i]}" data-act="rplay" data-v="${x.key.idx}" aria-label="${PA.keyName(x.key)}として 解決を きく">▶ きく</button></td>`).join('')+'</tr>';
+  h+='<tr>'+rs.map((x,i)=>`<td class="pl"><button class="pbtn ${i===pi?'on':''}" style="--rc:${RCOL[i]}" data-act="rplay" data-v="${x.key.idx}" aria-label="${PA.keyName(x.key)}として Ⅰへ すすむ ところを きく">▶ きく</button></td>`).join('')+'</tr>';
   h+=`</tbody></table>
     <div class="legend"><span>よこに ならんだ 4つ＝おなじ けんばん</span><span class="up"><b>赤＝導音</b>（半音上の 主音へ）</span>${rs.some(x=>x.next)?'<span>※＝第9音が いちばん下の 形</span>':''}</div>
     <div class="msg" style="margin-top:10px">${A?A.msg:state.autoWait?'👆 どこかを タッチすると <b>4つの 行き先</b>めぐりが はじまるよ':staticMsg(r)}</div>
@@ -259,7 +258,7 @@ function kbCard(){
   }else if(res===1||res===3){
     const t=PA.mod(r.key.tpc,12), ns=res===1?r.resolution:r.fin;
     ns.forEach(n=>mk.set(n.midi,{fill:rc,label:PA.nm(n),focus:true,sub:PA.mod(n.midi,12)===t?'主音':'',subColor:rc}));
-    cap=res===3?`${PA.keyName(r.key)}の Ⅰ（ここで 解決）`:r.next?`${PA.keyName(r.key)}の ${resLabel(r)}（このあと Ⅴ → Ⅰ）`:`${PA.keyName(r.key)}の ${resLabel(r)}（解決した 和音）`;
+    cap=res===3?`${PA.keyName(r.key)}の Ⅰ（ここで おちつく）`:r.next?`${PA.keyName(r.key)}の ${resLabel(r)}（このあと Ⅴ → Ⅰ）`:`${PA.keyName(r.key)}の ${resLabel(r)}（おちついた 和音）`;
   }else{
     r.next.forEach(n=>mk.set(n.midi,{fill:n.tag==='lt'?LT:VCOL,label:PA.nm(n),focus:true}));
     cap=`${PA.keyName(r.key)}の Ⅴ（このあと Ⅰ）`;
@@ -281,7 +280,7 @@ function staffCard(){
   const sev=r.spelling.find(n=>n.tag==='seventh'), b9=r.spelling.find(n=>n.tag==='b9');
   return `<section class="card"><h2>🎼 がくふ<small>${PA.keyName(key)}の 調号で 書くと（${H.symbol(key,'vii7')} → ${resLabel(r)}${r.next?' → Ⅴ → Ⅰ':''}）</small></h2>
     ${staff(key,cols,arrows,{sk:'staff',cw:r.next?90:120})}
-    <p class="note"><b class="up">導音${q(r.lt)}は 半音上へ</b>（主音へ）、<b style="color:${NIGHT}">第7音${q(sev)}・第9音${q(b9)}は 下へ</b>。調号も 臨時記号も 読みかたごとに かわるけれど、けんばんは おなじ だよ。${r.next?`<br>※ この 読みかたは 第9音が いちばん下の 形（芸大の 和声では ふつう 使わない）。${I64H} は まだ 解決では なくて、Ⅴ を とおって さいごの Ⅰ で 解決するよ。`:''}</p>
+    <p class="note"><b class="up">導音${q(r.lt)}は 半音上へ</b>（主音へ）、<b style="color:${NIGHT}">第7音${q(sev)}・第9音${q(b9)}は 下へ</b>。調号も 臨時記号も 読みかたごとに かわるけれど、けんばんは おなじ だよ。${r.next?`<br>※ この 読みかたは 第9音が いちばん下の 形（ふつうは あまり 使わない）。${I64H} では まだ おちつかなくて、Ⅴ を とおって さいごの Ⅰ に おちつくよ。`:''}</p>
   </section>`;
 }
 function quizCard(){
@@ -340,7 +339,7 @@ function gerCard(){
   }
   const how=g.plain?`<b style="color:${GER}">ドイツの6</b> を けんばんの ふつうの 名前（${namesC(g.v7)}）で 書きかえると`:`<b style="color:${GER}">ドイツの6</b> の${q(gn)}を${q(vn)}と 書きかえると`;
   let h=`<section class="card" id="ger"><h2>② ドイツの6 と Ⅴ7/♭Ⅱ<small>${PA.keyName(key)}で。同じ けんばん、ちがう 名前、ちがう 行き先</small></h2>
-    <p class="note" style="margin-top:0;color:var(--ink)">${PA.keyName(key)}の ${how}、<b style="color:${V7C}">${v7Name}</b>（♭Ⅱ＝${bII} の ための Ⅴ7）と まったく おなじ けんばん。絶対音感で 聴くと おなじ 和音だね。でも 名前が ちがうと、すすむ 方向が ぎゃくに なるよ。</p>
+    <p class="note" style="margin-top:0;color:var(--ink)">${PA.keyName(key)}の ${how}、<b style="color:${V7C}">${v7Name}</b>（♭Ⅱ＝${bII} の ための Ⅴ7）と まったく おなじ けんばん。耳で 聴くと まったく おなじ 和音だね。でも 名前が ちがうと、すすむ 方向が ぎゃくに なるよ。</p>
     <div class="vs">
       <div style="--c:${GER}"><h3>ドイツの6</h3><div class="ns">${namesC(g.ger)}</div>
         <p class="to">${q(gn)}（Ⅴへの 導音）は <b>半音上へ</b> → ${I64H} → <b>Ⅴ</b></p>
@@ -356,7 +355,7 @@ function gerCard(){
       [{c1:0,n1:gn,c2:1,n2:i64[d],color:LT,text:'半音↑'},{c1:0,n1:g.ger[0],c2:1,n2:i64[0],color:LOW,text:'半音↓'}],{sk:'g1',cw:100})}
     ${staff(key,[{notes:g.v7,color:V7C,label:'Ⅴ7/♭Ⅱ'},{notes:g.v7Res,color:V7C,label:'♭Ⅱ'}],
       [{c1:0,n1:vn,c2:1,n2:g.v7Res[d],color:V7C,text:'半音↓'},{c1:0,n1:g.v7[1],c2:1,n2:g.v7Res[1],color:LT,text:'半音↑',dy:-14}],{sk:'g2',cw:110})}
-    <p class="note">${q(g.v7[1])}と${q(g.v7[2])}は どちらも ♭Ⅱ の 根音${q(g.v7Res[1])}へ すすむので、${bII} では 2つの 声が おなじ 音に なるよ（平行5度を さけるため）。ドイツの6 は 平行5度を さけて ${I64H} を とおるのが ふつう。</p>
+    <p class="note">${q(g.v7[1])}と${q(g.v7[2])}は どちらも ♭Ⅱ の 根音${q(g.v7Res[1])}へ すすむので、${bII} では 2つの 声が おなじ 音に なるよ（2つの 声が 5度の はばの まま いっしょに 動くのを さけるため）。ドイツの6 も おなじ わけで、${I64H} を とおってから Ⅴ へ 行くのが ふつう。</p>
   </section>`;
   return h;
 }
@@ -368,16 +367,18 @@ function linksCard(){
   </div></section>`;
 }
 
-// 📖 用語メモ：正式な 名前（いまの 調・和音の 音を れいに）。よみかたは 小さく
+// 📖 ことばメモ：本や 楽譜で 見かける 名前を、やさしい ことばで（いまの 調の 音を れいに）。よみかたは 小さく
 function termsHTML(){
-  const {rs}=view(), ex=enhExample(rs);
-  return `<details class="more terms" data-d="terms"><summary>📖 用語メモ<small>正式な よびかた</small></summary><dl>
+  const {rs,r}=view(), ex=enhExample(rs), b9=r.spelling.find(n=>n.tag==='b9');
+  return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary><dl>
     <dt>異名同音<span class="yomi">（いめい どうおん）</span></dt>
-      <dd>名前（書き方）は ちがうけれど、けんばんでは おなじ 高さの 音（${ex.map(q).join('と')} など）。調にも あって、嬰ヘ長調と 変ト長調は 異名同音の 調。</dd>
-    <dt>異名同音的転調<span class="yomi">（いめいどうおんてき てんちょう）</span></dt>
-      <dd>和音の 音を 異名同音で 書きかえて（読みかえて）、その 書き方の 調へ すすむ 転調。遠い 調へも 一気に 行ける。② の ドイツの6 と Ⅴ7/♭Ⅱ の 読みかえも、よく 使われる。</dd>
-    <dt>減七の和音による転調</dt>
-      <dd>減七は となりどうしが ぜんぶ 短3度なので、どの 音を 導音と して 書きかえても 減七の 形の まま。だから 1つの 減七が、4つの 短調の Ⅶ7（Ⅴ9 の 根音省略形）に なる。${ABC[state.fam]}の家族なら ${rs.map(r=>PA.keyName(r.key)).join('・')}。おなじ 主音の 長調の ○Ⅶ7（準固有和音）と 読めば、長調へも 行ける。</dd>
+      <dd>名前（書き方）は ちがうけれど、けんばんは おなじ 音（${ex.map(q).join('と')} など）。調にも あって、嬰ヘ長調と 変ト長調は おなじ けんばんの 調。</dd>
+    <dt>転調<span class="yomi">（てんちょう）</span></dt>
+      <dd>曲の とちゅうで べつの 調へ うつる こと。この ページの ① ② は、音の 名前を 書きかえて うつる やりかた（本では「異名同音的転調<span class="yomi">（いめいどうおんてき てんちょう）</span>」と 書く）。1つの 減七は、書き方を かえると 4つの 短調の Ⅶ7 に なる（${ABC[state.fam]}の家族なら ${rs.map(x=>PA.keyName(x.key)).join('・')}）ので、遠い 調へも いっきに 行けるよ。おなじ 主音の 長調の ○Ⅶ7（準固有和音）と 読めば、長調へも 行ける。</dd>
+    <dt>解決<span class="yomi">（かいけつ）</span></dt>
+      <dd>ドキドキする 和音が、おちつく 和音（Ⅰ など）へ すすむ こと。この ページの「Ⅰへ すすむ」の こと。</dd>
+    <dt>増2度<span class="yomi">（ぞう 2ど）</span></dt>
+      <dd>となりの 文字どうしなのに、けんばんでは ひとつとばしの 文字と おなじ はばに なる 2つの 音。いまの 読みかたでは${q(b9)}と${q(r.lt)}。</dd>
   </dl></details>`;
 }
 
@@ -397,7 +398,7 @@ function render(){
     ${termsHTML()}`;
   // この 画面に 出てくる 記号だけ 説明する
   const ds=h.includes('class="ds"'), df=h.includes('class="df"');
-  h+=`<p class="note">※ 音の 高さは 平均律です。${ds?'<span class="ds">x</span> は ダブルシャープ'+(df?'、':'の 楽譜での 書き方です。'):''}${df?'<span class="df" style="letter-spacing:-.12em">♭♭</span> は ダブルフラットの 楽譜での 書き方です。':''}</p>
+  h+=`<p class="note">※ 音の 高さは ふつうの ピアノと おなじです。${ds?'<span class="ds">x</span> は ダブルシャープ'+(df?'、':'の 楽譜での 書き方です。'):''}${df?'<span class="df" style="letter-spacing:-.12em">♭♭</span> は ダブルフラットの 楽譜での 書き方です。':''}</p>
   </div>`;
   PA.paint(document.getElementById('view'),h,state.keyIdx+':'+state.fam);
   // 光る けんばんが 見えるように：鳴らしている ほうの けんばんだけ うごかす（もう 一方は 手で うごかした 位置の まま）
@@ -405,7 +406,7 @@ function render(){
   if(A||state.play){const b=box('kb');if(b) PA.follow(b);}
   if(state.g){const b=document.getElementById('ger');if(b) PA.follow(b);}
   const acts=(A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="tour">🔀 4つの調</button>`)+
-    `<button class="btn" data-act="play">🔊 減七</button><button class="btn primary" data-act="resolve">➡️ 解決</button>`;
+    `<button class="btn" data-act="play">🔊 減七</button><button class="btn primary" data-act="resolve">➡️ Ⅰへ すすむ</button>`;
   if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
 }
 
@@ -432,7 +433,7 @@ async function runTour(){
   const rs=readingsOf(state.keyIdx), A={i:0,stage:0,msg:''}; state.anim=A; state.res=0; state.quiz=null;
   const upd=m=>{if(m!==undefined)A.msg=m;render();};
   const wait=async ms=>{await PA.sleep(ms);return alive();};
-  upd(`<b>${ABC[state.fam]}の家族</b>の 減七を、4つの 調の 名前で 書いて、それぞれ 解決させてみよう。<b>けんばんは ずっと おなじ</b> だよ。`);
+  upd(`<b>${ABC[state.fam]}の家族</b>の 減七を、4つの 調の 名前で 書いて、それぞれ Ⅰへ すすめてみよう。<b>けんばんは ずっと おなじ</b> だよ。`);
   PA.chord(midis(rs[0].spelling),{dur:1.6});
   if(!await wait(2000)) return;
   for(let i=0;i<rs.length;i++){
@@ -442,13 +443,13 @@ async function runTour(){
     PA.chord(midis(r.spelling),{dur:1.5});
     if(!await wait(1700)) return;
     A.stage=1;
-    if(!r.next) upd(`<b>${i+1}.</b> 導音${q(r.lt)}→${q(tonicOf(r.key))}。<b style="color:${RCOL[i]}">${kn}</b>の ${resLabel(r)} へ 解決！`);
+    if(!r.next) upd(`<b>${i+1}.</b> 導音${q(r.lt)}→${q(tonicOf(r.key))}。<b style="color:${RCOL[i]}">${kn}</b>の ${resLabel(r)} に おちついた！`);
     else upd(`<b>${i+1}.</b> 導音${q(r.lt)}→${q(tonicOf(r.key))}。※ 第9音が いちばん下の 形なので、<b style="color:${RCOL[i]}">${kn}</b>の ${I64H} → Ⅴ → Ⅰ と すすむよ。`);
     PA.chord(midis(r.resolution),{dur:r.next?1.4:1.9});
     if(!await wait(r.next?1300:2000)) return;
     if(r.next){
       A.stage=2;render();PA.chord(midis(r.next),{dur:1.4});if(!await wait(1300)) return;
-      A.stage=3;upd(`<b>${i+1}.</b> <b style="color:${RCOL[i]}">${kn}</b>の Ⅰ で 解決！`);PA.chord(midis(r.fin),{dur:1.9});if(!await wait(2000)) return;
+      A.stage=3;upd(`<b>${i+1}.</b> <b style="color:${RCOL[i]}">${kn}</b>の Ⅰ に おちついた！`);PA.chord(midis(r.fin),{dur:1.9});if(!await wait(2000)) return;
     }
   }
   A.i=rs.findIndex(r=>r.given); A.stage=0;

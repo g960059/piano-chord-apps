@@ -244,7 +244,7 @@ test('Ⅶ7：長調は 半減七、短調は 減七。Ⅴ9 の 根音省略と �
     chordIs(v,lt,k.minor?DIM7:HDIM7,w);
     assert.equal(v[0].tag,'lt',w);
     eq(r9,v,w+': 根音省略の Ⅴ9 と おなじ（音・名前・tag）');
-    eq(v.map(n=>n.role),['第3音（導音）','第7音',k.minor?'第9音（短9度）':'第9音（長9度）','第5音'],w+': Ⅴ9 から 見た 名前');
+    eq(v.map(n=>n.role),['第3音（導音）','第7音',k.minor?'第9音（ひくい ほう）':'第9音（たかい ほう）','第5音'],w+': Ⅴ9 から 見た 名前');
     eq(v.map(n=>n.tag),['lt','seventh',k.minor?'b9':'ninth',null],w);
     const vv=H.vii7(k,'vii'); checkNotes(vv,w);
     eq(vv.map(n=>n.role),['根音（導音）','第5音','第7音','第3音'],w+': Ⅶ7 から 見た 名前');

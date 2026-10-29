@@ -58,7 +58,7 @@ const AUG='#8a4fe0', LOW='#2f7ee8', LT='#d1495b', VCOL='#3b4fa8', ICOL=PA.COL.I,
 const TYPES={
   it:{name:'イタリアの6',short:'イタリア',src:'dd',from:'Ⅴ7/Ⅴ',root:false,n:3},
   fr:{name:'フランスの6',short:'フランス',src:'dd',from:'Ⅴ7/Ⅴ',root:true,n:4},
-  ger:{name:'ドイツの6',short:'ドイツ',src:'dd9',from:'Ⅴ9/Ⅴ（短9度）',root:false,n:4}
+  ger:{name:'ドイツの6',short:'ドイツ',src:'dd9',from:'Ⅴ9/Ⅴ',root:false,n:4}
 };
 const TKEYS=['it','fr','ger'];
 const C=PA.chroma;
@@ -225,7 +225,7 @@ function staffCard(key,t){
   h+=`<p class="note"><b class="lo">${PA.nmH(low)}</b> は 半音下へ、<b class="up">${PA.nmH(up)}</b> は 半音上へ。<b>外へ ひらいて</b>、Ⅴ の 根音${q(V[0])}が オクターブで ならぶよ。</p>`;
   if(t==='ger'){
     const g=a;
-    h+=`<p class="note">ドイツの6 から Ⅴ へ ちょくせつ すすむと、${q(g[0])}と${q(g[2])}の 完全5度が、そのまま${q(V[0])}と${q(V[2])}の 完全5度へ ならんで うごく（<b>平行5度</b>）。和声では さけるので、あいだに <b>${I64H}</b>（Ⅰの 第2転回形）を はさむのが ふつう。${state.gerPath==='direct'?`<span style="color:${PAR}">オレンジの 線</span>が 平行5度。「➡️ Ⅴへ」で 聴いてみよう。`:''}</p>`;
+    h+=`<p class="note">ドイツの6 から Ⅴ へ ちょくせつ すすむと、${q(g[0])}と${q(g[2])}の 5度が、そのまま${q(V[0])}と${q(V[2])}の 5度へ ならんで うごく（<b>平行5度</b>）。ひびきが うすく なるので さける きまり。あいだに <b>${I64H}</b>（Ⅰ の 第5音を いちばん下に した 形）を はさむのが ふつう。${state.gerPath==='direct'?`<span style="color:${PAR}">オレンジの 線</span>が 平行5度。「➡️ Ⅴへ」で 聴いてみよう。`:''}</p>`;
   }
   return h+`</section>`;
 }
@@ -257,10 +257,10 @@ function borrowDetails(key,t){
   const a=aug(key,t), pm=parMinor(key);
   const borrowed=a.filter(n=>n.acc!==sigAcc(key,n.letter)&&n.tag!=='lt');
   let h=`<details class="more" data-d="borrow"><summary>🌙 長調では 短調から 音を かりる</summary>
-    <p>${borrowed.map(q).join('と')}は ${PA.keyName(key)}の 音階には ない 音。<b>${pm}</b>（おなじ主音の 短調）から かりてきた 音だよ。${t==='ger'?'ドイツの6 では、第5音を 下げた 音と 第9音（短9度）の 2つを かりる。':''}</p>`;
+    <p>${borrowed.map(q).join('と')}は ${PA.keyName(key)}の 音階には ない 音。<b>${pm}</b>（おなじ主音の 短調）から かりてきた 音だよ。${t==='ger'?'ドイツの6 では、第5音を 下げた 音と 第9音の 2つを かりる。':''}</p>`;
   if(t==='ger'){
     const alt=C.gerMajorAlt(key), g=aug(key,'ger'), i64=C.gerToI64(key);
-    h+=`<p>ドイツの6 が ${I64H} へ すすむときは、${q(g[2])}を${q(alt[2])}と 書くことも あるよ。${q(alt[2])}→${q(i64[2])}と <b>上へ すすむ</b> 形が 見えるから。けんばんは おなじ。${q(alt[0])}と${q(alt[2])}の はばは「<b>二重増4度</b>」。</p>
+    h+=`<p>ドイツの6 が ${I64H} へ すすむときは、${q(g[2])}を${q(alt[2])}と 書くことも あるよ。${q(alt[2])}→${q(i64[2])}と <b>上へ すすむ</b> 形が 見えるから。けんばんは おなじ。</p>
       ${staff(key,[{notes:alt,color:AUG,label:'ドイツ'},{notes:i64,color:ICOL,label:I64S},{notes:C.aug6ToV(key,'ger'),color:VCOL,label:'Ⅴ'}],[{c1:0,n1:alt[2],c2:1,n2:i64[2],color:AUG,text:'半音↑'}],{sk:'alt',cw:100})}
       <div class="row"><button class="btn small" data-act="altplay">🔊 ${PA.nmH(alt[2])} の 形で ${I64H} → Ⅴ</button></div>`;
   }
@@ -269,27 +269,31 @@ function borrowDetails(key,t){
 function tipsHTML(key){
   return `<details class="more" data-d="tips"><summary>💡 おぼえておこう</summary><ul>
     <li><b>増六の和音</b> ＝ ドッペルドミナントの <b>第5音を 半音下げ</b>、その音を <b>いちばん下</b>に おいた 和音。</li>
-    <li><b>イタリアの6</b> ＝ Ⅴ7/Ⅴ の 根音を はぶく（3つ）。<b>フランスの6</b> ＝ Ⅴ7/Ⅴ（根音あり・4つ）。<b>ドイツの6</b> ＝ Ⅴ9/Ⅴ（短9度）の 根音を はぶく（4つ）。</li>
+    <li><b>イタリアの6</b> ＝ Ⅴ7/Ⅴ の 根音を はぶく（3つ）。<b>フランスの6</b> ＝ Ⅴ7/Ⅴ（根音あり・4つ）。<b>ドイツの6</b> ＝ Ⅴ9/Ⅴ の 根音を はぶく（4つ）。</li>
     <li>いちばん下（下げた 第5音）と いちばん上（Ⅴへの 導音）が <b>増6度</b>。<b>外へ ひらいて</b> Ⅴ の 根音の オクターブへ。</li>
     <li>ドイツの6 は、平行5度に ならないように ふつう ${I64H} を とおって Ⅴ へ。</li>
     <li>${key.minor?'短調では、下げた 第5音も 第9音も 調号の 音（音階の 音）なので、増六の和音の 中で 臨時記号が いるのは Ⅴへの 導音だけ。':'長調では、下げた 音は おなじ主音の 短調から かりた 音なので、臨時記号が つくよ。'}</li>
   </ul></details>`;
 }
-// 📖 用語メモ：画面の やさしい ことば → 和声の 用語（芸大和声）。例は いまの 調・えらんだ 和音の 音で
+// 📖 ことばメモ：本や 楽譜で 見かける 名前を、やさしい ことばで。例は いまの 調・えらんだ 和音の 音で
 function termsHTML(key,t){
   const a=aug(key,t), low=a[0], up=a[a.length-1], g=aug(key,'ger'), gv=C.aug6ToV(key,'ger'), b=bIIinfo(key);
   const span=[0,1,2,3,4,5].map(i=>PA.nm({letter:(low.letter+i)%7,acc:0})).join('・'); // 増6度を 文字で 数える
-  return `<details class="more" data-d="terms"><summary>📖 用語メモ（くわしく 知りたい人へ）</summary>
-    <p class="note" style="margin:0 0 4px">画面の ことば → 和声の 用語（芸大和声）。例は ${PA.keyName(key)}の ${TYPES[t].name}だよ。</p><ul>
-    <li>「第5音を 半音下げて いちばん下に」 → <b>増六の和音</b>＝ ドッペルドミナント（Ⅱ の 変化和音）の <b>第5音 下方変位</b>形を、下げた 音を ベースに した <b>第2転回形</b>で つかう 和音（半音 下げる＝<b>下方変位</b>、上げる＝<b>上方変位</b>）。</li>
-    <li>「イタリア・フランス・ドイツ」 → <b>イタリアの6</b>＝Ⅴ7/Ⅴ の 根音省略形、<b>フランスの6</b>＝Ⅴ7/Ⅴ（根音あり）、<b>ドイツの6</b>＝Ⅴ9/Ⅴ（短9度）の 根音省略形 から つくる。英語では It+6・Fr+6・Ger+6。国の 名前は ならわしの よび名。</li>
-    <li>「増6度」 → ${q(low)}から${q(up)}は 文字で 数えて 6つ（${span}）なので 6度。長6度より ひろいので <b>増6度</b>（けんばんでは 短7度と おなじ はば）。</li>
-    <li>「外へ ひらいて Ⅴ の オクターブへ」 → 下方変位音は 下へ、上方変位音（Ⅴ への 導音）は 上へ すすむ <b>限定進行</b>。増6度は <b>8度</b>（オクターブ）に 解決する。</li>
-    <li>「平行5度」 → 芸大和声では <b>連続5度</b>（禁則）。ドイツの6 から すぐ Ⅴ へ すすむと${q(g[0])}${q(g[2])} →${q(gv[0])}${q(gv[2])}が 連続5度。</li>
-    <li>「${I64H}（Ⅰの 第2転回形）」 → <b>四六の和音</b>（ベースの 上に 6度と 4度）。Ⅴ の 前の ${I64H} は <b>終止四六</b> と いい、<b>属機能（D）</b>として はたらく。芸大和声では 転回の 番号で Ⅰ¹（第1転回形）・Ⅰ²（第2転回形）と 書く（この画面の 6・6/4 は 数字付き低音ふうの 書き方）。</li>
-    <li>「Ⅴ へ すすむ」 → 和音の はたらき（<b>機能</b>）は <b>主機能（T）</b>・<b>下属機能（S）</b>・<b>属機能（D）</b>。増六の和音は ドッペルドミナントと おなじく T→S→D→T の S の 場所に おく。</li>
-    ${key.minor?'':`<li>「短調から 音を かりる」 → <b>準固有</b>（同主短調 ${parMinor(key)}からの 借用）。下方変位した 第5音は、${parMinor(key)}の 音でも あるよ。</li>`}
-    <li>${t==='ger'?`「けんばんでは ${b.domName} と おなじ音」`:`ドイツの6 と ${b.domName}`} → <b>異名同音</b>の 読みかえ。ドイツの6 は ♭Ⅱ（${b.bII}＝<b>ナポリの和音</b>：Ⅱ の 根音 下方変位${key.minor?'':'。長調では 準固有 ○Ⅱ の 根音 下方変位'}）の Ⅴ7 と おなじ けんばんで、<b>転調</b>にも つかわれる。</li>
+  // けんばんで おなじ はばの 7度（上の 音を 書きかえる。♯♯・♭♭に なるときは 下の 音を 書きかえる）
+  const pcN=n=>PA.mod(PA.NAT[n.letter]+n.acc,12);
+  let s7=[low,{letter:(low.letter+6)%7,acc:PA.spell((low.letter+6)%7,pcN(up))}];
+  if(Math.abs(s7[1].acc)>1){const L=(up.letter+1)%7;s7=[{letter:L,acc:PA.spell(L,pcN(low))},up];}
+  const w7=Math.abs(s7[0].acc)>1||Math.abs(s7[1].acc)>1?'7度':`${q(s7[0])}から${q(s7[1])}（7度）`;
+  return `<details class="more" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary>
+    <p class="note" style="margin:0 0 4px">例は ${PA.keyName(key)}の ${TYPES[t].name}だよ。</p><ul>
+    <li><b>増六の和音</b> … いちばん下と いちばん上の はばが 増6度に なる 和音。ドッペルドミナントの 第5音を 半音下げて、いちばん下に おいた 形。いまは ${namesC(a,'・')}。</li>
+    <li><b>イタリアの6</b>・<b>フランスの6</b>・<b>ドイツの6</b> … 増六の和音の 3つの 形。英語の 本では It+6・Fr+6・Ger+6 と 書くよ。国の 名前は、むかしからの よび名で、とくに いみは ないよ。</li>
+    <li><b>増6度</b> … ${q(low)}から${q(up)}は 文字で 数えて 6つ（${span}）なので 6度。でも ふつうの 6度より ひろいので「増」6度。けんばんでは ${w7}と おなじ はばだよ。</li>
+    <li><b>平行5度</b>（連続5度） … 2つの 声が 5度（${q({letter:0,acc:0})}と${q({letter:4,acc:0})}のような はば）の まま いっしょに うごく こと。ひびきが うすく なるので さける。ドイツの6 から すぐ Ⅴ へ すすむと${q(g[0])}${q(g[2])} →${q(gv[0])}${q(gv[2])}が 平行5度に なるよ。</li>
+    <li><b>${I64H}</b>（四六の和音・終止四六） … Ⅰ の 第5音を いちばん下に した 形。Ⅴ の 前に おくと、Ⅴ の なかまとして はたらくよ。Ⅰ² と 書く 本も あるよ。</li>
+    ${key.minor?'':`<li><b>準固有</b> … おなじ主音の 短調（${parMinor(key)}）から 音を かりる こと。下げた 第5音${t==='ger'?'と 第9音':''}は、${parMinor(key)}の 音だよ。</li>`}
+    <li><b>異名同音</b> … 名前（書きかた）は ちがうけど、けんばんでは おなじ 音。ドイツの6 は ${b.domName}（${b.bII} の ための Ⅴ7）と おなじ けんばんなので、この 読みかえで ちがう 調へ うつる ことも あるよ。</li>
+    <li><b>ナポリの和音</b>（♭Ⅱ） … Ⅱ の 根音を 半音下げた 長三和音。${PA.keyName(key)}では ${b.bII}。</li>
   </ul></details>`;
 }
 function linksCard(){
@@ -318,7 +322,7 @@ function render(){
     else{
       const sub=new Map(); s.notes.forEach(n=>{if(s.id==='V'&&PA.mod(n.midi-s.notes[0].midi,12)===0) sub.set(n,'根音');});
       mk=marksOf(s.notes,{color:s.color,subs:sub});
-      cap=s.id==='V'?'Ⅴ（根音が オクターブで ならぶ）':`Ⅰの 第2転回形（${I64H}）`;
+      cap=s.id==='V'?'Ⅴ（根音が オクターブで ならぶ）':`${I64H}（Ⅰ の 第5音が いちばん下）`;
     }
   }
   h+=`<section class="card"><h2>🎹 けんばん<small>${cap}　さわると 音が出るよ</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(lo,hi,mk)}</div></section>`;
@@ -329,7 +333,7 @@ function render(){
   h+=tipsHTML(key);
   h+=termsHTML(key,t);
   h+=linksCard();
-  h+=`<p class="note">※ 音の 高さは 平均律です。<span class="ds">x</span> は ダブルシャープの 楽譜での 書き方です。</p></div>`;
+  h+=`<p class="note">※ 音の 高さは ふつうの ピアノと おなじです。<span class="ds">x</span> は ダブルシャープの 楽譜での 書き方です。</p></div>`;
   PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx+':'+t);
   if(state.anim) PA.follow(document.getElementById('view')); // つくりかたで 音の高さが かわっても 鍵が 見えるように
   const acts=(A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
@@ -349,7 +353,7 @@ async function runBuild(){
   const upd=m=>{if(m!==undefined)A.msg=m;render();};
   const wait=async ms=>{await PA.sleep(ms);return alive();};
   // ① ドッペルドミナント（ドイツは Ⅴ9/Ⅴ）を 1つずつ つみかさねる
-  const head=t==='ger'?`<b>①</b> まず ${PA.keyName(key)}の <b>Ⅴ9/Ⅴ</b>（ドッペルドミナントに 短9度を のせた 和音）を つくるよ。`
+  const head=t==='ger'?`<b>①</b> まず ${PA.keyName(key)}の <b>Ⅴ9/Ⅴ</b>（ドッペルドミナントに 第9音を のせた 和音）を つくるよ。`
     :`<b>①</b> まず ${PA.keyName(key)}の <b>ドッペルドミナント</b>（Ⅴ7/Ⅴ）を つくるよ。Ⅴ${q(V)}の ための Ⅴ7 だね。`;
   A.staffCap=t==='ger'?'Ⅴ9/Ⅴ':'ドッペルドミナント（Ⅴ7/Ⅴ）'; A.kbCap=A.staffCap;
   upd(head); if(!await wait(1300)) return;
@@ -359,7 +363,7 @@ async function runBuild(){
     `第3音${q(t3)}。Ⅱ7 の${q(ii3)}を 半音上げた 音で、Ⅴ${q(V)}への <b class="up">導音</b>`,
     `第5音${q(t5)}${key.minor?'（短調では これも 半音上げる）':''}`,
     `第7音${q(t7)}`,
-    `第9音${q(t9||t7)}（短9度）${key.minor?'':`。${parMinor(key)}から かりた 音`}`
+    `第9音${q(t9||t7)}${key.minor?'':`。${parMinor(key)}から かりた 音`}`
   ];
   for(let i=0;i<stack.length;i++){
     A.cols=[{notes:stack.slice(0,i+1)}]; A.arrows=[];
@@ -465,7 +469,7 @@ document.addEventListener('click',e=>{
     const my=token; setTimeout(()=>{if(my===token&&state.cmp===v){state.cmp=null;render();}},2300);
   }
   else if(a==='biidom'){const b=bIIinfo(key);playSeq([{notes:b.dom,color:VCOL,cap:`${b.domName}（♭Ⅱ の ための Ⅴ7）`},{notes:b.res,color:VCOL,cap:`${b.bII}（♭Ⅱ）`}]);}
-  else if(a==='biiger'){playSeq([{notes:aug(key,'ger'),color:AUG,cap:'ドイツの6'},{notes:C.gerToI64(key),color:ICOL,cap:`${I64H}（Ⅰの 第2転回形）`},{notes:C.aug6ToV(key,'ger'),color:VCOL,cap:'Ⅴ'}]);}
+  else if(a==='biiger'){playSeq([{notes:aug(key,'ger'),color:AUG,cap:'ドイツの6'},{notes:C.gerToI64(key),color:ICOL,cap:`${I64H}（Ⅰ の 第5音が いちばん下）`},{notes:C.aug6ToV(key,'ger'),color:VCOL,cap:'Ⅴ'}]);}
   else if(a==='altplay'){
     const alt=C.gerMajorAlt(key); if(!alt) return;
     stop(); render(); const my=token; // つくりかたの とちゅうでも 画面を もどしてから 鳴らす

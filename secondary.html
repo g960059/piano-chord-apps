@@ -397,12 +397,12 @@ function heroMsg(key,I){
   const st=stackOrder(I.X), lt=I.X.find(n=>n.tag==='lt'), others=st.filter(n=>n!==lt&&chg(key,n));
   const what=I.k==='V7'?'Ⅴ7':`Ⅶ7（${KNAME[I.k]}）`;
   let m=`<b>${I.lab}</b> は「${shortLab(I.tl)} の ${I.k==='V7'?'Ⅴ7':'Ⅶ7'}」と 読むよ。<br>`;
-  m+=`<b>その和音を いっときの 主和音（Ⅰ）と 考えて、その調${I.vb?'の 同主短調':''}の ${what} を 前に おく。</b><br>`;
+  m+=`<b>その和音を いっときの Ⅰ と 考えて、その調${I.vb?'と おなじ主音の 短調':''}の ${what} を 前に おく。</b><br>`;
   m+=`${I.tl}「${namesW(I.T.slice(1))}」を Ⅰ と 考えると <b class="tg">${I.tkName}</b>。`;
-  if(I.vb) m+=`${I.tkName}の Ⅶ7 は 半減七なので、同主短調（<b>${I.pm}</b>）の ${what} を つかう。それが <b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝ ${I.lab}。`;
+  if(I.vb) m+=`${I.tkName}の Ⅶ7 は 半減七なので、おなじ主音の 短調（<b>${I.pm}</b>）の ${what} を つかう。それが <b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝ ${I.lab}。`;
   else m+=`${srcWhat(I)} が <b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝ ${I.lab}。`;
   if(I.k!=='V7'){
-    m+=`<br>${KNAME[I.k]}の Ⅶ7 は、${I.src}の Ⅴ9（${I.k==='vii7'?'短9度':'長9度'}）から 根音を はぶいた 形（Ⅴの家族）だよ。`;
+    m+=`<br>${KNAME[I.k]}の Ⅶ7 は、${I.src}の Ⅴ9 から 根音を はぶいた 形（Ⅴの家族）だよ。`;
     const n9=I.X.find(n=>n.tag==='b9');
     if(n9&&I.vb&&!I.jun) m+=`<br>第9音${qC(key,n9)}は ${I.pm}から かりた 音だけど、${PA.keyName(key)}の 音でも あるので、${H.JUN} は つかないよ。`;
   }
@@ -410,7 +410,7 @@ function heroMsg(key,I){
   others.forEach(n=>{m+=`<br>${qC(key,n)}は 調の${q(dia(key,n))}を 半音${chg(key,n)>0?'上げた':'下げた'} 音。`;});
   if(I.jun){
     const n9=I.X.find(n=>n.tag==='b9'), pm=PA.keyName({...I.tk,minor:true});
-    m+=`<br>${H.JUN} は「${I.tkName}の 同主調（${pm}）から かりた」しるし。${n9?`第9音${qC(key,n9)}が かりた 音だよ。`:''}`;
+    m+=`<br>${H.JUN} は「${I.tkName}と おなじ主音の 短調（${pm}）から かりた」しるし。${n9?`第9音${qC(key,n9)}が かりた 音だよ。`:''}`;
   }
   return m;
 }
@@ -425,7 +425,7 @@ function rolesHTML(key,I){
 }
 function kindNote(key,I){
   if(H.secondary(key,I.t,'vii7h')) return '';
-  return `<p class="note" style="margin:0">${I.tl} には 半減七は つかわないよ（${I.tmin?'目標が 短三和音':'長9度が 調に ない 音'}だから）。</p>`;
+  return `<p class="note" style="margin:0">${I.tl} には 半減七は つかわないよ（${I.tmin?'目標が 短三和音':'半減七の 第9音が この 調に ない 音'}だから）。</p>`;
 }
 function staticMsgDone(key,I){
   const lt=I.X.find(n=>n.tag==='lt'), i=I.X.indexOf(lt);
@@ -461,7 +461,7 @@ function staffCard(key,I){
 }
 function doppelCard(key,I){
   if(I.t!==5) return '';
-  const what=I.k==='V7'?`${I.lab} は <b>ドッペルドミナント</b> と おなじ 和音！`:`${I.lab} は ドッペルドミナントの 家族（Ⅴ9/Ⅴ の 根音を はぶいた ${I.k==='vii7'?'減七の ':''}形）だよ。${I.k==='vii7'&&!key.minor?`第9音は 同主短調から かりた 音なので、${H.JUN} が つくよ。`:''}`;
+  const what=I.k==='V7'?`${I.lab} は <b>ドッペルドミナント</b> と おなじ 和音！`:`${I.lab} は ドッペルドミナントの 家族（Ⅴ9/Ⅴ の 根音を はぶいた ${I.k==='vii7'?'減七の ':''}形）だよ。${I.k==='vii7'&&!key.minor?`第9音は おなじ主音の 短調から かりた 音なので、${H.JUN} が つくよ。`:''}`;
   return `<a class="dpl" href="doppel.html" data-go="doppel"><span aria-hidden="true">🔺</span><span>${what}<br><small>「Ⅴ の ための Ⅴ7」。Ⅱ7 と くらべて 見てみよう ›</small></span></a>`;
 }
 function progCard(key,I,prog){
@@ -479,7 +479,7 @@ function progCard(key,I,prog){
   if(state.mode==='chain'){ // Ⅴ7/Ⅴ → Ⅴ7：導音が 半音下がって Ⅴ7 の 第7音に
     const j=prog.findIndex((s,i)=>s.sec&&i>0&&prog.slice(0,i).some(x=>x.sec)), li=j>=0?prog[j].ns.findIndex(n=>n.tag==='lt'):-1;
     const a=li>=0?prog[j].ns[li]:null, b=a&&prog[j+1]?prog[j+1].ns[li]:null;
-    if(a&&b&&b.letter===a.letter&&b.acc===a.acc-1) dn=`<br>${PA.H(prog[j].lab)} の 導音${qC(key,a)}は、つぎが Ⅴ7 なので おなじ 声で 半音下がって Ⅴ7 の 第7音${q(b)}に なるよ（べつの 声で${q(b)}を 出すと 対斜に なるから）。`;
+    if(a&&b&&b.letter===a.letter&&b.acc===a.acc-1) dn=`<br>${PA.H(prog[j].lab)} の 導音${qC(key,a)}は、つぎが Ⅴ7 なので おなじ 声で 半音下がって Ⅴ7 の 第7音${q(b)}に なるよ（べつの 声で${q(b)}を 出すと、${q(a)}と${q(b)}が ちがう 声で ぶつかって にごるから）。`;
   }
   h+=`<p class="note">${state.mode==='chain'?`${H.label(key,'secondary',chainT[0],'V7')} は ${H.label(key,'target',chainT[0])} を、${H.label(key,'secondary',chainT[1],'V7')}（ドッペルドミナント）は Ⅴ7 を よぶ。目標が つぎつぎに かわるよ。`:`${I.lab} → ${I.tl} の あと、Ⅴ7 → Ⅰ で おわるよ。`} ソプラノ（いちばん上）は ${namesC(key,sop,' → ')}。${dn}</p></section>`;
   return h;
@@ -521,25 +521,25 @@ function tipsHTML(key){
     <li>和音記号は「Ⅴ7/Ⅱ」（Ⅱ の Ⅴ7）のように、<b>／の 右に 目標</b>を 書くよ。</li>
     <li>目標に なれるのは <b>長三和音か 短三和音</b>だけ。減三和音（${key.minor?'短調の Ⅱ':'長調の Ⅶ'}）は いっときの Ⅰ に ならないよ。</li>
     <li>いちばん だいじな 音は 目標の <b>導音</b>（目標の 根音の 半音下）。目標へは 半音上へ すすむよ（Ⅴ7/Ⅴ → Ⅴ7 のときだけは、おなじ 声で 半音下がって Ⅴ7 の 第7音に なる）。</li>
-    ${key.minor?'<li>短調の Ⅲ・Ⅶ は 自然的短音階の 長三和音。「Ⅲ（自然）」「Ⅶ（自然）」と 書いて、和声的短音階の Ⅲ・Ⅶ と 区別するよ。</li>':''}
-    <li>${H.JUN} の しるしは「同主調から かりた（準固有）」の いみ。Ⅶ7（減七）で、第9音が 調に ない 音の ときに つくよ。</li>
+    ${key.minor?'<li>短調の Ⅲ・Ⅶ は、導音を 上げない 調号の 音だけで つくった 長三和音。「Ⅲ（自然）」「Ⅶ（自然）」と 書いて、導音を 上げた ときの Ⅲ・Ⅶ と 区別するよ。</li>':''}
+    <li>${H.JUN} の しるしは「おなじ主音の 短調から 音を かりた」いみ。いっときの 調が <b>長調</b>で、Ⅶ7（減七）に するために 第9音を その 短調から かりて、しかも その 音が もとの ${PA.keyName(key)}にも ない ときだけ つくよ。</li>
     <li>ダブルシャープは 楽譜と おなじ「<span class="ds">x</span>」、ダブルフラットは「${PA.H('𝄫')}」で あらわしているよ。</li>
     <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべるよ。</li>
   </ul></details>`;
 }
-// 📖 用語メモ：画面の やさしい ことば → 和声の 用語（芸大和声）。例は いまの 調・えらんだ 副属和音で
+// 📖 ことばメモ：本や 楽譜で 見かける 名前を、やさしい ことばで。例は いまの 調・えらんだ 副属和音で
 function termsHTML(key,I){
   const lt=I.X.find(n=>n.tag==='lt');
-  return `<details class="more" data-d="terms"><summary>📖 用語メモ（くわしく 知りたい人へ）</summary>
-    <p class="note" style="margin:0 0 4px">画面の ことば → 和声の 用語（芸大和声）。例は ${PA.keyName(key)}の ${I.lab}（${I.sym}）だよ。</p><ul>
-    <li>「副属和音」 → <b>副属和音</b>（セカンダリー・ドミナント）＝ Ⅰ 以外の 和音を <b>主和音と みなした ときの 属和音</b>。<b>副属七の和音</b>（Ⅴ7/x）と、副属九の和音の 根音省略形（Ⅶ7/x）が ある。いまは ${I.lab} ＝ ${srcWhat(I)}。</li>
-    <li>「いっときの Ⅰ」 → <b>一時的 転調</b>（<b>トニカイゼーション</b>＝主和音化）。${I.lab} → ${I.tl} の あいだだけ ${I.tkName}に うつった と 考える。新しい 調に おちついたら ふつうの <b>転調</b>。</li>
-    <li>「導音」「半音上げた・下げた 音」 → ${qC(key,lt)}は ${I.tkName}の <b>導音</b>。調に ない 音は 臨時記号で 半音 かえた <b>変位音</b>（上げる＝<b>上方変位</b>、下げる＝<b>下方変位</b>）。導音は 上へ、第7音・第9音は 下へ すすむ <b>限定進行音</b>。</li>
-    <li>「減七」「半減七」 → <b>減七の和音</b>（減三和音＋減7度）と <b>減五短七の和音</b>（半減七の和音：減三和音＋短7度）。どちらも <b>Ⅴ9 の 根音省略形</b>（短9度 → 減七、長9度 → 半減七）なので、名前は Ⅴ9 から 見て、導音が 第3音。</li>
-    <li>「○」 → <b>準固有</b>（同主調からの 借用）。${I.jun?`いまの ${I.lab} は ${I.tkName}の 同主調 ${I.pm}から かりた 和音。`:`いっときの 調が 長調で、Ⅶ7（減七）の 第9音（短9度）を その 同主短調から かりて、その 音が もとの 調にも ない ときに つく（いっときの 調が 短調なら、第9音は もともと その 調の 音なので つかない）。${I.k==='vii7'&&I.tmin?`いまの 第9音は ${I.tkName}の 音。`:''}`}</li>
-    ${key.minor?'<li>「Ⅲ（自然）」「Ⅶ（自然）」 → <b>自然的短音階</b>の 和音（長三和音）。<b>和声的短音階</b>では Ⅲ は 増三和音、Ⅶ は 減三和音。</li>':''}
-    <li>「目標」「Ⅰ6」 → 和音の はたらき（<b>機能</b>）は <b>主機能（T）</b>・<b>下属機能（S）</b>・<b>属機能（D）</b>。副属和音は 目標に たいして D の はたらき。和音記号の 6 は <b>第1転回形</b>（<b>六の和音</b>）、6/4 は <b>第2転回形</b>（<b>四六の和音</b>）。芸大和声では 転回の 番号で Ⅰ¹（第1転回形）・Ⅰ²（第2転回形）と 書く（この画面の 6・6/4 は 数字付き低音ふうの 書き方）。</li>
-    <li>「対斜」 → <b>対斜</b>：おなじ 文字の 音が 変化記号を かえて つづく とき、ちがう 声部に わかれる こと（禁則）。おなじ 声部で 半音 うごかせば さけられる。</li>
+  const F=PA.nmH({letter:3,acc:0}), Fs=PA.nmH({letter:3,acc:1}); // 対斜の 例（ファ と ファ♯）
+  return `<details class="more" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary>
+    <p class="note" style="margin:0 0 4px">例は ${PA.keyName(key)}の ${I.lab}（${I.sym}）だよ。</p><ul>
+    <li><b>副属和音</b>（セカンダリー・ドミナント） … Ⅰ 以外の 和音を「いっときの Ⅰ」と 考えて、その 前に おく Ⅴ7（または Ⅶ7）。いまは ${I.lab} ＝ ${srcWhat(I)}。</li>
+    <li><b>導音</b> … すぐ上の 音へ 半音で のぼりたがる 音。${qC(key,lt)}は ${I.tkName}の 導音で、${I.tl} の 根音へ のぼるよ。</li>
+    <li><b>減七</b>・<b>半減七</b> … どちらも 導音から ひとつとばしで 4つ かさねた Ⅶ7。Ⅴ9 から 根音を はぶいた 形。第9音が 半音 ひくい ほう（短調の 形）なら 減七、たかい ほう（長調の 形）なら 半減七。</li>
+    <li><b>○</b>（準固有） … おなじ主音の 短調から 音を かりた しるし。${I.jun?`いまの ${I.lab} は、第9音を ${I.pm}から かりているよ。`:`いっときの 調が 長調で、第9音を おなじ主音の 短調から かりて、その 音が もとの 調にも ない ときだけ つくよ。${I.k==='vii7'&&I.tmin?`いまは いっときの 調が 短調なので、第9音は もともと ${I.tkName}の 音。`:I.vb?`いまの 第9音は ${PA.keyName(key)}の 音でも あるので つかないよ。`:''}`}</li>
+    ${key.minor?'<li><b>Ⅲ（自然）</b>・<b>Ⅶ（自然）</b> … 導音を 上げない、調号の 音だけの 音階（<b>自然的短音階</b>）で つくった 長三和音。導音を 半音上げた 音階（<b>和声的短音階</b>）だと、Ⅲ も Ⅶ も ちがう ひびきの 和音に なるよ。</li>':''}
+    <li><b>Ⅰ6</b> … Ⅰ の 第3音を いちばん下に した 形（第1転回形）。Ⅰ¹ と 書く 本も あるよ。</li>
+    <li><b>対斜</b> … おなじ 文字の 音（たとえば「${F}」と「${Fs}」）が、ちがう 声で つづけて 出て ぶつかる こと。にごって 聞こえるので さける。おなじ 声で 半音 うごかせば だいじょうぶ。</li>
   </ul></details>`;
 }
 function linksCard(){
@@ -563,7 +563,7 @@ function render(){
       <p class="sellab">🎯 目標の 和音（どの 和音を よぶ？）</p>
       ${PA.seg('target',H.targets(key).map(t=>[t,`${ROMAN[t-1]}<small>${H.symbol(key,'target',t)}</small>`]),state.target,'full tseg')}
       <p class="sellab" style="margin-top:4px">🧩 前に おく 和音の 形</p>
-      <div class="seg full kseg" role="group">${KINDS.map(k=>{const ok=!!H.secondary(key,I.t,k);return `<button class="${I.k===k?'on':''}" data-act="kind" data-v="${k}" aria-pressed="${I.k===k}" ${ok?'':'disabled'}>${KNAME[k]}<small>${k==='V7'?'Ⅴ の 七の和音':k==='vii7'?'Ⅶ7（短9度）':'Ⅶ7（長9度）'}</small></button>`;}).join('')}</div>
+      <div class="seg full kseg" role="group">${KINDS.map(k=>{const ok=!!H.secondary(key,I.t,k);return `<button class="${I.k===k?'on':''}" data-act="kind" data-v="${k}" aria-pressed="${I.k===k}" ${ok?'':'disabled'}>${KNAME[k]}<small>${k==='V7'?'Ⅴ の 七の和音':k==='vii7'?'Ⅶ7・くらい ひびき':'Ⅶ7・やわらかい ひびき'}</small></button>`;}).join('')}</div>
       ${kindNote(key,I)}
     </section>
     ${heroCard(key,I)}`;
@@ -581,7 +581,7 @@ function render(){
   h+=tipsHTML(key);
   h+=termsHTML(key,I);
   h+=linksCard();
-  h+=`<p class="note">※ 音の 高さは 平均律です。</p></div>`;
+  h+=`<p class="note">※ 音の 高さは ふつうの ピアノと おなじです。</p></div>`;
   PA.paint(document.getElementById('view'),h,['secondary',state.minor,state.keyIdx,state.target,I.k,state.mode].join(':'));
   if(state.anim||state.prog) PA.follow(document.getElementById('view')); // 鳴っている 和音の 鍵が 見えるように
   renderActions(I);
@@ -642,7 +642,7 @@ async function runBuild(){
   PA.chord(midisOf(I.T),{dur:1.8}); if(!await wait(2100)) return;
   // ② その調の Ⅴ7（Ⅶ7）を ひとつずつ
   const head=I.k==='V7'?`<b>②</b> ${I.tkName}の <b>Ⅴ7</b> を つくるよ。根音は ${I.tl} の 根音${q(I.T[0])}から 5度上の${q(I.X[0])}。`
-    :`<b>②</b> ${I.vb?`${I.tkName}の 同主短調（${I.pm}）`:I.src}の <b>Ⅶ7（${KNAME[I.k]}）</b> を つくるよ。導音${qC(key,lt)}（${I.tl} の 根音${q(I.T[0])}の 半音下）から ひとつとばしで 4つ。<br><small>名前は Ⅴ9 から 見た よびかた：根音を はぶいたので、いちばん下の 導音が 第3音</small>`;
+    :`<b>②</b> ${I.vb?`${I.tkName}と おなじ主音の 短調（${I.pm}）`:I.src}の <b>Ⅶ7（${KNAME[I.k]}）</b> を つくるよ。導音${qC(key,lt)}（${I.tl} の 根音${q(I.T[0])}の 半音下）から ひとつとばしで 4つ。<br><small>名前は Ⅴ9 から 見た よびかた：根音を はぶいたので、いちばん下の 導音が 第3音</small>`;
   A.staffCap=srcWhat(I);
   for(let i=0;i<4;i++){
     const shown=new Set(st.slice(0,i+1)), part=I.X.filter(n=>shown.has(n)), n=st[i], c=chg(key,n);

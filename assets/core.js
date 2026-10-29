@@ -357,7 +357,7 @@ PA.openSettings=()=>{
     <div class="setrow"><label for="pa-naming">音の名前</label><select id="pa-naming"><option value="solfa">ドレミ</option><option value="en">CDE</option><option value="ja">ハニホ</option></select></div>
     <div class="setrow"><label for="pa-pitch">基準の音（ラ）</label><select id="pa-pitch"><option value="440">440Hz</option><option value="441">441Hz</option><option value="442">442Hz</option><option value="443">443Hz</option></select></div>
     <div class="setrow"><label for="pa-sound">音を 鳴らす</label><select id="pa-sound"><option value="1">🔊 鳴らす</option><option value="0">🔇 鳴らさない</option></select></div>
-    <p class="note">音は平均律で、ラ（A4）を えらんだ周波数にして 鳴らします（440Hzのとき まんなかのド＝約261.6Hz）。教室のピアノが442Hzなら 442Hzに。<br>iPhone・iPad で音が出ないときは、消音（マナーモード）を解除してください。</p>`;
+    <p class="note">音の 高さは ふつうの ピアノと おなじです。ラ（A4）の 高さを 440〜443Hz から えらべます。教室の ピアノが 442Hz なら 442Hz に。<br>iPhone・iPad で音が出ないときは、消音（マナーモード）を解除してください。</p>`;
   const el=sheet(h);
   el.querySelector('#pa-naming').value=S.naming; el.querySelector('#pa-pitch').value=String(S.pitchA); el.querySelector('#pa-sound').value=S.sound?'1':'0';
   el.onclick=e=>{if(e.target===el||e.target.closest('[data-sheet="close"]')) el.close();};
@@ -528,7 +528,7 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
   C.ddStack=(key,kind='dd',major9=false)=>{
     const b=key.tonicMidi-12;
     const r=tone(key,1,2,b,'根音'), t3=tone(key,3,6,b,'第3音（Ⅴへの導音）','lt'), t5=tone(key,5,9,b,'第5音',key.minor?'raised':null), t7=tone(key,7,12,b,'第7音');
-    const t9=major9&&!key.minor?tone(key,9,16,b,'第9音'):tone(key,9,15,b,'第9音（短9度）','b9');
+    const t9=major9&&!key.minor?tone(key,9,16,b,'第9音'):tone(key,9,15,b,'第9音（ひくい ほう）','b9');
     if(kind==='dd') return [r,t3,t5,t7];
     if(kind==='dd9') return [r,t3,t5,t7,t9];
     if(kind==='ddim') return [t3,t5,t7,t9];
@@ -541,7 +541,7 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
     const low=tone(key,5,8,b,'下げた第5音（いちばん下）','low'), c=tone(key,7,12,b,'第7音'), up=tone(key,3,18,b,'第3音（Ⅴへの導音）','lt');
     if(type==='it') return [low,c,up];
     if(type==='fr') return [low,c,tone(key,1,14,b,'根音'),up];
-    if(type==='ger') return [low,c,tone(key,9,15,b,'第9音（短9度）','b9'),up];
+    if(type==='ger') return [low,c,tone(key,9,15,b,'第9音（ひくい ほう）','b9'),up];
     return [];
   };
   // 増六 → Ⅴ（下の音は 半音下、上の音は 半音上：外へ ひらいて オクターブ）。aug6 と おなじ ならびで かえす
@@ -560,7 +560,7 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
   C.gerMajorAlt=key=>{
     if(key.minor) return null;
     const b=augBase(key), n=C.aug6(key,'ger');
-    n[2]=tone(key,1,15,b,'二重増4度で 書いた音','b9');
+    n[2]=tone(key,1,15,b,'♯で 書きかえた 第9音','b9');
     return n;
   };
   // コードネーム（めやす）
@@ -710,7 +710,7 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
             :[V(5,9,'根音'),V(0,0,'第3音'),V(2,4,'第5音'),V(0,0,'第3音')],
     V9_b9:b=>[V(4,7,'根音'),V(6,11,'第3音（導音）','lt'),V(3,5,'第7音','seventh'),b?V(5,8,'第9音（下げた 第6音）','borrowed'):V(5,9,'第9音','ninth')],
     // Ⅶ7＝Ⅴ9 の 根音省略（名前・tag は Ⅴ9 から 見た もの。H.vii7 と おなじ）
-    vii_dim7:b=>[V(6,11,'第3音（導音）','lt'),V(3,5,'第7音','seventh'),b?V(5,8,'第9音（下げた 第6音）','borrowed'):V(5,9,'第9音（長9度）','ninth'),V(1,2,'第5音')]
+    vii_dim7:b=>[V(6,11,'第3音（導音）','lt'),V(3,5,'第7音','seventh'),b?V(5,8,'第9音（下げた 第6音）','borrowed'):V(5,9,'第9音（たかい ほう）','ninth'),V(1,2,'第5音')]
   };
   const NEXT={
     iv:()=>[V(0,0,'Ⅰの根音',null,'leap'),V(0,0,'Ⅰの根音',null,'near'),V(2,4,'Ⅰの第3音',null,'down'),V(4,7,'Ⅰの第5音',null,'down')],
@@ -757,7 +757,7 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
       res:[V(TL,rs,'目標の根音',null,'leap'),V(TL,rs,'目標の根音',null,'down'),V(TL+2,rs+T.q3,'目標の第3音',null,'down'),V(TL,rs,'目標の根音',null,'up')]
     };
     if(kind==='vii7'||(kind==='vii7h'&&!T.minor&&T.maj9InKey)){
-      const n9=kind==='vii7'?V(TL+5,rs+8,'第9音（短9度）','b9'):V(TL+5,rs+9,'第9音（長9度）','ninth');
+      const n9=kind==='vii7'?V(TL+5,rs+8,'第9音（ひくい ほう）','b9'):V(TL+5,rs+9,'第9音（たかい ほう）','ninth');
       return {
         ch:[V(TL+6,rs+11,'第3音（導音）','lt'),V(TL+3,rs+5,'第7音','seventh'),n9,V(TL+1,rs+2,'第5音')],
         res:[V(TL,rs,'目標の根音',null,'up'),V(TL+2,rs+T.q3,'目標の第3音',null,'down'),V(TL+4,rs+T.q5,'目標の第5音',null,'down'),V(TL,rs,'目標の根音',null,'down')]
@@ -797,16 +797,16 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
   const sixOf=key=>semi(key,5); // 長調 ♮6、短調 ♭6
   // 調の Ⅶ7（＝根音省略の Ⅴ9）・半減七・減七を いっしょに つくって、おなじ 高さに そろえる
   const vfam=key=>fam(key,[
-    [viiSpec(key,sixOf(key),key.minor?'第9音（短9度）':'第9音（長9度）',key.minor?'b9':'ninth'),IRES(key)],
-    [viiSpec(key,9,key.minor?'第9音（上げた 第6音）':'第9音（長9度）',key.minor?'raised':'ninth'),IRES(key)],
-    [viiSpec(key,8,key.minor?'第9音（短9度）':'第9音（下げた 第6音）',key.minor?'b9':'borrowed'),IRES(key)]
+    [viiSpec(key,sixOf(key),key.minor?'第9音（ひくい ほう）':'第9音（たかい ほう）',key.minor?'b9':'ninth'),IRES(key)],
+    [viiSpec(key,9,key.minor?'第9音（上げた 第6音）':'第9音（たかい ほう）',key.minor?'raised':'ninth'),IRES(key)],
+    [viiSpec(key,8,key.minor?'第9音（ひくい ほう）':'第9音（下げた 第6音）',key.minor?'b9':'borrowed'),IRES(key)]
   ]);
   H.vii7=(key,view)=>{const v=vfam(key)[0][0];return view==='vii'?v.map((n,i)=>({...n,role:VII_VIEW[i]})):v;};
   H.vii7ToI=key=>vfam(key)[0][1];
   // 根音省略の Ⅴ9（H.vii7 と おなじ 音・おなじ 名前。名前を わけて 見せたいときは H.vii7(key,'vii')）
   H.rootless9=key=>vfam(key)[0][0];
   // Ⅴ9（根音あり・第5音を はぶく）：[5 | 7, 4, 9]（9 は 長調 ♮6、短調 ♭6）
-  const v9Spec=key=>[V(4,7,'根音'),V(6,11,'第3音（導音）','lt'),V(3,5,'第7音','seventh'),V(5,sixOf(key),key.minor?'第9音（短9度）':'第9音（長9度）',key.minor?'b9':'ninth')];
+  const v9Spec=key=>[V(4,7,'根音'),V(6,11,'第3音（導音）','lt'),V(3,5,'第7音','seventh'),V(5,sixOf(key),key.minor?'第9音（ひくい ほう）':'第9音（たかい ほう）',key.minor?'b9':'ninth')];
   const v9fam=key=>prog(key,[v9Spec(key),[V(0,0,'Ⅰの根音',null,'leap'),V(0,0,'Ⅰの根音',null,'up'),V(2,semi(key,2),'Ⅰの第3音',null,'down'),V(4,7,'Ⅰの第5音',null,'down')]]);
   H.v9=key=>v9fam(key)[0];
   H.v9ToI=key=>v9fam(key)[1];
@@ -845,7 +845,7 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
    *   ninthInBass：ベースが 第9音（♭6）＝Ⅴ9 の 第4転回形に あたる 形（芸大では ふつう つかわない）。解決は Ⅰ6/4 に なるので、
    *   next に そのあとの Ⅴ（おなじ ならび）を 入れる（それ以外は next＝null）。ふつうの Ⅶ7→Ⅰ として 見せない こと。
    *   密集（短3度で となりあう 声が ある）の ときは、その 2つの 声が 同度に なる ことが ある（ほかに よい すすみかたが ない） */
-  const DIM_REL={11:[6,'第3音（導音）','lt'],2:[1,'第5音',null],5:[3,'第7音','seventh'],8:[5,'第9音（短9度）','b9']};
+  const DIM_REL={11:[6,'第3音（導音）','lt'],2:[1,'第5音',null],5:[3,'第7音','seventh'],8:[5,'第9音（ひくい ほう）','b9']};
   H.dimReadings=input=>{
     let pcs, midis=null, givenKey=null, givenSp=null;
     if(input&&typeof input==='object'&&!Array.isArray(input)&&input.tpc!=null&&input.l!=null){

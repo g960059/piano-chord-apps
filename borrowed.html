@@ -73,8 +73,7 @@
 .more ul{margin:0;padding-left:1.3em}
 .more li{margin:6px 0}
 @media (prefers-reduced-motion:reduce){.sw .knob,.sw .knob::after{transition:none}}
-/* 📖 用語メモ（くわしく 知りたい人むけ。ふだんは とじておく） */
-.terms>summary small{font-weight:400;font-size:12px;color:var(--sub);margin-left:8px}
+/* 📖 ことばメモ（本や 楽譜で 見かける 名前。ふだんは とじておく） */
 .terms dl{margin:0}
 .terms dt{font-weight:800;margin:12px 0 2px}
 .terms dt:first-child{margin-top:2px}
@@ -96,14 +95,14 @@ const H=PA.henka;
 // ボタンの じゅん：よく つかう ○Ⅳ・○Ⅵ → Ⅱ の なかま → ドミナント（Ⅴ9・Ⅶ7）
 const IDS=['iv','bVI','ii_dim','ii_hdim7','V9_b9','vii_dim7'].filter(i=>H.BORROWED_IDS.includes(i));
 // ボタン：上＝和音記号（H.BORROWED の label）、下＝和音の 種類（芸大の 和音記号には 減・半減を 書かないので ことばで そえる）
-const SEG={iv:'短三和音',ii_dim:'減三和音',ii_hdim7:'半減七の和音',bVI:'長三和音',V9_b9:'短9度',vii_dim7:'減七の和音'};
+const SEG={iv:'短三和音',ii_dim:'減三和音',ii_hdim7:'半減七の和音',bVI:'長三和音',V9_b9:'短調の Ⅴ9',vii_dim7:'減七の和音'};
 // 和音の 名前（かりた形・ふつうの形）。root＝コードネームの 根音（主音から なん文字め）
 const INFO={
-  iv:{bn:'Ⅳm（短調の Ⅳ）',dn:'Ⅳ（下属和音）',root:3},
+  iv:{bn:'Ⅳm（短調の Ⅳ）',dn:'Ⅳ（長三和音）',root:3},
   ii_dim:{bn:'Ⅱ（減三和音）の 第1転回形',dn:'Ⅱ の 第1転回形',root:1},
   ii_hdim7:{bn:'Ⅱ7（半減七の和音）',dn:'Ⅱ7（Ⅱ の 七の和音）',root:1},
   bVI:{bn:'♭Ⅵ（長三和音）',dn:'Ⅵ（短三和音）',root:5},
-  V9_b9:{bn:'Ⅴ9（短9度）',dn:'Ⅴ9（長9度）',root:4},
+  V9_b9:{bn:'Ⅴ9（短調の 形）',dn:'Ⅴ9（長調の 形）',root:4},
   vii_dim7:{bn:'Ⅶ7（減七の和音）',dn:'Ⅶ7（半減七の和音）',root:6}
 };
 const NIGHT='#3b4fa8', SUN='#c46a00', RED='#d1495b', GHOST='#9b9184';
@@ -378,13 +377,13 @@ const ID_LINE={
   ii_dim:key=>`Ⅱ の 第5音が 下がって <b>減三和音</b>に。減三和音なので、いちばん下に 第3音${q(H.borrowed(key,'ii_dim')[0])}を おいた <b>第1転回形（Ⅱ6）</b>で つかうよ。`,
   ii_hdim7:()=>`Ⅱ7 の 第5音が 下がって <b>半減七の和音</b>に。短調の Ⅱ7 と おなじ 形で、Ⅴ7 の 前で くもった 色に なるよ。`,
   bVI:()=>`Ⅵ の 根音と 第5音を かりると、短三和音だった Ⅵ が <b>長三和音（♭Ⅵ）</b>に。Ⅴ の 前で つかうと、ドラマチックな ひびき。第3音（調の 主音）を 2つに するよ。`,
-  V9_b9:()=>`Ⅴ9 の 第9音を かりると、<b>短調の Ⅴ9</b> と おなじ 形。こくて、ドキッと する ひびき（第5音は はぶいて 4声に）。`,
+  V9_b9:()=>`Ⅴ9 の 第9音を かりると、<b>短調の Ⅴ9</b> と おなじ 形。こくて、ドキッと する ひびき（第5音は はぶいて 4つの 音に）。`,
   vii_dim7:()=>`Ⅴ9 の 第9音を かりると、<b>減七の和音</b>＝ 短調の Ⅶ7 と おなじ 形に なるよ。`
 };
 function heroMsg(key,id){
   const c=changes(key,id), pm=parMinor(key), dl=labelOf(key,id,false), bl=labelOf(key,id,true);
   if(!state.on) return `${dl} は ${PA.keyName(key)}の 音階の 音だけで できる 和音。<br>🌙 スイッチを おして、${c.map(x=>q(x.d)).join('と')}を 半音下げてみよう！ <b>${PA.keyName(pm)}</b>（おなじ主音の 短調）から 音を かりるよ。`;
-  let m=`${c.map(x=>`${q(x.d)} → <b class="bo">${q(x.b)}</b>`).join('、')}。${c.map(x=>q(x.b)).join('と')}は <b>${PA.keyName(pm)}</b>（同主短調）の 音。調号は ${PA.keyName(key)}の まま、<b>臨時記号</b>を つけて かりるよ。和音記号は ${bl}（○＝かりた 和音）。`;
+  let m=`${c.map(x=>`${q(x.d)} → <b class="bo">${q(x.b)}</b>`).join('、')}。${c.map(x=>q(x.b)).join('と')}は <b>${PA.keyName(pm)}</b>（おなじ主音の 短調）の 音。調号は ${PA.keyName(key)}の まま、<b>臨時記号</b>を つけて かりるよ。和音記号は ${bl}（○＝かりた 和音）。`;
   return m+`<br>${ID_LINE[id](key,c)}`;
 }
 function rolesHTML(key,id){
@@ -401,13 +400,13 @@ function heroCard(key,id){
   const on=state.on, A=state.anim, nx=A&&A.lab, col=nx?A.col:colOf(on), ns=A?A.ns:chordOf(key,id,on), hl=A?A.hl:on;
   const top=nx?`<div class="hk">${PA.keyName(key)}の ${nx}（${labelOf(key,id,true)} の つぎ）</div>
       <div class="hs">${labelOf(key,id,true)} → ${nx} へ すすんだ ところ</div>`:`<div class="hk">${PA.keyName(key)}の ${on?INFO[id].bn:INFO[id].dn}</div>
-      <div class="hs">コードネーム <b>${symOf(key,id,on)}</b>　/　${on?'🌙 同主短調から かりた 和音（準固有和音）':'☀️ 調の 音だけで できる 和音'}</div>`;
+      <div class="hs">コードネーム <b>${symOf(key,id,on)}</b>　/　${on?'🌙 おなじ主音の 短調から 音を かりた 和音（準固有和音）':'☀️ 調の 音だけで できる 和音'}</div>`;
   return `<section class="card hero" style="--c:${col}">
     <div class="hero-top"><span class="badge" style="--c:${col}">${nx||labelOf(key,id,on)}</span>
       <div style="min-width:0">${top}</div></div>
     <div class="hn">${members(ns).map(x=>nmB(x.n,hl)).join('&nbsp;・ ')}</div>
     ${A?'':rolesHTML(key,id)}
-    <button class="btn sw ${on?'on':''}" data-act="borrow" role="switch" aria-checked="${on}"><span class="knob"></span>🌙 同主短調から かりる</button>
+    <button class="btn sw ${on?'on':''}" data-act="borrow" role="switch" aria-checked="${on}"><span class="knob"></span>🌙 短調から 音を かりる</button>
     <div class="chips">${shapeChain(key,id)}</div>
     <div class="msg">${A?A.msg:state.autoWait?'👆 どこかを タッチすると、<b>音を かりる ところ</b>が はじまるよ':heroMsg(key,id)}</div>
   </section>`;
@@ -419,10 +418,10 @@ function scaleCard(key,id){
     return `<span class="${cls} ${minor&&used.has(n.letter)&&df?'use':''}">${PA.nmH(n)}</span>`;
   };
   const dg=[1,2,3,4,5,6,7].map(d=>`<span class="dg">${d}</span>`).join('');
-  return `<section class="card"><h2>🌙 同主短調から かりる って？<small>${PA.keyName(key)} と ${PA.keyName(pm)}は 主音が おなじ（同主調）</small></h2>
+  return `<section class="card"><h2>🌙 短調から 音を かりる って？<small>${PA.keyName(key)} と ${PA.keyName(pm)}は 主音が おなじ</small></h2>
     <p class="slab">☀️ ${PA.keyName(key)}の 音階</p>
     <div class="scl">${dg}${maj.map((n,i)=>cell(n,i,false)).join('')}</div>
-    <p class="slab">🌙 ${PA.keyName(pm)}の 音階（自然的短音階）</p>
+    <p class="slab">🌙 ${PA.keyName(pm)}の 音階（調号の とおり）</p>
     <div class="scl">${nat.map((n,i)=>cell(n,i,true)).join('')}</div>
     ${pm.enh?`<p class="note">${PA.keyName(pm)}は、ふつうは <b>${PA.keyName(PA.minorKey(pm.idx))}</b>と 書く 調（おなじ けんばん）。準固有和音では 主音の 文字を かえずに かりるので、${PA.keyName(pm)}として 見るよ。</p>`:''}
     <p class="note" style="color:var(--ink)">ちがうのは <b>3・6・7ばんめ</b>。準固有和音で かりるのは おもに <b class="bo">6ばんめ${q(nat[5])}</b>（♭Ⅵ では 3ばんめ${q(nat[2])}も）。${c.length?`いまの 和音で かりているのは ${c.map(x=>q(x.b)).join('と')}（下線）。`:''}</p>
@@ -465,30 +464,32 @@ function tipsHTML(key){
   const dbl=dblOf(key), six=key.scale[5], six2=parMinor(key).nat[5];
   const eq=dbl&&{letter:PA.mod(dbl.letter-1,7),acc:PA.spell(PA.mod(dbl.letter-1,7),dbl.midi),midi:dbl.midi};
   return `<details class="more"><summary>💡 もっと くわしく</summary><ul>
-    <li><b>準固有和音</b>（じゅんこゆう わおん）：芸大和声では 和音記号の 左上に <b>○</b> を つけて（○Ⅳ・○Ⅵ など）あらわすよ。ポピュラー音楽では「借用和音」と よぶ ことも ある（芸大和声で「借用」と いうと、ふつうは <a href="secondary.html">副属和音</a> の ような、ほかの 調から かりる 和音の こと）。</li>
+    <li><b>準固有和音</b>（じゅんこゆう わおん）は、和音記号の 左上に <b>○</b> を つけて（○Ⅳ・○Ⅵ など）書くよ。本に よっては「借用和音」とも よぶよ（ただし「借用和音」は、<a href="secondary.html">副属和音</a> の ような、ほかの 調から かりる 和音の ことを さす ことも ある）。</li>
     <li>かりた 音（とくに 6ばんめを 下げた 音）は <b>下へ すすみたがる</b>。だから ○Ⅳ・○Ⅱ・○Ⅵ・○Ⅴ9・○Ⅶ7 の あとは、その 音が 半音下へ すすむ 和音（Ⅰ や Ⅴ）が くるよ。</li>
-    <li>6ばんめを 半音下げるとき（${q(six,false)} → ${q(six2)}）は、<b>おなじ 声</b>で 下げる（Ⅳ → ○Ⅳ）。ちがう 声に わけると「対斜」に なって、ちぐはぐに 聞こえるよ。かりた 音を もとに もどす（○Ⅳ → Ⅳ）のも、ふつうは しない。</li>
+    <li>6ばんめを 半音下げるとき（${q(six,false)} → ${q(six2)}）は、<b>おなじ 声</b>で 下げる（Ⅳ → ○Ⅳ）。ちがう 声に わけると、ちぐはぐに 聞こえるよ。かりた 音を もとに もどす（○Ⅳ → Ⅳ）のも、ふつうは しない。</li>
     <li>Ⅴ7・Ⅴ9 の 第3音（導音）は、長調でも 短調でも おなじ 音。かりるのは 第9音だけ。</li>
     ${dbl?`<li>${PA.keyName(key)}では、かりた 音に <b>ダブルフラット</b>（${PA.H('𝄫')}）が つくことが あるよ。${q(dbl)}は ${q({letter:dbl.letter,acc:0},false)}に ♭を 2つ つけた 音。けんばんでは ${q(eq,false)}の 鍵を ひくよ。</li>`:''}
     <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべるよ。</li>
   </ul></details>`;
 }
-// 📖 用語メモ：正式な 名前（いまの 調・和音の 音を れいに）。よみかたは 小さく
+// 📖 ことばメモ：本や 楽譜で 見かける 名前を、やさしい ことばで（いまの 調の 音を れいに）。よみかたは 小さく
 function termsHTML(key){
   const pm=parMinor(key), six=key.scale[5], six2=pm.nat[5];
-  // 同主短調が 変イ・変ニ・変ト短調の ときは、おなじ けんばんの 短調の 名前を そえる
+  // おなじ主音の 短調が 変イ・変ニ・変ト短調の ときは、おなじ けんばんの 短調の 名前を そえる
   const pmDbl=Object.values(pm.sig).some(a=>Math.abs(a)>1), pmEq=pm.enh?PA.minorKey(pm.idx):null;
-  const pmNote=!pm.enh?'':pmDbl?`${PA.keyName(pm)}は 調号に ${PA.H('𝄫')} が いるので、ふつうは おなじ けんばんの ${PA.keyName(pmEq)}で 書く。`
-    :`${PA.keyName(pm)}は ${PA.sigLabel(pm)}。おなじ けんばんの ${PA.keyName(pmEq)}（${PA.sigLabel(pmEq)}）で 書くことも 多い。`;
-  return `<details class="more terms" data-d="terms"><summary>📖 用語メモ<small>正式な よびかた</small></summary><dl>
+  const pmNote=!pm.enh?'':pmDbl?`${PA.keyName(pm)}は 調号に ${PA.H('𝄫')} が いるので、ふつうは おなじ けんばんの ${PA.keyName(pmEq)}で 書くよ。`
+    :`${PA.keyName(pm)}は ${PA.sigLabel(pm)}。おなじ けんばんの ${PA.keyName(pmEq)}（${PA.sigLabel(pmEq)}）で 書くことも 多いよ。`;
+  return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary><dl>
     <dt>準固有和音<span class="yomi">（じゅんこゆう わおん）</span></dt>
-      <dd>長調で、同主短調の 音を かりて つくる 和音。和音記号の 左上に ○ を つける（${IDS.map(i=>PA.H(H.BORROWED[i].label)).join('・')}）。</dd>
-    <dt>同主調<span class="yomi">（どうしゅちょう）</span></dt>
-      <dd>主音が おなじ 長調と 短調（${PA.keyName(key)}と ${PA.keyName(pm)}）。${pmNote}調号が おなじ「平行調」（${PA.keyName(PA.minorKey(state.keyIdx))}）とは べつ。</dd>
-    <dt>借用<span class="yomi">（しゃくよう）</span></dt>
-      <dd>ほかの 調の 音や 和音を かりて 使うこと。芸大和声で「借用和音」と いうと、ふつうは 近親調から かりた 和音（副属和音 など）。同主短調から かりた 和音は「準固有和音」と よんで わける。ポピュラー音楽の「借用和音」（モーダル・インターチェンジ）は、準固有和音と ほぼ おなじ 意味。</dd>
-    <dt>♭6<span class="yomi">（フラット 6・下げた 第6音）</span></dt>
-      <dd>長音階の 第6音を 半音 下げた 音（${q(six,false)} → ${q(six2)}）。同主短調の 第6音で、準固有和音の 中心に なる 音。ふつう 半音下の 第5音へ すすむ。「♭」は「半音 下げる」と いう 意味で、${PA.keyName(key)}では 臨時記号 <b class="bo">${accOf(six2)}</b> を つけるよ。</dd>
+      <dd>長調の 中で、おなじ主音の 短調から 音を かりた 和音。記号の 左上に ○ を つけるよ（${IDS.map(i=>PA.H(H.BORROWED[i].label)).join('・')}）。</dd>
+    <dt>同主調・同主短調<span class="yomi">（どうしゅちょう・どうしゅ たんちょう）</span></dt>
+      <dd>主音が おなじ 長調と 短調の ペア。${PA.keyName(key)}の 同主短調は ${PA.keyName(pm)}。${pmNote}調号が おなじ ペア（${PA.keyName(PA.minorKey(state.keyIdx))}）は「平行調」と いって、べつの もの。</dd>
+    <dt>借用和音<span class="yomi">（しゃくよう わおん）</span></dt>
+      <dd>ほかの 調から かりてきた 和音。本に よって、この ページの 和音（準固有和音）の ことも、<a href="secondary.html">副属和音</a> の ことも ある。</dd>
+    <dt>♭6<span class="yomi">（フラット ろく）</span></dt>
+      <dd>音階の 6ばんめを 半音 下げた 音（${q(six,false)} → ${q(six2)}）。かりる 音の 中心で、半音下の 5ばんめへ すすみたがる。${PA.keyName(key)}では 楽譜に <b class="bo">${accOf(six2)}</b> を つけて 書くよ。</dd>
+    <dt>自然的短音階<span class="yomi">（しぜんてき たんおんかい）</span></dt>
+      <dd>調号の とおりに ならべた 短音階。上の「🌙 ${PA.keyName(pm)}の 音階」が これ。</dd>
   </dl></details>`;
 }
 let lastActions='';
@@ -520,7 +521,7 @@ function render(){
   h+=linksCard(key);
   h+=tipsHTML(key);
   h+=termsHTML(key);
-  h+=`<p class="note">※ 音の 高さは 平均律です。${dblOf(key)?`${PA.H('𝄫')} は ダブルフラットの 書き方です。`:''}</p></div>`;
+  h+=`<p class="note">※ 音の 高さは ふつうの ピアノと おなじです。${dblOf(key)?`${PA.H('𝄫')} は ダブルフラットの 書き方です。`:''}</p></div>`;
   PA.paint(document.getElementById('view'),h,'borrowed:'+state.keyIdx+':'+id);
   if(state.anim||state.cad||state.res===1) PA.follow(document.getElementById('view')); // 音の 高さが かわっても 光る鍵が 見えるように
   renderActions();

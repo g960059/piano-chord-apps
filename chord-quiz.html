@@ -106,6 +106,7 @@ const validQ=q=>!!q&&typeof q==='object'&&typeof q.minor==='boolean'&&isInt(q.ke
   else if(LEVEL_TIER.has(d.level)) Q.tier=LEVEL_TIER.get(d.level);
   if(typeof d.weak==='boolean') Q.weak=d.weak;
   if(KEYSETS.some(([v])=>v===d.keyset)) Q.keyset=d.keyset;
+  else if(!Object.keys(d).length) Q.keyset='both'; // はじめて ひらいた人は 24調 ぜんぶ（せっていが ある人は いままでどおり）
   if(d.chords&&typeof d.chords==='object'){
     const c={}; Object.keys(CHORDS).forEach(k=>c[k]=d.chords[k]!==false);
     if(Object.values(c).some(x=>x)) Q.chords=c;

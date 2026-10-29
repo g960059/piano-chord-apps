@@ -253,10 +253,10 @@ const KEY_NOTE='もともと この 調の 音（臨時記号は いらない）
 /* ===== せつめい ===== */
 function staticMsg(key){
   const n6=n6Of(key), ii=srcChord(key,'ii6',false), b=n6[0];
-  let m=`ナポリの六は、<b>Ⅱ6</b>（Ⅱ の 第1転回形）の 根音${q(ii[3])}を <b class="lo">半音下げて</b>${q(n6[3])}に した 和音。`;
+  let m=`ナポリの六は、<b>Ⅱ6</b>（Ⅱ の 第3音を いちばん下に した 形）の 根音${q(ii[3])}を <b class="lo">半音下げて</b>${q(n6[3])}に した 和音。`;
   m+=key.minor?'':`長調では 第5音${q(ii[2])}も <b>${parMinor(key)}</b>（おなじ主音の 短調）から かりて${q(n6[2])}に するよ。`;
-  m+=`<br>根音が 下がった Ⅱ なので <b>♭Ⅱ</b>、いちばん下が 第3音（第1転回形）なので <b>6</b>。`;
-  m+=`ベースは 音階の 4ばんめ${q(b)}で、<b>Ⅳ や Ⅱ6 と おなじ ところ</b>に おく <b>下属（S）</b>の なかま。Ⅴ の 前で つかうよ。`;
+  m+=`<br>根音が 下がった Ⅱ なので <b>♭Ⅱ</b>、いちばん下が 第3音なので <b>6</b>。`;
+  m+=`ベースは 音階の 4ばんめ${q(b)}で、<b>Ⅳ や Ⅱ6 と おなじ ところ</b>に おく なかま。Ⅴ の 前で つかうよ。`;
   return m;
 }
 function rolesHTML(key){
@@ -273,7 +273,7 @@ function heroCard(key){
   return `<section class="card hero" style="--c:${N_COL}">
     <div class="hero-top"><span class="badge" style="--c:${N_COL}">N6</span>
       <div style="min-width:0"><div class="hk">${PA.keyName(key)}の ナポリの六</div>
-      <div class="hs">コードネーム <b>${H.symbol(key,'N6')}</b>　/　♭Ⅱ の 第1転回形・下属（S）の なかま</div></div></div>
+      <div class="hs">コードネーム <b>${H.symbol(key,'N6')}</b>　/　♭Ⅱ の 第3音が いちばん下・Ⅳ の なかま</div></div></div>
     <div class="hn">${cur.length?namesC(uniqNames(cur)):'…'}</div>
     ${A?'':rolesHTML(key)}
     <div class="srcrow"><span>つくりかた：</span>${PA.seg('src',[['ii6','Ⅱ6 から'],['iv','Ⅳ から']],state.src,'full')}</div>
@@ -299,7 +299,7 @@ function staffCard(key){
     </div>`;
   h+=staff(key,cols,arrows,{sk:'staff'});
   const tonic=scaleOf(key)[0], lt=V[3];
-  if(p==='direct') h+=`<p class="note"><b class="lo">根音${q(n6[3])}は 導音${q(lt)}へ 減3度 下へ</b>（主音${q(tonic)}を とびこえて おりる）。第5音${q(n6[2])}は Ⅴ の 根音${q(nx[2])}へ 半音下へ、ベースは${q(nx[0])}へ 上がるよ。上の${q(n6[1])}は <b style="color:${V7_COL}">そのまま のこって Ⅴ7 の 第7音</b>に なる（第5音の ない Ⅴ7）。</p>`;
+  if(p==='direct') h+=`<p class="note"><b class="lo">根音${q(n6[3])}は 主音${q(tonic)}を とびこえて、導音${q(lt)}へ おりる</b>。第5音${q(n6[2])}は Ⅴ の 根音${q(nx[2])}へ 半音下へ、ベースは${q(nx[0])}へ 上がるよ。上の${q(n6[1])}は <b style="color:${V7_COL}">そのまま のこって Ⅴ7 の 第7音</b>に なる（第5音の ない Ⅴ7）。</p>`;
   else h+=`<p class="note">${I64H} を はさむと、<b class="lo">根音${q(n6[3])}は まず 主音${q(nx[3])}へ 半音下へ</b>、それから 導音${q(lt)}へ。第5音${q(n6[2])}は${q(nx[2])}へ。ベースは${q(nx[0])}の まま Ⅴ へ すすんで、Ⅴ の 前に「ため」が うまれるよ。</p>`;
   return h+`</section>`;
 }
@@ -307,11 +307,11 @@ function placeCard(key){
   const n6=n6Of(key), iv=srcChord(key,'iv',false), ii=srcChord(key,'ii6',false), V=toV7(key);
   const rows=[
     ['iv','Ⅳ',iv,SRC_COL,'根音が いちばん下'],
-    ['ii6','Ⅱ6',ii,SRC_COL,'Ⅱ の 第1転回形'],
+    ['ii6','Ⅱ6',ii,SRC_COL,'Ⅱ の 第3音が いちばん下'],
     ['n6','ナポリ',n6,N_COL,key.minor?'Ⅱ6 の 根音を 半音下げた':'Ⅱ6 の 根音を 半音下げ、第5音も <span class="bor">かりた 音</span>に']
   ];
-  let h=`<section class="card" style="--c:${N_COL}"><h2>🧭 Ⅳ・Ⅱ6 と おなじ ところ<small>どれも ベースは 4ばんめ「${PA.nmH(n6[0])}」。下属（S）の なかまで、Ⅴ の 前に おくよ</small></h2>
-    <div class="flow"><span class="fx">Ⅰ<small>T</small></span><span class="ar" aria-hidden="true">→</span><span class="fx s">Ⅳ・Ⅱ6・N6<small>S</small></span><span class="ar" aria-hidden="true">→</span><span class="fx">Ⅴ<small>D</small></span><span class="ar" aria-hidden="true">→</span><span class="fx">Ⅰ<small>T</small></span></div>
+  let h=`<section class="card" style="--c:${N_COL}"><h2>🧭 Ⅳ・Ⅱ6 と おなじ ところ<small>どれも ベースは 4ばんめ「${PA.nmH(n6[0])}」。どれも Ⅴ の 前に おく なかまだよ</small></h2>
+    <div class="flow"><span class="fx">Ⅰ<small>はじめ</small></span><span class="ar" aria-hidden="true">→</span><span class="fx s">Ⅳ・Ⅱ6・N6<small>Ⅴ の 前</small></span><span class="ar" aria-hidden="true">→</span><span class="fx">Ⅴ<small>Ⅰ を よぶ</small></span><span class="ar" aria-hidden="true">→</span><span class="fx">Ⅰ<small>おわり</small></span></div>
     <p class="note" style="margin-top:4px">👂 3つを 聴きくらべ。どれも そのあと おなじ Ⅴ7（${namesC(uniqNames(V),'・')}）へ すすむよ。</p>`;
   rows.forEach(([id,lab,ns,col,tx])=>{
     h+=`<div class="cmprow ${state.cmp===id?'on':''}" style="--c:${col===SRC_COL?DARK[SRC_COL]:col}"><button class="btn" data-act="cmp" data-v="${id}" aria-pressed="${state.cmp===id}">🔊 ${lab}</button>
@@ -348,38 +348,44 @@ function nameDetails(key){
   const n6=n6Of(key);
   return `<details class="more" data-d="name"><summary>📛 「ナポリの六」の 名前の ひみつ</summary>
     <p><b>ナポリ</b>は イタリアの 町の 名前。むかし（1700年ごろ）ナポリで 活やくした 作曲家たちが よく つかったので、この 名前で よばれるよ。</p>
-    <p><b>六</b>は「6の和音」（第1転回形）の こと。いちばん下の${q(n6[0])}から 根音${q(n6[3])}までが 6度 だから。</p>
+    <p><b>六</b>は「6の和音」（第3音が いちばん下の 形）の こと。いちばん下の${q(n6[0])}から 根音${q(n6[3])}までが 6度 だから。</p>
     <p>和音記号は 本によって「N6」「♭Ⅱ6」などと 書くよ。どれも おなじ 和音。</p>
   </details>`;
 }
 function borrowDetails(key){
   const n6=n6Of(key), ii=srcChord(key,'ii6',false), jii=srcChord(key,'ii6',true);
   return `<details class="more" data-d="borrow"><summary>🌙 長調では 短調から 音を かりる</summary>
-    <p>長調の Ⅱ6（${uniqNames(ii).map(nH).join('・')}）の 根音を 下げるだけでは、ナポリの六に ならない。第5音${q(ii[2])}も <b>${parMinor(key)}</b>（おなじ主音の 短調）から かりて${q(jii[2])}に する（<b>${srcLabel(key,'ii6',true)}</b>：<b>○</b>は 同主短調から かりた 和音の しるし）。それから 根音を 下げると ナポリの六${q(n6[3])}。</p>
+    <p>長調の Ⅱ6（${uniqNames(ii).map(nH).join('・')}）の 根音を 下げるだけでは、ナポリの六に ならない。第5音${q(ii[2])}も <b>${parMinor(key)}</b>（おなじ主音の 短調）から かりて${q(jii[2])}に する（<b>${srcLabel(key,'ii6',true)}</b>：<b>○</b>は おなじ主音の 短調から かりた 和音の しるし）。それから 根音を 下げると ナポリの六${q(n6[3])}。</p>
     <p>${q(n6[2])}は <a href="aug6.html" data-go="aug6">増六の和音</a> でも かりてくる 音だよ。短調では どちらも ${KEY_NOTE}。かりる 和音は <a href="borrowed.html" data-go="borrowed">準固有和音</a> で くわしく。</p>
   </details>`;
 }
 function tipsHTML(key){
   return `<details class="more" data-d="tips"><summary>💡 おぼえておこう</summary><ul>
-    <li><b>ナポリの六</b> ＝ ♭Ⅱ（音階の 2ばんめを 半音下げた 音が 根音の 長三和音）の <b>第1転回形</b>。</li>
+    <li><b>ナポリの六</b> ＝ ♭Ⅱ（音階の 2ばんめを 半音下げた 音が 根音の 長三和音）を、<b>第3音が いちばん下</b>に なるように おいた 形。</li>
     <li>ベースは 音階の 4ばんめ（第3音）。この 音を <b>2つ</b>（ベースと 上の 声）に するのが ふつう。</li>
-    <li>Ⅳ・Ⅱ6 と おなじ <b>下属（S）</b>の 場所で つかい、そのあと Ⅴ（Ⅴ7）へ。</li>
-    <li>根音（下げた 2ばんめ）は <b>導音へ 減3度 下へ</b>、または ${I64H} を とおって 主音 → 導音 と おりる。</li>
-    <li>${key.minor?'短調では 第5音は もともと この 調の 音なので、臨時記号が いるのは 根音（と Ⅴ の 導音）だけ。':'長調では 第5音も 同主短調から かりた 音なので、臨時記号が 2つ つくよ。'}</li>
+    <li>Ⅳ・Ⅱ6 と おなじ <b>Ⅴ の 前</b>の 場所で つかい、そのあと Ⅴ（Ⅴ7）へ。</li>
+    <li>根音（下げた 2ばんめ）は <b>主音を とびこえて 導音へ おりる</b>、または ${I64H} を とおって 主音 → 導音 と おりる。</li>
+    <li>${key.minor?'短調では 第5音は もともと この 調の 音なので、臨時記号が いるのは 根音（と Ⅴ の 導音）だけ。':'長調では 第5音も おなじ主音の 短調から かりた 音なので、臨時記号が 2つ つくよ。'}</li>
   </ul></details>`;
 }
-// 📖 用語メモ：画面の やさしい ことば → 和声の 用語（芸大和声）。例は いまの 調の 音で
+// 📖 ことばメモ：本や 楽譜で 見かける 名前を、やさしい ことばで。例は いまの 調の 音で
 function termsHTML(key){
   const n6=n6Of(key), r=n6[3], lt=toV7(key)[3];
   const span=[0,1,2].map(i=>PA.nm({letter:PA.mod(r.letter-i,7),acc:0})).join('・'); // 減3度を 文字で 数える（下へ）
-  return `<details class="more" data-d="terms"><summary>📖 用語メモ（くわしく 知りたい人へ）</summary>
-    <p class="note" style="margin:0 0 4px">画面の ことば → 和声の 用語（芸大和声）。例は ${PA.keyName(key)}の 音だよ。</p><ul>
-    <li>「ナポリの六」「N6」「♭Ⅱ6」 → <b>ナポリの六の和音</b>＝ <b>Ⅱ の 根音 下方変位</b>（♭Ⅱ＝<b>ナポリの和音</b>）の <b>第1転回形</b>。${key.minor?'短調では 第5音は もともと 調の 音なので、根音だけ 下方変位。':`長調では、準固有の ${srcLabel(key,'ii6',true)}（第5音は 同主短調の 音）の 根音を 下方変位した 形。`}${PA.keyName(key)}では ${H.symbol(key,'N6')}。（半音 下げる＝<b>下方変位</b>、上げる＝<b>上方変位</b>）</li>
-    <li>「6」「6/4」 → 転回形の 記号。6＝<b>第1転回形</b>（<b>六の和音</b>：ベースの 上に 3度と 6度）、6/4＝<b>第2転回形</b>（<b>四六の和音</b>：6度と 4度）。Ⅴ の 前の ${I64H} は <b>終止四六</b> と いい、<b>属機能（D）</b>として はたらく。芸大和声では 転回の 番号で Ⅱ¹（第1転回形）・Ⅰ²（第2転回形）のように 書く（この画面の 6・6/4 は 数字付き低音ふうの 書き方）。</li>
-    <li>「減3度 下へ」 →${q(r)}から${q(lt)}は 文字で 数えて 3つ（${span}）なので 3度。短3度より せまいので <b>減3度</b>（けんばんでは 長2度と おなじ はば）。下方変位音は 下へ すすむ <b>限定進行音</b>。</li>
-    <li>「下属（S）の なかま」 → <b>下属機能（S）</b>。和音の はたらき（<b>機能</b>）は <b>主機能（T）</b>Ⅰ など、<b>下属機能（S）</b>Ⅳ・Ⅱ など、<b>属機能（D）</b>Ⅴ・Ⅴ7 など。<b>カデンツ</b>（終止形）T→S→D→T の S に、Ⅳ・Ⅱ6 の かわりに ナポリの六を おく。</li>
-    ${key.minor?'':`<li>「短調から かりる」「○」 → <b>準固有和音</b>（同主短調からの 借用和音）。○ は 準固有の しるし。${PA.keyName(key)}は ${parMinor(key)}から かりる。</li>`}
-    <li>「そのまま のこって Ⅴ7 の 第7音」 → <b>共通音の 保留</b>（となりあう 和音に ある おなじ 音を、おなじ 声部で のこす こと）。</li>
+  // けんばんで おなじ はばの 2度（上の 音を 書きかえる。♯♯・♭♭に なるときは 下の 音を 書きかえる）
+  const pcN=n=>PA.mod(PA.NAT[n.letter]+n.acc,12);
+  let s2=[{letter:PA.mod(lt.letter+1,7),acc:PA.spell(PA.mod(lt.letter+1,7),pcN(r))},lt];
+  if(Math.abs(s2[0].acc)>1){const L=PA.mod(r.letter-1,7);s2=[r,{letter:L,acc:PA.spell(L,pcN(lt))}];}
+  const w2=Math.abs(s2[0].acc)>1||Math.abs(s2[1].acc)>1?'2度':`${q(s2[0])}から${q(s2[1])}（2度）`;
+  return `<details class="more" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary>
+    <p class="note" style="margin:0 0 4px">例は ${PA.keyName(key)}の 音だよ。</p><ul>
+    <li><b>ナポリの六</b>（N6・♭Ⅱ6） … Ⅱ の 根音を 半音下げた 長三和音（♭Ⅱ。<b>ナポリの和音</b>とも いう）を、第3音が いちばん下に なるように おいた 形。${PA.keyName(key)}では ${H.symbol(key,'N6')}。</li>
+    <li><b>6</b>・<b>6/4</b>（転回形） … どの 音を いちばん下に おくかの しるし。6＝第3音が いちばん下（第1転回形・六の和音）、6/4＝第5音が いちばん下（第2転回形・四六の和音）。Ⅱ¹・Ⅰ² のように 書く 本も あるよ。</li>
+    <li><b>終止四六</b> … Ⅴ の 前に おく ${I64H}。Ⅰ の 音だけど、ベースが Ⅴ の 根音なので、Ⅴ の なかまとして はたらくよ。</li>
+    <li><b>減3度</b> … ${q(r)}から${q(lt)}は 文字で 数えて 3つ（${span}）なので 3度。でも ふつうの 3度より せまいので「減」3度。けんばんでは ${w2}と おなじ はばだよ。</li>
+    <li><b>カデンツ</b>（終止形） … 曲や フレーズの おわりかたの 和音の ならび。ナポリの六は、Ⅳ や Ⅱ6 の かわりに Ⅴ の 前に おくよ。</li>
+    ${key.minor?'':`<li><b>準固有和音</b>・<b>○</b> … おなじ主音の 短調から かりた 和音。○ は その しるし。${PA.keyName(key)}は ${parMinor(key)}から かりるよ（${srcLabel(key,'ii6',true)} など）。</li>`}
+    <li><b>共通音</b> … となりの 和音にも ある おなじ 音。おなじ 声で そのまま のこすと なめらか。ナポリの${q(n6[1])}は、そのまま Ⅴ7 の 第7音に なるよ。</li>
   </ul></details>`;
 }
 function linksCard(){
@@ -391,7 +397,7 @@ function linksCard(){
 function footNote(key){
   const all=[...n6Of(key),...toV7(key),...H.viaI64(key).flat(),...srcChord(key,'ii6',true),...PATHS.flatMap(p=>cadSeq(key,p).flatMap(c=>c.ns))];
   const dfl=uniqNames(all.filter(n=>n.acc===-2)), dsh=all.some(n=>n.acc===2);
-  let h=`<p class="note">※ 音の 高さは 平均律です。`;
+  let h=`<p class="note">※ 音の 高さは ふつうの ピアノと おなじです。`;
   if(dsh) h+=`<span class="ds">x</span> は ダブルシャープ（重嬰）の 楽譜での 書き方です。`;
   if(dfl.length) h+=`${PA.H('𝄫')} は ダブルフラット（重変）。この調では 正しく 書くと どうしても 出てきます（${dfl.map(n=>`${PA.nmH(n)}＝${PA.nmH(PA.spellMidi(n.midi,PA.majorKey(0)))} の 鍵`).join('、')}）。`;
   return h+`</p>`;
@@ -485,7 +491,7 @@ async function runBuild(){
     if(!await wait(1500)) return;
   }
   A.cols=[{notes:S0,color:SRC_COL,label:L0}];
-  upd(`これが ${L0}（${srcSym(key,src,false)}）。ベース${q(S0[0])}は ${isII?'Ⅳ と おなじ 音。だから Ⅱ6 も':'Ⅱ6 と おなじ 音。どちらも'} <b>下属（S）</b>の 和音だね。`);
+  upd(`これが ${L0}（${srcSym(key,src,false)}）。ベース${q(S0[0])}は ${isII?'Ⅳ':'Ⅱ6'} と おなじ 音。どちらも <b>Ⅴ の 前に おく なかま</b>だね。`);
   PA.chord(midisOf(S0)); if(!await wait(2200)) return;
   let prev=S0, prevL=L0;
   // ② 長調だけ：第6音を 同主短調から かりて 半音下げる
@@ -495,7 +501,7 @@ async function runBuild(){
     A.marks=chordMarks(S1,SRC_COL); A.marks.get(S1[2].midi).fill=BOR; A.marks.get(S1[2].midi).sub='かりた'; A.marks.get(S1[2].midi).subColor=BOR;
     A.marks.set(S0[2].midi,{fill:'#fff',ring:BOR,tc:BOR,label:PA.nm(S0[2]),sub:'もとの音',subColor:GHOST});
     A.staffCap=`${isII?'第5音':'第3音'}を 半音下げる（${L1}）`; A.kbCap='オレンジ＝かりた 音';
-    upd(`<b>②</b> ${isII?'第5音':'第3音'}${q(S0[2])}を <b class="bor">半音下げて</b>${q(S1[2])}に するよ。${q(S1[2])}は <b>${parMinor(key)}</b>（おなじ主音の 短調）から かりてきた 音（${L1}：<b>○</b>は 同主短調から かりた 和音の しるし）。`);
+    upd(`<b>②</b> ${isII?'第5音':'第3音'}${q(S0[2])}を <b class="bor">半音下げて</b>${q(S1[2])}に するよ。${q(S1[2])}は <b>${parMinor(key)}</b>（おなじ主音の 短調）から かりてきた 音（${L1}：<b>○</b>は おなじ主音の 短調から かりた 和音の しるし）。`);
     PA.playNote(S1[2].midi,0,1.1,0.24); if(!await wait(1100)) return;
     PA.chord(midisOf(S1)); if(!await wait(2200)) return;
     prev=S1; prevL=L1;
@@ -513,7 +519,7 @@ async function runBuild(){
   PA.playNote(n.midi,0,1.1,0.24); if(!await wait(1100)) return;
   PA.chord(midisOf(n6));
   const done=`🎉 <b>できあがり！</b> ${PA.keyName(key)}の ナポリの六は <b class="big">${namesC(uniqNames(n6))}</b><br>`+
-    `${q(n)}を 根音に すると ${H.symbol(key,'bII')} の 長三和音（<b>♭Ⅱ</b>）。いちばん下が 第3音${q(n6[0])}なので 第1転回形＝「<b>6</b>」。`+
+    `${q(n)}を 根音に すると ${H.symbol(key,'bII')} の 長三和音（<b>♭Ⅱ</b>）。いちばん下が 第3音${q(n6[0])}なので「<b>6</b>」。`+
     (isII?'':`Ⅳ から 見ると、いちばん下から 5度の 音の かわりに 6度の 音を のせた 形だね。`)+`「➡️ Ⅴへ」で 聴いてみよう！`;
   upd(done); if(!await wait(2400)) return;
   state.msg=done; state.anim=null; render();

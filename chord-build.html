@@ -26,8 +26,7 @@
 .toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .nw{white-space:nowrap}
 .hn{text-wrap:balance}
-/* 📖 用語メモ（くわしく 知りたい人むけ。ふだんは とじておく） */
-.terms>summary small{font-weight:400;font-size:12px;color:var(--sub);margin-left:8px}
+/* 📖 ことばメモ（くわしく 知りたい人むけ。ふだんは とじておく） */
 .terms dl{margin:0}
 .terms dt{font-weight:800;margin:12px 0 2px}
 .terms dt:first-child{margin-top:2px}
@@ -122,26 +121,28 @@ function tipsHTML(key){
   if(key.minor) li.push(`🌙 <b>短調の Ⅴ・Ⅴ7</b> は、7ばんめの音「${PA.nmH(key.natLT)}」を <b>半音上げて</b>「${PA.nmH(key.lt)}」に する。だから Ⅴ はいつも 明るいひびき。`);
   return `<ol>${li.map(x=>`<li>${x}</li>`).join('')}</ol>`;
 }
-/* 📖 用語メモ：正式な 名前（いまの 調・和音の 音を れいに） */
+/* 📖 ことばメモ：本や 楽譜で 見かける 名前を やさしく（いまの 調・和音の 音を れいに） */
 const yomi=(w,y)=>`<ruby>${w}<rt>${y}</rt></ruby>`; // ふりがな
 function termsHTML(key,ch,tones){
   const c=CHORDS[ch], dg=d=>`「${PA.nmH(PA.at(key.scale,d))}」`;
   const ROLE=['根音','第3音','第5音','第7音'];
   const roles=tones.map((t,j)=>`${ROLE[j]}「${PA.nmH(t)}」`).join('・');
   const lt=key.minor
-    ?`音階の 7ばんめの音。短調では 「${PA.nmH(key.natLT)}」を 半音上げて 「${PA.nmH(key.lt)}」に して 導音に する（<b>${yomi('和声的短音階','わせいてき たんおんかい')}</b>）。主音の すぐ下で 主音へ すすみたがる音で、Ⅴ・Ⅴ7 の 第3音に なる。`
-    :`音階の 7ばんめの音${dg(6)}。主音の すぐ下で 主音へ すすみたがる音で、Ⅴ・Ⅴ7 の 第3音に なる。`;
-  return `<details class="more terms" data-d="terms"><summary>📖 用語メモ<small>正式な よびかた</small></summary><dl>
-    <dt>${yomi('音度記号','おんどきごう')}（ローマ数字）</dt>
-    <dd>音階の なんばんめの音を 根音に した 和音かを、<b>Ⅰ〜Ⅶ</b> で あらわす 記号（和声の 本では <b>${yomi('和音記号','わおんきごう')}</b> とも いう）。🪜 かいだんの ように、音階の 音の ばんごう（<b>${yomi('音度','おんど')}</b>）にも つかう。日本の 和声では 長調・短調とも 大文字で 書く（英語の 本では 短三和音を 小文字 ⅰ・ⅳ で 書くことも ある）。</dd>
-    <dt>${yomi('主和音','しゅわおん')}（Ⅰ）・${yomi('下属和音','かぞくわおん')}（Ⅳ）・${yomi('属和音','ぞくわおん')}（Ⅴ）</dt>
-    <dd>音階の 1ばんめ＝<b>主音</b>${dg(0)}、4ばんめ＝<b>下属音</b>${dg(3)}、5ばんめ＝<b>属音</b>${dg(4)}。その音を 根音に して 3度ずつ かさねた <b>三和音</b>。</dd>
-    <dt>${yomi('属七の和音','ぞくしちの わおん')}（Ⅴ7）</dt>
-    <dd>属和音に、根音から 7度上の <b>第7音</b> を 加えた <b>四和音</b>（七の和音）。</dd>
-    <dt>${yomi('根音','こんおん')}・第3音・第5音</dt>
-    <dd>基本形で 下から <b>根音</b>、根音の 3度上の <b>第3音</b>、5度上の <b>第5音</b>。いまの ${c.label} は ${roles}。</dd>
+    ?`音階の 7ばんめの音。主音の すぐ下（となり）に あって、主音へ 行きたがる音。短調では「${PA.nmH(key.natLT)}」を 半音上げて「${PA.nmH(key.lt)}」に するよ。`
+    :`音階の 7ばんめの音${dg(6)}。主音の すぐ下（となり）に あって、主音へ 行きたがる音。`;
+  return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary><dl>
+    <dt>${yomi('主音','しゅおん')}</dt>
+    <dd>音階の 1ばんめの音。いまの 調では ${dg(0)}。調の 名前にも なる 音だよ。</dd>
+    <dt>${yomi('主和音','しゅわおん')}・${yomi('下属和音','かぞくわおん')}・${yomi('属和音','ぞくわおん')}</dt>
+    <dd>Ⅰ・Ⅳ・Ⅴ の べつの よびかた。いまの 調では Ⅰ は ${dg(0)}、Ⅳ は ${dg(3)}、Ⅴ は ${dg(4)} から つくる 和音。</dd>
+    <dt>${yomi('属七の和音','ぞくしちの わおん')}</dt>
+    <dd>Ⅴ7 の べつの よびかた。Ⅴ に もうひとつ とばして 音を のせた、4つの音の 和音。</dd>
+    <dt>${yomi('根音','こんおん')}・第3音・第5音・第7音</dt>
+    <dd>ひとつとばしで つんだ 和音の 音の 名前。いちばん下が <b>根音</b>、2つめが <b>第3音</b>、3つめが <b>第5音</b>、Ⅴ7 の 4つめが <b>第7音</b>。いまの ${c.label} は ${roles}。</dd>
     <dt>${yomi('導音','どうおん')}</dt>
-    <dd>${lt}</dd>
+    <dd>${lt}</dd>${key.minor?`
+    <dt>${yomi('和声的短音階','わせいてき たんおんかい')}</dt>
+    <dd>7ばんめの音を 半音上げた 短調の 音階。🪜 かいだんの 短調は この 音階だよ。</dd>`:''}
   </dl></details>`;
 }
 function render(){

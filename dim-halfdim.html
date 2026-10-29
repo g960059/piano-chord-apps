@@ -64,8 +64,7 @@
 .more ul{margin:0;padding-left:1.3em}
 .more li{margin:6px 0}
 .rule{margin-top:10px}
-/* 📖 用語メモ（くわしく 知りたい人むけ。ふだんは とじておく） */
-.terms>summary small{font-weight:400;font-size:12px;color:var(--sub);margin-left:8px}
+/* 📖 ことばメモ（本や 楽譜で 見かける 名前。ふだんは とじておく） */
 .terms dl{margin:0}
 .terms dt{font-weight:800;margin:12px 0 2px}
 .terms dt:first-child{margin-top:2px}
@@ -160,6 +159,8 @@ const namesW=(ns,sep='・')=>ns.map(nmW).join(sep);
 const namesD=(s,sep='・')=>s.stack.map(n=>n===s.six?`<span class="nw dn">${PA.nmH(n)}</span>`:n.tag==='lt'?`<span class="nw up">${PA.nmH(n)}</span>`:nmW(n)).join(sep);
 const tonicOf=k=>({letter:k.l,acc:k.a});
 const stripP=r=>String(r).replace(/（.*$/,'');
+// 「ひとつずつ くらべる」の 小さい ことば（core.js の 役わり名を やさしく）
+const SUBTXT={'たかい ほう':'長調の 形','ひくい ほう':'短調の 形（半音 ひくい）'};
 
 /* ===== けんばん ===== */
 const isWhite=m=>!PA.BLACK.has(PA.mod(m,12));
@@ -285,7 +286,7 @@ function staticMsg(P){
 // つくりかたの さいごの 文（設定で 音の 名前を かえても いまの 名前で 出るように、その つど つくる）
 const doneMsg=P=>`🎉 <b>できあがり！</b> 半減七は <b>${namesD(P.maj)}</b>、減七は <b>${namesD(P.min)}</b>。<br>どちらも Ⅴ9 の 根音を はぶいた 和音で、ちがうのは いちばん上の 音（Ⅶ7 の <b class="dn">第7音</b> ＝ Ⅴ9 の 第9音）だけ！`;
 function enhNote(P){
-  if(P.respell) return `<p class="note">※ ${kn(P.key)}と ${kn(P.majK)}は おなじ けんばん。${kn(P.key)}の 同主調（${kn(H.minorOf(P.key.l,P.key.a))}）は 調号に ${PA.H('𝄫')} が 入るので、短調と くらべるときは ${kn(P.majK)}と ${kn(P.minK)}で 書くよ。</p>`;
+  if(P.respell) return `<p class="note">※ ${kn(P.key)}と ${kn(P.majK)}は おなじ けんばん。${kn(P.key)}と おなじ 主音の 短調（${kn(H.minorOf(P.key.l,P.key.a))}）は 調号に ${PA.H('𝄫')} が 入るので、短調と くらべるときは ${kn(P.majK)}と ${kn(P.minK)}で 書くよ。</p>`;
   const other=state.minor?P.majK:P.minK;
   if(listed(other)) return '';
   let t=`※ ${kn(other)}は この アプリの 調の リストに ない 調（おなじ 高さの ${enhName(other)}で 書くことが 多い）。ここでは 文字を そろえて くらべるために ${kn(other)}で 書いているよ。`;
@@ -326,11 +327,11 @@ function tableCard(P){
   if(v9) rows+=`<tr class="om"><th>${stripP(H.v9(M.k)[0].role)}（はぶく）</th><td>${PA.nmH(M.root)}</td><td>${PA.nmH(N.root)}</td></tr>`;
   ORDER.forEach((vi,j)=>{
     const rm=v9?M.v9Roles[vi]:M.viiRoles[vi], rn=v9?N.v9Roles[vi]:N.viiRoles[vi], same=rm===rn;
-    const sub=r=>same?'':`<small>${(String(r).match(/（(.*)）/)||['',''])[1]}</small>`;
+    const sub=r=>{if(same) return ''; const t=(String(r).match(/（(.*)）/)||['',''])[1]; return `<small>${SUBTXT[t]||t}</small>`;};
     const d=j===P.di, a=M.stack[j], b=N.stack[j];
     rows+=`<tr class="${d?'d':''}"><th>${same?rm:stripP(rm)}</th><td>${PA.nmH(a)}${sub(rm)}</td><td>${PA.nmH(b)}${sub(rn)}<span class="eq">${d?'ちがう！':'おなじ'}</span></td></tr>`;
   });
-  const note=v9?`Ⅴ9 として 見ると、音階の 5ばんめ${q(M.root)}（根音）を はぶいた 形。ちがうのは <b class="dn">第9音</b>だけ（長調は 長9度、短調は 短9度）。`
+  const note=v9?`Ⅴ9 として 見ると、音階の 5ばんめ${q(M.root)}（根音）を はぶいた 形。ちがうのは <b class="dn">第9音</b>だけ（短調の ほうが 半音 ひくい）。`
     :`下の 3つ（根音・第3音・第5音）は どちらも おなじ 減三和音。<b class="dn">第7音</b>だけ ちがうよ。`;
   return `<section class="card"><h2>🔍 ひとつずつ くらべる<small>${kn(M.k)}と ${kn(N.k)}</small></h2>
     ${PA.seg('view',[['vii','Ⅶ7 として 見る'],['v9','Ⅴ9 として 見る']],state.view,'full')}
@@ -352,7 +353,7 @@ function resText(P,s){
 }
 function resCard(P){
   const s=P[state.side], lt=s.ch[0];
-  return `<section class="card"><h2>➡️ Ⅰへ 解決<small>導音だけ 上へ、ほかの 3つは 下へ</small></h2>
+  return `<section class="card"><h2>➡️ Ⅰへ すすむ<small>導音だけ 上へ、ほかの 3つは 下へ</small></h2>
     <div style="margin-bottom:8px">${PA.seg('rside',[['maj','☀️ 半減七 → Ⅰ'],['min','🌙 減七 → Ⅰ']],state.side,'full')}</div>
     ${resStaff(s)}
     <p class="note">${resText(P,s)}${kn(s.k)}の Ⅰ に なるよ。下の「➡️ Ⅰへ」で 聴けるよ。</p>
@@ -381,7 +382,7 @@ function shapeCard(P){
     <div class="shrow"><b style="color:${SUN}">☀️ ${kn(P.maj.k)}</b><div class="chips">${chainHTML(P.maj,false)}</div></div>
     <div class="shrow"><b style="color:${NIGHT}">🌙 ${kn(P.min.k)}</b><div class="chips">${chainHTML(P.min,true)}</div></div>
     <div class="rule">半減七の 第7音を 半音下げると 減七。<br>減七の 第7音を 半音上げると 半減七。</div>
-    <p class="note">減七は 4つの 音が ぜんぶ おなじ 間かく（短3度）なので、けんばんで いうと <b>3つの家族</b> しか ないよ（<a href="minor-family.html" data-go="family">🏠 Ⅴの家族</a>）。</p></section>`;
+    <p class="note">減七は 4つの 音が ぜんぶ おなじ 間かくで ならぶので、けんばんで いうと <b>3つの家族</b> しか ないよ（<a href="minor-family.html" data-go="family">🏠 Ⅴの家族</a>）。</p></section>`;
 }
 function abCard(P){
   const ab=state.ab;
@@ -400,33 +401,35 @@ function linksCard(P){
   // リストに ない 短調（変イ短調）は、おなじ けんばんの 短調で ひらく
   const m=state.minor?null:P.minK, via=m&&m.enh&&m.idx>=0?`<small class="via">${kn(PA.minorKey(m.idx))}で ひらくよ（おなじ けんばん）</small>`:'';
   return `<section class="card"><h2>🔗 つながる アプリ</h2><div class="links">
-    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族 <small>減七の 3つの家族・Ⅰ への 解決</small>${via}</button>
+    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族 <small>減七の 3つの家族・Ⅰへの すすみかた</small>${via}</button>
     <button class="btn" data-act="go" data-v="enharmonic">🔀 異名同音の 読みかえ <small>おなじ 減七が 4つの 短調の Ⅶ7 に なる</small>${via}</button>
   </div></section>`;
 }
 function moreHTML(P){
   const M=P.maj, N=P.min;
   return `<details class="more" data-d="more"><summary>💡 もっと くわしく</summary><ul>
-    <li><b>名前の わけ</b>：減七は いちばん下${q(N.stack[0])}と いちばん上${q(N.six)}が「減7度」。半減七は 下の 3つが 減七と おなじ 減三和音で、いちばん上${q(M.six)}が「短7度」。半分だけ 減っている ので「半減七」。</li>
+    <li><b>名前の わけ</b>：減七は、4つの 音が ぜんぶ 小さな おなじ 間かくで つまった 形。半減七は 下の 3つ だけが 減七と おなじで、いちばん上${q(M.six)}が 減七${q(N.six)}より 半音 高い。半分だけ 減七と おなじ なので「半減七」。</li>
     <li><b>長調で 減七を つかう</b>ことも あるよ。${kn(N.k)}（おなじ 主音の 短調）から かりた 和音で、準固有和音（記号は ${H.label(P.majK,'borrowed','vii_dim7')}）。</li>
-    <li><b>短調の 半減七</b>：${q(M.six)}は 旋律的短音階で 上げた 6ばんめ。短調の 和音としては ふつう つかわないよ。</li>
-    <li>芸大の 和声では、Ⅶ7 を <b>Ⅴ9 の 根音省略形</b>（Ⅴ9 から 根音を はぶいた 形）と 考えるよ。だから はたらきは Ⅴ と おなじ ドミナント。Ⅰ へ すすむよ。</li>
+    <li><b>短調で 半減七？</b>：短調で ${q(M.six)}を つかうには、6ばんめを 半音 上げる ことに なる。短調の 和音としては ふつう つかわないよ。</li>
+    <li>Ⅶ7 は、<b>Ⅴ9 から 根音を はぶいた 形</b>と 考えるよ。だから Ⅴ の なかまで、Ⅴ と おなじように Ⅰ へ すすむよ。</li>
     <li>ダブルシャープは「<span class="ds">x</span>」、ダブルフラットは「${PA.H('𝄫')}」と 書くよ。</li>
     <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべるよ。</li>
   </ul></details>`;
 }
-// 📖 用語メモ：正式な 名前（いまの 調・和音の 音を れいに）。よみかたは 小さく
+// 📖 ことばメモ：本や 楽譜で 見かける 名前を、やさしい ことばで（いまの 調の 音を れいに）。よみかたは 小さく
 function termsHTML(P){
-  const M=P.maj, N=P.min;
-  return `<details class="more terms" data-d="terms"><summary>📖 用語メモ<small>正式な よびかた</small></summary><dl>
+  const M=P.maj, N=P.min, W=n=>PA.nmH({letter:n,acc:0});
+  return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary><dl>
     <dt>減七の和音<span class="yomi">（げんしち の わおん）</span></dt>
-      <dd>減三和音の 上に、根音から <b>減7度</b>の 音を のせた 七の和音。となりどうしが ぜんぶ 短3度。例：${kn(N.k)}の Ⅶ7（${namesW(N.stack)}）。</dd>
-    <dt>半減七の和音（減五短七の和音）<span class="yomi">（はんげんしち の わおん）</span></dt>
-      <dd>減三和音の 上に、根音から <b>短7度</b>の 音を のせた 七の和音。長調の Ⅶ7（導音の 上の 七の和音）が この 形で、これを「導七の和音<span class="yomi">（どうしち）</span>」と よぶ。例：${kn(M.k)}の Ⅶ7（${namesW(M.stack)}）。短調の Ⅱ7 も 半減七の 形だけれど、導七とは よばない。</dd>
+      <dd>4つの 音が ぜんぶ おなじ 間かくで つみかさなった 七の和音。短調の Ⅶ7 が この 形。例：${kn(N.k)}の Ⅶ7（${namesW(N.stack)}）。</dd>
+    <dt>半減七の和音<span class="yomi">（はんげんしち の わおん）</span></dt>
+      <dd>減七の いちばん上の 音を 半音 上げた 七の和音。長調の Ⅶ7 が この 形。例：${kn(M.k)}の Ⅶ7（${namesW(M.stack)}）。長調の Ⅶ7 は「導七の和音<span class="yomi">（どうしち）</span>」と 書く 本も あるよ。</dd>
     <dt>根音省略形<span class="yomi">（こんおん しょうりゃくけい）</span></dt>
-      <dd>和音から 根音を はぶいた 形。芸大和声では Ⅶ7 を Ⅴ9 の 根音省略形、Ⅶ（減三和音）を Ⅴ7 の 根音省略形 と 考える。だから はたらきは ドミナント（Ⅴ）の まま。</dd>
-    <dt>長調の Ⅶ7・短調の Ⅶ7</dt>
-      <dd>長調の Ⅶ7 は <b>半減七</b>（長9度の Ⅴ9 の 根音省略形）。短調の Ⅶ7 は、和声的短音階で 導音を 上げて つむので <b>減七</b>（短9度の Ⅴ9 の 根音省略形）。長調で 減七を 使うと、準固有和音の ${PA.H(H.label(P.majK,'borrowed','vii_dim7'))}。</dd>
+      <dd>和音から 根音を はぶいた 形の こと。「Ⅴ9 の 根音省略形」と 書いて あったら、Ⅶ7 の こと。</dd>
+    <dt>解決<span class="yomi">（かいけつ）</span></dt>
+      <dd>ドキドキする 和音が、おちつく 和音（Ⅰ など）へ すすむ こと。この ページの「Ⅰへ すすむ」の こと。</dd>
+    <dt>短3度<span class="yomi">（たん 3ど）</span></dt>
+      <dd>減七の となりどうしの 間かくの 名前。白鍵で いうと「${W(1)}と ${W(3)}」「${W(2)}と ${W(4)}」の 間かく。</dd>
   </dl></details>`;
 }
 let lastActions='';
@@ -435,7 +438,7 @@ function render(){
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}・${P.respell?`${kn(P.majK)}（おなじ けんばん）で ${kn(P.minK)}と`:`${kn(state.minor?P.majK:P.minK)}と`} くらべる</span></div>`;
   h+=heroCard(P)+kbCard(P)+tableCard(P)+staffCmpCard(P)+resCard(P)+shapeCard(P)+abCard(P)+linksCard(P)+moreHTML(P)+termsHTML(P);
-  h+=`<p class="note">※ 音の 高さは 平均律です。けんばんと「がくふで くらべる」は Ⅶ7 を 導音から ひとつとばしで つんだ 形、「Ⅰへ 解決」は 4声の 形で 鳴らします。</p></div>`;
+  h+=`<p class="note">※ 音の 高さは ふつうの ピアノと おなじです。けんばんと「がくふで くらべる」は Ⅶ7 を 導音から ひとつとばしで つんだ 形、「Ⅰへ すすむ」は 4つの 声（左手 1つ・右手 3つ）の 形で 鳴らします。</p></div>`;
   PA.paint(document.getElementById('view'),h,'dh:'+state.minor+':'+state.keyIdx);
   PA.follow(document.getElementById('view')); // 光る鍵が 見えるように（見えて いれば 動かさない。鳴らしおわって もとの 形に もどったときも）
   const acts=(state.anim?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
