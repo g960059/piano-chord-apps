@@ -321,7 +321,7 @@ function widgetCard(key){
     </div>
     <div class="msg" style="margin-top:10px">${wMsg(key)||`${PA.keyName(key)}の主音「${PA.nmH(W.lo0)}」から${state.wn}度上の「${PA.nmH(W.hi0)}」。ボタンで♯・♭をつけてみよう。`}</div>
     <div class="wfig"><div class="wst">${staff}</div><div class="scroll" data-sk="wkb">${PA.kbSVG(klo,khi,marks)}</div></div>
-    <div class="row" style="margin-top:8px"><button class="btn small" data-act="wplay">🔊 聴く</button><button class="btn small" data-act="wreset" ${state.ml||state.mh?'':'disabled'}>↩ もとにもどす</button></div>
+    <div class="row" style="margin-top:8px"><button class="btn small" data-act="wplay">${PA.icon('listen')}聴く</button><button class="btn small" data-act="wreset" ${state.ml||state.mh?'':'disabled'}>${PA.icon('undo')}もとにもどす</button></div>
     <p class="note">いちばん広い形よりもう1だん広げると<b>増（ひろげた）</b>、いちばんせまい形よりもう1だんせばめると<b>減（せばめた）</b>。</p>
     <h3>🔗 この名前が出てくるページ</h3>
     <div class="links">${W_LINKS.map(([h,t,s])=>`<a class="btn" href="${h}">${t}<small>${s}</small></a>`).join('')}</div>
@@ -390,7 +390,7 @@ function quizCard(key){
     <p class="askline">${ask}</p>
     <div class="choices" ${q.opts.length===2?'style="grid-template-columns:repeat(2,1fr)"':''}>${choices}</div>
     ${fb}
-    <div class="row" style="margin-top:10px"><button class="btn small" data-act="qplay">🔊 聴く</button>${done?`<button class="btn small primary" data-act="qnext" data-hot="next">${last?'🔁 もういちど':'次 ➡'}</button>`:''}</div>
+    <div class="row" style="margin-top:10px"><button class="btn small" data-act="qplay">${PA.icon('listen')}聴く</button>${done?`<button class="btn small primary" data-act="qnext" data-hot="next">${last?PA.icon('retry')+'もういちど':PA.icon('next')+'次'}</button>`:''}</div>
   </section>`;
 }
 
@@ -434,7 +434,7 @@ function render(){
     ${heroCard(key)}${whiteCard()}${widgetCard(key)}${quizCard(key)}${tipsHTML()}${termsHTML()}</div>`;
   PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx);
   PA.paint(document.getElementById('actions'),
-    `<button class="btn primary" data-act="play" data-hot="listen">🔊 2つの音を聴く</button><button class="btn" data-act="rnd">🎲 べつのれい</button>`,'bar');
+    `<button class="btn primary" data-act="play" data-hot="listen">${PA.icon('listen')}2つの音を聴く</button><button class="btn" data-act="rnd">${PA.icon('dice')}べつのれい</button>`,'bar');
 }
 
 /* ===== 音 ===== */
@@ -468,7 +468,7 @@ if(!window.PointerEvent){ // iOS 12など：core は click で鳴らすので、
   document.addEventListener('mousedown',srcOf,true);
 }
 PA.onKey=m=>{ // 音は core が鳴らす
-  if(!pickSrc) return;
+  if(!pickSrc&&!PA.midiIn) return; // 電子ピアノの鍵は、上のけんばんをおしたのとおなじ
   const key=curKey();
   if(state.picks.length!==1) state.picks=[IV.spell1(m,key)];
   else state.picks=IV.spell2(state.picks[0].midi,m,key);

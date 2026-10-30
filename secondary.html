@@ -466,7 +466,7 @@ function kbCaption(key,I,prog){
   if(state.anim) return state.anim.kbCap||'';
   if(state.prog&&prog){const s=prog[state.prog.i];return `ながれ${state.prog.i+1}/${prog.length}：<b style="color:${s.col}">${PA.H(s.lab)}</b>　${namesW(s.ns.slice(1))}（左手${PA.nmH(s.ns[0])}）`;}
   if(state.res===1) return `<b style="color:${TGT}">${I.tl}</b>：${namesW(I.R.slice(1))}（左手${PA.nmH(I.R[0])}）`;
-  return `<b style="color:${SEC}">${I.lab}</b>：<span class="up">赤＝導音・半音上げた音</span>${I.X.some(n=>chg(key,n)<0)?'、<span class="lo">青＝半音下げた音</span>':''}。さわると音が出るよ`;
+  return `<b style="color:${SEC}">${I.lab}</b>：<span class="up">赤＝導音・半音上げた音</span>${I.X.some(n=>chg(key,n)<0)?'、<span class="lo">青＝半音下げた音</span>':''}。${PA.once('tap-sound','さわると音が出るよ')}`;
 }
 function staffCard(key,I){
   const A=state.anim;
@@ -484,40 +484,40 @@ function doppelCard(key,I){
 }
 function progCard(key,I,prog){
   const chainT=CHAIN[key.minor];
-  let h=`<section class="card"><h2>🎵 ながれで聴く<small>「▶️ ながれを鳴らす」で、副属和音が目標をよぶようすを聴こう</small></h2>
+  let h=`<details class="card fold" data-d="prog"><summary><h2>🎵 ながれで聴く<small>「ながれを鳴らす」で、副属和音が目標をよぶようすを聴こう</small></h2></summary>
     ${PA.seg('mode',[['target','選んだ和音で'],['chain','2つつなげる']],state.mode,'full')}`;
-  if(!prog) return h+`<p class="note">この調では、ながれが見つからなかったよ。</p></section>`;
+  if(!prog) return h+`<p class="note">この調では、ながれが見つからなかったよ。</p></details>`;
   const cur=state.prog?state.prog.i:-1;
   h+=`<div class="seqrow">${prog.map((s,i)=>`${i?'<span class="ar" aria-hidden="true">→</span>':''}<span class="sc ${cur===i?'on':''}" style="--c:${s.col}">${PA.H(s.lab)}</span>`).join('')}</div>`;
   const cols=prog.map((s,i)=>({notes:s.ns,color:s.col,label:shortLab(s.lab),op:cur<0||cur===i?1:.35,plain:!s.sec&&!s.tgt}));
   h+=staff(key,cols,[],{sk:'progstaff',cw:96});
   const sop=prog.map(s=>s.ns[3]);
-  h+=`<div class="row" style="margin-top:8px"><button class="btn small night" data-act="prog">▶️ ながれを鳴らす</button></div>`;
+  h+=`<div class="row" style="margin-top:8px"><button class="btn small night" data-act="prog">${PA.icon('play')}ながれを鳴らす</button></div>`;
   let dn='';
   if(state.mode==='chain'){ // Ⅴ7/Ⅴ → Ⅴ7：導音が半音下がってⅤ7の第7音に
     const j=prog.findIndex((s,i)=>s.sec&&i>0&&prog.slice(0,i).some(x=>x.sec)), li=j>=0?prog[j].ns.findIndex(n=>n.tag==='lt'):-1;
     const a=li>=0?prog[j].ns[li]:null, b=a&&prog[j+1]?prog[j+1].ns[li]:null;
     if(a&&b&&b.letter===a.letter&&b.acc===a.acc-1) dn=`<br>${PA.H(prog[j].lab)}の導音${qC(key,a)}は、次がⅤ7なので、同じ声で半音下がってⅤ7の第7音${q(b)}になるよ（べつの声で${q(b)}を出すと、${q(a)}と${q(b)}がちがう声でぶつかって、にごるから）。`;
   }
-  h+=`<p class="note">${state.mode==='chain'?`${H.label(key,'secondary',chainT[0],'V7')}は${H.label(key,'target',chainT[0])}を、${H.label(key,'secondary',chainT[1],'V7')}（ドッペルドミナント）はⅤ7をよぶ。目標が次々にかわるよ。`:`${I.lab} → ${I.tl}のあと、Ⅴ7 → Ⅰでおわるよ。`}ソプラノ（いちばん上）は${namesC(key,sop,' → ')}。${dn}</p></section>`;
+  h+=`<p class="note">${state.mode==='chain'?`${H.label(key,'secondary',chainT[0],'V7')}は${H.label(key,'target',chainT[0])}を、${H.label(key,'secondary',chainT[1],'V7')}（ドッペルドミナント）はⅤ7をよぶ。目標が次々にかわるよ。`:`${I.lab} → ${I.tl}のあと、Ⅴ7 → Ⅰでおわるよ。`}ソプラノ（いちばん上）は${namesC(key,sop,' → ')}。${dn}</p></details>`;
   return h;
 }
 function abCard(key,I){
   const s=abSeqs(key), ab=state.ab;
-  let h=`<section class="card"><h2>👂 どっちが副属和音？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>${s?s.labs.map(l=>PA.H(l)).join(' → '):''}のながれで聴きくらべ</small></h2>`;
-  if(!s) return h+`</section>`;
-  if(s.same) return h+`<p class="note" style="margin-top:0">${I.lab}（${namesW(stackOrder(I.X))}）は<b>調の音だけ</b>でできる和音。${diaLabel(key,I.X)}と同じ音だよ。だから、聴きくらべる音がないよ。ほかの目標や形でためしてみよう。</p></section>`;
+  let h=`<details class="card fold" data-d="ab"><summary><h2>👂 どっちが副属和音？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>${s?s.labs.map(l=>PA.H(l)).join(' → '):''}のながれで聴きくらべ</small></h2></summary>`;
+  if(!s) return h+`</details>`;
+  if(s.same) return h+`<p class="note" style="margin-top:0">${I.lab}（${namesW(stackOrder(I.X))}）は<b>調の音だけ</b>でできる和音。${diaLabel(key,I.X)}と同じ音だよ。だから、聴きくらべる音がないよ。ほかの目標や形でためしてみよう。</p></details>`;
   const D=stackOrder(s.dia[s.xi]), dl=diaLabel(key,I.X);
   const other=lowChanged(key,I)?`半音かえる前の和音（調の音だけでできる和音）の${dl}`:I.k==='V7'?`同じ根音で、調の音だけの和音${dl}`:`いちばん下が同じ音で、調の音だけの和音${dl}`;
   h+=`<p class="note" style="margin-top:0">ひとつは${I.lab}、もうひとつは${other}。${I.tl}に「ぐっとひっぱられる」のはどっち？</p>`;
-  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 問題を出す</button></div></section>`;
-  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ A をきく</button><button class="btn" data-act="abplay" data-v="B">▶️ B をきく</button></div>`;
-  if(ab.answer==null) return h+`<p class="askline">副属和音（${I.lab}）は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">A が${PA.H(shortLab(I.lab))}</button><button class="btn night" data-act="qchoose" data-v="B">B が${PA.H(shortLab(I.lab))}</button></div></section>`;
+  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}問題を出す</button></div></details>`;
+  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">${PA.icon('play')}A をきく</button><button class="btn" data-act="abplay" data-v="B">${PA.icon('play')}B をきく</button></div>`;
+  if(ab.answer==null) return h+`<p class="askline">副属和音（${I.lab}）は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">A が${PA.H(shortLab(I.lab))}</button><button class="btn night" data-act="qchoose" data-v="B">B が${PA.H(shortLab(I.lab))}</button></div></details>`;
   const ok=ab.answer===ab.sec, ob=ab.sec==='A'?'B':'A', lt=I.X.find(n=>n.tag==='lt');
   return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！もういちど聴きくらべてみよう。'}
       <b>${ab.sec}</b>が${I.lab}：${namesC(key,stackOrder(I.X))}、<b>${ob}</b>が${dl}：${namesW(D)}。
       <br>${lt&&chg(key,lt)>0?`導音${qC(key,lt)}が半音上の${I.tl}の根音へのぼるので、${I.tl}がつよく聞こえるんだ。`:`半音かえた音が${I.tl}へなめらかに動くので、${I.tl}がつよく聞こえるんだ。`}</div>
-    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 次の問題</button></div></section>`;
+    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}次の問題</button></div></details>`;
 }
 function overview(key){
   const ts=H.targets(key), ek=effKind(key);
@@ -564,11 +564,13 @@ function termsHTML(key,I){
 // chord でⅤ7/Ⅴ（ドッペル）と副属和音（Ⅴ7/Ⅱ・Ⅴ7/Ⅲ・Ⅴ7/Ⅳ・Ⅴ7/Ⅵ）にしぼる。短調ではクイズのほうでⅤ7/Ⅱが、長調ではⅤ7/Ⅲが出ない
 function tryCard(key){
   return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',level:5,chord:'dd,s2,s3,s4,s6',key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
-    sub:`${PA.keyName(key)}で、副属和音（${key.minor?'Ⅴ7/Ⅲ・Ⅴ7/Ⅳ':'Ⅴ7/Ⅱ・Ⅴ7/Ⅳ'}など）をけんばんで5問おさえてみよう。`,btn:'🎯 けんばんで5問'});
+    sub:`${PA.keyName(key)}で、副属和音（${key.minor?'Ⅴ7/Ⅲ・Ⅴ7/Ⅳ':'Ⅴ7/Ⅱ・Ⅴ7/Ⅳ'}など）をけんばんで5問おさえてみよう。`,btn:PA.icon('target')+'けんばんで5問'});
 }
-function linksCard(){
-  return `<section class="card"><h2>🔗 つながるアプリ</h2><div class="links">
-    <a class="btn" href="doppel.html" data-go="doppel">🔺 <span>Ⅱ7とドッペルドミナント ›<small>Ⅴ7/Ⅴ＝ドッペルドミナント</small></span></a></div></section>`;
+// ドッペル（doppel.html）へのリンクは1つだけ：目標がⅤのときは上の doppelCard がリンクになるので、ここは出さない
+function linksCard(I){
+  if(I.t===5) return '';
+  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>ドッペルドミナントのページ</small></h2></summary><div class="links">
+    <a class="btn" href="doppel.html" data-go="doppel">🔺 <span>Ⅱ7とドッペルドミナント ›<small>Ⅴ7/Ⅴ＝ドッペルドミナント</small></span></a></div></details>`;
 }
 
 /* ===== 画面 ===== */
@@ -604,16 +606,16 @@ function render(){
   h+=overview(key);
   h+=tipsHTML(key);
   h+=termsHTML(key,I);
-  h+=linksCard();
-  h+=`<p class="note">※ 音の高さはふつうのピアノと同じです。</p></div>`;
+  h+=linksCard(I);
+  h+=`</div>`;
   PA.paint(document.getElementById('view'),h,['secondary',state.minor,state.keyIdx,state.target,I.k,state.mode].join(':'));
   if(state.anim||state.prog) PA.follow(document.getElementById('view')); // 鳴っている和音の鍵が見えるように
   renderActions(I);
 }
 function renderActions(I){
   const busy=state.anim||state.prog;
-  const acts=(busy?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
-    `<button class="btn" data-act="play" data-hot="listen">🔊 いっしょに</button><button class="btn primary" data-act="resolve">➡️ ${PA.H(shortLab(I.tls))}へ</button>`;
+  const acts=(busy?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
+    `<button class="btn" data-act="play" data-hot="listen">${PA.icon('listen')}いっしょに</button><button class="btn primary" data-act="resolve">${PA.icon('next')}${PA.H(shortLab(I.tls))}へ</button>`;
   if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
 }
 

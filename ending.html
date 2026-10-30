@@ -195,7 +195,7 @@ function tryCard(key){
   const M=T(state.type), level=key.minor?4:QUIZ_LV[state.type], p={level,key:PA.keyDeck.id(state.minor,state.keyIdx),n:3};
   return PA.tryHTML({to:'ending-quiz',params:Object.assign({mode:'ear'},p),
     sub:`${PA.keyName(key)}で3もん。${M.emoji} ${M.name}も出るレベル${level}だよ。`,
-    btn:'👂 きいて当てる3もん',
+    btn:PA.icon('ear')+'きいて当てる3もん',
     links:[{to:'ending-quiz',params:Object.assign({mode:'see'},p),label:'🎼 見て当てる3もん'}]});
 }
 function termsHTML(key){
@@ -267,8 +267,8 @@ function render(){
   if(step!==lastStep||sig!==lastSig) PA.follow(view);
   lastStep=step; lastSig=sig;
   PA.paint(document.getElementById('actions'),
-    (state.playing?`<button class="btn" data-act="stop" data-hot="listen">⏹ とめる</button>`:`<button class="btn primary" data-act="cplay" data-hot="listen" aria-label="ながして聴く">▶️ <span class="lbl-w">ながして聴く</span><span class="lbl-n">ながす</span></button>`)+
-    `<button class="btn" data-act="again">🔊 もういちど</button><button class="btn nx" data-act="next" data-hot="next" aria-label="次の和音">次 ➡</button>`,'bar');
+    (state.playing?`<button class="btn" data-act="stop" data-hot="listen">${PA.icon('stop')}とめる</button>`:`<button class="btn primary" data-act="cplay" data-hot="listen" aria-label="ながして聴く">${PA.icon('play')}<span class="lbl-w">ながして聴く</span><span class="lbl-n">ながす</span></button>`)+
+    `<button class="btn" data-act="again">${PA.icon('listen')}もういちど</button><button class="btn nx" data-act="next" data-hot="next" aria-label="次の和音">${PA.icon('next')}次</button>`,'bar');
 }
 
 /* ===== 音 ===== */

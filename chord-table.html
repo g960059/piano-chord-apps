@@ -168,7 +168,7 @@ function tryHTML(minor,sel){
   return PA.tryHTML({to:'chord-quiz',params:{key:k?PA.keyDeck.id(minor,sel.i):null,n:5},
     title:k?`<span class="nw">${PA.keyName(k)}の</span>和音をクイズでためそう`:'和音クイズでためしてみよう',
     sub:k?`${PA.keyName(k)}の和音を5もん。表を見ないで、こたえられるかな？`:'表の和音を5もん。マスを選ぶと、その調の問題になるよ。',
-    btn:'🎯 5もんためす'});
+    btn:PA.icon('target')+'5もんためす'});
 }
 function render(){
   const minor=state.minor, n=PA.keyCount(minor), flatFrom=minor?PA.MINOR_FLAT_FROM:PA.MAJOR_FLAT_FROM, sel=state.sel;
@@ -213,8 +213,8 @@ function render(){
   PA.paint(document.getElementById('view'),h,'table:'+minor);
   const hasSel=!!(sel&&sel.minor===minor);
   PA.paint(document.getElementById('actions'),state.hide
-    ?`<button class="btn" data-act="thide">👀 ぜんぶ見せる</button><button class="btn primary wide" data-act="treset">🔄 もういちどかくす</button>`
-    :`<button class="btn primary wide" data-act="thide">🙈 かくしてれんしゅう</button><button class="btn night" data-act="tbuild" ${hasSel?'':'disabled'} aria-label="${hasSel?PA.keyName(keyAt(sel.minor,sel.i))+'の'+CHORDS[sel.ch].label+'の':''}つくりかたを見る">🐸 ${hasSel?`<span class="lbl-w">${CHORDS[sel.ch].label}の</span>`:''}つくりかた</button>`,'bar');
+    ?`<button class="btn" data-act="thide">${PA.icon('eye')}ぜんぶ見せる</button><button class="btn primary wide" data-act="treset">${PA.icon('refresh')}もういちどかくす</button>`
+    :`<button class="btn primary wide" data-act="thide">${PA.icon('eyeOff')}かくしてれんしゅう</button><button class="btn night" data-act="tbuild" ${hasSel?'':'disabled'} aria-label="${hasSel?PA.keyName(keyAt(sel.minor,sel.i))+'の'+CHORDS[sel.ch].label+'の':''}つくりかたを見る">🐸 ${hasSel?`<span class="lbl-w">${CHORDS[sel.ch].label}の</span>`:''}つくりかた</button>`,'bar');
 }
 
 /* ほかのページをひらく：「和音のしくみ」の状態を先に書いておく */

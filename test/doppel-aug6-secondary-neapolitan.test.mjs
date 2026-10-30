@@ -48,7 +48,7 @@ for(const [file,want] of Object.entries(PAGES)){
   });
   test(`${file}：「🔊 いっしょに」に data-hot="listen"`,()=>{
     assert.match(html,/data-act="play" data-hot="listen"/);
-    if(file!=='aug6.html') assert.match(html,/data-act="qnext" data-hot="next">🎲 問題を出す/);
+    if(file!=='aug6.html') assert.match(html,/data-act="qnext" data-hot="next">\$\{PA\.icon\('dice'\)\}問題を出す/);
   });
 }
 

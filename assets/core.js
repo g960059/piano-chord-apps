@@ -25,6 +25,17 @@
  * 平均律・A4＝基準ピッチ（設定で440〜443Hz）。生徒は絶対音感があるので、音の高さと表示はかならずそろえる。
  *
  * きろく：PA.store.get(k,d) / PA.store.set(k,v)（'pianoapps.'+k に JSON）、PA.store.keys() → 'pianoapps.' をとった名前の一覧
+ *   PA.onStore（きろくがかわった）・PA.flushStore（ひかえを書きおわるまでまつ Promise）は native.js がおく
+ *
+ * ----- iOS アプリ（Capacitor） -----
+ *   PA.native … アプリの中（capacitor://localhost）なら true。アプリだけのしくみは assets/native.js（tools/build-app.mjs が足す）
+ *   PA.SITE … 公開しているサイトのアドレス（アプリの中の PA.absUrl・PA.shareHTML はこちらのアドレスになる）
+ *   アプリではランキングを出さない（ear.html の NO_RANK）。ホーム画面に追加・ブラウザの設定などのことばもかえる
+ *
+ * ----- 🎹 電子ピアノ（MIDI）：PA.midi（くわしくは「===== 🎹 電子ピアノ」のところ） -----
+ *   鍵盤をおす → PA.onKey(m)（画面のけんばんとおなじ）。和音でこたえるページは PA.onMidiChord=midis=>{…}
+ *   PA.midi.active() … 機器がつながっている。PA.onMidiChange … つながりがかわった
+ *   PA.midiIn … PA.onKey・PA.onMidiChord の中で true なら電子ピアノから（画面のけんばんにない高さのことがある。ふるえない）
  *
  * ----- アプリの目次（ホーム・つぎへのリンク・もどるにつかう） -----
  *   PA.APP_TYPES … {learn,quiz,play,ref,ear}：{label, c(色), l(うすい色), dk(白い字をのせられるこい色)}
@@ -102,22 +113,89 @@
 'use strict';
 const PA=window.PA={};
 document.documentElement.lang='ja';
+// iOS アプリ（Capacitor）の中：ページは capacitor://localhost/…（アプリの中のファイル）。アプリだけのしくみは assets/native.js
+PA.native=(()=>{try{return location.protocol==='capacitor:';}catch(e){return false;}})();
+if(PA.native){try{document.documentElement.classList.add('pa-native');}catch(e){}} // app.css：リンクの長おしメニューを出さない
+// 公開しているサイト（アプリの中から先生におくるリンクは、こちらのアドレスにする）
+PA.SITE='https://piano-chord-apps.g960059.workers.dev/';
+// ふるえ（ハプティクス）：kind＝'success'（正解）・'light'（まちがい・軽い合図）・'selection'（えらぶ）・'medium'（2回おすボタンの1回め）。
+// ウェブではなにもしない（iPhone の Safari にはない）。アプリでは native.js がおきかえる（iPhone だけ。マイク・電子ピアノのときはふるえない）
+PA.haptic=()=>{};
+// こたえたとき（ok＝正解）。音・見た目といっしょに、ページがよぶ
+PA.answerFx=ok=>{try{PA.haptic(ok?'success':'light');}catch(e){}};
 
-/* ===== 保存（使えないブラウザでもこわれないように） ===== */
+/* ===== ボタンのアイコン（SVG） =====
+ * PA.icon(name) → <svg class="ic">（線のアイコン。色はボタンの文字の色、大きさは文字の大きさにあわせる。読み上げはしない）
+ * 操作のボタン（きく・とめる・次へ など）につかう。気もちやキャラクター（🐸・🎉・聴きわけの顔）は絵文字のまま。
+ * 絵は Lucide 0.548（https://lucide.dev 、ISC ライセンス、© Lucide Contributors・Cole Bemis）の線をそのまま使っている。
+ * ライセンスの全文：assets/icons/LUCIDE-LICENSE.txt（アイコンをふやすときは lucide-static の icons/*.svg の中身をここにうつす） */
+const ICONS={
+  check:'<path d="M20 6 9 17l-5-5"/>',
+  erase:'<path d="M21 21H8a2 2 0 0 1-1.42-.587l-3.994-3.999a2 2 0 0 1 0-2.828l10-10a2 2 0 0 1 2.829 0l5.999 6a2 2 0 0 1 0 2.828L12.834 21"/><path d="m5.082 11.09 8.828 8.828"/>',
+  hint:'<path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/>',
+  next:'<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>',
+  listen:'<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><path d="M16 9a5 5 0 0 1 0 6"/><path d="M19.364 18.364a9 9 0 0 0 0-12.728"/>',
+  retry:'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/>',
+  mic:'<path d="M12 19v3"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><rect x="9" y="2" width="6" height="13" rx="3"/>',
+  piano:'<path d="M18.5 8c-1.4 0-2.6-.8-3.2-2A6.87 6.87 0 0 0 2 9v11a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-8.5C22 9.6 20.4 8 18.5 8"/><path d="M2 14h20"/><path d="M6 14v4"/><path d="M10 14v4"/><path d="M14 14v4"/><path d="M18 14v4"/>',
+  play:'<path d="M5 5a2 2 0 0 1 3.008-1.728l11.997 6.998a2 2 0 0 1 .003 3.458l-12 7A2 2 0 0 1 5 19z"/>',
+  undo:'<path d="M9 14 4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11"/>',
+  repeat:'<path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/>',
+  dice:'<rect width="12" height="12" x="2" y="10" rx="2" ry="2"/><path d="m17.92 14 3.5-3.5a2.24 2.24 0 0 0 0-3l-5-4.92a2.24 2.24 0 0 0-3 0L10 6"/><path d="M6 18h.01"/><path d="M10 14h.01"/><path d="M15 6h.01"/><path d="M18 9h.01"/>',
+  eye:'<path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/><circle cx="12" cy="12" r="3"/>',
+  model:'<path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/>',
+  send:'<path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/>',
+  settings:'<path d="M9.671 4.136a2.34 2.34 0 0 1 4.659 0 2.34 2.34 0 0 0 3.319 1.915 2.34 2.34 0 0 1 2.33 4.033 2.34 2.34 0 0 0 0 3.831 2.34 2.34 0 0 1-2.33 4.033 2.34 2.34 0 0 0-3.319 1.915 2.34 2.34 0 0 1-4.659 0 2.34 2.34 0 0 0-3.32-1.915 2.34 2.34 0 0 1-2.33-4.033 2.34 2.34 0 0 0 0-3.831A2.34 2.34 0 0 1 6.35 6.051a2.34 2.34 0 0 0 3.319-1.915"/><circle cx="12" cy="12" r="3"/>',
+  back:'<path d="m15 18-6-6 6-6"/>',
+  session:'<path d="M13.4 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7.4"/><path d="M2 6h4"/><path d="M2 10h4"/><path d="M2 14h4"/><path d="M2 18h4"/><path d="M21.378 5.626a1 1 0 1 0-3.004-3.004l-5.01 5.012a2 2 0 0 0-.506.854l-.837 2.87a.5.5 0 0 0 .62.62l2.87-.837a2 2 0 0 0 .854-.506z"/>',
+  book:'<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>',
+  music:'<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>',
+  checkOn:'<rect width="18" height="18" x="3" y="3" rx="2"/><path d="m9 12 2 2 4-4"/>',
+  checkOff:'<rect width="18" height="18" x="3" y="3" rx="2"/>',
+  copy:'<rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/>',
+  refresh:'<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/>',
+  flag:'<path d="M4 22V4a1 1 0 0 1 .4-.8A6 6 0 0 1 8 2c3 0 5 2 7.333 2q2 0 3.067-.8A1 1 0 0 1 20 4v10a1 1 0 0 1-.4.8A6 6 0 0 1 16 16c-3 0-5-2-8-2a6 6 0 0 0-4 1.528"/>',
+  mute:'<path d="M11 4.702a.705.705 0 0 0-1.203-.498L6.413 7.587A1.4 1.4 0 0 1 5.416 8H3a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1h2.416a1.4 1.4 0 0 1 .997.413l3.383 3.384A.705.705 0 0 0 11 19.298z"/><line x1="22" x2="16" y1="9" y2="15"/><line x1="16" x2="22" y1="9" y2="15"/>',
+  save:'<path d="M12 15V3"/><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="m7 10 5 5 5-5"/>',
+  open:'<path d="m6 14 1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2"/>',
+  bluetooth:'<path d="m7 7 10 10-5 5V2l5 5L7 17"/>',
+  trash:'<path d="M10 11v6"/><path d="M14 11v6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>',
+  close:'<path d="M18 6 6 18"/><path d="m6 6 12 12"/>',
+  target:'<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+  eyeOff:'<path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/><path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/><path d="M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143"/><path d="m2 2 20 20"/>',
+  shuffle:'<path d="m18 14 4 4-4 4"/><path d="m18 2 4 4-4 4"/><path d="M2 18h1.973a4 4 0 0 0 3.3-1.7l5.454-8.6a4 4 0 0 1 3.3-1.7H22"/><path d="M2 6h1.972a4 4 0 0 1 3.6 2.2"/><path d="M22 18h-6.041a4 4 0 0 1-3.3-1.8l-.359-.45"/>',
+  search:'<path d="m21 21-4.34-4.34"/><circle cx="11" cy="11" r="8"/>',
+  chart:'<path d="M3 3v16a2 2 0 0 0 2 2h16"/><path d="M18 17V9"/><path d="M13 17V5"/><path d="M8 17v-3"/>',
+  trophy:'<path d="M10 14.66v1.626a2 2 0 0 1-.976 1.696A5 5 0 0 0 7 21.978"/><path d="M14 14.66v1.626a2 2 0 0 0 .976 1.696A5 5 0 0 1 17 21.978"/><path d="M18 9h1.5a1 1 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M6 9a6 6 0 0 0 12 0V3a1 1 0 0 0-1-1H7a1 1 0 0 0-1 1z"/><path d="M6 9H4.5a1 1 0 0 1 0-5H6"/>',
+  calendar:'<path d="M8 2v4"/><path d="M16 2v4"/><rect width="18" height="18" x="3" y="4" rx="2"/><path d="M3 10h18"/>',
+  globe:'<circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/>',
+  wait:'<path d="M5 22h14"/><path d="M5 2h14"/><path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22"/><path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2"/>',
+  ear:'<path d="M6 8.5a6.5 6.5 0 1 1 13 0c0 6-6 6-6 10a3.5 3.5 0 1 1-7 0"/><path d="M15 8.5a2.5 2.5 0 0 0-5 0v1a2 2 0 1 1 0 4"/>',
+  stop:'<rect x="6" y="6" width="12" height="12" rx="2.5"/>',
+  hand:'<path d="M18 11V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2"/><path d="M14 10V4a2 2 0 0 0-2-2a2 2 0 0 0-2 2v2"/><path d="M10 10.5V6a2 2 0 0 0-2-2a2 2 0 0 0-2 2v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15"/>',
+  link:'<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>'
+};
+PA.icon=name=>ICONS[name]?`<svg class="ic ic-${name}" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${ICONS[name]}</svg>`:'';
+
+/* ===== 保存（使えないブラウザでもこわれないように） =====
+ * PA.onStore … きろくがかわったとき（アプリでは native.js が、消されないところにもひかえる）
+ * PA.flushStore … ひかえを書きおわるまでまつ Promise（ページを読みなおす前に。なければ null） */
+const stored=()=>{try{if(PA.onStore) PA.onStore();}catch(e){}};
 PA.store={
   get(k,d){try{const v=localStorage.getItem('pianoapps.'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
-  set(k,v){try{localStorage.setItem('pianoapps.'+k,JSON.stringify(v));}catch(e){}},
+  set(k,v){try{localStorage.setItem('pianoapps.'+k,JSON.stringify(v));}catch(e){}stored();},
   // 'pianoapps.' のきろくの名前（'pianoapps.' をとったもの）
   keys(){const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf('pianoapps.')===0) out.push(k.slice(10));}}catch(e){}return out;}
 };
 PA.esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
-const S=PA.settings={naming:'solfa',sound:true,pitchA:440,voice:'piano'};
+const S=PA.settings={naming:'solfa',sound:true,pitchA:440,voice:'piano',midiEcho:false};
 const loadSettings=()=>{
   const d=PA.store.get('settings',{})||{};
   if(['solfa','en','ja'].includes(d.naming)) S.naming=d.naming;
   if(typeof d.sound==='boolean') S.sound=d.sound;
   if([440,441,442,443].includes(d.pitchA)) S.pitchA=d.pitchA;
   if(d.voice==='piano'||d.voice==='synth') S.voice=d.voice;
+  if(typeof d.midiEcho==='boolean') S.midiEcho=d.midiEcho;
 };
 loadSettings();
 PA.saveSettings=()=>PA.store.set('settings',S);
@@ -237,7 +315,8 @@ PA.loadPiano=()=>{
   if(Date.now()-pianoFailAt<30000||typeof fetch!=='function'||typeof OfflineAudioContext!=='function') return Promise.resolve(false);
   const oc=new OfflineAudioContext(1,1,44100);
   const all=Promise.all(PIANO.notes.map(n=>fetch(PIANO.base+n.file)
-    .then(r=>{if(!r.ok) throw new Error(n.file+' '+r.status);return r.arrayBuffer();})
+    // アプリの中のファイル：Capacitor は mp3 を HTTP でないこたえ（status 0）でかえす。中身はあるので読む
+    .then(r=>{if(!r.ok&&!(PA.native&&r.status===0)) throw new Error(n.file+' '+r.status);return r.arrayBuffer();})
     .then(ab=>oc.decodeAudioData(ab)).then(b=>({midi:n.midi,buf:pianoTrim(oc,b)}))))
     .then(list=>{pianoBufs=list;return true;});
   // 1つでもとまったままのときは、PIANO.wait 秒で「読めなかった」にする（あとから読めたら、そのときから使う）
@@ -268,6 +347,17 @@ PA.audio=()=>{
   return actx;
 };
 PA.audioRunning=()=>!!(actx&&actx.state==='running');
+// アプリにもどっても音のしくみがうごかない（着信のあとなど。iOS の WKWebView でおきる）：すてて、つぎにさわったときつくりなおす
+// （読んだ録音はそのままつかえる）。native.js がアプリにもどったときによぶ
+PA.audioStuck=()=>!!actx&&actx.state!=='running';
+PA.audioReset=()=>{
+  if(!actx) return;
+  // ページの再生（伴奏づけの光る場所など）もとめて、画面も「とめる」から もとにもどす（どのページも onStopCancel＝描きなおし）
+  try{if(PA.onStopDown) PA.onStopDown();if(PA.onStopCancel) PA.onStopCancel();}catch(e){}
+  PA.stopSound();
+  const old=actx; actx=null; master=null;
+  try{old.close().catch(()=>{});}catch(e){}
+};
 ['pointerup','touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>{if(S.sound)PA.audio();},{capture:true,passive:true}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&actx&&actx.state!=='running'&&actx.state!=='closed')actx.resume().catch(()=>{});});
 // ページをひらいたら、さわる前に録音を読んでおく（さいしょの音からピアノになるように）。音を鳴らさないページ（<body data-nosound>）では読まない
@@ -330,6 +420,89 @@ PA.chord=(ms,o={})=>{
 };
 PA.sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
+/* ===== 🎹 電子ピアノ（MIDI） =====
+ * つないだ電子ピアノの鍵盤をおすと、画面のけんばんをおしたのとおなじ（PA.onKey(m)）。
+ *   音は電子ピアノが鳴らすので、アプリは鳴らさない（せってい「アプリでも鳴らす」をオン＝音の出ない MIDI キーボード用）。
+ * 和音でこたえるページは PA.onMidiChord=midis=>{…} をおく：ひいた音がそろったとき1回（midis＝おさえている音、低いじゅん）。
+ *   あるときは PA.onKey のかわりにこちらをよぶ（鍵を1つずつおしたことにはしない）。
+ * つなぎかた
+ *   ・iOS アプリ：assets/native.js が PA.midi.useNative({start, pair}) で CoreMIDI（USB・Bluetooth）をつなぐ。ページをひらくとつなぐ
+ *   ・ウェブ（Chrome・Edge・Android など）：Web MIDI。⚙️ の「🎹 電子ピアノをつなぐ」をおしたときだけ（ゆるしをきかれるので）
+ *   ・iPhone・iPad の Safari には MIDI がない → ⚙️ にも出さない（マイクの 🎤 でこたえる）
+ * PA.midi.available() … つなげる？  PA.midi.connect() → Promise<boolean>  PA.midi.pair() … Bluetooth の画面（アプリだけ）
+ * PA.midi.devices() … つながっている機器の名前  PA.midi.held() … いまおさえている音（Set）  PA.midi.active() … 機器がある
+ * PA.midi.onChange … つながりがかわったとき（⚙️ が書きなおす）。ページは PA.onMidiChange をおいてもよい
+ * PA.midi.note(on, m, vel)・PA.midi.pedal(on)・PA.midi.setDevices(names) … 入力（native.js・Web MIDI・テストから）
+ * PA.midi.CHORD_WAIT … 和音がそろったとみなす時間（さいごの鍵から ミリ秒） */
+PA.midi=(()=>{
+  const M={CHORD_WAIT:90};
+  let nat=null, web=null, devs=[], timer=0, chordDone=false;
+  const held=new Set();
+  const changed=()=>{try{if(M.onChange) M.onChange();}catch(e){}try{if(PA.onMidiChange) PA.onMidiChange();}catch(e){}};
+  const fire=()=>{
+    timer=0; if(!held.size||chordDone) return;
+    chordDone=true;
+    const ms=[...held].sort((a,b)=>a-b);
+    if(PA.onMidiChord){PA.midiIn=true;try{PA.onMidiChord(ms);}finally{PA.midiIn=false;}}
+  };
+  M.note=(on,m,vel)=>{
+    m=Math.round(+m); if(!(m>=0&&m<=127)) return;
+    if(on&&vel===0) on=false; // ベロシティ0のノートオン＝はなした
+    if(!on){held.delete(m);if(!held.size) chordDone=false;PA.keyLight(m,false);return;}
+    if(held.has(m)) return;
+    held.add(m); chordDone=false; PA.keyLight(m,true);
+    if(S.midiEcho) PA.playNote(m,0,1.4,Math.max(0.08,Math.min(0.3,(vel||64)/127*0.3)));
+    if(PA.onMidiChord){clearTimeout(timer);timer=setTimeout(fire,M.CHORD_WAIT);return;}
+    // PA.midiIn＝電子ピアノからの鍵（ページは、画面にない高さをけんばんの中へうつすのにつかう）
+    if(PA.onKey){PA.midiIn=true;try{PA.onKey(m);}finally{PA.midiIn=false;}}
+  };
+  M.pedal=()=>{}; // いまはつかわない（おさえている音だけで和音をきめる）
+  M.held=()=>new Set(held);
+  // おさえていた鍵の画面のへこみも、もどしてからわすれる（機器がはずれたら、はなした知らせはもうこない）
+  M.reset=()=>{held.forEach(m=>{try{PA.keyLight(m,false);}catch(e){}});held.clear();clearTimeout(timer);timer=0;chordDone=false;};
+  M.devices=()=>devs.slice();
+  M.active=()=>devs.length>0;
+  M.setDevices=names=>{
+    const next=(Array.isArray(names)?names:[]).filter(n=>typeof n==='string'&&n).map(n=>n.slice(0,60));
+    if(next.join('\n')===devs.join('\n')) return;
+    devs=next; M.reset(); changed(); // 機器がかわったら、おさえている音はわすれる（はずした機器のオフはもうこない）
+  };
+  M.native=()=>!!nat;
+  M.useNative=o=>{nat=o||null;changed();};
+  M.webAvailable=()=>!nat&&typeof navigator!=='undefined'&&typeof navigator.requestMIDIAccess==='function';
+  M.available=()=>!!nat||M.webAvailable();
+  M.canPair=()=>!!(nat&&nat.pair);
+  M.pair=()=>nat&&nat.pair?Promise.resolve(nat.pair()).catch(()=>{}):Promise.resolve();
+  const webList=()=>{const out=[];try{web.inputs.forEach(i=>{if(i.state!=='disconnected') out.push(i.name||'MIDI');});}catch(e){}return out;};
+  const webHook=()=>{
+    try{web.inputs.forEach(i=>{i.onmidimessage=ev=>{
+      const d=ev.data; if(!d||d.length<2) return;
+      const st=d[0]&0xf0;
+      if(st===0x90) M.note(true,d[1],d[2]); else if(st===0x80) M.note(false,d[1],0);
+      else if(st===0xb0&&d[1]===64) M.pedal(d[2]>=64);
+    };});}catch(e){}
+    M.setDevices(webList());
+  };
+  M.connect=()=>{
+    if(nat) return Promise.resolve(nat.start()).then(()=>true,()=>false);
+    if(web){webHook();return Promise.resolve(true);}
+    if(!M.webAvailable()) return Promise.resolve(false);
+    return navigator.requestMIDIAccess({sysex:false}).then(a=>{web=a;web.onstatechange=webHook;webHook();PA.store.set('midi-web',true);return true;},
+      ()=>{PA.store.set('midi-web',false);return false;});
+  };
+  // ウェブで前につないだことがあるなら、ページをひらいたらつなぐ。ただしブラウザがもうゆるしているときだけ
+  // （ゆるしがリセットされていると、さわってもいないのに「MIDI を使ってもいい？」が出てしまうので）
+  if(typeof window!=='undefined'&&window.addEventListener) window.addEventListener('load',()=>{
+    if(nat||!M.webAvailable()||!PA.store.get('midi-web',false)) return;
+    const P=navigator.permissions; if(!P||!P.query) return; // わからないときは ⚙️ の「つなぐ」をまつ
+    P.query({name:'midi',sysex:false}).then(s=>{
+      if(s.state==='granted') M.connect();
+      else if(s.state==='denied') PA.store.set('midi-web',false);
+    },()=>{});
+  });
+  return M;
+})();
+
 /* ===== けんばん SVG =====
  * marks: Map midi -> {fill, label, tc(文字色), ring(わくの色), light(黒鍵をうすく), bubble(黒鍵ラベルのふきだしの色), sub(下の小さな字), subColor, focus(最初に見せたい鍵),
  *   sr(読み上げで鍵の名前のあとにつけることば。例 'えらんだ・まちがい' →「ミ、えらんだ・まちがい」)}
@@ -356,7 +529,7 @@ PA.kbSVG=(lo,hi,marks=new Map(),opts={})=>{
   const attrs=(m,mk)=>`data-m="${m}" ${mk?'data-mk="1"':''} ${mk&&mk.focus?'data-focus="1"':''} tabindex="${m===tabM?0:-1}" role="button" aria-label="${PA.esc(keyLabel(m)+(mk&&mk.sr?'、'+mk.sr:''))}"`;
   wh.forEach(m=>{
     const x=X[m], mk=marks.get(m);
-    s+=`<rect ${attrs(m,mk)} class="key" x="${x}" y="${TOP}" width="${W}" height="${H}" rx="5" fill="${mk&&mk.fill?mk.fill:'#fff'}" stroke="#8d8278" stroke-width="1.2"/>`;
+    s+=`<rect ${attrs(m,mk)} class="key w${!mk||!mk.fill||/^#f(ff|fffff|4efe8)$/i.test(mk.fill)?' plain':''}" x="${x}" y="${TOP}" width="${W}" height="${H}" rx="5" fill="${mk&&mk.fill?mk.fill:'#fff'}" stroke="#8d8278" stroke-width="1.2"/>`;
     if(mk&&mk.ring) s+=`<rect x="${x+3}" y="${TOP+3}" width="${W-6}" height="${H-6}" rx="5" fill="none" stroke="${mk.ring}" stroke-width="4" pointer-events="none"/>`;
     if(mk&&mk.label) s+=`<text x="${x+W/2}" y="${TOP+H-40}" text-anchor="middle" font-size="${String(mk.label).length>3?12:15}" font-weight="800" fill="${mk.tc||'#fff'}">${PA.Svg(mk.label)}</text>`;
     if(mk&&mk.sub) s+=`<text x="${x+W/2}" y="${TOP+H+17}" text-anchor="middle" font-size="11" font-weight="700" fill="${mk.subColor||'#6f667a'}">${mk.sub}</text>`;
@@ -366,7 +539,7 @@ PA.kbSVG=(lo,hi,marks=new Map(),opts={})=>{
   for(let m=lo;m<=hi;m++){
     if(!PA.BLACK.has(mod(m,12))||X[m-1]===undefined) continue;
     const x=X[m-1]+W-BW/2, mk=marks.get(m);
-    s+=`<rect ${attrs(m,mk)} class="key" x="${x}" y="${TOP}" width="${BW}" height="${BH}" rx="4" fill="${mk&&mk.fill?mk.fill:'#2b2630'}" stroke="#1e1a22" stroke-width="1"/>`;
+    s+=`<rect ${attrs(m,mk)} class="key b" x="${x}" y="${TOP}" width="${BW}" height="${BH}" rx="4" fill="${mk&&mk.fill?mk.fill:'#2b2630'}" stroke="#1e1a22" stroke-width="1"/>`;
     if(mk&&mk.light) s+=`<rect x="${x+3}" y="${TOP+3}" width="${BW-6}" height="${BH-6}" rx="3" fill="#fff" opacity=".45" pointer-events="none"/>`;
     if(mk&&mk.ring) s+=`<rect x="${x+2}" y="${TOP+2}" width="${BW-4}" height="${BH-4}" rx="4" fill="none" stroke="${mk.ring}" stroke-width="4" pointer-events="none"/>`;
     if(mk&&mk.label){
@@ -539,7 +712,8 @@ PA.app=id=>PA.APPS.find(a=>a.id===id)||null;
 PA.seg=(act,opts,cur,cls='')=>`<div class="seg ${cls}" role="group">`+opts.map(([v,l])=>`<button class="${String(v)===String(cur)?'on':''}" data-act="${act}" data-v="${v}" aria-pressed="${String(v)===String(cur)}">${l}</button>`).join('')+`</div>`;
 PA.keyChip=key=>`<button class="keychip" data-pa="keysheet" aria-haspopup="dialog">${PA.keyName(key)}<small>${PA.sigLabel(key)}</small></button>`;
 let sheetEl=null, sheetPrev=null;
-const isOpen=el=>!!el&&(el.open===true||(!!el.hasAttribute&&el.hasAttribute('open')));
+// とじているとちゅう（すっと下がっているあいだ）は、もうとじたことにする（ためしの音などを鳴らさない）
+const isOpen=el=>!!el&&!el.paClosing&&(el.open===true||(!!el.hasAttribute&&el.hasAttribute('open')));
 let sheetSeq=0;
 function sheet(html){
   sheetSeq++;
@@ -557,7 +731,9 @@ function sheet(html){
     }
     document.body.appendChild(sheetEl);
     sheetEl.addEventListener('click',e=>{if(e.target===sheetEl) sheetEl.close();});
+    animateClose(sheetEl);
   }
+  if(sheetEl.paCancelClose) sheetEl.paCancelClose(); // とじているとちゅうにまたひらく：とじるのをやめる
   sheetEl.innerHTML=`<div class="sheet-in">${html}</div>`;
   if(!isOpen(sheetEl)){
     if(!sheetEl.classList.contains('pa-fb')) sheetEl.showModal();
@@ -569,12 +745,31 @@ function sheet(html){
   return sheetEl;
 }
 PA.closeSheet=()=>{if(isOpen(sheetEl)) sheetEl.close();};
+// とじるとき、すっと下がってから close（app.css の .closing）。Esc もおなじ。動きをへらす設定・古いブラウザ（.pa-fb）はすぐ
+function animateClose(el){
+  const real=el.close.bind(el);
+  let timer=0;
+  const stop=()=>{clearTimeout(timer);timer=0;el.paClosing=false;el.removeEventListener('animationend',onEnd);el.classList.remove('closing');};
+  const done=()=>{stop();if(isOpen(el)) real();};
+  const onEnd=e=>{if(e.target===el) done();};
+  el.paCancelClose=()=>{if(timer) stop();};
+  el.close=function(){
+    if(!isOpen(el)) return;
+    if(el.classList.contains('pa-fb')||PA.reduceMotion()){real();return;}
+    el.paClosing=true; el.classList.add('closing'); el.addEventListener('animationend',onEnd);
+    timer=setTimeout(done,320); // animationend がこなくても、かならずとじる
+  };
+  el.addEventListener('cancel',e=>{e.preventDefault();el.close();});
+  // とじているとちゅうのタップ・えらびなおしはうけつけない（2回えらぶ・またひらくのをふせぐ）
+  el.addEventListener('click',e=>{if(el.paClosing){e.preventDefault();e.stopImmediatePropagation();}},true);
+  el.addEventListener('change',e=>{if(el.paClosing) e.stopImmediatePropagation();},true);
+}
 // 調をえらぶシート：minor（短調か）, idx（いま）, both（長調・短調を切りかえられる）, onPick(minor,idx)
 PA.openKeySheet=o=>{
   let minor=!!o.minor;
   const draw=()=>{
     const n=PA.keyCount(minor), flatFrom=minor?PA.MINOR_FLAT_FROM:PA.MAJOR_FLAT_FROM;
-    let h=`<div class="sheet-head"><h2>調を選ぶ</h2><button class="iconbtn" data-sheet="close" aria-label="とじる">✕</button></div>`;
+    let h=`<div class="sheet-head"><h2>調を選ぶ</h2><button class="iconbtn" data-sheet="close" aria-label="とじる">${PA.icon('close')}</button></div>`;
     if(o.both) h+=`<div style="margin-bottom:10px">${PA.seg('pa-mode',[['0','☀️ 長調'],['1','🌙 短調']],minor?'1':'0','full')}</div>`;
     h+=`<div class="keygrid"><div class="sep">調号なし・♯の調</div>`;
     for(let i=0;i<n;i++){
@@ -589,37 +784,57 @@ PA.openKeySheet=o=>{
       if(b.dataset.act==='pa-mode'){minor=b.dataset.v==='1';draw();const n=el.querySelector(`[data-act="pa-mode"][data-v="${minor?1:0}"]`);if(n)n.focus({preventScroll:true});return;}
       if(b.dataset.sheet==='close'){el.close();return;}
       if(b.dataset.sheet==='key'){
-        el.close();o.onPick(minor,+b.dataset.v);
         // 描きなおしで調のボタンが入れかわっても、キーボードのフォーカスを調のボタンにもどす
-        const ae=document.activeElement;
-        if(!ae||ae===document.body||!document.contains(ae)){const n=document.querySelector('[data-pa="keysheet"]');if(n)n.focus({preventScroll:true});}
+        // （すっと下がってからとじるときは、とじおわったあと＝close のあとにも）
+        const refocus=()=>{const ae=document.activeElement;if(!ae||ae===document.body||!document.contains(ae)){const n=document.querySelector('[data-pa="keysheet"]');if(n)n.focus({preventScroll:true});}};
+        el.addEventListener('close',refocus,{once:true});
+        el.close();o.onPick(minor,+b.dataset.v);refocus();
       }
     };
   };
   draw();
 };
 PA.openSettings=()=>{
-  const h=`<div class="sheet-head"><h2>⚙️ せってい</h2><button class="iconbtn" data-sheet="close" aria-label="とじる">✕</button></div>
+  const h=`<div class="sheet-head"><h2>⚙️ せってい</h2><button class="iconbtn" data-sheet="close" aria-label="とじる">${PA.icon('close')}</button></div>
     <div class="setrow"><label for="pa-naming">音の名前</label><select id="pa-naming"><option value="solfa">ドレミ</option><option value="en">CDE</option><option value="ja">ハニホ</option></select></div>
     <div class="setrow"><label for="pa-pitch">基準の音（ラ）</label><select id="pa-pitch"><option value="440">440Hz</option><option value="441">441Hz</option><option value="442">442Hz</option><option value="443">443Hz</option></select></div>
     <div class="setrow"><label for="pa-sound">音を鳴らす</label><select id="pa-sound"><option value="1">🔊 鳴らす</option><option value="0">🔇 鳴らさない</option></select></div>
     <div class="setrow"><label for="pa-voice">音色</label><select id="pa-voice"><option value="piano">🎹 ピアノ</option><option value="synth">🔔 シンプルな音</option></select></div>
     <p class="note">音の高さはふつうのピアノと同じです。ラ（A4）の高さを440〜443Hz から選べます。教室のピアノが442Hz なら、442Hz に。<br>iPhone・iPad で音が出ないときは、消音（マナーモード）を解除してください。<br>ピアノの音は、Yamaha C5 の録音（Salamander Grand Piano V3、Alexander Holm、CC BY 3.0）を短く切って使っています。読みこめないときは、シンプルな音で鳴ります。</p>
+    <div id="pa-midi-box">${midiSecHTML()}</div>
     <div class="setsec"><h3>💾 きろくのひかえ</h3>
-      <p class="note">iPhone・iPad では、このサイトを1週間ほどひらかないと、きろくがきえることがあります。ホーム画面に追加するか、ときどきファイルに書きだしておくと、あんしんです。<br>LINE などのリンクは Safari でひらくので、ホーム画面のアプリとは、きろくがべつになるよ。うつすときは、書きだし・読みこみを使ってね。</p>
-      <div class="row"><button class="btn small" data-sheet="export">💾 きろくをファイルに書きだす</button><button class="btn small" data-sheet="import">📂 ファイルからよみこむ</button></div>
+      <p class="note">${PA.native?'きろくは、この端末の中にあるよ。ときどきファイルに書きだしておくと、あんしんです。<br>ウェブ（Safari など）で使っていたきろくとはべつだよ。うつすときは、ウェブで書きだしたファイルを、ここで読みこんでね。'
+        :'iPhone・iPad では、このサイトを1週間ほどひらかないと、きろくがきえることがあります。ホーム画面に追加するか、ときどきファイルに書きだしておくと、あんしんです。<br>LINE などのリンクは Safari でひらくので、ホーム画面のアプリとは、きろくがべつになるよ。うつすときは、書きだし・読みこみを使ってね。'}</p>
+      <div class="row"><button class="btn small" data-sheet="export">${PA.icon('save')}きろくをファイルに書きだす</button><button class="btn small" data-sheet="import">${PA.icon('open')}ファイルからよみこむ</button></div>
       <input type="file" id="pa-import" accept=".json,application/json" class="pa-sr" tabindex="-1" aria-hidden="true">
       <p class="note" id="pa-backup-msg" role="status"></p>
       <div id="pa-backup-text" hidden></div>
-    </div>`;
+    </div>
+    <div class="row" style="margin-top:12px"><button class="btn small" data-sheet="once-reset">${PA.icon('book')}はじめの説明をもういちど出す</button></div>
+    <p class="note pa-links"><a href="support.html">🛟 こまったとき・おといあわせ</a>　<a href="privacy.html">🔒 プライバシーポリシー</a></p>`;
   const el=sheet(h);
   el.querySelector('#pa-naming').value=S.naming; el.querySelector('#pa-pitch').value=String(S.pitchA); el.querySelector('#pa-sound').value=S.sound?'1':'0'; el.querySelector('#pa-voice').value=S.voice;
+  const midiBox=el.querySelector('#pa-midi-box'), midiEcho=()=>{const m=el.querySelector('#pa-midiecho');if(m) m.value=S.midiEcho?'1':'0';};
+  midiEcho();
+  // つながりがかわったら書きなおす（フォーカスがあったボタンは、書きなおしたあともおなじボタンに）
+  PA.midi.onChange=()=>{
+    if(!isOpen(el)||!midiBox) return;
+    const f=document.activeElement, fs=f&&midiBox.contains(f)?f.dataset.sheet||f.id:null;
+    midiBox.innerHTML=midiSecHTML(); midiEcho();
+    if(fs){const n=midiBox.querySelector(`[data-sheet="${fs}"],#${fs}`)||midiBox.querySelector('button,select');if(n) n.focus({preventScroll:true});}
+  };
   el.onclick=e=>{
     if(e.target===el||e.target.closest('[data-sheet="close"]')){el.close();return;}
     const b=e.target.closest('[data-sheet]'); if(!b) return;
     if(b.dataset.sheet==='export') exportRecords(el);
     if(b.dataset.sheet==='import') el.querySelector('#pa-import').click();
     if(b.dataset.sheet==='copy') copyBackupText(el);
+    if(b.dataset.sheet==='midi-pair') PA.midi.pair();
+    if(b.dataset.sheet==='once-reset'){PA.onceReset();b.innerHTML=PA.icon('check')+'出すようにしたよ';PA.announce('はじめの説明を、また出すようにしたよ');if(PA.onSettings) PA.onSettings();}
+    if(b.dataset.sheet==='midi-connect'){
+      const st=el.querySelector('#pa-midi-st');
+      PA.midi.connect().then(ok=>{if(!ok&&st) st.textContent='つなげなかったよ。電子ピアノをつないでから、もういちどおしてね（「MIDI を使ってもいい？」ときかれたら「許可」）';});
+    }
   };
   el.onchange=e=>{
     const t=e.target;
@@ -627,6 +842,7 @@ PA.openSettings=()=>{
     if(t.id==='pa-naming') S.naming=t.value;
     if(t.id==='pa-pitch'){S.pitchA=+t.value;PA.playNote(69,0,1.6,0.25);}
     if(t.id==='pa-sound'){S.sound=t.value==='1';if(!S.sound)PA.stopSound();}
+    if(t.id==='pa-midiecho') S.midiEcho=t.value==='1';
     if(t.id==='pa-voice'){
       S.voice=t.value;
       if(PA.onStopDown) PA.onStopDown(); // ⏹ とおなじに、ページの再生（ならびの光る場所など）もとめる
@@ -640,6 +856,18 @@ PA.openSettings=()=>{
     PA.saveSettings(); updateSoundBar(); if(PA.onSettings) PA.onSettings();
   };
 };
+// ⚙️ の「🎹 電子ピアノ」（つなげないブラウザ＝iPhone・iPad の Safari などでは出さない）
+function midiSecHTML(){
+  if(!PA.midi.available()) return '';
+  const ds=PA.midi.devices();
+  const st=ds.length?`✅ つながっているよ：${ds.map(PA.esc).join('、')}<br>電子ピアノでひくと、画面のけんばんをおしたのとおなじになるよ。`
+    :PA.native?'USB のケーブルでつなぐか、下のボタンから Bluetooth でつないでね。':'電子ピアノを USB でつないでから、「つなぐ」をおしてね。';
+  const btns=(PA.midi.canPair()?`<button class="btn small" data-sheet="midi-pair">${PA.icon('bluetooth')}Bluetooth でつなぐ</button>`:'')
+    +(!PA.midi.native()&&!ds.length?`<button class="btn small" data-sheet="midi-connect">${PA.icon('piano')}電子ピアノをつなぐ</button>`:'');
+  return `<div class="setsec"><h3>🎹 電子ピアノ（MIDI）</h3><p class="note" id="pa-midi-st" role="status">${st}</p>`
+    +(btns?`<div class="row">${btns}</div>`:'')
+    +`<div class="setrow"><label for="pa-midiecho">アプリでも音を鳴らす</label><select id="pa-midiecho"><option value="0">鳴らさない</option><option value="1">鳴らす（音の出ないキーボードのとき）</option></select></div></div>`;
+}
 /* ----- きろくのひかえ（'pianoapps.' のきろくを JSON ファイルに） ----- */
 // ファイルの中身をたしかめる：{'pianoapps.…': JSON の文字, …}。ちがえば null
 PA.checkBackup=o=>{
@@ -659,9 +887,9 @@ const pad2=n=>(n<10?'0':'')+n;
 // ファイルにできないブラウザ（iOS 12の Safari など）：中身を文字で見せて、コピーできるようにする
 function showBackupText(el,text){
   const box=el.querySelector('#pa-backup-text'); if(!box) return false;
-  box.innerHTML=`<p class="note">このブラウザではファイルにできないので、下の文字をぜんぶコピーして、メモなどにはりつけて、とっておいてね。</p>`
+  box.innerHTML=`<p class="note">${PA.native?'ファイルにできなかったので':'このブラウザではファイルにできないので'}、下の文字をぜんぶコピーして、メモなどにはりつけて、とっておいてね。</p>`
     +`<textarea id="pa-backup-ta" readonly rows="5" aria-label="きろくの中身" style="width:100%;font:16px/1.4 monospace;border:2px solid var(--line);border-radius:12px;padding:8px;background:var(--soft2);color:var(--ink)"></textarea>`
-    +`<div class="row" style="margin-top:6px"><button type="button" class="btn small" data-sheet="copy">📋 コピーする</button></div>`;
+    +`<div class="row" style="margin-top:6px"><button type="button" class="btn small" data-sheet="copy">${PA.icon('copy')}コピーする</button></div>`;
   box.querySelector('#pa-backup-ta').value=text;
   box.hidden=false;
   return true;
@@ -689,8 +917,9 @@ function exportRecords(el){
   }catch(e){say('書きだせなかったよ');return;}
   const fallback=()=>{if(showBackupText(el,text)) say('');else say('書きだせなかったよ');};
   // ホーム画面のアプリ：ダウンロードするともどれないことがあるので、できれば「共有」でファイルをわたす
-  let standalone=false;
-  try{standalone=navigator.standalone===true||(!!window.matchMedia&&matchMedia('(display-mode: standalone)').matches);}catch(e){}
+  // アプリの中もおなじ（ダウンロードのしくみがないので、ダウンロードにすると何も書きださずに「書きだしたよ」と出てしまう）
+  let standalone=PA.native;
+  try{standalone=standalone||navigator.standalone===true||(!!window.matchMedia&&matchMedia('(display-mode: standalone)').matches);}catch(e){}
   if(standalone&&typeof File==='function'&&navigator.share&&navigator.canShare){
     let file=null;
     try{file=new File([text],name,{type:'application/json'});}catch(e){}
@@ -701,6 +930,7 @@ function exportRecords(el){
       return;
     }
   }
+  if(PA.native){fallback();return;}
   const a=document.createElement('a');
   if(!('download' in a)||typeof Blob!=='function'||!window.URL||!URL.createObjectURL){fallback();return;}
   try{
@@ -723,7 +953,12 @@ function importRecords(file,el){
       PA.store.keys().forEach(k=>localStorage.removeItem('pianoapps.'+k));
       Object.keys(data).forEach(k=>localStorage.setItem(k,data[k]));
     }catch(e){say('ほぞんできなかったよ');return;}
-    location.reload();
+    stored();
+    // アプリ：ひかえを書きおわってから読みなおす（2びょうまでまつ）
+    let go=false; const reload=()=>{if(!go){go=true;location.reload();}};
+    let p=null; try{p=PA.flushStore?PA.flushStore():null;}catch(e){}
+    if(p&&typeof p.then==='function'){p.then(reload,reload);setTimeout(reload,2000);}
+    else reload();
   };
   r.onerror=()=>say('よみこめなかったよ');
   r.readAsText(file);
@@ -743,7 +978,7 @@ function updateSoundBar(){
   if(S.sound){if(sb) sb.hidden=true;return;}
   if(!sb){
     sb=document.createElement('div'); sb.id='pa-soundoff'; sb.className='soundoff';
-    sb.innerHTML='<span role="status">🔇 音がオフになっているよ</span><button type="button" class="btn small" data-pa="sound-on">🔊 音を出す</button>';
+    sb.innerHTML='<span role="status">🔇 音がオフになっているよ</span><button type="button" class="btn small" data-pa="sound-on">'+PA.icon('listen')+'音を出す</button>';
     bar.parentNode.insertBefore(sb,bar.nextSibling);
   }
   sb.hidden=false;
@@ -755,12 +990,13 @@ PA.mountBar=o=>{
   const bar=document.getElementById('appbar');
   PA.currentApp=o.app||null;
   const r=PA.store.get('return-to',null);
-  let backEl=`<a class="iconbtn" href="${o.back||'index.html'}" aria-label="ホームにもどる">‹</a>`;
+  // data-pa="back"：ホームから来たばかりなら history.back()（アプリの左はしのスワイプでもどるのとおなじ れきしにする）
+  let backEl=`<a class="iconbtn" href="${o.back||'index.html'}" data-pa="back" aria-label="ホームにもどる">${PA.icon('back')}</a>`;
   if(!o.back&&r&&typeof r.app==='string'&&/^[a-z0-9-]+$/.test(r.app)&&r.app!==o.app&&Date.now()-r.t<36e5){
     const prev=PA.app(r.app), name=prev?prev.title:'前のアプリ';
-    backEl=`<a class="backpill" href="${r.app}.html" data-pa="back" aria-label="${PA.esc(name)}にもどる"><span class="bp-ar" aria-hidden="true">‹</span><span class="bp-tx">${PA.esc(name)}</span>へ</a>`;
+    backEl=`<a class="backpill" href="${r.app}.html" data-pa="back" aria-label="${PA.esc(name)}にもどる"><span class="bp-ar" aria-hidden="true">${PA.icon('back')}</span><span class="bp-tx">${PA.esc(name)}</span>へ</a>`;
   }
-  bar.innerHTML=`${backEl}<h1>${o.title}</h1><button class="iconbtn" data-pa="settings" aria-label="せってい">⚙️</button>`;
+  bar.innerHTML=`${backEl}<h1>${o.title}</h1><button class="iconbtn" data-pa="settings" aria-label="せってい">${PA.icon('settings')}</button>`;
   document.title=o.title;
   if(o.app){
     const t=Date.now(), a=PA.app(o.app);
@@ -797,8 +1033,9 @@ PA.parseParams=search=>{
 PA.params=()=>PA.parseParams(location.search);
 PA.fromLink=()=>{const p=PA.params();return PA.PARAM_KEYS.some(k=>hasOwn(p,k));};
 PA.paramInt=(name,lo,hi)=>{const v=PA.params()[name];if(v==null||!/^-?\d{1,6}$/.test(v)) return null;const n=+v;return n>=lo&&n<=hi?n:null;};
-PA.absUrl=rel=>{try{return new URL(rel,location.href).href;}catch(e){return rel;}};
-PA.shareHTML=(page,params,label)=>`<button type="button" class="btn small pa-share" data-pa="share" data-url="${PA.esc(PA.absUrl(PA.url(page,params)))}">${label||'🔗 リンクをおくる'}</button>`;
+// アプリの中では capacitor://localhost/… になるので、公開しているサイトのアドレスにする（先生・ウェブでひらけるように）
+PA.absUrl=rel=>{try{return new URL(rel,PA.native?PA.SITE+location.pathname.replace(/^\/+/,''):location.href).href;}catch(e){return rel;}};
+PA.shareHTML=(page,params,label)=>`<button type="button" class="btn small pa-share" data-pa="share" data-url="${PA.esc(PA.absUrl(PA.url(page,params)))}">${label||PA.icon('link')+'リンクをおくる'}</button>`;
 const flash=(b,t)=>{
   if(b.dataset.orig==null) b.dataset.orig=b.innerHTML;
   b.textContent=t; PA.announce(t);
@@ -833,7 +1070,10 @@ document.addEventListener('click',e=>{
     // そのページから来たばかりなら history.back()（れきしがふえない・スクロールももどる）
     const h=(b.getAttribute('href')||'').split(/[?#]/)[0];
     let ref=null; try{ref=document.referrer?new URL(document.referrer):null;}catch(err){}
-    if(h&&ref&&ref.origin===location.origin&&(ref.pathname===h||ref.pathname.slice(-(h.length+1))==='/'+h)&&history.length>1){e.preventDefault();history.back();}
+    // origin ではなく protocol と host でくらべる（アプリの capacitor:// は URL の origin が 'null' になる）
+    // ホーム（index.html）は / でひらいていることもある（アプリのさいしょ・公開サイトのトップ）
+    const same=ref&&(ref.pathname===h||ref.pathname.slice(-(h.length+1))==='/'+h||(h==='index.html'&&/\/$/.test(ref.pathname)));
+    if(h&&ref&&ref.protocol===location.protocol&&ref.host===location.host&&same&&history.length>1){e.preventDefault();history.back();}
   }
 });
 // 「もどる」で前の画面からそのままもどってきたとき（bfcache）。ホームでは「まえのアプリ」をわすれる。ほかのページでかえた設定もよみなおす
@@ -859,7 +1099,7 @@ document.addEventListener('click',e=>{
   e.preventDefault(); e.stopImmediatePropagation();
   unArm();
   armed={sig,t:Date.now(),timer:setTimeout(unArm,4000)};
-  showArm(b); PA.announce(b.dataset.confirm);
+  showArm(b); PA.announce(b.dataset.confirm); PA.haptic('medium');
 },true);
 // ほかへフォーカスがうつったらもとにもどす（描きなおしでボタンが入れかわったときはそのまま）
 document.addEventListener('focusout',e=>{
@@ -910,7 +1150,7 @@ PA.tryHTML=(o={})=>{
   const title=o.title||(app?`「${app.title}」でためしてみよう`:'ためしてみよう');
   const more=(o.links||[]).filter(l=>l&&l.to).map(l=>`<a class="btn small" href="${PA.esc(PA.url(l.to,l.params))}">${l.label||PA.esc((PA.app(l.to)||{}).title||l.to)}</a>`).join('');
   return `<section class="card try-card" style="--tc:${T.dk};--tl:${T.l}"><h2>${title}</h2>${o.sub?`<p class="lead">${o.sub}</p>`:''}`
-    +`<a class="btn try-go" href="${PA.esc(PA.url(o.to||'index',o.params))}">${o.btn||'🎯 ためしてみる'}</a>`
+    +`<a class="btn try-go" href="${PA.esc(PA.url(o.to||'index',o.params))}">${o.btn||PA.icon('target')+'ためしてみる'}</a>`
     +(more?`<div class="row try-more">${more}</div>`:'')+`</section>`;
 };
 
@@ -932,13 +1172,22 @@ const lastSigs=new WeakMap();
 const FOCUS_NEXT={build:['stop'],stop:['build','cplay','wcad'],play:['stop'],cplay:['stop'],enew:['eplay'],eans:['enew'],qchoose:['qnext'],qmark:['qnext'],qcheck:['qnext'],qnext:['qcheck']};
 const dKey=(d,i)=>d.id||(d.dataset&&d.dataset.d)||((d.className||'')+':'+((d.querySelector('summary')||{}).textContent||'').trim())||('#'+i);
 const rove=k=>{const svg=k.closest('svg');if(svg) svg.querySelectorAll('[data-m]').forEach(x=>x.setAttribute('tabindex',x===k?'0':'-1'));};
+// こたえの「ぽん」「ゆれ」（app.css）：描きなおす前にも出ていたものには .still
+const FX_SEL='.choice.right,.choice.wrong,.echoice.right,.echoice.wrong,.fb.good,.fb.bad';
+const fxKey=n=>[n.dataset.act||'',n.dataset.v||'',n.classList.contains('right')?'r':n.classList.contains('wrong')?'w':n.classList.contains('good')?'g':'b',
+  n.classList.contains('fb')?(n.textContent||'').slice(0,80):''].join('|');
 PA.paint=(el,html,sig)=>{
   const ae=document.activeElement, ds=ae&&ae.dataset?ae.dataset:{}, inEl=!!ae&&ae!==el&&el.contains(ae);
   const fa=ds.act||null, fv=ds.v, fp=ds.pa||null, wasBtn=inEl&&ae.tagName==='BUTTON';
   const km=inEl&&ds.m!=null&&ae.closest('.kb')?ds.m:null, kIdx=km!=null?[...el.querySelectorAll(`[data-m="${km}"]`)].indexOf(ae):-1;
   const keep={}; if(sig===lastSigs.get(el)) el.querySelectorAll('[data-sk]').forEach(b=>keep[b.dataset.sk]=b.scrollLeft);
   const openD=new Set(); el.querySelectorAll('details').forEach((d,i)=>{if(d.open) openD.add(dKey(d,i));});
+  const fxSeen=new Set(); el.querySelectorAll(FX_SEL).forEach(n=>fxSeen.add(fxKey(n)));
   el.innerHTML=html;
+  // おなじこたえの描きなおし・ひらいたときにもうこたえてあった（読みなおし）：うごきはくりかえさない
+  keyDowns.forEach((n,m)=>el.querySelectorAll(`.kb [data-m="${m}"]`).forEach(k=>k.classList.add('down')));
+  const fxFirst=!lastSigs.has(el);
+  if(fxFirst||fxSeen.size) el.querySelectorAll(FX_SEL).forEach(n=>{if(fxFirst||fxSeen.has(fxKey(n))) n.classList.add('still');});
   if(openD.size) el.querySelectorAll('details').forEach((d,i)=>{if(!d.open&&openD.has(dKey(d,i))) d.open=true;});
   el.querySelectorAll('[data-sk]').forEach(b=>{ if(keep[b.dataset.sk]!=null) b.scrollLeft=keep[b.dataset.sk]; else PA.placeScroll(b); });
   lastSigs.set(el,sig);
@@ -993,23 +1242,43 @@ document.addEventListener('pointerdown',e=>{
   if(e.target.closest('[data-act="stop"]')){stopPend=true;if(PA.onStopDown)PA.onStopDown();else PA.stopSound();return;}
   const k=e.target.closest('[data-m]'); if(!k) return;
   const m=+k.dataset.m;
-  if(e.pointerType==='mouse'){if(e.button!==0)return;PA.audio();PA.playNote(m,0,1.4,0.24);if(PA.onKey)PA.onKey(m);return;}
+  if(e.pointerType==='mouse'){if(e.button!==0)return;keyFlash(k);PA.audio();PA.playNote(m,0,1.4,0.24);if(PA.onKey)PA.onKey(m);return;}
   const box=k.closest('.scroll'), scrollable=!!box&&box.scrollWidth>box.clientWidth+1;
-  const d={m,x:e.clientX,y:e.clientY,played:false};
+  const d={m,k,x:e.clientX,y:e.clientY,played:false,t0:0,lit:0};
   if(PA.audioRunning()&&!scrollable){PA.playNote(m,0,1.4,0.24);d.played=true;}
+  // 鍵をへこませる。横にスクロールできる鍵盤は、0.06びょう指がうごかなかったら（スワイプで鍵が光らないように）
+  const lit=()=>{if(downs.get(e.pointerId)===d&&!d.on){setDown(m,true);d.on=true;d.t0=Date.now();}};
+  if(scrollable) d.lit=setTimeout(lit,60);
   downs.set(e.pointerId,d);
+  if(!scrollable) lit();
 });
+// へこんでいる鍵は高さ（m）でおぼえる：おした鍵で描きなおしても、PA.paint が新しい鍵にもつけなおす
+const keyDowns=new Map(); // m → おしている数（指・マウス・電子ピアノ）
+const setDown=(m,on)=>{
+  const n=(keyDowns.get(m)||0)+(on?1:-1);
+  if(n>0) keyDowns.set(m,n); else keyDowns.delete(m);
+  const v=keyDowns.has(m);
+  try{document.querySelectorAll(`.kb [data-m="${m}"]`).forEach(k=>k.classList.toggle('down',v));}catch(e){}
+};
+// 鍵のへこみをもどす（みじかいタップでも 0.12びょうは見せる。now＝すぐ）
+const keyUp=(d,now)=>{clearTimeout(d.lit);if(!d.on) return;d.on=false;const m=d.m;setTimeout(()=>setDown(m,false),now?0:Math.max(0,120-(Date.now()-d.t0)));};
+const keyFlash=k=>{const m=+k.dataset.m;setDown(m,true);setTimeout(()=>setDown(m,false),150);};
+// 電子ピアノの鍵：おしているあいだ、画面の鍵盤もへこむ（その高さの鍵があるときだけ）
+PA.keyLight=(m,on)=>setDown(m,!!on);
 document.addEventListener('pointerup',e=>{
   if(stopPend&&!(e.target.closest&&e.target.closest('[data-act="stop"]'))) stopCancel();
   const d=downs.get(e.pointerId); if(!d) return;
   downs.delete(e.pointerId);
-  if(Math.hypot(e.clientX-d.x,e.clientY-d.y)>=10) return;
+  const tap=Math.hypot(e.clientX-d.x,e.clientY-d.y)<10;
+  if(tap&&!d.on){setDown(d.m,true);d.on=true;d.t0=Date.now();} // 0.06びょうより早くはなした（横スクロールの鍵盤）：いま見せる
+  keyUp(d,false);
+  if(!tap) return;
   if(!d.played){PA.audio();PA.playNote(d.m,0,1.4,0.24);}
   if(PA.onKey) PA.onKey(d.m);
 });
-document.addEventListener('pointercancel',e=>{downs.delete(e.pointerId);stopCancel();});
+document.addEventListener('pointercancel',e=>{const d=downs.get(e.pointerId);if(d) keyUp(d,true);downs.delete(e.pointerId);stopCancel();});
 // キーボード・読み上げソフトでひく：Enter／スペース（読み上げソフトの「タップ」は detail=0の click）、←→ Home End でとなりの鍵へ
-const hitKey=k=>{const m=+k.dataset.m;PA.audio();PA.playNote(m,0,1.4,0.24);if(PA.onKey)PA.onKey(m);};
+const hitKey=k=>{const m=+k.dataset.m;keyFlash(k);PA.audio();PA.playNote(m,0,1.4,0.24);if(PA.onKey)PA.onKey(m);};
 document.addEventListener('keydown',e=>{
   const k=e.target&&e.target.closest&&e.target.closest('.kb [data-m]'); if(!k||e.ctrlKey||e.metaKey||e.altKey||e.isComposing) return;
   if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat) hitKey(k);return;}
@@ -1021,6 +1290,48 @@ document.addEventListener('keydown',e=>{
 });
 // Pointer Events のないブラウザ（iOS 12の Safari など）では、ふつうのタップ（click）でひく
 document.addEventListener('click',e=>{if(e.detail===0||!window.PointerEvent){const k=e.target.closest&&e.target.closest('.kb [data-m]');if(k) hitKey(k);}});
+
+/* ===== おしたときの手ごたえ（app.css の .is-pressed・.is-nav） =====
+ * タッチ：指がふれたらすぐ .is-pressed（横いっぱいの行・横スクロールの中は 0.06びょうまってから＝スクロールでは光らない）。
+ *   はなす・8px うごく・スクロールになる（pointercancel）でとる。みじかいタップでも 0.1びょうは見せる。マウス・キーボードは :active
+ * おなじサイトのページへのリンクは、つぎのページが出るまで .is-nav（ページがかわるのを待つあいだに、もういちどおさない）
+ * えらぶボタン（.seg・調のシート）と ⚙️ のえらぶらんは、アプリでは軽くふるえる（PA.haptic('selection')） */
+const PRESS_SEL='.btn,.iconbtn,.backpill,.keychip,a.go,.try-go,.choice,.echoice,.kbtn,.cellbtn,.kd-cell,.namechip,.tool,.topbtn,.seg button,.arow,summary';
+let press=null; // {el, t0, x, y, timer}
+const pressOff=(late)=>{
+  if(!press) return; const p=press; press=null; clearTimeout(p.timer);
+  if(!late||!p.t0){p.el.classList.remove('is-pressed');return;}
+  setTimeout(()=>p.el.classList.remove('is-pressed'),Math.max(0,100-(Date.now()-p.t0)));
+};
+document.addEventListener('touchstart',()=>{},{passive:true}); // iOS で :active がすぐ効くように
+document.addEventListener('pointerdown',e=>{
+  if(e.pointerType==='mouse') return;
+  pressOff(false);
+  const el=e.target&&e.target.closest&&e.target.closest(PRESS_SEL);
+  if(!el||el.disabled||el.getAttribute('aria-disabled')==='true') return;
+  const p=press={el,t0:0,x:e.clientX,y:e.clientY,timer:0};
+  const on=()=>{if(press===p){el.classList.add('is-pressed');p.t0=Date.now();}};
+  if(el.matches('.arow,summary')||el.closest('.scroll')) p.timer=setTimeout(on,60); else on();
+},{capture:true,passive:true});
+document.addEventListener('pointermove',e=>{if(press&&Math.hypot(e.clientX-press.x,e.clientY-press.y)>8) pressOff(false);},{capture:true,passive:true});
+document.addEventListener('pointerup',()=>{
+  if(press&&!press.t0){const p=press;clearTimeout(p.timer);p.el.classList.add('is-pressed');p.t0=Date.now();} // 0.06びょうより早くはなした：いま見せる
+  pressOff(true);
+},{capture:true,passive:true});
+document.addEventListener('pointercancel',()=>pressOff(false),{capture:true,passive:true});
+document.addEventListener('click',e=>{
+  if(e.defaultPrevented||e.button>0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey) return;
+  const a=e.target&&e.target.closest&&e.target.closest('a[href]'); if(!a||a.target||a.hasAttribute('download')) return;
+  let u; try{u=new URL(a.href,location.href);}catch(err){return;}
+  if(u.protocol!==location.protocol||u.host!==location.host||(u.pathname===location.pathname&&u.search===location.search)) return;
+  a.classList.add('is-nav'); setTimeout(()=>a.classList.remove('is-nav'),4000);
+});
+document.addEventListener('click',e=>{
+  const b=e.target&&e.target.closest&&e.target.closest('.seg button,.sheet .kbtn');
+  if(b&&!b.disabled&&b.getAttribute('aria-pressed')!=='true'&&!b.classList.contains('on')) PA.haptic('selection');
+},true);
+document.addEventListener('change',e=>{if(e.target&&e.target.closest&&e.target.closest('.sheet select')) PA.haptic('selection');},true);
+window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();document.querySelectorAll('.is-nav,.is-pressed,.kb .down').forEach(n=>n.classList.remove('is-nav','is-pressed','down'));});
 /* ===== ドッペルドミナントと増六の和音（芸大和声の考え方） =====
  * 長調・短調どちらでも、key（PA.majorKey / PA.minorKey）をわたすと、正しいつづりと高さの音をかえす。
  * 音：{letter, acc, midi, role(日本語の役わり), tag('lt'＝Ⅴへの導音、'low'＝下げた音、'b9'＝短9度、'raised'＝上げた音)}
@@ -1832,7 +2143,7 @@ document.addEventListener('click',e=>{if(e.detail===0||!window.PointerEvent){con
       +`<div class="chips" style="margin-bottom:2px">${legend}</div>`
       +body
       +`<p class="note">${note}</p>`
-      +`<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn small" data-act="keystats-reset" data-v="${quiz}"${conf}>🗑 きろくをけす</button></div></section>`;
+      +`<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn small" data-act="keystats-reset" data-v="${quiz}"${conf}>${PA.icon('trash')}きろくをけす</button></div></section>`;
   };
 })();
 /* ===== れんしゅうの回（n もん）とけっかのカード（つかいかたはいちばん上） =====
@@ -1841,6 +2152,19 @@ document.addEventListener('click',e=>{if(e.detail===0||!window.PointerEvent){con
  * じぶんでできた＝ok で hint でない、ヒントでできた＝ok で hint、まちがえた＝ok でない
  */
 PA.HINT_NOTE='こたえる前に見ても、×にはならないよ。「ヒントでできた」になるよ';
+/* はじめの数回だけ出す説明：PA.once(id, html, n=3) → ひらいた回が n 回までは html、そのあとは ''
+ * 1回ひらいたページの中では、なんど描きなおしても出しつづける（きゅうに消えない）。PA.store 'once'＝{id: 見た回数}
+ * ⚙️ の「はじめの説明をもういちど出す」で、ぜんぶ数えなおす（PA.onceReset） */
+const onceSeen=new Set();
+PA.once=(id,html,n)=>{
+  const max=n==null?3:n, all=PA.store.get('once',{}), o=all&&typeof all==='object'&&!Array.isArray(all)?all:{};
+  const c=typeof o[id]==='number'?o[id]:0;
+  if(onceSeen.has(id)) return c<=max?html:'';
+  if(c>=max) return '';
+  onceSeen.add(id); o[id]=c+1; PA.store.set('once',o);
+  return html;
+};
+PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
 (function(){
   const QUIZ_RE=/^[a-z0-9][a-z0-9-]{0,40}$/, HOURS12=12*36e5;
   const clampN=v=>{const n=parseInt(v,10);return n>=1?Math.min(20,n):0;};
@@ -1942,13 +2266,14 @@ PA.HINT_NOTE='こたえる前に見ても、×にはならないよ。「ヒン�
           +`<div class="sc-hint"><b>${T.hint}</b><span>ヒントを見てできた</span></div>`
           +`<div class="sc-wrong"><b>${T.wrong}</b><span>まちがえた</span></div></div>`
           +list
-          +`<div class="sess-teacher"><h3>👩‍🏫 先生に見せる</h3><dl>`
+          // 先生に見せる：日づけ・せってい・リンク（けっかは上の大きな字を見せる）。ふだんはたたんでおく
+          +`<details class="sess-teacher" data-d="sess-teacher"><summary>👩‍🏫 先生に見せる</summary><dl>`
           +`<dt>日づけ</dt><dd>${dateText(+now())}</dd>`
           +`<dt>れんしゅう</dt><dd>${PA.esc(title)}</dd>`
           +(set?`<dt>せってい</dt><dd>${set}</dd>`:'')
-          +`<dt>けっか</dt><dd>${d.n}もん中${T.ok}もん（じぶんで${T.self}・ヒント${T.hint}・まちがい${T.wrong}）${stars}</dd></dl>`
-          +`<div class="row">${PA.shareHTML(page,params,'🔗 同じれんしゅうのリンク')}</div></div>`
-          +`<div class="row sess-btns"><button type="button" class="btn primary" data-act="session-again">🔁 もういちど</button><button type="button" class="btn" data-act="session-free">🎈 じゆうにれんしゅう</button></div>`
+          +`</dl>`
+          +`<div class="row">${PA.shareHTML(page,params,PA.icon('link')+'同じれんしゅうのリンク')}</div></details>`
+          +`<div class="row sess-btns"><button type="button" class="btn primary" data-act="session-again">${PA.icon('retry')}もういちど</button><button type="button" class="btn" data-act="session-free">🎈 じゆうにれんしゅう</button></div>`
           +`</section>`;
       }
     };
