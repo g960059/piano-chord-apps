@@ -474,14 +474,14 @@ function abCard(key,id){
   const ab=state.ab, D=H.diatonic(key,id), B=H.borrowed(key,id), bl=labelOf(key,id,true), dl=labelOf(key,id,false);
   let h=`<section class="card"><h2>👂 どっちがかりた和音？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>①と②の後には、どちらも${nextLab(id)}が鳴るよ</small></h2>
     <p class="note" style="margin-top:0">ひとつは${dl}、もうひとつは${bl}（短調のかげがあるほう）。どっちかな？</p>`;
-  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext">🎲 問題を出す</button></div></section>`;
-  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ ①をきく</button><button class="btn" data-act="abplay" data-v="B">▶️ ②をきく</button></div>`;
+  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext">${PA.icon('dice')}問題を出す</button></div></section>`;
+  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">${PA.icon('play')}①をきく</button><button class="btn" data-act="abplay" data-v="B">${PA.icon('play')}②をきく</button></div>`;
   if(ab.answer==null) return h+`<p class="askline">🌙 かりた和音（${bl}）は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">①が${bl}</button><button class="btn night" data-act="qchoose" data-v="B">②が${bl}</button></div></section>`;
   const ok=ab.answer===ab.b, other=ab.b==='A'?'B':'A', c=changes(key,id);
   return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！もういちど聴きくらべてみよう。'}
       <b>${AB_NM[ab.b]}</b>が${bl}（${members(B).map(x=>nmB(x.n)).join('・')}）、<b>${AB_NM[other]}</b>が${dl}（${members(D).map(x=>nmW(x.n)).join('・')}）。
       <br>${c.map(x=>q(x.b)).join('と')}が入ると、ひびきに短調のかげがさすよ。</div>
-    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 次の問題</button></div></section>`;
+    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}次の問題</button></div></section>`;
 }
 function linksCard(key){
   const n6=H.neapolitan(key), b2=n6[n6.length-1];
@@ -497,7 +497,7 @@ function tryCard(){
   const key=PA.keyDeck.id(false,state.keyIdx);
   return PA.tryHTML({to:'chroma-quiz',params:{key,mode:'keys',level:4,n:5},
     sub:'けんばんで、Ⅳm・♭Ⅵ（短調からかりる和音）をおさえてみよう。レベル4なので、ナポリの六・増六も出るよ。いまの調で5問。',
-    btn:'🎯 5問ためしてみる',
+    btn:PA.icon('target')+'5問ためしてみる',
     links:[{to:'chroma-quiz',params:{key,mode:'keys',chord:'ivm,bvi',n:5},label:'Ⅳmと♭Ⅵだけで5問'}]});
 }
 // この調でかりた音にダブルフラットがつく音（なければ null）
@@ -571,8 +571,8 @@ function render(){
   renderActions();
 }
 function renderActions(){
-  const acts=(state.cad||state.anim?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="cplay">🎵 カデンツ</button>`)+
-    `<button class="btn" data-act="play" data-hot="listen">🔊 いっしょに</button><button class="btn primary" data-act="tonext">➡️ ${nextLab(state.id)}へ</button>`;
+  const acts=(state.cad||state.anim?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="cplay">🎵 カデンツ</button>`)+
+    `<button class="btn" data-act="play" data-hot="listen">${PA.icon('listen')}いっしょに</button><button class="btn primary" data-act="tonext">${PA.icon('next')}${nextLab(state.id)}へ</button>`;
   if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
 }
 

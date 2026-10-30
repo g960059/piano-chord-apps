@@ -61,11 +61,11 @@ test('PA.url・PA.parseParams・PA.params・PA.fromLink・PA.paramInt',()=>{
 test('PA.shareHTML・PA.tryHTML',()=>{
   const PA=loadPA();
   const s=PA.shareHTML('chord-quiz',{key:'M1',n:5});
-  assert.match(s,/^<button type="button" class="btn small pa-share" data-pa="share" data-url="https:\/\/example\.test\/apps\/chord-quiz\.html\?key=M1&amp;n=5">🔗 リンクをおくる<\/button>$/);
+  assert.match(s,/^<button type="button" class="btn small pa-share" data-pa="share" data-url="https:\/\/example\.test\/apps\/chord-quiz\.html\?key=M1&amp;n=5"><svg class="ic ic-link"[^>]*aria-hidden="true"[^>]*>[\s\S]*<\/svg>リンクをおくる<\/button>$/);
   assert.ok(PA.shareHTML('ear',null,'おくる').includes('>おくる<'));
   const t=PA.tryHTML({to:'chord-quiz',params:{key:'M1',n:3},sub:'ト長調で3もん',links:[{to:'ear',label:'👂 耳で'},{to:'chord-table'}]});
   assert.ok(t.includes('class="card try-card"')&&t.includes('--tc:#c0392b'));
-  assert.ok(t.includes('<a class="btn try-go" href="chord-quiz.html?key=M1&amp;n=3">🎯 ためしてみる</a>'));
+  assert.match(t,/<a class="btn try-go" href="chord-quiz\.html\?key=M1&amp;n=3"><svg class="ic ic-target"[^>]*aria-hidden="true"[^>]*>[\s\S]*?<\/svg>ためしてみる<\/a>/);
   assert.ok(t.includes('「和音クイズ」でためしてみよう')&&t.includes('ト長調で3もん'));
   assert.ok(t.includes('href="ear.html">👂 耳で</a>')&&t.includes('href="chord-table.html">和音いちらん表</a>'));
   const t2=PA.tryHTML({to:'cadence',title:'ひいてみよう',btn:'🎹 ひく'});

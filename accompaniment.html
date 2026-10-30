@@ -100,8 +100,9 @@ input[type=checkbox]{flex:none;width:22px;height:22px;accent-color:var(--ink)}
 .palbar{position:-webkit-sticky;position:sticky;bottom:0;z-index:20;margin-left:-16px;margin-right:-16px;padding:6px 12px calc(8px + env(safe-area-inset-bottom,0px));
   background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
   box-shadow:0 -4px 12px rgba(80,60,30,.10);border-radius:16px 16px 0 0;border-top:1px solid var(--line)}
-.selrow{display:flex;align-items:center;gap:6px}
-.selinfo{flex:1;min-width:0;margin:0;font-size:15px;line-height:1.35}
+.selrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
+/* ボタンにおされて文が1〜2字ずつの縦長にならないように：せまいときは文が1行ぶんをとって、ボタンは次の行へ */
+.selinfo{flex:1 1 9em;min-width:0;margin:0;font-size:15px;line-height:1.35}
 .pbtn{flex:none;display:inline-flex;align-items:center;justify-content:center;gap:4px;min-height:44px;padding:4px 12px;border-radius:999px;
   background:var(--soft);font-weight:700;font-size:14px;white-space:nowrap}
 .pbtn.primary{background:var(--ink);color:#fff}
@@ -112,8 +113,10 @@ input[type=checkbox]{flex:none;width:22px;height:22px;accent-color:var(--ink)}
 .cbtn.on{background:var(--c);color:#fff}
 .cbtn.clear{--c:#857c8f;--l:#f4efe8;padding:4px 10px}
 .cbtn.clear .nm{display:block;font-size:12px;font-weight:700}
-/* せまい画面：アイコンの下に小さな字をのこす（タッチでは title が見えないので） */
-@media (max-width:420px){.selinfo .pre,.pbtn .long{display:none}.pbtn{flex-direction:column;width:auto;min-width:52px;padding:2px 6px;gap:0;font-size:18px;line-height:1.1}.pbtn .t{display:block;font-size:10.5px}}
+.cbtn .num svg.ic{width:.95em;height:.95em;vertical-align:-.12em} /* けす・次へのアイコン（PA.icon） */
+.pbtn svg.ic{width:1.1em;height:1.1em}
+/* せまい画面（大きい iPhone のたて＝430・440px もふくむ）：アイコンの下に小さな字をのこす（タッチでは title が見えないので） */
+@media (max-width:500px){.selinfo .pre,.pbtn .long{display:none}.pbtn{flex-direction:column;width:auto;min-width:52px;padding:2px 6px;gap:0;font-size:18px;line-height:1.1}.pbtn .t{display:block;font-size:10.5px}}
 @media (min-width:600px){
   .palette{gap:8px}
   .cbtn{padding:6px 4px}
@@ -723,8 +726,9 @@ function feedbackHTML(song,key,chs){
     if(gs[i]==='good') items.push(`<b>${whereLabel(song,i)}</b>：${CHORDS[chs[i]].label}でも合うよ${state.reveal?`（おてほんは${CHORDS[sl.ans].label}）`:''}`);
   });
   const allOk=!bad&&!empty;
-  let h=`<div class="fb ${allOk?'good':'bad'}" role="status">`;
-  h+=allOk?`🎉 ぜんぶ合っているよ！（◎ ${best}・○ ${good}）「▶️ はじめから」で自分の伴奏をきいてみよう。`
+  // ゆれ・ぽん（app.css）は「こたえあわせ」をおしたときだけ。なおしているあいだはうごかさない
+  let h=`<div class="fb ${allOk?'good':'bad'}${state.fbFresh?'':' still'}" role="status">`;
+  h+=allOk?`🎉 ぜんぶ合っているよ！（◎ ${best}・○ ${good}）「はじめから」で自分の伴奏をきいてみよう。`
           :`◎ ${best}　○ ${good}　× ${bad}${empty?`　まだ${empty}マス`:''}　<span style="font-size:14px">（×のマスをなおすと、その場で ◎○ にかわるよ）</span>`;
   h+=`<div class="legend">◎＝おてほんと同じ　○＝これでも合う　×＝合わない</div>`;
   if(items.length){
@@ -734,29 +738,29 @@ function feedbackHTML(song,key,chs){
   }
   return h+`</div>`;
 }
-const playBtnHTML=playing=>playing?`<button class="pbtn primary" data-act="stop" aria-label="とめる" title="とめる">⏹<span class="t">とめる</span></button>`:`<button class="pbtn primary" data-act="playall" aria-label="はじめからきく" title="はじめからきく">▶️<span class="t">はじめから</span></button>`;
+const playBtnHTML=playing=>playing?`<button class="pbtn primary" data-act="stop" aria-label="とめる" title="とめる">${PA.icon('stop')}<span class="t">とめる</span></button>`:`<button class="pbtn primary" data-act="playall" aria-label="はじめからきく" title="はじめからきく">${PA.icon('play')}<span class="t">はじめから</span></button>`;
 function view(){
   const song=curSong(), key=curKey(), chs=choices(), P=state.play;
   const filled=chs.filter(Boolean).length, N=song.slots.length, si=state.sel, sl=song.slots[si], cur=chs[si];
   let h=`<div class="stack">
     <p class="lead">メロディーにⅠ・Ⅳ・Ⅴ・Ⅴ7をつけて、伴奏を作ってみよう</p>
     <div><p class="lbl">① 曲を選ぶ<span class="cnt">ぜんぶで${SONGS.length}曲<span class="swipe">・よこに動かせるよ</span></span></p>${songsHTML()}</div>
-    <div><p class="lbl">② 調を選ぶ</p><div class="toprow"><div class="keyrow">${PA.keyChip(key)}<button class="btn dice" data-act="randkey" aria-label="ランダムにほかの調にする">🎲 ランダム</button></div>
+    <div><p class="lbl">② 調を選ぶ</p><div class="toprow"><div class="keyrow">${PA.keyChip(key)}<button class="btn dice" data-act="randkey" aria-label="ランダムにほかの調にする">${PA.icon('dice')}ランダム</button></div>
       ${state.randKey===state.keyIdx?`<p class="note keymsg">🎲 <b>${PA.keyName(key)}</b>にしたよ。選んだ和音はそのまま。音の高さだけがかわるよ</p>`:`<p class="note">調をかえても、選んだ和音はそのまま。音の高さだけがかわるよ</p>`}</div>
       ${state.diceUsed||state.randSeen.length||state.randTier!=='all'?`<details class="more randset" id="randset"><summary>🎲 ランダムで出す調：${randTierOf(state.randTier).emoji} ${randTierOf(state.randTier).name}</summary>${PA.keyDeck.tierSeg('randtier',state.randTier)}
         <p class="note">長調の中から出すよ。ぜんぶの調が1回ずつ出るまで、同じ調は出ないよ。嬰ヘ長調と変ト長調は同じ音で、書きかたがちがうだけ。だから1つとかぞえるよ。</p></details>`:''}
-      <div class="sharerow">${PA.shareHTML('accompaniment',shareParams(),'👩‍🏫 この曲をおくる')}</div></div>
+      <div class="sharerow">${PA.shareHTML('accompaniment',shareParams(),PA.icon('send')+'この曲をおくる')}</div></div>
     <section class="card scorecard">
       <div class="scorehead"><h2>③ 和音を選ぶ<small>${song.tip(key)}</small></h2>
         <div class="progress"><b>${filled}</b> / ${N}マス選んだ</div></div>
       ${P&&P.model?`<div class="banner">🎧 おてほんが鳴っているよ。${state.reveal?'マスにはおてほんの和音を出しています。':'よくきいて、自分の和音とくらべてみよう。'}</div>`:''}
       <div class="scroll" data-sk="score">${scoreRows()}</div>
-      <p class="note" style="margin-top:2px">マスをタップして、下のⅠ・Ⅳ・Ⅴ・Ⅴ7から選んでね。${state.autoNext?'選ぶと次のマスへすすむよ。':'いろいろためしたら「➡ 次のマスへ」ですすもう。'}</p>
+      <p class="note" style="margin-top:2px">マスをタップして、下のⅠ・Ⅳ・Ⅴ・Ⅴ7から選んでね。${state.autoNext?'選ぶと次のマスへすすむよ。':'いろいろためしたら「次のマスへ」ですすもう。'}</p>
       <div class="btns">
-        <button class="btn ok ${state.checked&&!state.reveal?'':'wide'}" data-act="check" data-hot="check">✅ こたえあわせ</button>
-        ${state.checked&&!state.reveal?`<button class="btn reveal" data-act="reveal">👀 こたえを見る</button>`:''}
-        <button class="btn" data-act="model">🎧 おてほんをきく</button>
-        <button class="btn ${state.clearArm?'warn':''}" data-act="clear">${state.clearArm?'ほんとうにけす？':'🧽 ぜんぶけす'}</button>
+        <button class="btn ok ${state.checked&&!state.reveal?'':'wide'}" data-act="check" data-hot="check">${PA.icon('check')}こたえあわせ</button>
+        ${state.checked&&!state.reveal?`<button class="btn reveal" data-act="reveal">${PA.icon('eye')}こたえを見る</button>`:''}
+        <button class="btn" data-act="model">${PA.icon('model')}おてほんをきく</button>
+        <button class="btn ${state.clearArm?'warn':''}" data-act="clear">${state.clearArm?'ほんとうにけす？':PA.icon('erase')+'ぜんぶけす'}</button>
       </div>
       ${state.checked?feedbackHTML(song,key,chs):''}
     </section>`;
@@ -781,13 +785,13 @@ function view(){
   h+=`<div class="palbar" role="group" aria-label="和音を選ぶ">
       <div class="selrow">
         <p class="selinfo"><span class="pre">いま選んでいるマス：</span><b>${whereLabel(song,si)}</b>　<span class="mw">メロディー：</span><span class="mi" aria-hidden="true">♪</span><b>${namesH(sounding(sl.notes).map(n=>noteAt(key,n.k)))||'（休み）'}</b></p>
-        <button class="pbtn" data-act="undo" aria-label="ひとつもどす" title="ひとつもどす" ${canUndo()?'':'aria-disabled="true"'}>↩<span class="t"><span class="long">ひとつ</span>もどす</span></button>
-        <button class="pbtn" data-act="playsel" aria-label="このマスだけきく" title="このマスだけきく">🔁<span class="t">このマス</span></button>
+        <button class="pbtn" data-act="undo" aria-label="ひとつもどす" title="ひとつもどす" ${canUndo()?'':'aria-disabled="true"'}>${PA.icon('undo')}<span class="t"><span class="long">ひとつ</span>もどす</span></button>
+        <button class="pbtn" data-act="playsel" aria-label="このマスだけきく" title="このマスだけきく">${PA.icon('repeat')}<span class="t">このマス</span></button>
         ${playBtnHTML(!!P)}
       </div>
       <div class="palette ${state.autoNext?'':'wnext'}">`+CH_KEYS.map((c,i)=>`<button class="cbtn ${cur===c?'on':''}" style="--c:${COL[c]};--l:${LCOL[c]}" data-act="pick" data-v="${c}" aria-pressed="${cur===c}" aria-label="${CHORDS[c].label}（キー${[1,4,5,7][i]}）"><span class="num">${CHORDS[c].label}</span><span class="nm">${namesH(chordTones(key,c))}</span><span class="sym">${PA.H(chordSym(key,c))}</span></button>`).join('')+
-      `<button class="cbtn clear" data-act="pick" data-v="" aria-label="けす"><span class="num">？</span><span class="nm">けす</span></button>`+
-      (state.autoNext?'':`<button class="cbtn go" data-act="next" aria-label="次のマスへ" ${si<N-1?'':'aria-disabled="true"'}><span class="num">➡</span><span class="nm"><span class="gs">次へ</span><span class="gl">次の<br>マスへ</span></span></button>`)+`</div>
+      `<button class="cbtn clear" data-act="pick" data-v="" aria-label="けす"><span class="num">${PA.icon('erase')}</span><span class="nm">けす</span></button>`+
+      (state.autoNext?'':`<button class="cbtn go" data-act="next" aria-label="次のマスへ" ${si<N-1?'':'aria-disabled="true"'}><span class="num">${PA.icon('next')}</span><span class="nm"><span class="gs">次へ</span><span class="gl">次の<br>マスへ</span></span></button>`)+`</div>
     </div>`;
   const mi=PA.nmH(noteAt(key,2)), la=PA.nmH(noteAt(key,5)), re_si=namesH([noteAt(key,1),noteAt(key,6)]), shared=namesH([noteAt(key,0),noteAt(key,3),noteAt(key,4)]);
   h+=`<details class="more tips" ${state.tipsOpen?'open':''}><summary>💡 伴奏づけのコツ</summary><p class="note" style="margin:0 0 6px">${PA.keyName(key)}の音名で書いているよ</p><ol>
@@ -817,7 +821,7 @@ function render(){
   const ae=document.activeElement, focusId=ae&&ae.id, fa=ae&&ae.dataset?ae.dataset.act:null, wasBtn=!!ae&&ae.tagName==='BUTTON';
   const wasSlot=!!ae&&!!ae.getAttribute&&ae.getAttribute('data-slot')!=null;
   try{
-    PA.paint(viewEl,view(),state.songId+':'+state.keyIdx);
+    PA.paint(viewEl,view(),state.songId+':'+state.keyIdx); state.fbFresh=false;
   }catch(err){
     console.error(err);
     if(rendering) throw err;
@@ -960,14 +964,14 @@ document.addEventListener('click',e=>{
     case 'playsel': playRange(state.sel,state.sel); return;
     case 'stop': stopPlay(); break;
     case 'model': playRange(0,curSong().slots.length-1,true,true); return;
-    case 'check': stopPlay(); state.checked=true; break;
+    case 'check': stopPlay(); state.checked=true; state.fbFresh=true; break;
     case 'reveal': state.reveal=true; break;
     case 'style': state.style=v; save(); break;
     case 'clear':
       if(!state.clearArm){state.clearArm=true;clearTimeout(clearTimer);clearTimer=setTimeout(()=>{
         state.clearArm=false;
         if(renderSafe()) return;
-        const b=document.querySelector('[data-act="clear"]'); if(b){b.classList.remove('warn');b.textContent='🧽 ぜんぶけす';}
+        const b=document.querySelector('[data-act="clear"]'); if(b){b.classList.remove('warn');b.innerHTML=PA.icon('erase')+'ぜんぶけす';}
       },3000);break;}
       clearTimeout(clearTimer); state.clearArm=false; stopPlay();
       if(choices().some(Boolean)) pushHist({all:choices().slice(),sel:state.sel});

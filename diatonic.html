@@ -273,7 +273,7 @@ function famCard(key){
     :'おちつく（Ⅰ）→ ひろがる（Ⅳ）→ もどりたくなる（Ⅴ）→ おちつく（Ⅰ）。いつものながれ。'}</p>`;
   const cols=fl.map((c,i)=>({notes:c.rh,lh:c.lh,color:colOf(c.d),accColor:LT,op:state.step<0||i===state.step?1:0.3,label:ROM[c.d],labelColor:colOf(c.d)}));
   h+=`<div style="margin-top:8px">${staffBox(PA.staffSVG(key,cols,{grand:true,colW:58}),'pstaff',0.62)}</div>`;
-  h+=`<div class="row" style="margin-top:8px">${state.playing?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="cplay">▶️ ながして聴く</button>`}</div></section>`;
+  h+=`<div class="row" style="margin-top:8px">${state.playing?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="cplay">${PA.icon('play')}ながして聴く</button>`}</div></section>`;
   return h;
 }
 function linksCard(key){
@@ -302,11 +302,11 @@ function quizCard(key){
       const cls=done?(c===ans?'right':c===x.pick?'wrong':''):'';
       return `<button class="choice ${cls}" data-act="qpick" data-v="${i}:${c}" ${done?'aria-disabled="true"':''}>${cls==='right'?'⭕ ':cls==='wrong'?'❌ ':''}${label(c)}</button>`;
     }).join('');
-    return `<div class="qbox"><p class="qtext"><span>Q${i+1}. ${qt}</span>${x.type==='feel'?`<button class="btn small" data-act="qplay" data-v="${x.d}" aria-label="${ROM[x.d]}を聴く">🔊 聴く</button>`:''}</p>
+    return `<div class="qbox"><p class="qtext"><span>Q${i+1}. ${qt}</span>${x.type==='feel'?`<button class="btn small" data-act="qplay" data-v="${x.d}" aria-label="${ROM[x.d]}を聴く">${PA.icon('listen')}聴く</button>`:''}</p>
       <div class="choices ${c3?'c3':''}">${ch}</div>${fb}</div>`;
   }).join('');
   return `<section class="card"><h2>✅ たしかめよう<small>選ぶと、すぐこたえが出るよ</small></h2>${rows}
-    <div class="row" style="margin-top:12px"><button class="btn small" data-act="qnew">🔄 ほかの問題</button></div></section>`;
+    <div class="row" style="margin-top:12px"><button class="btn small" data-act="qnew">${PA.icon('refresh')}ほかの問題</button></div></section>`;
 }
 let lastDeg=-1;
 function render(){
@@ -337,7 +337,7 @@ function render(){
   if(d!==lastDeg) PA.follow(view); // 和音がかわったら鍵盤をその和音へ（見えていれば動かさない）
   lastDeg=d;
   PA.paint(document.getElementById('actions'),
-    `<button class="btn primary" data-act="play" data-hot="listen">🔊 いっしょに</button><button class="btn" data-act="arp">🎶 ひとつずつ</button><button class="btn" data-act="next" data-hot="next" aria-label="次の和音">次 ➡</button>`,'bar');
+    `<button class="btn primary" data-act="play" data-hot="listen">${PA.icon('listen')}いっしょに</button><button class="btn" data-act="arp">${PA.icon('music')}ひとつずつ</button><button class="btn" data-act="next" data-hot="next" aria-label="次の和音">${PA.icon('next')}次</button>`,'bar');
 }
 
 /* ===== 音 ===== */

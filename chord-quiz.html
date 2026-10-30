@@ -57,6 +57,7 @@
 .tog button{min-height:48px;border-radius:14px;font-weight:800;font-size:17px;background:var(--card);color:var(--sub);border:3px solid var(--line)}
 .tog button.on{background:var(--l);color:var(--c);border-color:var(--c)}
 .tog.one{grid-template-columns:1fr}
+.tog button svg.ic{width:1.1em;height:1.1em;margin-right:4px;vertical-align:-.2em} /* チェックの四角（PA.icon） */
 .tips ol{margin:0;padding-left:1.3em}
 .tips li{margin:6px 0}
 .actionbar .btn{flex:1 1 auto}
@@ -323,7 +324,7 @@ function gradeKeys(t){
 }
 function checkKeys(){
   const t=chordTones(keyOfQ(Q.q),Q.q.chord), ok=gradeKeys(t).ok;
-  Q.checked=true; Q.lastOk=ok;
+  Q.checked=true; Q.lastOk=ok; PA.answerFx(ok);
   if(Q.result===null) answered(ok); // スコアは1回目だけ
   if(ok) PA.chord(t.map(n=>n.midi));
 }
@@ -366,7 +367,7 @@ function choiceHint(key,c,t,pick){
 }
 function choose(i){
   const ok=!!Q.choices[i].ok;
-  Q.chosen=i; Q.lastOk=ok;
+  Q.chosen=i; Q.lastOk=ok; PA.answerFx(ok);
   if(Q.result===null) answered(ok); // スコアは1回目だけ
   PA.chord(chordTones(keyOfQ(Q.q),Q.q.chord).map(n=>n.midi));
 }
@@ -421,12 +422,12 @@ function micHTML(key,t){
   if(!MIC_OK||Q.type!=='keys'||Q.checked) return '';
   if(MIC.phase==='intro') return `<div class="micbox" role="group" aria-labelledby="mic-h"><p id="mic-h" class="mict">🎤 マイクでピアノの音をきいてしらべるよ。音はこの端末の中だけでしらべて、どこにもおくらないよ。</p>
     <p class="note">録音はしないよ。「マイクを使ってもいい？」ときかれたら「許可」をおしてね。しずかな部屋で、端末をピアノの近く（譜面台など）におくと、よくきこえるよ。</p>
-    <div class="row"><button class="btn primary small" data-act="micstart">🎤 始める</button><button class="btn small" data-act="micoff">やめる</button></div></div>`;
+    <div class="row"><button class="btn primary small" data-act="micstart">${PA.icon('mic')}始める</button><button class="btn small" data-act="micoff">やめる</button></div></div>`;
   const on=MIC.phase==='on'||MIC.phase==='wait';
-  let h=`<div class="row microw"><button class="btn small mic" data-act="mic" aria-pressed="${on}">🎤 ピアノでひいてこたえる</button></div>`;
+  let h=`<div class="row microw"><button class="btn small mic" data-act="mic" aria-pressed="${on}">${PA.icon('mic')}ピアノでひいてこたえる</button></div>`;
   if(MIC.phase==='error') h+=`<p class="msg" role="alert" style="margin-top:8px">${PA.esc(MIC.err)}</p>`;
   if(on) h+=`<div class="micbox"><div class="micmeter" aria-hidden="true"><i id="micbar"></i></div><p id="micst" class="mict" role="status">${micStatus()}</p>${micMissHTML(key,t)}
-    <div class="row"><button class="btn small" data-act="micoff">🎹 けんばんでこたえる</button></div></div>`;
+    <div class="row"><button class="btn small" data-act="micoff">${PA.icon('piano')}けんばんでこたえる</button></div></div>`;
   return h;
 }
 
@@ -513,9 +514,9 @@ function settingsHTML(){
     ${only}
     <div class="opt"><span class="lab">調</span>${PA.seg('qkeyset',KEYSETS,Q.keyset,'full')}</div>
     <div class="opt"><span class="lab">むずかしさ（調号の数）</span>${KD.tierSeg('qtier',Q.tier)}</div>
-    <div class="opt"><div class="tog one" role="group"><button class="${Q.weak?'on':''}" style="--c:#c9542e;--l:#fde5df" data-act="qweak" aria-pressed="${Q.weak}">${Q.weak?'✅':'⬜'} 📈 にがてな調を多めに</button></div><small>まちがえた調がすこし多く出るよ</small></div>
-    <div class="opt"><span class="lab">和音（タップで入れる・はずす）</span><div class="tog" role="group">${CHORD_IDS.map(k=>`<button class="${Q.chords[k]?'on':''}" style="--c:${PA.COL[k]};--l:${PA.LCOL[k]}" data-act="qchord" data-v="${k}" aria-pressed="${!!Q.chords[k]}">${Q.chords[k]?'✅':'⬜'} ${CHORDS[k].label}</button>`).join('')}</div></div>
-    <div class="opt"><span class="lab">先生へ</span><div class="row">${PA.shareHTML('chord-quiz',Object.assign(shareParams(),{n:5}),'👩‍🏫 れんしゅうをおくる')}</div><small>このせっていで「5もん」のリンクをおくれるよ</small></div>
+    <div class="opt"><div class="tog one" role="group"><button class="${Q.weak?'on':''}" style="--c:#c9542e;--l:#fde5df" data-act="qweak" aria-pressed="${Q.weak}">${Q.weak?PA.icon('checkOn'):PA.icon('checkOff')}📈 にがてな調を多めに</button></div><small>まちがえた調がすこし多く出るよ</small></div>
+    <div class="opt"><span class="lab">和音（タップで入れる・はずす）</span><div class="tog" role="group">${CHORD_IDS.map(k=>`<button class="${Q.chords[k]?'on':''}" style="--c:${PA.COL[k]};--l:${PA.LCOL[k]}" data-act="qchord" data-v="${k}" aria-pressed="${!!Q.chords[k]}">${Q.chords[k]?PA.icon('checkOn'):PA.icon('checkOff')}${CHORDS[k].label}</button>`).join('')}</div></div>
+    <div class="opt"><span class="lab">先生へ</span><div class="row">${PA.shareHTML('chord-quiz',Object.assign(shareParams(),{n:5}),PA.icon('send')+'れんしゅうをおくる')}</div><small>このせっていで「5もん」のリンクをおくれるよ</small></div>
     <div class="opt"><button class="btn small" data-act="qreset">スコアを0にもどす</button></div>
   </details>`;
 }
@@ -538,7 +539,7 @@ function checkHTML(){
 }
 function sessHead(){
   if(sess&&sess.active()) return sess.progressHTML();
-  return `<button class="btn small" data-act="sess5">📝 きょうの5もん</button>`;
+  return `<button class="btn small" data-act="sess5">${PA.icon('session')}きょうの5もん</button>`;
 }
 let lastActions=null;
 function renderSummary(){
@@ -552,7 +553,7 @@ function render(){
   Q.view='quiz';
   if((MIC.phase==='on'||MIC.phase==='wait')&&(Q.type!=='keys'||Q.checked||MIC.qid!==Q.qid)) stopMic();
   const q=Q.q, key=keyOfQ(q), c=CHORDS[q.chord], col=PA.COL[q.chord], t=chordTones(key,q.chord), done=isDone();
-  let h=`<div class="stack">${PA.seg('qtype',[['keys','🎹 けんばんでおさえる'],['choice','✋ 4つから選ぶ']],Q.type,'full')}
+  let h=`<div class="stack">${PA.seg('qtype',[['keys',PA.icon('piano')+'けんばんでおさえる'],['choice',PA.icon('hand')+'4つから選ぶ']],Q.type,'full')}
     <section class="card hero" style="--c:${col}">
       <div class="score">${scoreText(Q)} <span>れんぞく${Q.streak}</span> ${'🌟'.repeat(Math.min(Q.streak,10))}${sessHead()}</div>
       <div class="qwrap"><div class="qtext">
@@ -588,13 +589,13 @@ function render(){
   renderActions(done);
 }
 function renderActions(done){
-  const hint=`<button class="btn" data-act="qhint" ${Q.hint>=2?'disabled':''}>💡 ${Q.hint?'ヒント2':'ヒント'}</button>`;
+  const hint=`<button class="btn" data-act="qhint" ${Q.hint>=2?'disabled':''}>${PA.icon('hint')}${Q.hint?'ヒント2':'ヒント'}</button>`;
   const next=sess&&sess.finished()?'🎉 けっかを見る':null;
   let a;
-  if(Q.type==='keys'&&!Q.checked) a=`<button class="btn ok" data-act="qcheck" data-hot="check" ${Q.picked.size?'':'disabled'}>✅ こたえあわせ</button><button class="btn" data-act="qclear" ${Q.picked.size?'':'disabled'}>🧽 けす</button>${hint}`;
+  if(Q.type==='keys'&&!Q.checked) a=`<button class="btn ok" data-act="qcheck" data-hot="check" ${Q.picked.size?'':'disabled'}>${PA.icon('check')}こたえあわせ</button><button class="btn" data-act="qclear" ${Q.picked.size?'':'disabled'}>${PA.icon('erase')}けす</button>${hint}`;
   else if(Q.type==='choice'&&!done) a=hint;
-  else if(Q.type==='keys'&&!Q.lastOk) a=`<button class="btn primary" data-act="qnext" data-hot="next">${next||'➡️ 次へ'}</button><button class="btn" data-act="qretry">🔁 もういちど</button><button class="btn" data-act="qplay" data-hot="listen">🔊 こたえを聴く</button>`;
-  else a=`<button class="btn primary" data-act="qnext" data-hot="next">${next||'➡️ 次の問題'}</button><button class="btn" data-act="qplay" data-hot="listen">🔊 こたえを聴く</button>`;
+  else if(Q.type==='keys'&&!Q.lastOk) a=`<button class="btn primary" data-act="qnext" data-hot="next">${next||PA.icon('next')+'次へ'}</button><button class="btn" data-act="qretry">${PA.icon('retry')}もういちど</button><button class="btn" data-act="qplay" data-hot="listen">${PA.icon('listen')}こたえを聴く</button>`;
+  else a=`<button class="btn primary" data-act="qnext" data-hot="next">${next||PA.icon('next')+'次の問題'}</button><button class="btn" data-act="qplay" data-hot="listen">${PA.icon('listen')}こたえを聴く</button>`;
   if(a!==lastActions){PA.paint(document.getElementById('actions'),a,'bar');lastActions=a;}
 }
 function showFeedback(){

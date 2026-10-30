@@ -238,7 +238,7 @@ function render(){
         <div class="hs">コードネーム<b>${famSym(key,f)}</b>　/　<span style="color:${LT}">赤い音＝導音</span>（7ばんめを上げた音）</div></div></div>
       <div class="chips">${shapeChain(key)}</div>
       <div class="msg" style="margin-top:10px">${A?A.msg:state.autoWait?'👆 どこかをタッチすると、<b>つくりかた</b>が始まるよ':info.line}</div>
-      <div class="row" style="margin-top:10px"><button class="btn small" data-act="arp">🎶 ひとつずつ</button></div>
+      <div class="row" style="margin-top:10px"><button class="btn small" data-act="arp">${PA.icon('music')}ひとつずつ</button></div>
     </section>`;
   h+=`<section class="card"><h2>🪜 音階のかいだん<small>${PA.keyName(key)}の7ばんめを上げた短音階。ひとつとばしで、つみかさねるよ。オレンジの印＝となりどうし（半音）</small></h2><div class="scroll" data-sk="ladder">${ladderSVG(key,{tones:shownKs,omit:(f==='DIM'&&(!A||A.omitShown))?4:null})}</div></section>`;
 
@@ -273,13 +273,13 @@ function render(){
   // 1つの和音だけだと3もんともおなじもんだいになるので、2つをかわりばんこに）
   const pair=TRY_PAIR[f]||['V','V7'];
   h+=PA.tryHTML({to:'minor-quiz',params:{mode:'chord',key:PA.keyDeck.id(true,state.keyIdx),chord:pair.join(','),n:3},
-    sub:`けんばんで${PA.keyName(key)}の${pair.map(x=>FAM[x].label).join('と')}をおさえてみよう（3問）`,btn:'🎯 3問ためしてみる'});
+    sub:`けんばんで${PA.keyName(key)}の${pair.map(x=>FAM[x].label).join('と')}をおさえてみよう（3問）`,btn:PA.icon('target')+'3問ためしてみる'});
   h+=termsHTML(key);
   h+=`<p class="note">※ 和音は、7ばんめの音を半音上げた短音階でつくっています。<span class="ds">x</span>はダブルシャープの楽譜での書き方です。</p></div>`;
   PA.paint(document.getElementById('view'),h,state.keyIdx+':'+f);
   if(state.anim) PA.follow(document.getElementById('view')); // アニメで光る鍵が見えるように
-  const acts=(A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
-    `<button class="btn" data-act="play">🔊 いっしょに</button><button class="btn primary" data-act="resolve">➡️ Ⅰへすすむ</button>`;
+  const acts=(A?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
+    `<button class="btn" data-act="play">${PA.icon('listen')}いっしょに</button><button class="btn primary" data-act="resolve">${PA.icon('next')}Ⅰへすすむ</button>`;
   if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
 }
 

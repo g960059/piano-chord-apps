@@ -132,7 +132,9 @@ details.more[open]{padding-bottom:12px}
 
 /* ===== iPhone・iPad で自然につかえるように ===== */
 /* ボタンを長おししても文字が選ばれない */
-button,.btn,.seg,.keychip,.kbtn,.appcard,.choice{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+button,.btn,.seg,.keychip,.kbtn,.choice,.echoice,.cellbtn,.iconbtn,.backpill,a.go,.tool,.arow,.weakrow a,.try-go,summary{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* アプリ：リンクを長おししても「リンクをコピー・共有」のメニューを出さない（文の中のリンクも。文はえらべるまま） */
+html.pa-native a[href]{-webkit-touch-callout:none}
 /* 文の中のリンクは、見た目はそのままでタップできるはんいを広げる */
 #view p a:not(.btn),#view li a:not(.btn),#view .note a:not(.btn),#view .msg a:not(.btn){display:inline-block;padding:12px 2px;margin:-12px 0;text-underline-offset:3px}
 /* スマホを横にしたとき：上と下のバーをうすくして、見えるはんいを広げる */
@@ -247,3 +249,67 @@ dialog.sheet.pa-fb>.sheet-in{width:100%;max-width:640px;background:var(--card);b
   .stack>*+*,.duo-grid>*+*{margin-top:12px}
   @media (min-width:1000px){.duo-grid>*+*{margin-top:0}}
 }
+
+/* ===== おしたときの手ごたえ（アプリのボタンのように） =====
+ * 指がふれたらすぐ（.07s）しずみ、はなすとやわらかく（.18s）もどる。
+ * タッチは .is-pressed（core.js がつける：みじかいタップでも見える・スクロールでは出ない・横いっぱいの行はすこしまってから）。
+ * :active はマウスのある端末だけ（タッチの :active は、スクロールでも光ってしまうので）。
+ * A＝まるいボタン（すこし小さく・暗く）、B＝タイル（へこんで、下の影のふちが消える）、C＝横いっぱいの行（色だけ）。
+ * 動きをへらす設定では、大きさは変えず色だけ。:is() がない古い Safari は、こたえのタイルだけへこむ（下のふつうの書きかた） */
+:root{--press-in:.07s;--press-out:.18s;--press-ease:cubic-bezier(.25,.8,.25,1)}
+.btn,.iconbtn,.backpill,.keychip,a.go,.try-go,.choice,.echoice,.kbtn,.cellbtn,.kd-cell,.namechip,.tool,.topbtn,.seg button,.arow,summary{
+  transition:transform var(--press-out) var(--press-ease),filter var(--press-out),box-shadow var(--press-out),background-color var(--press-out),opacity .15s}
+.choice:not([disabled]):active,.echoice:not([disabled]):active,.choice.is-pressed:not([disabled]),.echoice.is-pressed:not([disabled]){transform:scale(.97)}
+:is(.btn,.iconbtn,.backpill,.keychip,a.go,.try-go).is-pressed:not([disabled],[aria-disabled="true"]){transform:scale(.96);filter:brightness(.93);transition-duration:var(--press-in)}
+:is(.btn.primary,.btn.night,.btn.ok,.btn.warn,a.go,.try-go).is-pressed:not([disabled],[aria-disabled="true"]){filter:brightness(1.18)}
+:is(.choice,.echoice,.kbtn,.cellbtn,.kd-cell,.namechip,.tool,.topbtn).is-pressed:not([disabled],[aria-disabled="true"]){transform:translateY(1px) scale(.97);filter:brightness(.95);box-shadow:0 0 0 #eadfce;transition-duration:var(--press-in)}
+.seg button.is-pressed:not([disabled],[aria-disabled="true"]){filter:brightness(.92);transition-duration:var(--press-in)}
+:is(.arow,summary).is-pressed{background-color:var(--soft2);transition-duration:var(--press-in)}
+@media (hover:hover){
+  :is(.btn,.iconbtn,.backpill,.keychip,a.go,.try-go):active:not([disabled],[aria-disabled="true"]){transform:scale(.96);filter:brightness(.93);transition-duration:var(--press-in)}
+  :is(.btn.primary,.btn.night,.btn.ok,.btn.warn,a.go,.try-go):active:not([disabled],[aria-disabled="true"]){filter:brightness(1.18)}
+  :is(.choice,.echoice,.kbtn,.cellbtn,.kd-cell,.namechip,.tool,.topbtn):active:not([disabled],[aria-disabled="true"]){transform:translateY(1px) scale(.97);filter:brightness(.95);box-shadow:0 0 0 #eadfce;transition-duration:var(--press-in)}
+  .seg button:active:not([disabled],[aria-disabled="true"]){filter:brightness(.92);transition-duration:var(--press-in)}
+  :is(.arow,summary):active{background-color:var(--soft2);transition-duration:var(--press-in)}
+}
+/* ページへうつるリンク：つぎのページが出るまで、おしたままに見せる（二度おししない） */
+.is-nav{opacity:.8;filter:brightness(.95)}
+@media (prefers-reduced-motion:reduce){
+  .choice:not([disabled]):active,.echoice:not([disabled]):active,.choice.is-pressed:not([disabled]),.echoice.is-pressed:not([disabled]),
+  :is(.btn,.iconbtn,.backpill,.keychip,a.go,.try-go,.choice,.echoice,.kbtn,.cellbtn,.kd-cell,.namechip,.tool,.topbtn):is(:active,.is-pressed):not([disabled],[aria-disabled="true"]){transform:none}
+}
+
+/* ===== 画面の鍵盤：おしているあいだ、へこむ（fill は属性より CSS がつよい。色つきの鍵はすこしうすく） ===== */
+.kb .key{transition:fill .12s,fill-opacity .12s}
+.kb .key.w.down:is(:not([data-mk]),.plain){fill:#e7dfd2}
+.kb .key.b.down:not([data-mk]){fill:#4d4556}
+.kb .key[data-mk]:not(.plain).down{fill-opacity:.72}
+
+/* ===== 下から出るシート（調・⚙️）：すっと上がって、すっと下がる ===== */
+@keyframes pa-sheet-up{from{transform:translateY(100%)}}
+@keyframes pa-sheet-down{to{transform:translateY(100%)}}
+@keyframes pa-fade-in{from{opacity:0}}
+@keyframes pa-fade-out{to{opacity:0}}
+dialog.sheet:not(.pa-fb)[open]{animation:pa-sheet-up .3s cubic-bezier(.32,.72,0,1)}
+dialog.sheet:not(.pa-fb)[open]::backdrop{animation:pa-fade-in .25s ease}
+dialog.sheet:not(.pa-fb)[open].closing{animation:pa-sheet-down .2s ease-in forwards}
+dialog.sheet.closing{pointer-events:none}
+dialog.sheet:not(.pa-fb)[open].closing::backdrop{animation:pa-fade-out .2s ease-in forwards}
+
+/* ===== こたえのタイル：正解は「ぽん」、まちがいは小さく1回ゆれる（描きなおしでくりかえさない＝.still は core.js がつける） ===== */
+@keyframes pa-nudge{0%,100%{transform:none}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+:is(.choice,.echoice).right:not(.still){animation:pop .32s ease}
+:is(.choice,.echoice).wrong:not(.still),.fb.bad:not(.still){animation:pa-nudge .28s ease}
+.fb.good.still{animation:none}
+@media (prefers-reduced-motion:reduce){
+  dialog.sheet:not(.pa-fb)[open],dialog.sheet:not(.pa-fb)[open]::backdrop,dialog.sheet:not(.pa-fb)[open].closing,dialog.sheet:not(.pa-fb)[open].closing::backdrop{animation:none}
+  :is(.choice,.echoice).right:not(.still),:is(.choice,.echoice).wrong:not(.still),.fb.bad:not(.still){animation:none}
+}
+
+/* ===== ボタンのアイコン（PA.icon。svg のふつうの決まり＝はばいっぱいのブロック、をここだけかえる） ===== */
+svg.ic{display:inline-block;flex:none;width:1.25em;height:1.25em;vertical-align:-.25em;overflow:visible}
+.btn svg.ic{width:1.2em;height:1.2em;margin-left:-2px}
+.iconbtn svg.ic{width:24px;height:24px;color:var(--ink)}
+.backpill .bp-ar svg.ic{width:20px;height:20px;vertical-align:-4px}
+.seg button svg.ic{width:1.15em;height:1.15em;margin-right:4px;vertical-align:-.22em}
+svg.ic-play path,svg.ic-stop rect{fill:currentColor} /* ▶ はぬりつぶし（とめる■とならぶので） */

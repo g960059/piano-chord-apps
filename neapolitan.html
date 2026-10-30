@@ -312,8 +312,8 @@ function staffCard(key){
   }
   let h=`<section class="card" style="--c:${V_COL}"><h2>🎼 Ⅴへすすむ<small>${st.map(s=>s.name).join(' → ')}　ボタンで聴けるよ</small></h2>
     <div class="pbtns">
-      <button class="btn ${p==='direct'?'on':''}" data-act="resolve" data-v="direct" aria-pressed="${p==='direct'}">➡️ Ⅴへ</button>
-      <button class="btn ${p==='i64'?'on':''}" data-act="resolve" data-v="i64" aria-pressed="${p==='i64'}">➡️ ${I64H}をとおってⅤへ</button>
+      <button class="btn ${p==='direct'?'on':''}" data-act="resolve" data-v="direct" aria-pressed="${p==='direct'}">${PA.icon('next')}Ⅴへ</button>
+      <button class="btn ${p==='i64'?'on':''}" data-act="resolve" data-v="i64" aria-pressed="${p==='i64'}">${PA.icon('next')}${I64H}をとおってⅤへ</button>
     </div>`;
   h+=staff(key,cols,arrows,{sk:'staff'});
   const tonic=scaleOf(key)[0], lt=V[3];
@@ -332,7 +332,7 @@ function placeCard(key){
     <div class="flow"><span class="fx">Ⅰ<small>はじめ</small></span><span class="ar" aria-hidden="true">→</span><span class="fx s">Ⅳ・Ⅱ6・N6<small>Ⅴの前</small></span><span class="ar" aria-hidden="true">→</span><span class="fx">Ⅴ<small>Ⅰをよぶ</small></span><span class="ar" aria-hidden="true">→</span><span class="fx">Ⅰ<small>おわり</small></span></div>
     <p class="note" style="margin-top:4px">👂 3つを聴きくらべ。どれも、そのあと同じⅤ7（${namesC(uniqNames(V),'・')}）へすすむよ。</p>`;
   rows.forEach(([id,lab,ns,col,tx])=>{
-    h+=`<div class="cmprow ${state.cmp===id?'on':''}" style="--c:${col===SRC_COL?DARK[SRC_COL]:col}"><button class="btn" data-act="cmp" data-v="${id}" aria-pressed="${state.cmp===id}">🔊 ${lab}</button>
+    h+=`<div class="cmprow ${state.cmp===id?'on':''}" style="--c:${col===SRC_COL?DARK[SRC_COL]:col}"><button class="btn" data-act="cmp" data-v="${id}" aria-pressed="${state.cmp===id}">${PA.icon('listen')}${lab}</button>
       <div class="tx"><b>${uniqNames(ns).map(nH).join('・')}</b><br>${tx}</div></div>`;
   });
   return h+`<p class="note">ナポリは<b>明るい長三和音</b>（明るいひびきの3つの音の和音）${key.minor?'だけど、下げた根音で':'なのに、下げた音が2つ入って'}、ふっと<b>かげがさす</b>ようなひびき。Ⅴがいっそう、まちどおしく聞こえるよ。</p></section>`;
@@ -353,14 +353,14 @@ function abCard(key){
   const ab=state.ab;
   let h=`<section class="card"><h2>👂 どっちがナポリ？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>AとB、どちらもそのあとⅤ7を鳴らすよ</small></h2>
     <p class="note" style="margin-top:0">ひとつはナポリの六、もうひとつはⅣかⅡ6。${key.minor?'短調ではナポリだけが長三和音（明るいひびきの和音）。ほかよりぱっと明るく聞こえるのはどっち？':'ふっとくらく聞こえるのはどっち？'}</p>`;
-  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 問題を出す</button></div></section>`;
-  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ A をきく</button><button class="btn" data-act="abplay" data-v="B">▶️ B をきく</button></div>`;
+  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}問題を出す</button></div></section>`;
+  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">${PA.icon('play')}A をきく</button><button class="btn" data-act="abplay" data-v="B">${PA.icon('play')}B をきく</button></div>`;
   if(ab.answer==null) return h+`<p class="askline">ナポリの六は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">A がナポリ</button><button class="btn night" data-act="qchoose" data-v="B">B がナポリ</button></div></section>`;
   const ok=ab.answer===ab.n6, other=ab.n6==='A'?'B':'A', n6=n6Of(key), o=srcChord(key,ab.other,false);
   return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！もういちど聴きくらべてみよう。'}
       <b>${ab.n6}</b>がナポリ（${uniqNames(n6).map(nH).join('・')}）、<b>${other}</b>が${ab.other==='iv'?'Ⅳ':'Ⅱ6'}（${uniqNames(o).map(nH).join('・')}）。
       <br>ナポリの根音${q(n6[3])}は、Ⅴ7で導音${q(toV7(key)[3])}へおりるよ。</div>
-    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 次の問題</button></div></section>`;
+    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}次の問題</button></div></section>`;
 }
 function nameDetails(key){
   const n6=n6Of(key);
@@ -409,8 +409,8 @@ function termsHTML(key){
 // 変化和音クイズへ：いまの調で、🎹 おさえるレベル4（増六＋ナポリ・Ⅳm・♭Ⅵ）を5もん。👂 聴きわけはレベル3（Ⅳ・Ⅳm・ナポリ）
 function tryCard(key){
   return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',level:4,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
-    sub:`${PA.keyName(key)}で、ナポリの六（と増六${key.minor?'':'・かりた和音'}）をけんばんで5問おさえてみよう。`,btn:'🎯 けんばんで5問',
-    links:[{to:'chroma-quiz',params:{mode:'ear',level:3,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:'👂 耳で聴きわける'}]});
+    sub:`${PA.keyName(key)}で、ナポリの六（と増六${key.minor?'':'・かりた和音'}）をけんばんで5問おさえてみよう。`,btn:PA.icon('target')+'けんばんで5問',
+    links:[{to:'chroma-quiz',params:{mode:'ear',level:3,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:PA.icon('ear')+'耳で聴きわける'}]});
 }
 function linksCard(){
   return `<section class="card"><h2>🔗 つながるアプリ</h2><div class="links">
@@ -445,8 +445,8 @@ function render(){
     ${nameDetails(key)}${key.minor?'':borrowDetails(key)}${tipsHTML(key)}${termsHTML(key)}${linksCard()}${footNote(key)}</div>`;
   PA.paint(document.getElementById('view'),h,'neapolitan:'+state.minor+':'+state.keyIdx);
   if(A||state.playing) PA.follow(document.getElementById('view')); // 音の高さがかわっても鍵が見えるように
-  const acts=(A||state.playing?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
-    `<button class="btn" data-act="play" data-hot="listen">🔊 いっしょに</button><button class="btn primary" data-act="resolve">➡️ ${state.path==='i64'?I64H+'→Ⅴ':'Ⅴへ'}</button>`;
+  const acts=(A||state.playing?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
+    `<button class="btn" data-act="play" data-hot="listen">${PA.icon('listen')}いっしょに</button><button class="btn primary" data-act="resolve">${PA.icon('next')}${state.path==='i64'?I64H+'→Ⅴ':'Ⅴへ'}</button>`;
   if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
 }
 
@@ -543,7 +543,7 @@ async function runBuild(){
   PA.chord(midisOf(n6));
   const done=`🎉 <b>できあがり！</b>${PA.keyName(key)}のナポリの六は<b class="big">${namesC(uniqNames(n6))}</b><br>`+
     `${q(n)}を根音にすると${H.symbol(key,'bII')}の長三和音（<b>♭Ⅱ</b>）。いちばん下が第3音${q(n6[0])}なので「<b>6</b>」。`+
-    (isII?'':`Ⅳから見ると、いちばん下から5度の音のかわりに6度の音をのせた形だね。`)+`「➡️ Ⅴへ」で聴いてみよう！`;
+    (isII?'':`Ⅳから見ると、いちばん下から5度の音のかわりに6度の音をのせた形だね。`)+`「Ⅴへ」で聴いてみよう！`;
   upd(done); if(!await wait(2400)) return;
   state.msg=done; state.anim=null; render();
 }

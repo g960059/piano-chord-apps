@@ -12,6 +12,8 @@
  *    PA.midi.useNative でつなぐ。ページをひらくたびに start（ネイティブ側はずっとつないだまま。ページがかわると
  *    Capacitor がイベントのうけとりをはずすので、ページごとに addListener しなおす。「もどる」でもどったページ（bfcache）も） 
  * 3. アプリにもどったとき：着信などのあと AudioContext がうごかないままになることがあるので、つくりなおす
+ * 4. ふるえ（PA.haptic）：ネイティブの PianoHaptics（ios/App/App/PianoHapticsPlugin.swift）。マイクできいているあいだ・
+ *    電子ピアノからの入力ではふるえない（マイクがひろう・ピアノをひいている手にはいらない）。0.08びょうに1回まで
  */
 (function(){
 'use strict';
@@ -55,6 +57,14 @@ if(wasEmpty){
 }else if(!PA.store.get('native-backup-v1',false)){
   PA.store.set('native-backup-v1',true); // アプリを新しくして、はじめてひらいたとき：いまのきろくをすぐひかえる
 }
+
+/* ===== 4. ふるえ ===== */
+let lastHaptic=0;
+PA.haptic=kind=>{
+  if(PA.midiIn||(PA.mic&&PA.mic.active&&PA.mic.active())) return;
+  const t=Date.now(); if(t-lastHaptic<80) return; lastHaptic=t;
+  try{cap.toNative('PianoHaptics','play',{kind});}catch(e){}
+};
 
 /* ===== 2. 電子ピアノ（MIDI）と 3. アプリにもどったとき ===== */
 const devs=r=>{if(r&&Array.isArray(r.devices)) PA.midi.setDevices(r.devices);};

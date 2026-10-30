@@ -260,14 +260,14 @@ function abCard(key){
   const ab=state.ab, ii=byRole(C.ii7(key)), dd=byRole(C.dd(key));
   let h=`<section class="card"><h2>👂 どっちがドッペル？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>AとB、どちらもそのあとⅤを鳴らすよ</small></h2>
     <p class="note" style="margin-top:0">ひとつはⅡ7、もうひとつはドッペルドミナント。Ⅴに「ぐっとひっぱられる」のはどっち？</p>`;
-  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 問題を出す</button></div></section>`;
-  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ A をきく</button><button class="btn" data-act="abplay" data-v="B">▶️ B をきく</button></div>`;
+  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}問題を出す</button></div></section>`;
+  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">${PA.icon('play')}A をきく</button><button class="btn" data-act="abplay" data-v="B">${PA.icon('play')}B をきく</button></div>`;
   if(ab.answer==null) return h+`<p class="askline">ドッペルドミナントは？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">A がドッペル</button><button class="btn night" data-act="qchoose" data-v="B">B がドッペル</button></div></section>`;
   const ok=ab.answer===ab.dd, other=ab.dd==='A'?'B':'A';
   return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！もういちど聴きくらべてみよう。'}
       <b>${ab.dd}</b>がドッペル（${namesC(dd)}）、<b>${other}</b>がⅡ7（${namesW(ii)}）。
       <br>「${PA.nmH(dd[1])}」がⅤの「${PA.nmH(C.toV(key)[1])}」へ半音でのぼるので、Ⅴがつよく聞こえるんだ。</div>
-    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 次の問題</button></div></section>`;
+    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}次の問題</button></div></section>`;
 }
 function famCard(key){
   const f=state.fam, ns=C.ddStack(key,f), root=C.ddStack(key,'dd')[0], lt=ns.find(n=>n.tag==='lt'), n9=C.ddStack(key,'dd9')[4];
@@ -288,7 +288,7 @@ function famCard(key){
     <div class="hs">コードネーム<b>${C.symbol(key,f)}</b></div>
     <p class="note" style="color:var(--ink)">${line}</p>
     <div class="scroll" data-sk="famkb" style="margin-top:8px">${PA.kbSVG(lo,hi,marks)}</div>
-    <div class="row" style="margin-top:8px"><button class="btn small" data-act="famplay">🔊 鳴らす</button><button class="btn small" data-act="famarp">🎶 ひとつずつ</button></div>
+    <div class="row" style="margin-top:8px"><button class="btn small" data-act="famplay">${PA.icon('listen')}鳴らす</button><button class="btn small" data-act="famarp">${PA.icon('music')}ひとつずつ</button></div>
     <p class="note"><a href="minor-family.html" data-go="family">🏠 Ⅴの家族</a>で、同じしくみの「Ⅰへむかう和音」を見てみよう（短調）。</p></section>`;
 }
 // 📖 ことばメモ：本や楽譜で見かける名前を、やさしいことばで。例はいまの調の音で
@@ -310,8 +310,8 @@ let lastActions='';
 // 変化和音クイズへ：いまの調で、🎹 おさえるレベル1（Ⅱ7・ドッペル）を5もん。👂 聴きわけもレベル1
 function tryCard(key){
   return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',level:1,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
-    sub:`${PA.keyName(key)}で、Ⅱ7とドッペルドミナントをけんばんで5問おさえてみよう。`,btn:'🎯 けんばんで5問',
-    links:[{to:'chroma-quiz',params:{mode:'ear',level:1,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:'👂 耳で聴きわける'}]});
+    sub:`${PA.keyName(key)}で、Ⅱ7とドッペルドミナントをけんばんで5問おさえてみよう。`,btn:PA.icon('target')+'けんばんで5問',
+    links:[{to:'chroma-quiz',params:{mode:'ear',level:1,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:PA.icon('ear')+'耳で聴きわける'}]});
 }
 function render(){
   const key=curKey(), r=state.raised, col=colOf(r), X=chordOf(key,r), V=C.toV(key);
@@ -337,7 +337,7 @@ function render(){
   h+=`<section class="card"><h2>🎹 けんばん<small id="kbcap">${kbCaption(key,seq)}</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(lo,hi,marks)}</div></section>`;
   // がくふ：和音 → Ⅴ
   const dd=byRole(C.dd(key)), ii=byRole(C.ii7(key)), vr=V[1];
-  h+=`<section class="card"><h2>🎼 がくふ<small>左：${label(r)}　右：Ⅴ（「➡️ Ⅴへ」で聴けるよ）</small></h2>${mainStaff(key)}
+  h+=`<section class="card"><h2>🎼 がくふ<small>左：${label(r)}　右：Ⅴ（「Ⅴへ」で聴けるよ）</small></h2>${mainStaff(key)}
     <p class="note">${r?`<b class="up">第3音「${PA.nmH(dd[1])}」は半音上へ</b>（Ⅴの根音「${PA.nmH(vr)}」へ）`:`第3音「${PA.nmH(ii[1])}」は上の「${PA.nmH(vr)}」へ`}、<b style="color:${col}">第7音「${PA.nmH(ii[3])}」は下へ</b>、ベースは5度下の「${PA.nmH(V[0])}」へすすむよ。</p></section>`;
   h+=`<div class="rule">Ⅱ7もドッペルドミナントも、<b>Ⅴの前</b>におく和音。ドッペルのほうが導音の力でⅤをつよくよぶよ。<br><span style="font-weight:400">「ドッペル」はドイツ語で「ダブル（2じゅう）」、「ドミナント」はⅤのこと。Ⅴの、そのまたⅤだから「ⅤのⅤ」といういみだよ。</span></div>`;
   // カデンツ
@@ -368,8 +368,8 @@ function render(){
   renderActions();
 }
 function renderActions(){
-  const acts=`<button class="btn" data-act="play" data-hot="listen">🔊 いっしょに</button><button class="btn primary" data-act="tov">➡️ Ⅴへ</button>`+
-    (state.cad?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="cplay">🎵 カデンツ</button>`);
+  const acts=`<button class="btn" data-act="play" data-hot="listen">${PA.icon('listen')}いっしょに</button><button class="btn primary" data-act="tov">${PA.icon('next')}Ⅴへ</button>`+
+    (state.cad?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="cplay">🎵 カデンツ</button>`);
   if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
 }
 

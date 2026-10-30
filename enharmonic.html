@@ -57,6 +57,7 @@
 .rk.on small{color:#fff}
 .pbtn{width:100%;min-height:44px;border-radius:999px;background:var(--soft);font-weight:800;font-size:14px;color:var(--rc)}
 .pbtn.on{background:var(--rc);color:#fff}
+.pbtn svg.ic{width:1em;height:1em;margin-right:4px;vertical-align:-.15em}
 .legend{display:flex;flex-wrap:wrap;gap:4px 12px;font-size:13px;color:var(--sub);margin-top:4px}
 .vs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:10px;margin-top:8px}
 .vs>div{border-radius:14px;padding:10px 12px;min-width:0;background:var(--soft2);border-top:5px solid var(--c)}
@@ -272,7 +273,7 @@ function heroCard(){
   });
   h+='<tr>'+rs.map((x,i)=>`<td class="dest" style="--rc:${RCOL[i]}">→ ${PA.nmH(tonicOf(x.key))}${x.next?'<sup>※</sup>':''}<small>${resLabel(x)}${x.next?' → Ⅴ → Ⅰ':''}</small></td>`).join('')+'</tr>';
   const pi=state.play?state.play.i:-1;
-  h+='<tr>'+rs.map((x,i)=>`<td class="pl"><button class="pbtn ${i===pi?'on':''}" style="--rc:${RCOL[i]}" data-act="rplay" data-v="${x.key.idx}" aria-label="${PA.keyName(x.key)}としてⅠへすすむのをきく">▶ きく</button></td>`).join('')+'</tr>';
+  h+='<tr>'+rs.map((x,i)=>`<td class="pl"><button class="pbtn ${i===pi?'on':''}" style="--rc:${RCOL[i]}" data-act="rplay" data-v="${x.key.idx}" aria-label="${PA.keyName(x.key)}としてⅠへすすむのをきく">${PA.icon('play')}きく</button></td>`).join('')+'</tr>';
   h+=`</tbody></table>
     <div class="legend"><span>よこにならんだ4つ＝同じけんばん</span><span class="up"><b>赤＝導音</b>（半音上の主音へ）</span>${rs.some(x=>x.next)?'<span>※＝第9音がいちばん下の形</span>':''}</div>
     <div class="msg" style="margin-top:10px">${A?A.msg:state.autoWait?'👆 どこかをタッチすると、<b>4つの行き先</b>めぐりが始まるよ':staticMsg(r)}</div>
@@ -317,8 +318,8 @@ function quizCard(){
   const Q=state.quiz, rs=readingsOf(state.keyIdx);
   let h=`<section class="card"><h2>🎲 どこへ行った？<small>減七の後に鳴る和音を聴いて、行き先の調をあてよう</small></h2>`;
   if(state.qN) h+=`<p class="note score" style="margin-top:0">${state.qOk} / ${state.qN}問正解</p>`;
-  if(!Q) return h+`<div class="ab one"><button class="btn night" data-act="qnext">🎲 問題を出す</button></div></section>`;
-  h+=`<div class="ab one"><button class="btn" data-act="qplay">▶️ もういちどきく</button></div>`;
+  if(!Q) return h+`<div class="ab one"><button class="btn night" data-act="qnext">${PA.icon('dice')}問題を出す</button></div></section>`;
+  h+=`<div class="ab one"><button class="btn" data-act="qplay">${PA.icon('repeat')}もういちどきく</button></div>`;
   // 答えは主音の高さ（tpc）でおぼえる：おなじ家族の中で調をかえても（嬰ニ短調⇔変ホ短調）、おなじ答えのまま
   h+=`<p class="askline">どの調へ行った？</p><div class="choices">`+rs.map(x=>{
     const t=x.key.tpc, cls=Q.pick==null?'':t===Q.ans?'right':t===Q.pick?'wrong':'';
@@ -328,7 +329,7 @@ function quizCard(){
   if(Q.pick!=null&&r){
     const ok=Q.pick===Q.ans;
     h+=`<div class="fb ${ok?'good':'bad'}" role="status" style="margin-top:10px">${ok?'🎉 そのとおり！':'🤔 おしい！'}行き先は<b>${PA.keyName(r.key)}</b>。${PA.keyName(r.key)}の読みかたでは${q(r.lt)}が導音で、${q(tonicOf(r.key))}へすすんだね。</div>
-      <div class="ab"><button class="btn" data-act="pick" data-v="${r.key.idx}">👀 この読みかたを見る</button><button class="btn night" data-act="qnext" data-hot="next">🎲 次の問題</button></div>`;
+      <div class="ab"><button class="btn" data-act="pick" data-v="${r.key.idx}">${PA.icon('eye')}この読みかたを見る</button><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}次の問題</button></div>`;
   }
   return h+`</section>`;
 }
@@ -373,10 +374,10 @@ function gerCard(){
     <div class="vs">
       <div style="--c:${GER}"><h3>ドイツの6</h3><div class="ns">${namesC(g.ger)}</div>
         <p class="to">${q(gn)}（Ⅴへの導音）は<b>半音上へ</b> → ${I64H} → <b>Ⅴ</b></p>
-        <button class="btn small" data-act="gplay" data-v="ger">🔊 ドイツの6 → Ⅴ</button></div>
+        <button class="btn small" data-act="gplay" data-v="ger">${PA.icon('listen')}ドイツの6 → Ⅴ</button></div>
       <div style="--c:${V7C}"><h3>${v7Name}（Ⅴ7/♭Ⅱ）</h3><div class="ns">${g.v7.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}</div>
         <p class="to">${q(vn)}（第7音）は<b>半音下へ</b> → <b>${bII}</b>（♭Ⅱ）</p>
-        <button class="btn small" data-act="gplay" data-v="v7">🔊 ${v7Name} → ${bII}</button></div>
+        <button class="btn small" data-act="gplay" data-v="v7">${PA.icon('listen')}${v7Name} → ${bII}</button></div>
     </div>
     ${odds.length?`<p class="note">${odds.map(n=>`${q(n)}は${q(plainOf(n))}`).join('、')}のけんばんだよ。</p>`:''}
     <div class="scroll" data-sk="gkb" style="margin-top:8px">${PA.kbSVG(lo,hi,mk)}</div>
@@ -403,7 +404,7 @@ function tryCard(){
   const key=PA.keyDeck.id(true,state.keyIdx);
   return PA.tryHTML({to:'chroma-quiz',params:{key,mode:'keys',chord:'vii7',n:5},
     sub:`けんばんで、${PA.keyName(curKey())}の減七（Ⅶ7）をおさえてみよう。5問。`,
-    btn:'🎯 5問ためしてみる',
+    btn:PA.icon('target')+'5問ためしてみる',
     links:[{to:'chroma-quiz',params:{key,mode:'keys',level:3,n:5},label:'↔️ レベル3（ドイツの6など増六）'}]});
 }
 // 📖 ことばメモ：本や楽譜で見かける名前を、やさしいことばで（いまの調の音をれいに）。よみかたは小さく
@@ -445,8 +446,8 @@ function render(){
   const box=sk=>{const b=document.querySelector(`[data-sk="${sk}"]`);return b&&b.parentElement;};
   if(A||state.play){const b=box('kb');if(b) PA.follow(b);}
   if(state.g){const b=document.getElementById('ger');if(b) PA.follow(b);}
-  const acts=(A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="tour">🔀 4つの調</button>`)+
-    `<button class="btn" data-act="play" data-hot="listen">🔊 減七</button><button class="btn primary" data-act="resolve">➡️ Ⅰへすすむ</button>`;
+  const acts=(A?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="tour">🔀 4つの調</button>`)+
+    `<button class="btn" data-act="play" data-hot="listen">${PA.icon('listen')}減七</button><button class="btn primary" data-act="resolve">${PA.icon('next')}Ⅰへすすむ</button>`;
   if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
 }
 

@@ -151,7 +151,7 @@ function render(){
       <div class="kbleg"><span><i style="background:#fff;border:2px solid #857c8f"></i>調号のまま「${PA.nmH(key.natLT)}」</span><span><i style="background:#d1495b"></i>上げた7ばんめ「${PA.nmH(key.lt)}」</span><span><i style="background:#3b4fa8"></i>主音「${PA.nmH(key.nat[0])}」</span></div>
       <div class="row" style="margin-top:8px"><button class="btn small" data-act="lt">🔔 ${PA.nmH(key.lt)} → ${PA.nmH(key.nat[0])}</button><span class="note" style="margin:0">主音のすぐ下（となり）</span></div>
     </section>
-    <section class="card" id="demo"><h2>🧪 ${demoQuestion(key)}${state.sigDemo?'<small>下の「🙈 もどす」でもとにもどるよ</small>':''}</h2>
+    <section class="card" id="demo"><h2>🧪 ${demoQuestion(key)}${state.sigDemo?'<small>下の「もどす」でもとにもどるよ</small>':''}</h2>
       <p class="cap"><b>${PA.keyName(rel)}の音階</b>${state.sigDemo?'（調号をかえたとき）':''}</p>
       <div class="scroll staffbox" data-sk="demo">${PA.staffSVG(key,demo8.map(n=>({notes:[n],color:n.wrong?'#d1495b':'#e8553d',noAcc:true})),{colW:40,minW:380,sigOverride:state.sigDemo?{letter:key.lt.letter,acc:key.lt.acc}:null})}</div>
       <div class="${state.sigDemo?'fb bad':'msg'}" style="margin-top:8px">${state.sigDemo
@@ -163,8 +163,8 @@ function render(){
   const nRev=state.revealed.size;
   h+=`<section class="card" id="list"><h2>📋 どの記号をつける？（ぜんぶの短調）<small>7ばんめを「主音の半音下」にするための記号</small></h2>
     <div class="legend3"><span class="t-sharp">♯シャープ：調号に何もない音を上げる</span><span class="t-natural">♮ナチュラル：♭をとって上げる</span><span class="t-dsharp"><span class="ds">x</span>ダブルシャープ：♯がついた音をもっと上げる</span></div>
-    ${PA.seg('hide',[['0','👀 ぜんぶ見せる'],['1','🙈 かくしてれんしゅう']],state.hide?'1':'0','full')}
-    ${state.hide?`<div class="hidebar"><p class="note">「？」をタップするとこたえが出るよ（${nRev}/${NKEYS}）</p><button class="btn small" data-act="rehide" ${nRev?'':'disabled'}>🔁 もういちどかくす</button></div>`
+    ${PA.seg('hide',[['0',PA.icon('eye')+'ぜんぶ見せる'],['1',PA.icon('eyeOff')+'かくしてれんしゅう']],state.hide?'1':'0','full')}
+    ${state.hide?`<div class="hidebar"><p class="note">「？」をタップするとこたえが出るよ（${nRev}/${NKEYS}）</p><button class="btn small" data-act="rehide" ${nRev?'':'disabled'}>${PA.icon('retry')}もういちどかくす</button></div>`
       :`<p class="note">短調の名前をタップすると、上の楽譜とけんばんが、その調にかわるよ。右のこたえをタップすると音が出るよ。</p>`}
     <div class="klist" role="list">
       <div class="khead" aria-hidden="true"><span>短調</span><span>7ばんめ<br>（調号のまま）</span><span>上げると・つける記号</span></div>`;
@@ -186,14 +186,14 @@ function render(){
       <p class="note" style="margin-top:0">${PA.nmH({letter:2,acc:1})}は${PA.nmH({letter:3,acc:0})}のけんばん、${PA.nmH({letter:3,acc:2})}は${PA.nmH({letter:4,acc:0})}のけんばんでひくよ。でも7ばんめは主音のすぐ下の線・間のままなので、名前はかえずに記号をつけて書く（音階では${PA.nmH({letter:0,acc:0})}〜${PA.nmH({letter:6,acc:0})}を1回ずつ使う）。</p></details>
   </section>
   ${PA.tryHTML({to:'minor-quiz',params:{mode:'mark',key:PA.keyDeck.id(true,state.keyIdx),n:3},
-    sub:`${PA.keyName(key)}から始めて、7ばんめにつける記号を選んでみよう（3問）`,btn:'🎯 記号を選ぶクイズ（この調から3問）',
+    sub:`${PA.keyName(key)}から始めて、7ばんめにつける記号を選んでみよう（3問）`,btn:PA.icon('target')+'記号を選ぶクイズ（この調から3問）',
     links:[{to:'minor-why',label:'❓ なぜ7ばんめを上げるの？'}]})}
   ${termsHTML(key)}</div>`;
   PA.paint(document.getElementById('view'),h,String(state.keyIdx));
   PA.paint(document.getElementById('actions'),
-    `<button class="btn" data-act="harmplay" aria-label="${PA.keyName(key)}の7ばんめを上げた音階をきく">🎶 ${PA.keyName(key)}</button>`+
+    `<button class="btn" data-act="harmplay" aria-label="${PA.keyName(key)}の7ばんめを上げた音階をきく">${PA.icon('music')}${PA.keyName(key)}</button>`+
     `<button class="btn ${state.sigDemo?'warn':'night'}" data-act="sigdemo" aria-pressed="${state.sigDemo}">${state.sigDemo?'🙈 もどす':'🧪 ためす'}</button>`+
-    `<button class="btn" data-act="relplay" aria-label="${state.sigDemo?`調号をかえた${PA.keyName(key.rel)}のへんな音階をきく`:`${PA.keyName(key.rel)}の音階をきく`}">${state.sigDemo?'🎶 へんな音階':'🎶 '+PA.keyName(key.rel)}</button>`,'bar');
+    `<button class="btn" data-act="relplay" aria-label="${state.sigDemo?`調号をかえた${PA.keyName(key.rel)}のへんな音階をきく`:`${PA.keyName(key.rel)}の音階をきく`}">${PA.icon('music')}${state.sigDemo?'へんな音階':PA.keyName(key.rel)}</button>`,'bar');
 }
 
 /* ===== 操作 ===== */

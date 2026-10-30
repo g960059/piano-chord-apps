@@ -484,7 +484,7 @@ function doppelCard(key,I){
 }
 function progCard(key,I,prog){
   const chainT=CHAIN[key.minor];
-  let h=`<section class="card"><h2>🎵 ながれで聴く<small>「▶️ ながれを鳴らす」で、副属和音が目標をよぶようすを聴こう</small></h2>
+  let h=`<section class="card"><h2>🎵 ながれで聴く<small>「ながれを鳴らす」で、副属和音が目標をよぶようすを聴こう</small></h2>
     ${PA.seg('mode',[['target','選んだ和音で'],['chain','2つつなげる']],state.mode,'full')}`;
   if(!prog) return h+`<p class="note">この調では、ながれが見つからなかったよ。</p></section>`;
   const cur=state.prog?state.prog.i:-1;
@@ -492,7 +492,7 @@ function progCard(key,I,prog){
   const cols=prog.map((s,i)=>({notes:s.ns,color:s.col,label:shortLab(s.lab),op:cur<0||cur===i?1:.35,plain:!s.sec&&!s.tgt}));
   h+=staff(key,cols,[],{sk:'progstaff',cw:96});
   const sop=prog.map(s=>s.ns[3]);
-  h+=`<div class="row" style="margin-top:8px"><button class="btn small night" data-act="prog">▶️ ながれを鳴らす</button></div>`;
+  h+=`<div class="row" style="margin-top:8px"><button class="btn small night" data-act="prog">${PA.icon('play')}ながれを鳴らす</button></div>`;
   let dn='';
   if(state.mode==='chain'){ // Ⅴ7/Ⅴ → Ⅴ7：導音が半音下がってⅤ7の第7音に
     const j=prog.findIndex((s,i)=>s.sec&&i>0&&prog.slice(0,i).some(x=>x.sec)), li=j>=0?prog[j].ns.findIndex(n=>n.tag==='lt'):-1;
@@ -510,14 +510,14 @@ function abCard(key,I){
   const D=stackOrder(s.dia[s.xi]), dl=diaLabel(key,I.X);
   const other=lowChanged(key,I)?`半音かえる前の和音（調の音だけでできる和音）の${dl}`:I.k==='V7'?`同じ根音で、調の音だけの和音${dl}`:`いちばん下が同じ音で、調の音だけの和音${dl}`;
   h+=`<p class="note" style="margin-top:0">ひとつは${I.lab}、もうひとつは${other}。${I.tl}に「ぐっとひっぱられる」のはどっち？</p>`;
-  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 問題を出す</button></div></section>`;
-  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ A をきく</button><button class="btn" data-act="abplay" data-v="B">▶️ B をきく</button></div>`;
+  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}問題を出す</button></div></section>`;
+  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">${PA.icon('play')}A をきく</button><button class="btn" data-act="abplay" data-v="B">${PA.icon('play')}B をきく</button></div>`;
   if(ab.answer==null) return h+`<p class="askline">副属和音（${I.lab}）は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">A が${PA.H(shortLab(I.lab))}</button><button class="btn night" data-act="qchoose" data-v="B">B が${PA.H(shortLab(I.lab))}</button></div></section>`;
   const ok=ab.answer===ab.sec, ob=ab.sec==='A'?'B':'A', lt=I.X.find(n=>n.tag==='lt');
   return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！もういちど聴きくらべてみよう。'}
       <b>${ab.sec}</b>が${I.lab}：${namesC(key,stackOrder(I.X))}、<b>${ob}</b>が${dl}：${namesW(D)}。
       <br>${lt&&chg(key,lt)>0?`導音${qC(key,lt)}が半音上の${I.tl}の根音へのぼるので、${I.tl}がつよく聞こえるんだ。`:`半音かえた音が${I.tl}へなめらかに動くので、${I.tl}がつよく聞こえるんだ。`}</div>
-    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 次の問題</button></div></section>`;
+    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}次の問題</button></div></section>`;
 }
 function overview(key){
   const ts=H.targets(key), ek=effKind(key);
@@ -564,7 +564,7 @@ function termsHTML(key,I){
 // chord でⅤ7/Ⅴ（ドッペル）と副属和音（Ⅴ7/Ⅱ・Ⅴ7/Ⅲ・Ⅴ7/Ⅳ・Ⅴ7/Ⅵ）にしぼる。短調ではクイズのほうでⅤ7/Ⅱが、長調ではⅤ7/Ⅲが出ない
 function tryCard(key){
   return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',level:5,chord:'dd,s2,s3,s4,s6',key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
-    sub:`${PA.keyName(key)}で、副属和音（${key.minor?'Ⅴ7/Ⅲ・Ⅴ7/Ⅳ':'Ⅴ7/Ⅱ・Ⅴ7/Ⅳ'}など）をけんばんで5問おさえてみよう。`,btn:'🎯 けんばんで5問'});
+    sub:`${PA.keyName(key)}で、副属和音（${key.minor?'Ⅴ7/Ⅲ・Ⅴ7/Ⅳ':'Ⅴ7/Ⅱ・Ⅴ7/Ⅳ'}など）をけんばんで5問おさえてみよう。`,btn:PA.icon('target')+'けんばんで5問'});
 }
 function linksCard(){
   return `<section class="card"><h2>🔗 つながるアプリ</h2><div class="links">
@@ -612,8 +612,8 @@ function render(){
 }
 function renderActions(I){
   const busy=state.anim||state.prog;
-  const acts=(busy?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
-    `<button class="btn" data-act="play" data-hot="listen">🔊 いっしょに</button><button class="btn primary" data-act="resolve">➡️ ${PA.H(shortLab(I.tls))}へ</button>`;
+  const acts=(busy?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
+    `<button class="btn" data-act="play" data-hot="listen">${PA.icon('listen')}いっしょに</button><button class="btn primary" data-act="resolve">${PA.icon('next')}${PA.H(shortLab(I.tls))}へ</button>`;
   if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
 }
 

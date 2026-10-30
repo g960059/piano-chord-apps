@@ -173,6 +173,10 @@ cd native && npm install && npm run sync && npm run open
   録音が読めないとき・古いブラウザ・設定で「シンプルな音」のときは、合成の音で鳴ります。🏆 チャレンジは、はじめた時の音色でさいごまで鳴らします。
 - iOS Safari 12でもうごくように、`?.`・`??`・クラスのフィールドはつかいません。
 
+## アイコンのクレジット
+
+ボタンの線のアイコン（`PA.icon`）は [Lucide](https://lucide.dev)（ISC ライセンス、© Lucide Contributors・Cole Bemis）です。ライセンスの全文は `assets/icons/LUCIDE-LICENSE.txt`。
+
 ## 音のクレジット
 
 - ピアノの音：[Salamander Grand Piano V3](https://sfzinstruments.github.io/pianos/salamander/)（Yamaha C5、Alexander Holm、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)）。

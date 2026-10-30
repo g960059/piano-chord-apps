@@ -87,7 +87,7 @@ test('ear.html：アプリ（NO_RANK）ではランキングを出さず、サ�
   const html=fs.readFileSync(path.join(root,'ear.html'),'utf8');
   assert.match(html,/const NO_RANK=PA\.native;/);
   assert.match(html,/if\(NO_RANK\)\{PA\.stopSound\(\);chClear\(\);chBegin\(null,randomSeed\(\),true\);return;\}chConnect\(\);/);
-  assert.match(html,/\.concat\(NO_RANK\?\[\]:\[\['rank','📊 ランキング'\]\]\)/);
+  assert.match(html,/\.concat\(NO_RANK\?\[\]:\[\['rank',PA\.icon\('chart'\)\+'ランキング'\]\]\)/);
   assert.match(html,/if\(NO_RANK&&v==='rank'\) v='free';/);
   // 📊 ランキングへのボタンは、どれも NO_RANK のときは出さない
   const btns=html.match(/[^\n]*data-v="rank"[^\n]*/g)||[];
@@ -143,4 +143,39 @@ test('PA.midi：機器がかわったら、おさえている音はわすれる'
   PA.midi.setDevices(['A','B']); PA.midi.note(true,60,90);
   PA.midi.setDevices(['A']);
   assert.equal(PA.midi.held().size,0);
+});
+
+test('PA.haptic・PA.answerFx：ウェブではなにもしない。こたえたら success／light',()=>{
+  const PA=loadPA();
+  assert.doesNotThrow(()=>PA.haptic('success'));
+  const got=[]; PA.haptic=k=>got.push(k);
+  PA.answerFx(true); PA.answerFx(false);
+  assert.deepEqual(got,['success','light']);
+  PA.haptic=()=>{throw new Error('x');};
+  assert.doesNotThrow(()=>PA.answerFx(true)); // ふるえがこわれても、こたえあわせはつづく
+});
+
+test('クイズ：こたえあわせのところで PA.answerFx をよぶ',()=>{
+  const want={'chord-quiz.html':2,'minor-quiz.html':2,'chroma-quiz.html':2,'ending-quiz.html':1,'ear.html':2};
+  Object.entries(want).forEach(([f,n])=>assert.equal((fs.readFileSync(path.join(root,f),'utf8').match(/PA\.answerFx\(/g)||[]).length,n,f));
+});
+
+test('アプリ：リンクの長おしプレビューをとめる・ふるえのプラグインを登録する',()=>{
+  const cfg=JSON.parse(fs.readFileSync(path.join(root,'native','capacitor.config.json'),'utf8'));
+  assert.equal(cfg.ios.allowsLinkPreview,false);
+  const vc=fs.readFileSync(path.join(root,'native','ios','App','App','MainViewController.swift'),'utf8');
+  assert.match(vc,/registerPluginInstance\(PianoHapticsPlugin\(\)\)/);
+  const pbx=fs.readFileSync(path.join(root,'native','ios','App','App.xcodeproj','project.pbxproj'),'utf8');
+  assert.match(pbx,/PianoHapticsPlugin\.swift in Sources \*\/,/);
+});
+
+test('app.css：おしたときの見た目（:active と .is-pressed）・動きをへらす設定',()=>{
+  const css=fs.readFileSync(path.join(root,'assets','app.css'),'utf8');
+  assert.match(css,/:is\(:active,\.is-pressed\)/);
+  assert.match(css,/\[open\]\.closing\{animation:pa-sheet-down/);
+  assert.match(css,/\.kb \.key\.w\.down/);
+  const rm=css.split('@media (prefers-reduced-motion:reduce)').slice(1).join('');
+  assert.match(rm,/transform:none/); assert.match(rm,/animation:none/);
+  // ページごとの .echoice:active はなくして app.css にまとめた
+  ['chroma-quiz.html','ending-quiz.html','ear.html'].forEach(f=>assert.ok(!fs.readFileSync(path.join(root,f),'utf8').includes('.echoice:not([disabled]):active'),f));
 });

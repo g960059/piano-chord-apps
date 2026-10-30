@@ -6,7 +6,8 @@
   "loggingBehavior": "debug",
   "ios": {
     "contentInset": "never",
-    "backgroundColor": "#fdf8f0"
+    "backgroundColor": "#fdf8f0",
+    "allowsLinkPreview": false
   },
   "plugins": {}
 }
