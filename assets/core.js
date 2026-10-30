@@ -628,7 +628,9 @@ PA.openSettings=()=>{
     if(t.id==='pa-pitch'){S.pitchA=+t.value;PA.playNote(69,0,1.6,0.25);}
     if(t.id==='pa-sound'){S.sound=t.value==='1';if(!S.sound)PA.stopSound();}
     if(t.id==='pa-voice'){
-      S.voice=t.value;PA.stopSound();
+      S.voice=t.value;
+      if(PA.onStopDown) PA.onStopDown(); // ⏹ とおなじに、ページの再生（ならびの光る場所など）もとめる
+      PA.stopSound();
       // ためしの音。録音を読むあいだに、とじた・音をとめた・音色をかえたときは鳴らさない
       const g=soundGen, sq=sheetSeq;
       const preview=()=>{const keep=voiceLock;voiceLock=null;PA.playNote(60,0,1.6,0.25);voiceLock=keep;}; // チャレンジでとめた音色ではなく、えらんだ音色で

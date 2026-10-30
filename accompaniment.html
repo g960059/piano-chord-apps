@@ -1025,11 +1025,11 @@ let resizeTimer=null;
 window.addEventListener('resize',()=>{clearTimeout(resizeTimer);resizeTimer=setTimeout(()=>{if(perRowNow(curSong(),curKey())!==lastPerRow) state.play?renderPlayback():render();},120);});
 
 PA.mountBar({title:'伴奏づけ',app:'accompaniment'});
-let lastPitch=PA.settings.pitchA;
+let lastPitch=PA.settings.pitchA, lastVoice=PA.settings.voice;
 PA.onSettings=()=>{
-  // 音を消した・基準の音をかえたときは再生をとめる（鳴っている音と表示をそろえる）
-  if(state.play&&(!PA.settings.sound||PA.settings.pitchA!==lastPitch)) stopPlay();
-  lastPitch=PA.settings.pitchA;
+  // 音を消した・基準の音・音色をかえたときは再生をとめる（鳴っている音と表示をそろえる。音色をかえると鳴る予定の音が消えるので）
+  if(state.play&&(!PA.settings.sound||PA.settings.pitchA!==lastPitch||PA.settings.voice!==lastVoice)) stopPlay();
+  lastPitch=PA.settings.pitchA; lastVoice=PA.settings.voice;
   render();
 };
 PA.onStopDown=()=>stopPlay(); // 描きなおしは click 側で（ボタンが入れかわって再生し直さないように）
