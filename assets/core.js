@@ -352,7 +352,8 @@ PA.audioRunning=()=>!!(actx&&actx.state==='running');
 PA.audioStuck=()=>!!actx&&actx.state!=='running';
 PA.audioReset=()=>{
   if(!actx) return;
-  try{if(PA.onStopDown) PA.onStopDown();}catch(e){} // ページの再生（伴奏づけの光る場所など）もとめる
+  // ページの再生（伴奏づけの光る場所など）もとめて、画面も「とめる」から もとにもどす（どのページも onStopCancel＝描きなおし）
+  try{if(PA.onStopDown) PA.onStopDown();if(PA.onStopCancel) PA.onStopCancel();}catch(e){}
   PA.stopSound();
   const old=actx; actx=null; master=null;
   try{old.close().catch(()=>{});}catch(e){}
