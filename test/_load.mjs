@@ -1,5 +1,6 @@
 // core.js をブラウザなしで読みこむ（node --test 用の最小のスタブ）
-// loadPA(source?, {search:'?n=5', storage:Map}) … search＝location.search、storage＝localStorage のかわり（Map）
+// loadPA(source?, {search:'?n=5', storage:Map, href, protocol}) … search＝location.search、storage＝localStorage のかわり（Map）
+//   protocol:'capacitor:' で iOS アプリの中（PA.native）のかわり
 import vm from 'node:vm';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,7 +23,8 @@ export function loadPA(source,opts={}){
     navigator:{},
     matchMedia:()=>({matches:false}),
     CSS:{escape:s=>String(s)},
-    location:{href:opts.href||'https://example.test/apps/chord-quiz.html'+(opts.search||''),search:opts.search||'',protocol:'https:',origin:'https://example.test'},
+    location:(()=>{const href=opts.href||'https://example.test/apps/chord-quiz.html'+(opts.search||''), u=new URL(href);
+      return {href,search:opts.search||'',protocol:opts.protocol||'https:',origin:'https://example.test',pathname:u.pathname,host:u.host};})(),
     URL,
     setTimeout,
     clearTimeout,

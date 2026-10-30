@@ -243,7 +243,7 @@ function handCard(key){
       <tr><td>そのままのこる音</td><td${w(inv.kept,root.kept)}>${inv.kept}つ</td><td${w(root.kept,inv.kept)}>${root.kept}つ</td></tr>
       <tr><td>親指の音</td><td class="win">${th(inv)}</td><td>${th(root)}</td></tr></tbody></table>
     <p class="note">${form==='inv'?`<span style="color:#8f5a00">オレンジのわく</span>＝前の和音と同じけんばん（そのまま）。ほかの音も、となりへ動くだけ。だから手がほとんど動かないよ。Ⅴ6/5は${q(PA.at(key.scale,1))}をはぶいているよ。`:'ぜんぶ基本のかたちだと、和音がかわるたびに、手ごと大きくとぶ。ひびきもブツブツ切れやすいね。'}</p>
-    <div class="row" style="margin-top:8px">${playing?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="cplay">▶️ ながして聴く</button>`}<a class="btn small" href="cadence.html">🎹 カデンツ（左手つき）</a></div></section>`;
+    <div class="row" style="margin-top:8px">${playing?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="cplay">${PA.icon('play')}ながして聴く</button>`}<a class="btn small" href="cadence.html">${PA.icon('piano')}カデンツ（左手つき）</a></div></section>`;
 }
 // 🎯 たしかめよう（答えは保存しない）
 function newQ(prev){
@@ -256,7 +256,7 @@ function quizCard(key){
   const Z=state.quiz;
   if(Z.done) return `<section class="card"><h2>🎯 たしかめよう</h2>
     <div class="fb ${Z.right===QN?'good':''}" style="${Z.right===QN?'':'background:var(--soft2)'}" role="status">${Z.right===QN?'🎉':'👍'} ${QN}問中<b>${Z.right}問</b>正解！${Z.right===QN?'かんぺき！':'上のかたちをもう一度見てから、またやってみよう。'}</div>
-    <div class="row" style="margin-top:10px"><button class="btn primary" data-act="qreset">🔁 もういちど</button></div></section>`;
+    <div class="row" style="margin-top:10px"><button class="btn primary" data-act="qreset">${PA.icon('retry')}もういちど</button></div></section>`;
   const Q=Z.q, c=INV.CHORDS[Q.ch], col=PA.COL[Q.ch], s=INV.shape(key,Q.ch,Q.shape), answered=Q.picked!=null;
   const marks=new Map(); s.forEach(n=>marks.set(n.midi,{fill:col,label:PA.nm(n),focus:true}));
   const [lo,hi]=chordRange(key,Q.ch);
@@ -268,14 +268,14 @@ function quizCard(key){
   if(answered){
     const ok=Q.picked===Q.shape, t=INV.tones(key,Q.ch);
     fb=`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'⭕ 正解！':'🤔 おしい！'}いちばん下は${q(s[0])}＝<b>${INV.ROLE[Q.shape]}</b>。だから<b>${INV.NAME[Q.shape]}</b>（${labelH(Q.ch,Q.shape)}）。${ok?'':`<br>「ひとつとばし」にならべなおすと、${PA.namesH(t)}。根音は${q(t[0])}だね。`}</div>
-      <div class="row"><button class="btn primary" data-act="qnext">${Z.n<QN?'次の問題 ➡':'けっかを見る ➡'}</button></div>`;
+      <div class="row"><button class="btn primary" data-act="qnext">${PA.icon('next')}${Z.n<QN?'次の問題':'けっかを見る'}</button></div>`;
   }
   return `<section class="card"><h2>🎯 たしかめよう<small>${Z.n} / ${QN}問　いちばん下の音を見て、こたえよう</small></h2>
     <div class="qbox">
     <p class="qq">${PA.keyName(key)}の<b style="color:${col}">${c.label}</b>。このかたちはどれ？</p>
     ${staffBox(PA.staffSVG(key,[{notes:s,color:col,ltColor:'#d1495b',accColor:'#d1495b'}],{minW:180,maxScale:1.15}),'qstaff')}
     ${kbBox(lo,hi,marks,'qkb')}
-    <div class="row"><button class="btn small" data-act="qplay">🔊 きく</button></div>
+    <div class="row"><button class="btn small" data-act="qplay">${PA.icon('listen')}きく</button></div>
     <div class="choices qch" style="grid-template-columns:repeat(${c.n===3?3:2},minmax(0,1fr))" role="group" aria-label="こたえを選ぶ">${choices}</div>
     ${fb}</div></section>`;
 }
@@ -328,7 +328,7 @@ function render(){
         <div class="hs"><b>${INV.ROLE[i]}</b>がいちばん下　/　<span class="nw">コードネーム${PA.H(INV.symbol(key,ch,i))}</span></div></div></div>
       <div class="lowline">下から：${s.map((x,j)=>`<span class="nw ${j===0?'lo':''}">${PA.nmH(x)}</span>`).join('・')}</div>
       <div class="msg" style="margin-top:10px" aria-live="polite">${A?A.msg:(state.msg||staticMsg(key,ch,i,s))}</div>
-      <div class="row" style="margin-top:10px"><button class="btn small" data-act="arp">🎶 下からひとつずつ</button></div>
+      <div class="row" style="margin-top:10px"><button class="btn small" data-act="arp">${PA.icon('music')}下からひとつずつ</button></div>
     </section>
     <p class="shplabel">${n}つのかたち（下が低い音。<span style="background:#ffe6a8;color:#7a4b00;border-radius:6px;padding:0 4px">黄色</span>＝いちばん下）</p>
     <div class="shps" style="grid-template-columns:repeat(${n},minmax(0,1fr))">`+all.map((sh,j)=>`<button class="shp ${j===i?'on':''}" style="--c:${col};--l:${PA.LCOL[ch]};--t:${TCOL[ch]}" data-act="shape" data-v="${j}" aria-pressed="${j===i}" aria-label="${INV.NAME[j]}（下から${PA.namesT(sh)}）"><span class="lab">${labelH(ch,j)}</span><span class="sn">${INV.SHORT[j]}</span><span class="nm">${sh.map((x,k)=>`<span class="${k===0?'lo':''}">${PA.nmH(x)}</span>`).join('')}</span></button>`).join('')+`</div>`;
@@ -343,7 +343,7 @@ function render(){
     marks.set(mv.to,{fill:'#ffc93c',tc:'#3a3245',ring:'#f4a100',label:PA.nm(mv.note),sub:'⤴ ここへ',subColor:'#8f5a00',focus:true});
   }
   const [lo,hi]=chordRange(key,ch);
-  h+=`<section class="card"><h2>🎹 けんばん<small><span style="color:#8f5a00">オレンジのわく</span>＝いちばん下の音。さわると音が出るよ</small></h2>${kbBox(lo,hi,marks,'kb')}</section>`;
+  h+=`<section class="card"><h2>🎹 けんばん<small><span style="color:#8f5a00">オレンジのわく</span>＝いちばん下の音${PA.once('tap-sound','。さわると音が出るよ')}</small></h2>${kbBox(lo,hi,marks,'kb')}</section>`;
   const cols=all.map((sh,j)=>staffCol(j===i||!!(mv&&j===i+1),ch,{notes:sh,label:INV.labelText(ch,j),sub:INV.SHORT[j]}));
   const arrows=mv&&i+1<n?[{c1:i,i1:0,c2:i+1,i2:n-1,color:'#f4a100',dash:'5 4'}]:[];
   const raised=s.some(x=>x.raised);
@@ -354,8 +354,8 @@ function render(){
   if(i!==lastShape||sig!==lastSig||mv) PA.follow(view); // 色のついた鍵が見えるように
   lastShape=i; lastSig=sig;
   PA.paint(document.getElementById('actions'),
-    (A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build" aria-label="動かしてみる">🔄 <span class="lbl-w">動かしてみる</span><span class="lbl-n">動かす</span></button>`)+
-    `<button class="btn primary" data-act="play" data-hot="listen">🔊 きく</button><button class="btn nx" data-act="next" data-hot="next" aria-label="次のかたち">次 ➡</button>`,'bar');
+    (A?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="build" aria-label="動かしてみる">${PA.icon('refresh')}<span class="lbl-w">動かしてみる</span><span class="lbl-n">動かす</span></button>`)+
+    `<button class="btn primary" data-act="play" data-hot="listen">${PA.icon('listen')}きく</button><button class="btn nx" data-act="next" data-hot="next" aria-label="次のかたち">${PA.icon('next')}次</button>`,'bar');
 }
 
 /* ===== 音・アニメ ===== */

@@ -190,7 +190,7 @@ function render(){
       <p class="sub">かいだんの高さ＝音の高さ。7ばんめ「${nmH(relLT)}」と主音「${nmH(relT)}」は…</p>
       <div class="scroll" data-sk="stair-rel" data-start="end">${stairSVG(relNotes(key),{hl:[6,7],hlColor:MAJ_C,hlFill:'#fde5df',gapHl:[7],gapColor:MAJ_C,brackets:[{i:6,j:7,color:MAJ_C,text:'半音！となりどうし'}]})}</div>
       <div class="trio">
-        <button class="btn small" data-act="wscale" data-v="rel">🎶 音階</button>
+        <button class="btn small" data-act="wscale" data-v="rel">${PA.icon('music')}音階</button>
         <button class="btn small" data-act="wcad" data-v="rel">🔔 Ⅴ→Ⅰ</button>
         <button class="btn small" data-act="wlt" data-v="rel">${nmH(relLT)}→${nmH(relT)}</button>
       </div>
@@ -201,7 +201,7 @@ function render(){
       <div class="scroll" data-sk="stair-min" data-start="end">${stairSVG(mn,{hl:[6,7],hlColor:MIN_C,hlFill:'#e6eafb',showRaised:raise,gapHl:raise?[6,7]:[7],gapColor:raise?LT_C:MIN_C,
         brackets:[{i:6,j:7,color:raise?LT_C:MIN_C,text:raise?'半音になった！':'全音（1つあいている）'}]})}</div>
       <div class="trio">
-        <button class="btn small" data-act="wscale" data-v="min">🎶 音階</button>
+        <button class="btn small" data-act="wscale" data-v="min">${PA.icon('music')}音階</button>
         <button class="btn small" data-act="wcad" data-v="min">🔔 Ⅴ→Ⅰ</button>
         <button class="btn small" data-act="wlt" data-v="min">${nmH(mn7)}→${nmH(mnT)}</button>
       </div>
@@ -221,21 +221,21 @@ function render(){
   const ab=state.ab;
   h+=`<section class="card"><h2>👂 聴きくらべクイズ<small>どっちが「おわった！」感じ？</small></h2>
     <p class="note" style="margin-top:0">A と B のどちらかは7ばんめを上げたⅤ、もう一方は上げないⅤ。どちらもそのあとに${PA.keyName(key)}のⅠを鳴らすよ。</p>`;
-  if(!ab) h+=`<div class="ab" style="grid-template-columns:1fr"><button class="btn night" data-act="abnew">🎲 問題を出す</button></div>`;
+  if(!ab) h+=`<div class="ab" style="grid-template-columns:1fr"><button class="btn night" data-act="abnew">${PA.icon('dice')}問題を出す</button></div>`;
   else{
-    h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ A をきく</button><button class="btn" data-act="abplay" data-v="B">▶️ B をきく</button></div>`;
+    h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">${PA.icon('play')}A をきく</button><button class="btn" data-act="abplay" data-v="B">${PA.icon('play')}B をきく</button></div>`;
     if(ab.answer==null) h+=`<p class="askline">「おわった！」と感じたのは？</p><div class="ab"><button class="btn night" data-act="abans" data-v="A">A</button><button class="btn night" data-act="abans" data-v="B">B</button></div>`;
     else{
       const ok=ab.answer===ab.raised;
       h+=`<div class="fb ${ok?'good':'bad'}">${ok?'🎉 そのとおり！':'🤔 こんどはもう一方をよくきいてみよう。'}
         <b>${ab.raised}</b>が7ばんめを上げたⅤ（${namesH(vHarm)}）、<b>${ab.raised==='A'?'B':'A'}</b>が上げないⅤ（${namesH(vNat)}）だよ。
         <br>${nmH(key.lt)}は${nmH(mnT)}の半音下なので、${nmH(mnT)}に、すいこまれるように聞こえるんだ。</div>
-        <div class="ab" style="grid-template-columns:1fr"><button class="btn night" data-act="abnew">🎲 次の問題</button></div>`;
+        <div class="ab" style="grid-template-columns:1fr"><button class="btn night" data-act="abnew">${PA.icon('dice')}次の問題</button></div>`;
     }
   }
   h+=`</section>
     ${PA.tryHTML({to:'minor-quiz',params:{mode:'mark',key:PA.keyDeck.id(true,state.keyIdx),n:3},
-      sub:`${PA.keyName(key)}から始めて、7ばんめにつける記号（♯・♮・<span class="ds">x</span>）を選んでみよう（3問）`,btn:'🎯 記号を選ぶクイズ（この調から3問）'})}
+      sub:`${PA.keyName(key)}から始めて、7ばんめにつける記号（♯・♮・<span class="ds">x</span>）を選んでみよう（3問）`,btn:PA.icon('target')+'記号を選ぶクイズ（この調から3問）'})}
     <details class="more"><summary>💡 このページの音について</summary><ul>
       <li>和音は、7ばんめの音を半音上げた短音階でつくっているよ。</li>
       <li>ダブルシャープは、楽譜では「<span class="ds">x</span>」のような形で書くよ。この画面でも<span class="ds">x</span>であらわしているよ。</li>
@@ -249,7 +249,7 @@ function render(){
 function renderActions(){
   const r=state.raise;
   const html=`<button class="btn sw ${r?'on':''}" data-act="raise" role="switch" aria-checked="${r}"><span class="knob"></span>7ばんめを上げる</button>`+
-    (state.busy?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="wcad" data-v="min">🌙 Ⅴ→Ⅰ</button>`);
+    (state.busy?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="wcad" data-v="min">🌙 Ⅴ→Ⅰ</button>`);
   const el=document.getElementById('actions');
   if(el.dataset.h===html) return;
   const ae=document.activeElement, had=ae&&el.contains(ae)?ae.dataset.act:null;

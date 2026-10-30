@@ -249,13 +249,14 @@ M.supported=()=>{
 M.errorText=err=>{
   const n=err&&err.name||'';
   if(n==='NotAllowedError'||n==='PermissionDeniedError'||n==='SecurityError')
-    return 'マイクが使えないよ。「マイクを使ってもいい？」で「許可」をおしてね。まちがえて「許可しない」をおしたときは、ブラウザの設定でこのページのマイクを「許可」にして、ページを読みなおしてね。';
+    return PA.native?'マイクが使えないよ。まちがえて「許可しない」をおしたときは、「設定」アプリ →「和音アプリ」で「マイク」をオンにしてね。'
+      :'マイクが使えないよ。「マイクを使ってもいい？」で「許可」をおしてね。まちがえて「許可しない」をおしたときは、ブラウザの設定でこのページのマイクを「許可」にして、ページを読みなおしてね。';
   if(n==='NotFoundError'||n==='DevicesNotFoundError'||n==='OverconstrainedError')
     return 'マイクが見つからないよ。マイクのある端末でためしてね。';
   if(n==='NotReadableError'||n==='TrackStartError'||n==='AbortError')
     return 'マイクを、ほかのアプリが使っているみたい。ほかのアプリをとじてから、もういちどおしてね。';
   if(n==='unsupported')
-    return 'このブラウザではマイクが使えないよ。画面の鍵盤でこたえてね。';
+    return (PA.native?'この端末ではマイクが使えないよ。':'このブラウザではマイクが使えないよ。')+'画面の鍵盤でこたえてね。';
   if(n==='ended')
     return 'マイクがとまったよ。もういちど 🎤 をおしてね。';
   return 'マイクがうまく動かなかったよ。もういちどおしてね。';

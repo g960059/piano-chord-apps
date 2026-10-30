@@ -41,7 +41,7 @@ const AUDIO=[
   'assets/piano/Fs6.mp3',
   'assets/piano/Fs7.mp3',
 ];
-const VERSION='e928bfe902';
+const VERSION='f7e056ed98';
 const PRECACHE=[
   './',
   'accompaniment.html',
@@ -67,8 +67,10 @@ const PRECACHE=[
   'minor-signature.html',
   'minor-why.html',
   'neapolitan.html',
+  'privacy.html',
   'progression.html',
   'secondary.html',
+  'support.html',
   'assets/app.css',
   'assets/core.js',
   'assets/ear-game.js',

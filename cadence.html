@@ -204,7 +204,7 @@ function render(){
     <div class="scroll" data-sk="staff"><div class="staffw" style="min-width:${staffMinW(key)}px">${PA.staffSVG(key,cols,{grand:true,colW:66})}</div></div></section></div></div>`;
   // 和音クイズへ：いまの調のⅠ・Ⅳ・Ⅴ・Ⅴ7を5もん
   h+=PA.tryHTML({to:'chord-quiz',params:{key:PA.keyDeck.id(state.minor,state.keyIdx),chord:'I,IV,V,V7',n:5},
-    sub:`${PA.keyName(key)}のⅠ・Ⅳ・Ⅴ・Ⅴ7を5もん。`,btn:'🎯 5もんためしてみる'});
+    sub:`${PA.keyName(key)}のⅠ・Ⅳ・Ⅴ・Ⅴ7を5もん。`,btn:PA.icon('target')+'5もんためしてみる'});
   h+=`<details class="more" data-d="tips" ${state.more?'open':''}><summary>💡 カデンツのポイント</summary><ul>
       <li>左手は、和音の<b>根音</b>（基本の形でいちばん下にくる音）をひくよ。</li>
       <li><b>🤲 なめらかな形</b>：前の和音と同じけんばんは、<b>そのまま</b>。手があまり動かないので、伴奏でよく使うよ。</li>
@@ -219,8 +219,8 @@ function render(){
   if(step!==lastStep){const b=view.querySelector('[data-sk="kbr"]'); if(b) PA.placeScroll(b);}
   lastStep=step;
   PA.paint(document.getElementById('actions'),
-    (state.playing?`<button class="btn" data-act="stop" data-hot="listen">⏹ とめる</button>`:`<button class="btn primary" data-act="cplay" data-hot="listen" aria-label="ながして聴く">▶️ <span class="lbl-w">ながして聴く</span><span class="lbl-n">ながす</span></button>`)+
-    `<button class="btn" data-act="again">🔊 もういちど</button><button class="btn nx" data-act="next" data-hot="next" aria-label="次の和音">次 ➡</button>`,'bar');
+    (state.playing?`<button class="btn" data-act="stop" data-hot="listen">${PA.icon('stop')}とめる</button>`:`<button class="btn primary" data-act="cplay" data-hot="listen" aria-label="ながして聴く">${PA.icon('play')}<span class="lbl-w">ながして聴く</span><span class="lbl-n">ながす</span></button>`)+
+    `<button class="btn" data-act="again">${PA.icon('listen')}もういちど</button><button class="btn nx" data-act="next" data-hot="next" aria-label="次の和音">${PA.icon('next')}次</button>`,'bar');
 }
 
 /* ===== 音 ===== */

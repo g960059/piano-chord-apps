@@ -1,0 +1,20 @@
+{
+  "name": "piano-chord-apps-native",
+  "private": true,
+  "type": "module",
+  "description": "ピアノ和音アプリの iOS アプリ（Capacitor）。ページはリポジトリのいちばん上のものを tools/build-app.mjs で www/ にあつめて入れる",
+  "scripts": {
+    "build": "node ../tools/build-app.mjs",
+    "sync": "node ../tools/build-app.mjs && npx cap sync ios",
+    "open": "npx cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/app": "^8.1.2",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/ios": "^8.6.0",
+    "@capacitor/preferences": "^8.0.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.6.0"
+  }
+}

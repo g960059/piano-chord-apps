@@ -1,0 +1,13 @@
+{
+  "appId": "dev.g960059.pianochord",
+  "appName": "和音アプリ",
+  "webDir": "www",
+  "backgroundColor": "#fdf8f0",
+  "loggingBehavior": "debug",
+  "ios": {
+    "contentInset": "never",
+    "backgroundColor": "#fdf8f0",
+    "allowsLinkPreview": false
+  },
+  "plugins": {}
+}

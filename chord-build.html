@@ -208,7 +208,7 @@ function render(){
     const lit=[...A.scaleLit], curK=A.frog!=null?A.frog:(lit.length&&lit.length<=8?lit[lit.length-1]:null);
     lit.forEach(k=>{const m=PA.at(key.scale,k).midi;if(!marks.has(m))marks.set(m,{fill:PA.BLACK.has(m%12)?'#8a7440':'#fff3c4',focus:k===curK&&!shown.length});});
   }
-  h+=`<div class="stack duo-side"><section class="card"><h2>🎹 けんばん<small>さわると音が出るよ</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(60,88,marks)}</div></section>`;
+  h+=`<div class="stack duo-side"><section class="card"><h2>🎹 けんばん${PA.once('tap-sound','<small>さわると音が出るよ</small>')}</h2><div class="scroll" data-sk="kb">${PA.kbSVG(60,88,marks)}</div></section>`;
   let staffNote='';
   if(shown.length){const st=PA.stepOf(shown[0]);staffNote=`ひとつとばしだから、この和音は<b>${(st-30)%2===0?'線・線・線':'間・間・間'}</b>にならぶよ。`;}
   h+=`<section class="card"><h2>🎼 がくふ</h2><div class="scroll" data-sk="staff">${PA.staffSVG(key,[{notes:shown,color:col,ltColor:'#d1495b',accColor:'#d1495b'}],{minW:220})}</div><p class="note">${staffNote}</p></section></div></div>`;
@@ -216,13 +216,13 @@ function render(){
     // おなじ調のⅠ・Ⅳ・Ⅴ（いま見ている和音も入れる）。和音がかわるので3もんともおなじもんだいにならない
     +PA.tryHTML({to:'chord-quiz',params:{key:kid,chord:tryChords(ch).join(','),mode:'keys',n:3},
       title:`<span class="nw">${PA.keyName(key)}の</span><span class="nw">${tryChords(ch).map(x=>CHORDS[x].label).join('・')}を、</span><span class="nw">じぶんで</span><span class="nw">つくろう</span>`,
-      sub:'「和音クイズ」で、けんばんをおさえて3もん。',btn:'🎯 けんばんで3もん',
+      sub:'「和音クイズ」で、けんばんをおさえて3もん。',btn:PA.icon('target')+'けんばんで3もん',
       links:[{to:'cadence',params:{key:kid},label:'🎵 カデンツできく'},{to:'chord-table',params:{key:kid,chord:ch},label:'📋 いちらん表で見る'}]})+`</div>`;
   PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx);
   if(state.anim) PA.follow(document.getElementById('view')); // アニメで光る鍵が見えるように
   PA.paint(document.getElementById('actions'),
-    (A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
-    `<button class="btn" data-act="play" data-hot="listen">🔊 いっしょに</button><button class="btn" data-act="arp">🎶 ひとつずつ</button>`,'bar');
+    (A?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
+    `<button class="btn" data-act="play" data-hot="listen">${PA.icon('listen')}いっしょに</button><button class="btn" data-act="arp">${PA.icon('music')}ひとつずつ</button>`,'bar');
 }
 
 /* ===== つくりかたアニメ ===== */

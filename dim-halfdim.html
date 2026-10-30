@@ -88,14 +88,6 @@
 .terms dt:first-child{margin-top:2px}
 .terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
 .terms .yomi{font-weight:400;font-size:12px;color:var(--sub)}
-/* たたんだカード（見たいときにひらく）。PA.paint が data-d でひらいたままにする */
-details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;min-height:48px;margin:-4px 0}
-details.fold>summary::-webkit-details-marker{display:none}
-details.fold>summary h2{margin:0;flex:1;min-width:0}
-/* 「ひらく／とじる」は見た目だけ（読み上げは見出しと「ひらいている／とじている」だけに。古い Safari は2つめをむしして1つめをつかう） */
-details.fold>summary::after{content:"ひらく ▾";content:"ひらく ▾"/"";flex:none;font-size:13px;font-weight:700;color:var(--sub);padding:4px 10px;border-radius:999px;background:var(--soft2);white-space:nowrap}
-details.fold[open]>summary::after{content:"とじる ▴";content:"とじる ▴"/""}
-details.fold[open]>summary{margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -295,7 +287,7 @@ function sideCard(s,icon){
     <div class="st">${s.name}<small>の和音</small></div>
     <div class="sn">${namesD(s)}</div>
     <div class="sy">${s.sym}</div>
-    <button class="btn small" data-act="side" data-v="${s.id}" aria-pressed="${state.play===s.id}">🔊 きく</button>
+    <button class="btn small" data-act="side" data-v="${s.id}" aria-pressed="${state.play===s.id}">${PA.icon('listen')}きく</button>
   </div>`;
 }
 function staticMsg(P){
@@ -341,7 +333,7 @@ function kbCard(P){
     mk=overlayMarks(P,state.view==='v9');
     cap=`<span style="color:${PUR}">むらさき</span>＝同じ3つ、<span class="up">赤＝導音</span>。第7音は<b style="color:${SUN}">${PA.nmH(P.maj.six)}</b>（長調）と<b style="color:${NIGHT}">${PA.nmH(P.min.six)}</b>（短調）`+(state.view==='v9'?`。うすい鍵＝はぶいた根音`:'');
   }
-  return `<section class="card"><h2>🎹 けんばん<small>${cap}　さわると音が出るよ</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(lo,hi,mk)}</div></section>`;
+  return `<section class="card"><h2>🎹 けんばん<small>${cap}${PA.once('tap-sound','　さわると音が出るよ')}</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(lo,hi,mk)}</div></section>`;
 }
 function tableCard(P){
   const M=P.maj, N=P.min, v9=state.view==='v9';
@@ -375,11 +367,11 @@ function resText(P,s){
 }
 function resCard(P){
   const s=P[state.side], lt=s.ch[0];
-  return `<section class="card"><h2>➡️ Ⅰへすすむ<small>導音だけ上へ、ほかの3つは下へ</small></h2>
+  return `<details class="card fold" data-d="res"><summary><h2>➡️ Ⅰへすすむ<small>導音だけ上へ、ほかの3つは下へ</small></h2></summary>
     <div style="margin-bottom:8px">${PA.seg('rside',[['maj','☀️ 半減七 → Ⅰ'],['min','🌙 減七 → Ⅰ']],state.side,'full')}</div>
     ${resStaff(s)}
-    <p class="note">${resText(P,s)}${kn(s.k)}のⅠになるよ。下の「➡️ Ⅰへ」で聴けるよ。</p>
-    ${sigOK(s.k)?'':`<p class="note">※ ${kn(s.k)}は調号に${dblMark(s.k)}が入るので、調号なしで書いているよ。</p>`}</section>`;
+    <p class="note">${resText(P,s)}${kn(s.k)}のⅠになるよ。下の「Ⅰへ」で聴けるよ。</p>
+    ${sigOK(s.k)?'':`<p class="note">※ ${kn(s.k)}は調号に${dblMark(s.k)}が入るので、調号なしで書いているよ。</p>`}</details>`;
 }
 // 白鍵だけ → 調号をつける →（短調は）導音を上げる
 function chainHTML(s,minor){
@@ -410,16 +402,16 @@ function shapeCard(P){
 const AB_NM={A:'①',B:'②'};
 function abCard(P){
   const ab=state.ab;
-  let h=`<section class="card"><h2>👂 どっちが減七？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>${kn(P.maj.k)}の半減七と${kn(P.min.k)}の減七</small></h2>
+  let h=`<details class="card fold" data-d="ab"><summary><h2>👂 どっちが減七？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>${kn(P.maj.k)}の半減七と${kn(P.min.k)}の減七</small></h2></summary>
     <p class="note" style="margin-top:0">減七は4つの音が同じ間かくで、<b>ぐっとくらくドキドキ</b>するひびき。半減七はすこし<b>やわらかい</b>。</p>`;
-  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext">🎲 問題を出す</button></div></section>`;
-  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ ①をきく</button><button class="btn" data-act="abplay" data-v="B">▶️ ②をきく</button></div>`;
-  if(ab.answer==null) return h+`<p class="askline">減七は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">①が減七</button><button class="btn night" data-act="qchoose" data-v="B">②が減七</button></div></section>`;
+  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext">${PA.icon('dice')}問題を出す</button></div></details>`;
+  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">${PA.icon('play')}①をきく</button><button class="btn" data-act="abplay" data-v="B">${PA.icon('play')}②をきく</button></div>`;
+  if(ab.answer==null) return h+`<p class="askline">減七は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">①が減七</button><button class="btn night" data-act="qchoose" data-v="B">②が減七</button></div></details>`;
   const ok=ab.answer===ab.dim, other=ab.dim==='A'?'B':'A';
   return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！もういちど聴きくらべてみよう。'}
       <b>${AB_NM[ab.dim]}</b>が減七（${namesD(P.min)}）、<b>${AB_NM[other]}</b>が半減七（${namesD(P.maj)}）。
       <br>ちがうのはいちばん上の${q(P.maj.six)}と${q(P.min.six)}だけ。</div>
-    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 次の問題</button></div></section>`;
+    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}次の問題</button></div></details>`;
 }
 function linksCard(P){
   // リストにない短調（変イ短調）は、おなじけんばんの短調でひらく
@@ -435,8 +427,8 @@ function tryCard(){
   const key=PA.keyDeck.id(state.minor,state.keyIdx);
   return PA.tryHTML({to:'chroma-quiz',params:{key,mode:'keys',chord:'vii7',n:5},
     sub:`けんばんで、${kn(curKey())}のⅦ7（${state.minor?'短調では減七':'長調では半減七'}）をおさえてみよう。5問。`,
-    btn:'🎯 5問ためしてみる',
-    links:[{to:'chroma-quiz',params:{key,mode:'keys',level:5,n:5},label:'🎹 レベル5（ぜんぶの和音）'},{to:'ear',params:{level:8},label:'👂 減七・半減七を耳で聴きわける（ぜんぶの和音）'}]});
+    btn:PA.icon('target')+'5問ためしてみる',
+    links:[{to:'chroma-quiz',params:{key,mode:'keys',level:5,n:5},label:PA.icon('piano')+'レベル5（ぜんぶの和音）'},{to:'ear',params:{level:8},label:PA.icon('ear')+'減七・半減七を耳で聴きわける（ぜんぶの和音）'}]});
 }
 function moreHTML(P){
   const M=P.maj, N=P.min;
@@ -446,6 +438,7 @@ function moreHTML(P){
     <li><b>短調で半減七？</b>：短調で${q(M.six)}を使うには、6ばんめを半音上げることになる。短調の和音としてはふつう使わないよ。</li>
     <li>Ⅶ7は、<b>Ⅴ9から根音をはぶいた形</b>と考えるよ。だからⅤのなかまで、Ⅴと同じようにⅠへすすむよ。</li>
     <li>ダブルシャープは「<span class="ds">x</span>」、ダブルフラットは「${PA.H('𝄫')}」と書くよ。</li>
+    <li>けんばんと「がくふでくらべる」は、Ⅶ7を導音から上へひとつとばしに4つつんだ形で、「Ⅰへすすむ」は4つの声（左手1つ・右手3つ）の形で鳴らしているよ。</li>
     <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と基準の音（ラ＝440〜443Hz）を選べるよ。</li>
   </ul></details>`;
 }
@@ -470,12 +463,13 @@ function render(){
   const key=curKey(), P=pairOf(key);
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}・${P.respell?`${kn(P.majK)}（同じけんばん）で${kn(P.minK)}と`:`${kn(state.minor?P.majK:P.minK)}と`}くらべる</span></div>`;
-  h+=heroCard(P)+kbCard(P)+tableCard(P)+staffCmpCard(P)+resCard(P)+abCard(P)+shapeCard(P)+tryCard()+linksCard(P)+moreHTML(P)+termsHTML(P);
-  h+=`<p class="note">※ 音の高さはふつうのピアノと同じです。けんばんと「がくふでくらべる」は、Ⅶ7を導音から上へひとつとばしに4つつんだ形で、「Ⅰへすすむ」は4つの声（左手1つ・右手3つ）の形で鳴らします。</p></div>`;
+  // いつもひらいているのは、主役（くらべる・けんばん・がくふ・ためしてみる）だけ。ほかはたたんで下に
+  h+=heroCard(P)+kbCard(P)+staffCmpCard(P)+tryCard()+tableCard(P)+resCard(P)+abCard(P)+shapeCard(P)+linksCard(P)+moreHTML(P)+termsHTML(P);
+  h+=`</div>`;
   PA.paint(document.getElementById('view'),h,'dh:'+state.minor+':'+state.keyIdx);
   PA.follow(document.getElementById('view')); // 光る鍵が見えるように（見えていれば動かさない。鳴らしおわってもとの形にもどったときも）
-  const acts=(state.anim?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
-    `<button class="btn" data-act="cmp" data-hot="listen">🔊 くらべる</button><button class="btn primary" data-act="resolve">➡️ Ⅰへ</button>`;
+  const acts=(state.anim?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
+    `<button class="btn" data-act="cmp" data-hot="listen">${PA.icon('listen')}くらべる</button><button class="btn primary" data-act="resolve">${PA.icon('next')}Ⅰへ</button>`;
   if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
 }
 
