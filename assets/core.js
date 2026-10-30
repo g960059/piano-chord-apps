@@ -725,7 +725,8 @@ PA.openSettings=()=>{
       <input type="file" id="pa-import" accept=".json,application/json" class="pa-sr" tabindex="-1" aria-hidden="true">
       <p class="note" id="pa-backup-msg" role="status"></p>
       <div id="pa-backup-text" hidden></div>
-    </div>`;
+    </div>
+    <p class="note pa-links"><a href="support.html">🛟 こまったとき・おといあわせ</a>　<a href="privacy.html">🔒 プライバシーポリシー</a></p>`;
   const el=sheet(h);
   el.querySelector('#pa-naming').value=S.naming; el.querySelector('#pa-pitch').value=String(S.pitchA); el.querySelector('#pa-sound').value=S.sound?'1':'0'; el.querySelector('#pa-voice').value=S.voice;
   const midiBox=el.querySelector('#pa-midi-box'), midiEcho=()=>{const m=el.querySelector('#pa-midiecho');if(m) m.value=S.midiEcho?'1':'0';};
