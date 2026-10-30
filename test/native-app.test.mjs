@@ -156,7 +156,7 @@ test('PA.haptic・PA.answerFx：ウェブではなにもしない。こたえた
 });
 
 test('クイズ：こたえあわせのところで PA.answerFx をよぶ',()=>{
-  const want={'chord-quiz.html':2,'minor-quiz.html':2,'chroma-quiz.html':2,'ending-quiz.html':1,'ear.html':2};
+  const want={'chord-quiz.html':2,'minor-quiz.html':2,'chroma-quiz.html':2,'ending-quiz.html':1,'ear.html':2,'progression.html':1};
   Object.entries(want).forEach(([f,n])=>assert.equal((fs.readFileSync(path.join(root,f),'utf8').match(/PA\.answerFx\(/g)||[]).length,n,f));
 });
 

@@ -198,7 +198,7 @@ const seqText=(data,reveal)=>data.map((c,i)=>i!==Q.q.i?c.label:Q.q.type==='chord
 const recLabel=(q,c)=>q.type==='bass'?P.BASS_ROLES[c].name+'（'+P.BASS_ROLES[c].form+'）':P.choiceLabel(q,c);
 function answer(v){
   const q=Q.q, ok=v===P.answer(q), hint=ok&&Q.hint, r=Q.rec[Q.step];
-  Q.ans=v; r.total++;
+  Q.ans=v; r.total++; PA.answerFx(ok);
   if(ok&&!hint){r.right++;r.streak++;r.best=Math.max(r.best,r.streak);}
   else if(hint) r.hint++; // ヒントでできた：⭐ はふえないが、れんぞくもきれない
   else r.streak=0;
@@ -272,7 +272,7 @@ function scoreHTML(){
   return `<div class="score">⭐ ${r.right} / ${r.total}もん正解${r.hint?` <span class="note" style="margin:0">💡 ヒントでできた${r.hint}</span>`:''} <span class="note" style="margin:0">れんぞく${r.streak}</span> <span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(r.streak,10))}</span></div>`
     +`<div class="rec">📒 ステップ${Q.step}のさいこう：<b>${r.best?`${r.best}もんれんぞく`:'まだないよ'}</b>${r.best>=CLEAR?'✓':`<span>（${CLEAR}もんれんぞくで ✓）</span>`}</div>`;
 }
-const sessHTML=()=>`<div class="sessrow">${sess.active()||sess.finished()?sess.progressHTML():`<button class="btn small" data-act="sess5">📝 きょうの5もん</button>`}</div>`;
+const sessHTML=()=>`<div class="sessrow">${sess.active()||sess.finished()?sess.progressHTML():`<button class="btn small" data-act="sess5">${PA.icon('session')}きょうの5もん</button>`}</div>`;
 const titleText=q=>q.type==='chord'?'「？」の和音は？':q.type==='bass'?'「？」の和音の、いちばん下の音は？':'いちばん上の音は、どう動いた？';
 function subText(q){
   if(q.type==='chord') return 'ならびが鳴るよ。「？」のところをよく聴こう。ほかの和音の名前は、こたえたあとに出るよ。';
@@ -323,7 +323,7 @@ function tryHTML(){
 }
 function abBtn(v,label,sub,color){
   const on=Q.playing===v;
-  return `<button class="btn ${on?'on':''}" style="--c:${color}" data-act="pcmp" data-v="${v}" aria-pressed="${on}"><span>${on?'⏹ とめる':label}</span><small>${sub}</small></button>`;
+  return `<button class="btn ${on?'on':''}" style="--c:${color}" data-act="pcmp" data-v="${v}" aria-pressed="${on}"><span>${on?PA.icon('stop')+'とめる':label}</span><small>${sub}</small></button>`;
 }
 function fbHTML(){
   const q=Q.q, right=P.answer(q), ok=Q.ans===right;
@@ -333,9 +333,9 @@ function fbHTML(){
   h+=`<span class="sm">${P.why(q)}</span>`;
   if(!ok){
     if(q.type==='chord') h+=`<span class="sm">選んだ${E.LABEL[Q.ans]}は「${feel(Q.ans)}」。</span>`;
-    h+=`<div class="abrow">${abBtn('mine','🔁 選んだほう',q.type==='top'?topLineOf(Q.ans).map(N).join('→<wbr>'):PA.esc(ansText(Q.ans)),col(Q.ans))}${abBtn('right','🔁 正解',q.type==='top'?topLineOf(right).map(N).join('→<wbr>'):PA.esc(ansText(right)),col(right))}</div>`;
+    h+=`<div class="abrow">${abBtn('mine',PA.icon('listen')+'選んだほう',q.type==='top'?topLineOf(Q.ans).map(N).join('→<wbr>'):PA.esc(ansText(Q.ans)),col(Q.ans))}${abBtn('right',PA.icon('listen')+'正解',q.type==='top'?topLineOf(right).map(N).join('→<wbr>'):PA.esc(ansText(right)),col(right))}</div>`;
   }
-  if(q.type==='top'){const on=Q.playing==='top';h+=`<div class="row"><button class="btn small ${on?'on':''}" data-act="ptop" aria-pressed="${on}">${on?'⏹ とめる':'🎵 上の音だけ'}</button></div>`;}
+  if(q.type==='top'){const on=Q.playing==='top';h+=`<div class="row"><button class="btn small ${on?'on':''}" data-act="ptop" aria-pressed="${on}">${on?PA.icon('stop')+'とめる':PA.icon('music')+'上の音だけ'}</button></div>`;}
   return h+`</div>`;
 }
 // がくふ（こたえたあと）：「？」の列に色、いちばん下の問題はその音にわ、いちばん上の問題は上の音に線
@@ -355,7 +355,7 @@ function settingsText(step){const s=ST(step);return `ステップ${s.n}（${s.na
 const linkParams=step=>({step,slow:Q.slow?1:null});
 function settingsHTML(){
   return `<details class="more" id="psetd" ${Q.openSet?'open':''}><summary><span class="sumtx">🎛 せってい・先生へ<small>ステップ${Q.step}${Q.slow?'・🐢 ゆっくり':''}</small></span></summary>
-    <div class="opt"><div class="row">${PA.shareHTML(QUIZ,Object.assign(linkParams(Q.step),{n:5}),'👩‍🏫 れんしゅうをおくる')}</div><small>リンクをひらくと、いまのせってい（${PA.esc(settingsText(Q.step))}）で5もんできるよ</small></div>
+    <div class="opt"><div class="row">${PA.shareHTML(QUIZ,Object.assign(linkParams(Q.step),{n:5}),PA.icon('send')+'れんしゅうをおくる')}</div><small>リンクをひらくと、いまのせってい（${PA.esc(settingsText(Q.step))}）で5もんできるよ</small></div>
     <div class="opt"><div class="row"><button class="btn small" data-act="preset" data-confirm="もういちどおすと、0にもどすよ">ステップ${Q.step}のきろくを0にもどす</button></div></div>
   </details>`;
 }
@@ -382,7 +382,7 @@ function render(){
   const q=Q.q, key=keyOfQ(), data=dataOf(), ch=P.choices(q), reveal=!!Q.ans;
   let h=`<div class="stack"><section class="card hero">${stepsHTML()}${scoreHTML()}${sessHTML()}
     <div class="qtitle"><span>👂 ${titleText(q)}</span></div>
-    <p class="qsub">${subText(q)}${Q.played||Q.ans?'':'下の<b>▶️ 聴く</b>をおすと鳴るよ。'}</p>
+    <p class="qsub">${subText(q)}${Q.played||Q.ans?'':PA.once('prog-play','下の<b>聴く</b>をおすと鳴るよ。')}</p>
     ${cardsHTML(data,reveal)}
     <div class="keyline"><span class="kn">${PA.keyName(key)}（${PA.sigLabel(key)}）</span><button class="tgl" data-act="pslow" aria-pressed="${Q.slow}">🐢 ゆっくり</button></div>`;
   if(Q.muteHint&&!PA.settings.sound) h+=`<div class="rinfo soundhint" role="status">🔇 音がオフだよ<button type="button" class="btn small" data-pa="sound-on">🔊 音を出す</button></div>`;
@@ -401,11 +401,11 @@ function render(){
 let lastActions=null;
 function renderActions(){
   const bar=document.getElementById('actions');
-  const main=Q.playing==='q'?`<button class="btn" data-act="stop" data-hot="listen">⏹ とめる</button>`
-    :`<button class="btn night" data-act="pplay" data-hot="listen">${Q.played||Q.ans?'🔁 もういちど':'▶️ 聴く'}</button>`;
+  const main=Q.playing==='q'?`<button class="btn" data-act="stop" data-hot="listen">${PA.icon('stop')}とめる</button>`
+    :`<button class="btn night" data-act="pplay" data-hot="listen">${Q.played||Q.ans?PA.icon('repeat')+'もういちど':PA.icon('play')+'聴く'}</button>`;
   let a='';
   if(Q.sum) a='';
-  else if(Q.ans) a=main+`<button class="btn primary" data-act="pnext" data-hot="next">${sess.finished()?'けっかを見る ➡':'つぎへ ➡'}</button>`;
+  else if(Q.ans) a=main+`<button class="btn primary" data-act="pnext" data-hot="next">${sess.finished()?'🎉 けっかを見る':PA.icon('next')+'つぎへ'}</button>`;
   else a=main+(Q.q.type!=='top'?`<button class="btn" data-act="ponly">「？」だけ</button>`:'');
   bar.style.display=a?'':'none';
   if(a!==lastActions){PA.paint(bar,a,'bar');lastActions=a;}
