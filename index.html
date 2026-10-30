@@ -28,67 +28,109 @@
 <title>ピアノ和音アプリ</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
-/* 入口は「しずかに」：目立たせるのは「つづき」と「つぎ」の単元だけ（こい墨色）。種類のラベルは灰色の文字で、和音の色（赤・緑・青・むらさき）はつかわない */
-.home h2{margin:0;font-size:17px}
+/* 入口は「すごろく」：単元＝地図の島。🐸 のいる島が「いまここ」。クイズは赤い色でめだたせる（PA.APP_TYPES の色） */
+.home h2{margin:0;font-size:17px;line-height:1.35}
 .home h2 small{display:block;font-weight:400;color:var(--sub);font-size:13px;margin-top:2px}
-.lbl{margin:4px 4px -4px;font-size:15px;font-weight:800;color:var(--ink)}
-/* はじめての人 */
-.hero{text-align:center;padding:18px 16px}
-.hero .big{font-size:44px;line-height:1}
-.hero h2{font-size:22px;margin-top:6px}
+.lbl{margin:4px 4px -4px;font-size:16px;font-weight:800;color:var(--ink)}
+.lbl small{display:block;font-weight:400;color:var(--sub);font-size:13px}
+/* はじめての人：ぼうけんへのさそい */
+.hero{text-align:center;padding:18px 16px;background:linear-gradient(160deg,#e3f2ff 0%,#fff6dc 70%)}
+.hero .big{font-size:44px;line-height:1;letter-spacing:4px}
+.hero h2{font-size:22px;margin-top:8px}
 .hero .lead{color:var(--ink);font-size:16px;margin:6px 0 12px;word-break:keep-all;overflow-wrap:anywhere}
-.hero .btn{display:flex;width:100%;min-height:56px;font-size:18px}
+.hero .btn{display:flex;width:100%;min-height:56px;font-size:18px;background:#ffd66b;color:var(--ink);box-shadow:0 3px 0 #e0a92a}
+.hero .btn svg.ic{width:1.1em;height:1.1em}
 .hero .site{margin:12px 0 0;color:var(--sub);font-size:13px;line-height:1.6;text-align:left}
-/* きょうのれんしゅう（つづき＋にがて） */
-.go{display:flex;align-items:center;gap:12px;min-height:68px;padding:10px 14px;border-radius:16px;background:var(--ink);color:#fff;text-decoration:none}
-.go .ic{flex:none;width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,.95);display:grid;place-items:center;font-size:24px}
+/* つづきから（明るい黄色）＋にがて */
+.go{display:flex;align-items:center;gap:12px;min-height:72px;padding:10px 14px;border-radius:18px;background:linear-gradient(135deg,#ffe07a,#ffb547);color:var(--ink);text-decoration:none;box-shadow:0 3px 0 #e0a92a}
+.go .ic{flex:none;width:48px;height:48px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:26px}
 .go .tx{flex:1;min-width:0}
 .go b{display:block;font-size:18px;line-height:1.3}
-.go .meta{display:block;font-size:13px;line-height:1.45;opacity:.9}
-.go .eye{display:block;font-size:12px;font-weight:800;line-height:1.3;opacity:.85}
+.go .meta{display:block;font-size:13px;line-height:1.45}
+.go .eye{display:block;font-size:12.5px;font-weight:800;line-height:1.3}
 .go .eye svg.ic{display:inline-block;width:1.1em;height:1.1em;background:none;border-radius:0;font-size:inherit;margin-right:3px;vertical-align:-.2em}
-.go::after{content:"›";flex:none;font-size:28px}
+.go::after{content:"›";flex:none;font-size:30px;font-weight:800}
 .weakrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px}
 .weakrow .wl{flex-basis:100%;font-size:13px;font-weight:800;color:var(--sub)}
 .weakrow .wl svg.ic{width:1.15em;height:1.15em;margin-right:4px;vertical-align:-.22em}
 #view .weakrow a{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:4px 12px;border-radius:999px;background:var(--soft2);color:var(--ink);text-decoration:none;font-size:14px;font-weight:700;border:2px solid var(--line)}
 .weakrow a small{font-weight:400;color:var(--sub);font-size:12px}
-/* いつでも（どうぐ） */
-.tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-.tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:76px;padding:8px 4px;border-radius:16px;background:var(--card);box-shadow:0 2px 0 #eadfce;color:var(--ink);text-decoration:none;text-align:center}
-.tool .ic{font-size:24px;line-height:1.1}
-.tool b{font-size:14px;line-height:1.3;word-break:keep-all;overflow-wrap:anywhere}
-.tool small{color:var(--sub);font-size:11.5px;line-height:1.3;white-space:nowrap}
-@media (max-width:360px){.tool{padding:8px 2px}.tool b{font-size:13px}.tool small{font-size:11px}}
-/* コース：番号つきの単元。ひらくのは「つぎ」の単元だけ */
-.units{display:flex;flex-direction:column;gap:8px}
-details.unit{background:var(--card);border-radius:16px;box-shadow:0 2px 0 #eadfce;min-width:0}
-details.unit>summary{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 12px;cursor:pointer;list-style:none;border-radius:16px}
-details.unit[open]>summary{border-radius:16px 16px 0 0} /* おしたときの色が、カードのまるい角からはみださない */
-details.unit>summary::-webkit-details-marker{display:none}
-details.unit>summary::after{content:"▾";flex:none;color:var(--sub);font-size:14px;transition:transform .15s}
-details.unit[open]>summary::after{transform:rotate(180deg)}
-.unit .no{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:15px;background:var(--soft);color:var(--ink)}
-.unit.done .no{background:var(--ok);color:#fff}
-.unit .ut{flex:1;min-width:0}
-.unit .ut b{display:block;font-size:16px;line-height:1.35}
-.unit .ut small{display:block;color:var(--sub);font-size:12.5px;line-height:1.4}
-.unit .prog{flex:none;font-size:13px;font-weight:700;color:var(--sub);white-space:nowrap}
-.unit.next{box-shadow:0 0 0 3px var(--ink)}
-.unit.next .no{background:var(--ink);color:#fff}
-.unit .nexttag{display:inline-block;margin-left:6px;font-size:11.5px;font-weight:800;padding:0 7px;border-radius:999px;background:var(--ink);color:#fff;vertical-align:2px}
-.alist{list-style:none;margin:0;padding:0 8px 8px;display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--line)}
-#view li a.arow{display:flex;margin:0;align-items:center;gap:10px;min-height:56px;padding:6px 6px;border-radius:12px;color:var(--ink);text-decoration:none}
-@media (hover:hover){.arow:hover{background:var(--soft2)}}
-.arow .ic{flex:none;width:36px;height:36px;border-radius:11px;background:var(--soft2);display:grid;place-items:center;font-size:20px}
+/* クイズだけあそぶ：クイズ・耳のアプリを色つきのボタンで（白い字は APP_TYPES の dk の上だけ） */
+.qzs{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+@media (min-width:540px){.qzs{grid-template-columns:repeat(3,minmax(0,1fr))}}
+#view a.qz{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:92px;padding:10px 6px;border-radius:18px;background:var(--c);color:#fff;text-decoration:none;text-align:center;box-shadow:0 3px 0 rgba(0,0,0,.22)}
+@media (hover:hover){#view a.qz:hover{filter:brightness(1.06)}}
+.qz .ic{width:38px;height:38px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:21px;line-height:1}
+.qz b{font-size:14.5px;line-height:1.3;word-break:keep-all;overflow-wrap:anywhere}
+.qz small{font-size:12px;line-height:1.3;font-weight:700}
+/* ぼうけんの地図 */
+.map{background:#fff radial-gradient(circle,#efe6d8 1.2px,transparent 1.6px) 0 0/18px 18px}
+.trail{margin-top:10px}
+.trail .start{display:inline-flex;align-items:center;gap:4px;min-height:32px;padding:2px 12px;border-radius:999px;background:var(--ink);color:#fff;font-size:13.5px;font-weight:800}
+details.stage{position:relative}
+/* 島と島をつなぐ点線（島の列のまん中） */
+details.stage::before{content:"";position:absolute;top:0;bottom:0;left:28px;border-left:4px dashed #d6c6b0;z-index:0}
+details.stage.r::before{left:auto;right:28px}
+details.stage>summary{position:relative;z-index:1;display:flex;align-items:center;gap:10px;min-height:84px;padding:10px 0;cursor:pointer;list-style:none;border-radius:16px}
+details.stage>summary::-webkit-details-marker{display:none}
+details.stage.r>summary{flex-direction:row-reverse}
+details.stage.here>summary{padding-top:22px}
+.isle{flex:none;position:relative;width:60px;height:60px;border-radius:50%;background:var(--l);border:4px solid var(--c);display:grid;place-items:center;font-size:28px;line-height:1;box-shadow:0 4px 0 rgba(58,50,69,.16)}
+.stage.here .isle::after,.goal.here .isle::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:3px dashed var(--c)}
+.isle .frog{position:absolute;top:-24px;right:-14px;font-size:30px;line-height:1}
+.isle .ok{position:absolute;right:-6px;bottom:-6px;width:24px;height:24px;border-radius:50%;background:var(--ok);color:#fff;font-size:14px;font-weight:800;display:grid;place-items:center;border:2px solid #fff}
+@media (prefers-reduced-motion:no-preference){
+  .isle .frog{animation:hop 2.4s ease-in-out infinite}
+  @keyframes hop{0%,62%,100%{transform:translateY(0)}70%{transform:translateY(-8px)}78%{transform:translateY(0)}84%{transform:translateY(-3px)}90%{transform:translateY(0)}}
+}
+.sign{flex:1;min-width:0;position:relative;background:#fff;border:2px solid var(--l);border-radius:16px;padding:8px 30px 8px 12px;box-shadow:0 2px 0 var(--line)}
+.sign::after{content:"▾";position:absolute;right:10px;top:9px;color:var(--sub);font-size:14px;transition:transform .15s}
+details.stage[open] .sign::after{transform:rotate(180deg)}
+.sign b{font-size:16px;line-height:1.35}
+.sign small{display:block;color:var(--sub);font-size:12.5px;line-height:1.4}
+.sign .tag{display:inline-block;margin-left:6px;font-size:11.5px;font-weight:800;padding:0 8px;border-radius:999px;vertical-align:2px;line-height:1.6;white-space:nowrap}
+.sign .tag.now{background:var(--ink);color:#fff}
+.sign .tag.clear{background:var(--ok);color:#fff}
+.stars{display:block;margin-top:2px;font-size:15px;line-height:1.2;letter-spacing:1px;color:#ddd0bd}
+.stars .on{color:#c97a00}
+.stage.here .sign{border-color:var(--c);box-shadow:0 3px 0 var(--c)}
+@media (hover:hover){details.stage>summary:hover .sign{background:var(--soft2)}}
+/* 島をあけたときのページ（クイズ・耳はその色で） */
+.alist{position:relative;z-index:1;list-style:none;margin:2px 0 10px;padding:6px;display:flex;flex-direction:column;gap:4px;background:#fff;border-radius:16px;border:2px solid var(--l);border-top:5px solid var(--c);box-shadow:0 2px 0 var(--line)}
+#view li a.arow{display:flex;margin:0;align-items:center;gap:10px;min-height:56px;padding:6px 8px;border-radius:12px;color:var(--ink);text-decoration:none}
+@media (hover:hover){#view li a.arow:hover{background:var(--soft2)}}
+.arow .ic{flex:none;width:38px;height:38px;border-radius:50%;background:var(--soft2);display:grid;place-items:center;font-size:20px}
 .arow .tx{flex:1;min-width:0;line-height:1.35}
 .arow .tx b{font-size:15.5px}
 .arow .d{display:block;color:var(--sub);font-size:12.5px;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .arow .st{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:12px;font-weight:700;white-space:nowrap}
-.ty{display:inline-block;font-size:11.5px;font-weight:800;padding:0 7px;border-radius:999px;border:1.5px solid var(--line);color:var(--sub);background:#fff;line-height:1.5}
 .arow .seen{color:var(--ok);font-size:16px;font-weight:800}
-#view li a.arow.seen-row{min-height:48px}
-.arow .kd{color:var(--ok);font-size:12px}
+.arow .kd{color:var(--ink);font-size:12px}
+#view li a.arow.game{background:var(--tl);border:2px solid var(--tc)}
+#view li a.arow.game .ic{background:#fff;border:2px solid var(--tc)}
+@media (hover:hover){#view li a.arow.game:hover{filter:brightness(.98)}}
+.arow .ty{display:inline-block;margin-right:6px;font-size:11.5px;font-weight:800;padding:0 7px;border-radius:999px;background:var(--td);color:#fff;line-height:1.6;vertical-align:1px}
+/* ゴール */
+.goal{display:flex;align-items:center;gap:10px;min-height:84px;padding:10px 0 2px}
+.goal.r{flex-direction:row-reverse}
+.goal.here{padding-top:22px}
+.goal .isle{--c:#c97a00;--l:#fff1cc}
+.goal .sign{padding-right:12px;border-color:#fff1cc}
+.goal .sign::after{content:none}
+/* 島と島のあいだ：S字の点線（左→右。右→左は鏡にうつす） */
+.link{position:relative;height:30px;margin:0 28px}
+.link::before,.link::after{content:"";position:absolute;width:calc(50% + 2px);height:calc(50% + 2px);border:0 dashed #d6c6b0}
+.link::before{left:0;top:0;border-left-width:4px;border-bottom-width:4px;border-bottom-left-radius:16px}
+.link::after{right:0;bottom:0;border-top-width:4px;border-right-width:4px;border-top-right-radius:16px}
+.link.r{transform:scaleX(-1)}
+/* せまい画面（320px）：島を小さくして、看板の文字をすこし小さく */
+@media (max-width:360px){
+  .isle{width:52px;height:52px;font-size:24px}
+  details.stage::before{left:24px} details.stage.r::before{right:24px}
+  .link{margin:0 24px}
+  .sign{padding-left:10px}
+  .sign b{font-size:15px}
+}
 .foot{margin:4px 4px 0;font-size:13px;line-height:1.6}
 .foot>summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center}
 .foot p{margin:0 0 4px}
@@ -99,22 +141,36 @@ details.unit[open]>summary::after{transform:rotate(180deg)}
 <main class="page" id="view"></main>
 <script src="assets/core.js"></script>
 <script>
-/* 入口：きょうのれんしゅう（つづき＋にがて）・いつでも（どうぐ）・コース（番号つきの単元）
+/* 入口：つづきから（＋にがて）・クイズだけあそぶ・ぼうけんの地図（単元＝島、🐸＝いまここ）
  *   目次は core の PA.UNITS・PA.APPS・PA.APP_TYPES（このページではもたない）。app.title はただの文字、app.d は HTML
- *   「いつでも」の3つ（TOOLS）はコースの単元にはならべない（おなじものを2回出さない）
+ *   島の名前・色（LOOK）だけこのページのもの。しらない単元は PA.UNITS の名前と PALETTE の色
  *   ひらいたアプリ：PA.store 'visited'（PA.mountBar がきろく）。まえからの人は 'last'・'keystats-…' なども見る
- *   コースのひらく／とじる：PA.store 'home-units'＝{unit の id: true/false}（じぶんでおしたときだけほぞん） */
+ *   島のひらく／とじる：PA.store 'home-units'＝{unit の id: true/false}（じぶんでおしたときだけほぞん） */
 const T=PA.APP_TYPES, ESC=PA.esc;
-const TOOLS=[['accompaniment','曲につける'],['ear','まいにちすこし'],['chord-table','ぜんぶの調']];
-const TOOL_IDS=TOOLS.map(t=>t[0]);
 const TALLY_MODES={'minor-quiz':['minor']}; // 短調クイズは短調だけ（12）。ほかは長調・短調（24）
 const isObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const rec=k=>{const v=PA.store.get(k,null);return isObj(v)&&typeof v.app==='string'&&PA.app(v.app)?v:null;};
 const typeOf=a=>T[a.type]||T.learn;
-// コースにならべる単元（「いつでも」のアプリをのぞいて、のこりがある単元だけ）
-const COURSE=PA.UNITS.map(u=>({id:u.id,title:u.title,sub:u.sub,apps:u.apps.filter(id=>PA.app(id)&&TOOL_IDS.indexOf(id)<0)})).filter(u=>u.apps.length);
-// 単元の名前の先頭の絵文字は番号にかえる（「🎹 はじめの和音」→「はじめの和音」）
-const plainTitle=t=>String(t).replace(/^(?:[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u266C\u2670-\u27BF])\uFE0F?\s*/,'');
+const isGame=a=>a.type==='quiz'||a.type==='ear';
+// 島の名前と色（c＝ふちの色、l＝うすい色。どちらも文字はのせない）
+const LOOK={
+  u1:{name:'はじめの和音',sub:'Ⅰ・Ⅳ・Ⅴ・Ⅴ7からスタート',c:'#f4a100',l:'#fff1cc'},
+  u2:{name:'曲につけてみよう',sub:'知っている曲に和音をつける',c:'#22a06b',l:'#daf3e6'},
+  u3:{name:'和音をもっと知ろう',sub:'7つの和音・和音のかたち・音のへだたり',c:'#2f7ee8',l:'#dfeafd'},
+  u4:{name:'短調の森',sub:'Ⅴ・Ⅴ7・Ⅴ9・減七と臨時記号',c:'#3b4fa8',l:'#e6eafb'},
+  u5:{name:'おわりかたの丘',sub:'曲のおわりの6つの形',c:'#0f9d9a',l:'#d5f3f2'},
+  u6:{name:'変化和音の虹',sub:'半音動かす・よその調からかりる',c:'#8a4fe0',l:'#ece2fb'},
+  ear:{name:'耳のひろば',sub:'毎日すこしずつ。聴いてパッとわかる',c:'#d6458a',l:'#fbe1ee'}
+};
+const PALETTE=[['#f4a100','#fff1cc'],['#22a06b','#daf3e6'],['#2f7ee8','#dfeafd'],['#8a4fe0','#ece2fb'],['#d6458a','#fbe1ee']];
+const EMOJI_RE=/^((?:[\uD800-\uDBFF][\uDC00-\uDFFF]|[☀-♬♰-➿])️?)\s*/;
+// 地図の島（PA.UNITS のじゅん。目次にあるページがある単元だけ）
+const STAGES=PA.UNITS.map((u,i)=>{
+  const m=String(u.title).match(EMOJI_RE), lk=LOOK[u.id]||{}, pl=PALETTE[i%PALETTE.length];
+  return {id:u.id,emoji:m?m[1]:'🏝️',name:lk.name||String(u.title).replace(EMOJI_RE,''),sub:lk.sub||u.sub||'',c:lk.c||pl[0],l:lk.l||pl[1],
+    apps:u.apps.filter(id=>PA.app(id))};
+}).filter(s=>s.apps.length);
+const stageOf=id=>STAGES.find(s=>s.apps.indexOf(id)>=0)||null;
 
 // ひらいたことのあるアプリ（id の Set）
 function visitedSet(){
@@ -144,25 +200,35 @@ function lastDone(app){
   const p=best&&PA.keyDeck.parse(best);
   return p?'さいごの調：'+PA.keyName(PA.keyOf(p.minor,p.idx)):'';
 }
+function quizStat(id){
+  const t=PA.keyDeck.tally(id,{modes:TALLY_MODES[id]||['major','minor']});
+  return {good:t.good,total:t.total};
+}
+// 🐸 のいる島：まだひらいていないページがある、いちばん前の島（ぜんぶひらいたら null＝ゴール）
+function nextUnitId(vis){
+  const s=STAGES.find(s=>s.apps.some(id=>!vis.has(id)));
+  return s?s.id:null;
+}
 
-/* ----- 上：はじめての人／きょうのれんしゅう ----- */
-// 'last…' がないけれどひらいたことがある人：さいごにひらいたアプリ（'visited' の時こく）、なければつぎの単元のまだひらいていないアプリ
+/* ----- 上：はじめての人／つづきから ----- */
+// 'last…' がないけれどひらいたことがある人：さいごにひらいたアプリ（'visited' の時こく）、なければ 🐸 の島のまだひらいていないアプリ
 function fallbackRec(vis){
   const v=PA.store.get('visited',{}); let best=null;
   if(isObj(v)) Object.keys(v).forEach(id=>{const t=v[id];if(PA.app(id)&&typeof t==='number'&&t>0&&(!best||t>best.t)) best={app:id,t};});
   if(best) return best;
-  const nx=COURSE.find(u=>u.id===nextUnitId(vis))||COURSE[0];
+  const nx=STAGES.find(s=>s.id===nextUnitId(vis))||STAGES[0];
   const id=nx&&(nx.apps.find(a=>!vis.has(a))||nx.apps[0]);
   return id?{app:id,t:0}:null;
 }
 function topHTML(vis){
   const lp=rec('last-practice'), ll=rec('last-learn'), old=rec('last');
   if(!vis.size&&!lp){
-    return `<section class="card hero" aria-labelledby="hero-h"><div class="big" aria-hidden="true">🐸</div>
-      <h2 id="hero-h">はじめての和音</h2>
-      <p class="lead">ド・ミ・ソを見て・聴いて・つくってみよう</p>
-      <a class="btn primary" href="chord-build.html">ここから始める ›</a>
-      <p class="site">Ⅰ・Ⅳ・Ⅴから7つの和音、短調、おわりかた、変化和音、伴奏づけ、耳のれんしゅうまで。「見て・聴いて・さわって」おぼえよう。</p></section>`;
+    const s0=STAGES[0], first=s0&&PA.app(s0.apps[0]);
+    return `<section class="card hero" aria-labelledby="hero-h"><div class="big" aria-hidden="true">🐸🗺️</div>
+      <h2 id="hero-h">和音のぼうけんに出発！</h2>
+      <p class="lead">さいしょの島は「${ESC(s0?s0.name:'はじめの和音')}」。ド・ミ・ソを見て・聴いて・つくってみよう</p>
+      ${first?`<a class="btn" href="${first.id}.html">${PA.icon('play')}さいしょの島からスタート</a>`:''}
+      <p class="site">Ⅰ・Ⅳ・Ⅴから7つの和音、短調、おわりかた、変化和音、伴奏づけ、耳のれんしゅうまで。島をじゅんにまわって、「見て・聴いて・さわって」おぼえよう。クイズだけあそんでもOK！</p></section>`;
   }
   // つづき：さいごにひらいたページ（クイズ・しくみの新しいほう）
   const main=(lp&&ll?(ll.t>lp.t?ll:lp):lp||ll)||old||fallbackRec(vis);
@@ -170,7 +236,7 @@ function topHTML(vis){
   const ws0=PA.weakSummary(30).filter(w=>{const a=PA.app(w.quiz);return a&&a.type==='quiz';});
   const ws=ws0.filter(w=>w.quiz===ws0[0].quiz).slice(0,3); // いちばんにがてのクイズだけ（1行に）
   if(!main&&!ws.length) return '';
-  let h=`<section class="card" aria-labelledby="today-h"><h2 id="today-h" class="pa-sr">きょうのれんしゅう</h2>`;
+  let h=`<section class="card" aria-labelledby="today-h"><h2 id="today-h" class="pa-sr">つづきから</h2>`;
   if(main){
     const app=PA.app(main.app), meta=[when(main.t),lastDone(app)].filter(Boolean).join('・');
     h+=`<a class="go" href="${app.id}.html"><span class="ic" aria-hidden="true">${app.ic}</span><span class="tx"><span class="eye">${PA.icon('play')}つづきから</span><b>${ESC(app.title)}</b>${meta?`<span class="meta">${ESC(meta)}</span>`:''}</span></a>`;
@@ -189,44 +255,49 @@ function topHTML(vis){
   return h+`</section>`;
 }
 
-/* ----- いつでも：伴奏づけ・聴きわけ・いちらん表 ----- */
-function toolsHTML(){
-  return `<h2 class="lbl" id="tools-h">いつでも</h2><nav class="tools" aria-labelledby="tools-h">`
-    +TOOLS.map(([id,sub])=>{const a=PA.app(id);if(!a) return '';
-      return `<a class="tool" href="${a.id}.html"><span class="ic" aria-hidden="true">${a.ic}</span><b>${ESC(a.title)}</b><small>${sub}</small></a>`;}).join('')
-    +`</nav>`;
+/* ----- クイズだけあそぶ：クイズと耳のアプリ ----- */
+function gamesHTML(vis){
+  const games=PA.APPS.filter(isGame); if(!games.length) return '';
+  return `<h2 class="lbl" id="games-h"><span aria-hidden="true">🎮 </span>クイズだけあそぶ<small>島のじゅんでなくても、すきなクイズからどうぞ</small></h2><nav class="qzs" aria-labelledby="games-h">`
+    +games.map(a=>{
+      const st=stageOf(a.id), seen=vis.has(a.id);
+      let sub=a.type==='ear'?'聴いて当てる':'はじめてみよう';
+      if(a.type==='quiz'&&seen){const q=quizStat(a.id);sub=`できた調${q.good}／${q.total}`;}
+      else if(seen) sub='またあそぶ';
+      return `<a class="qz" href="${a.href?ESC(a.href):a.id+'.html'}" style="--c:${typeOf(a).dk}"><span class="ic" aria-hidden="true">${a.type==='quiz'&&st?st.emoji:a.ic}</span><b>${ESC(a.title)}</b><small>${sub}</small></a>`;
+    }).join('')+`</nav>`;
 }
 
-/* ----- コース：番号つきの単元 ----- */
-function nextUnitId(vis){
-  const u=COURSE.find(u=>u.apps.some(id=>!vis.has(id)));
-  return u?u.id:null;
-}
-function quizStat(id){
-  const t=PA.keyDeck.tally(id,{modes:TALLY_MODES[id]||['major','minor']});
-  return {good:t.good,total:t.total};
-}
+/* ----- ぼうけんの地図：島（単元）をS字の点線でつなぐ ----- */
 // 行は アイコン＋名前＋ようす だけ。説明は まだひらいていない行だけ1行で（ひらいたことがあれば中身はわかっているので）
 function appRow(app,vis){
-  const seen=vis.has(app.id);
+  const seen=vis.has(app.id), ty=typeOf(app), game=isGame(app);
   let st='';
   if(app.type==='quiz'&&seen){const q=quizStat(app.id);st=`<span class="kd">できた調${q.good}／${q.total}</span>`;}
   else if(seen) st=`<span class="seen" role="img" aria-label="ひらいた">✓</span>`;
-  return `<li><a class="arow${seen?' seen-row':''}" href="${app.href?ESC(app.href):app.id+'.html'}"><span class="ic" aria-hidden="true">${app.ic}</span>`
-    +`<span class="tx"><b>${ESC(app.title)}</b>${seen?'':`<span class="d">${app.d}</span>`}</span>${st?`<span class="st">${st}</span>`:''}</a></li>`;
+  return `<li><a class="arow${game?' game':''}" href="${app.href?ESC(app.href):app.id+'.html'}"${game?` style="--tc:${ty.c};--tl:${ty.l};--td:${ty.dk}"`:''}><span class="ic" aria-hidden="true">${app.ic}</span>`
+    +`<span class="tx">${game?`<span class="ty">${ESC(ty.label)}</span>`:''}<b>${ESC(app.title)}</b>${seen?'':`<span class="d">${app.d}</span>`}</span>${st?`<span class="st">${st}</span>`:''}</a></li>`;
 }
-function courseHTML(vis){
+function mapHTML(vis){
   const saved=PA.store.get('home-units',{}), sv=isObj(saved)?saved:{};
   const nx=nextUnitId(vis);
-  const cards=COURSE.map((u,i)=>{
-    const apps=u.apps.map(PA.app), n=apps.filter(a=>vis.has(a.id)).length, done=n===apps.length;
-    const isNext=u.id===nx, open=typeof sv[u.id]==='boolean'?sv[u.id]:isNext;
-    return `<details class="unit${isNext?' next':''}${done?' done':''}" data-d="unit-${u.id}" data-u="${u.id}"${open?' open':''}>`
-      +`<summary><span class="no" aria-hidden="true">${done?'✓':i+1}</span><span class="ut"><b>${ESC(plainTitle(u.title))}${isNext?'<span class="nexttag">次</span>':''}</b>${u.sub?`<small>${ESC(u.sub)}</small>`:''}</span>`
-      +`<span class="prog">${done?'<span class="pa-sr">おわった、</span>':''}${n}/${apps.length}<span class="pa-sr">ひらいた</span></span></summary>`
-      +`<ul class="alist">${apps.map(a=>appRow(a,vis)).join('')}</ul></details>`;
-  }).join('');
-  return `<h2 class="lbl">コース</h2><div class="units">${cards}</div>`;
+  let h=`<section class="card map" aria-labelledby="map-h"><h2 id="map-h"><span aria-hidden="true">🗺️ </span>ぼうけんの地図<small>🐸のいる島が、いまのばしょ。島をおすとページが出てくるよ</small></h2>`
+    +`<div class="trail"><div class="start"><span aria-hidden="true">🚩</span>スタート</div>`;
+  STAGES.forEach((s,i)=>{
+    const apps=s.apps.map(PA.app), n=apps.filter(a=>vis.has(a.id)).length, done=n===apps.length;
+    const here=s.id===nx, side=i%2?'r':'l', open=typeof sv[s.id]==='boolean'?sv[s.id]:here;
+    const stars=apps.map(a=>vis.has(a.id)?'<span class="on">★</span>':'☆').join('');
+    h+=`<details class="stage ${side}${here?' here':''}${done?' done':''}" data-d="stage-${s.id}" data-u="${s.id}" style="--c:${s.c};--l:${s.l}"${open?' open':''}>`
+      +`<summary><span class="isle" aria-hidden="true">${s.emoji}${here?'<span class="frog">🐸</span>':''}${done?'<span class="ok">✓</span>':''}</span>`
+      +`<span class="sign"><b>${ESC(s.name)}</b>${here?'<span class="tag now">いまここ</span>':''}${done?'<span class="tag clear">クリア！</span>':''}`
+      +`${s.sub?`<small>${ESC(s.sub)}</small>`:''}<span class="stars" aria-hidden="true">${stars}</span><span class="pa-sr">${apps.length}ページのうち${n}ページひらいた</span></span></summary>`
+      +`<ul class="alist">${apps.map(a=>appRow(a,vis)).join('')}</ul></details>`
+      +`<div class="link ${side}" aria-hidden="true"></div>`;
+  });
+  const gside=STAGES.length%2?'r':'l', all=!nx;
+  h+=`<div class="goal ${gside}${all?' here':''}"><span class="isle" aria-hidden="true">🏆${all?'<span class="frog">🐸</span>':''}</span>`
+    +`<span class="sign"><b>ゴール</b>${all?'<span class="tag now">いまここ</span>':''}<small>${all?'ぜんぶの島をまわったね！クイズでうでだめししよう':'ぜんぶの島をまわると、ここにつくよ'}</small></span></div>`;
+  return h+`</div></section>`;
 }
 
 /* ----- さいごのおしらせ ----- */
@@ -241,12 +312,12 @@ function footHTML(){
 
 function render(){
   const vis=visitedSet();
-  const h=`<div class="stack home">${topHTML(vis)}${toolsHTML()}${courseHTML(vis)}${footHTML()}</div>`;
+  const h=`<div class="stack home">${topHTML(vis)}${gamesHTML(vis)}${mapHTML(vis)}${footHTML()}</div>`;
   PA.paint(document.getElementById('view'),h,'home');
 }
-// じぶんでひらいた／とじた単元だけおぼえる
+// じぶんでひらいた／とじた島だけおぼえる
 document.getElementById('view').addEventListener('click',e=>{
-  const sm=e.target.closest&&e.target.closest('details.unit>summary'); if(!sm) return;
+  const sm=e.target.closest&&e.target.closest('details.stage>summary'); if(!sm) return;
   const d=sm.parentNode;
   setTimeout(()=>{const s=PA.store.get('home-units',{}), sv=isObj(s)?s:{};sv[d.dataset.u]=d.open;PA.store.set('home-units',sv);},0);
 });
