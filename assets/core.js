@@ -352,7 +352,8 @@ PA.audioRunning=()=>!!(actx&&actx.state==='running');
 PA.audioStuck=()=>!!actx&&actx.state!=='running';
 PA.audioReset=()=>{
   if(!actx) return;
-  try{if(PA.onStopDown) PA.onStopDown();}catch(e){} // ページの再生（伴奏づけの光る場所など）もとめる
+  // ページの再生（伴奏づけの光る場所など）もとめて、画面も「とめる」から もとにもどす（どのページも onStopCancel＝描きなおし）
+  try{if(PA.onStopDown) PA.onStopDown();if(PA.onStopCancel) PA.onStopCancel();}catch(e){}
   PA.stopSound();
   const old=actx; actx=null; master=null;
   try{old.close().catch(()=>{});}catch(e){}
@@ -457,7 +458,8 @@ PA.midi=(()=>{
   };
   M.pedal=()=>{}; // いまはつかわない（おさえている音だけで和音をきめる）
   M.held=()=>new Set(held);
-  M.reset=()=>{held.clear();clearTimeout(timer);timer=0;chordDone=false;};
+  // おさえていた鍵の画面のへこみも、もどしてからわすれる（機器がはずれたら、はなした知らせはもうこない）
+  M.reset=()=>{held.forEach(m=>{try{PA.keyLight(m,false);}catch(e){}});held.clear();clearTimeout(timer);timer=0;chordDone=false;};
   M.devices=()=>devs.slice();
   M.active=()=>devs.length>0;
   M.setDevices=names=>{
