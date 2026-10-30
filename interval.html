@@ -468,7 +468,7 @@ if(!window.PointerEvent){ // iOS 12など：core は click で鳴らすので、
   document.addEventListener('mousedown',srcOf,true);
 }
 PA.onKey=m=>{ // 音は core が鳴らす
-  if(!pickSrc) return;
+  if(!pickSrc&&!PA.midiIn) return; // 電子ピアノの鍵は、上のけんばんをおしたのとおなじ
   const key=curKey();
   if(state.picks.length!==1) state.picks=[IV.spell1(m,key)];
   else state.picks=IV.spell2(state.picks[0].midi,m,key);

@@ -1117,6 +1117,7 @@ PA.onSettings=render;
 PA.onPageShow=()=>{PA.stopSound();location.reload();}; // 「もどる」でもどったら読みなおす（べつのページですすめたきろくを古いきろくで上書きしない）
 PA.onKey=m=>{ // 音は core が鳴らす
   if(Q.mode!=='keys'||Q.checked) return;
+  if(PA.midiIn) m=inKb(m); // 電子ピアノ：画面のけんばんの高さへ（KB_LO〜KB_HI はいつも見えている）
   Q.picked.has(m)?Q.picked.delete(m):Q.picked.add(m); render();
 };
 document.addEventListener('click',e=>{

@@ -25,6 +25,17 @@
  * 平均律・A4＝基準ピッチ（設定で440〜443Hz）。生徒は絶対音感があるので、音の高さと表示はかならずそろえる。
  *
  * きろく：PA.store.get(k,d) / PA.store.set(k,v)（'pianoapps.'+k に JSON）、PA.store.keys() → 'pianoapps.' をとった名前の一覧
+ *   PA.onStore（きろくがかわった）・PA.flushStore（ひかえを書きおわるまでまつ Promise）は native.js がおく
+ *
+ * ----- iOS アプリ（Capacitor） -----
+ *   PA.native … アプリの中（capacitor://localhost）なら true。アプリだけのしくみは assets/native.js（tools/build-app.mjs が足す）
+ *   PA.SITE … 公開しているサイトのアドレス（アプリの中の PA.absUrl・PA.shareHTML はこちらのアドレスになる）
+ *   アプリではランキングを出さない（ear.html の NO_RANK）。ホーム画面に追加・ブラウザの設定などのことばもかえる
+ *
+ * ----- 🎹 電子ピアノ（MIDI）：PA.midi（くわしくは「===== 🎹 電子ピアノ」のところ） -----
+ *   鍵盤をおす → PA.onKey(m)（画面のけんばんとおなじ）。和音でこたえるページは PA.onMidiChord=midis=>{…}
+ *   PA.midi.active() … 機器がつながっている。PA.onMidiChange … つながりがかわった
+ *   PA.midiIn … PA.onKey の中で true なら電子ピアノの鍵（画面のけんばんにない高さのことがある）
  *
  * ----- アプリの目次（ホーム・つぎへのリンク・もどるにつかう） -----
  *   PA.APP_TYPES … {learn,quiz,play,ref,ear}：{label, c(色), l(うすい色), dk(白い字をのせられるこい色)}
@@ -102,22 +113,30 @@
 'use strict';
 const PA=window.PA={};
 document.documentElement.lang='ja';
+// iOS アプリ（Capacitor）の中：ページは capacitor://localhost/…（アプリの中のファイル）。アプリだけのしくみは assets/native.js
+PA.native=(()=>{try{return location.protocol==='capacitor:';}catch(e){return false;}})();
+// 公開しているサイト（アプリの中から先生におくるリンクは、こちらのアドレスにする）
+PA.SITE='https://piano-chord-apps.g960059.workers.dev/';
 
-/* ===== 保存（使えないブラウザでもこわれないように） ===== */
+/* ===== 保存（使えないブラウザでもこわれないように） =====
+ * PA.onStore … きろくがかわったとき（アプリでは native.js が、消されないところにもひかえる）
+ * PA.flushStore … ひかえを書きおわるまでまつ Promise（ページを読みなおす前に。なければ null） */
+const stored=()=>{try{if(PA.onStore) PA.onStore();}catch(e){}};
 PA.store={
   get(k,d){try{const v=localStorage.getItem('pianoapps.'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
-  set(k,v){try{localStorage.setItem('pianoapps.'+k,JSON.stringify(v));}catch(e){}},
+  set(k,v){try{localStorage.setItem('pianoapps.'+k,JSON.stringify(v));}catch(e){}stored();},
   // 'pianoapps.' のきろくの名前（'pianoapps.' をとったもの）
   keys(){const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf('pianoapps.')===0) out.push(k.slice(10));}}catch(e){}return out;}
 };
 PA.esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
-const S=PA.settings={naming:'solfa',sound:true,pitchA:440,voice:'piano'};
+const S=PA.settings={naming:'solfa',sound:true,pitchA:440,voice:'piano',midiEcho:false};
 const loadSettings=()=>{
   const d=PA.store.get('settings',{})||{};
   if(['solfa','en','ja'].includes(d.naming)) S.naming=d.naming;
   if(typeof d.sound==='boolean') S.sound=d.sound;
   if([440,441,442,443].includes(d.pitchA)) S.pitchA=d.pitchA;
   if(d.voice==='piano'||d.voice==='synth') S.voice=d.voice;
+  if(typeof d.midiEcho==='boolean') S.midiEcho=d.midiEcho;
 };
 loadSettings();
 PA.saveSettings=()=>PA.store.set('settings',S);
@@ -237,7 +256,8 @@ PA.loadPiano=()=>{
   if(Date.now()-pianoFailAt<30000||typeof fetch!=='function'||typeof OfflineAudioContext!=='function') return Promise.resolve(false);
   const oc=new OfflineAudioContext(1,1,44100);
   const all=Promise.all(PIANO.notes.map(n=>fetch(PIANO.base+n.file)
-    .then(r=>{if(!r.ok) throw new Error(n.file+' '+r.status);return r.arrayBuffer();})
+    // アプリの中のファイル：Capacitor は mp3 を HTTP でないこたえ（status 0）でかえす。中身はあるので読む
+    .then(r=>{if(!r.ok&&!(PA.native&&r.status===0)) throw new Error(n.file+' '+r.status);return r.arrayBuffer();})
     .then(ab=>oc.decodeAudioData(ab)).then(b=>({midi:n.midi,buf:pianoTrim(oc,b)}))))
     .then(list=>{pianoBufs=list;return true;});
   // 1つでもとまったままのときは、PIANO.wait 秒で「読めなかった」にする（あとから読めたら、そのときから使う）
@@ -268,6 +288,16 @@ PA.audio=()=>{
   return actx;
 };
 PA.audioRunning=()=>!!(actx&&actx.state==='running');
+// アプリにもどっても音のしくみがうごかない（着信のあとなど。iOS の WKWebView でおきる）：すてて、つぎにさわったときつくりなおす
+// （読んだ録音はそのままつかえる）。native.js がアプリにもどったときによぶ
+PA.audioStuck=()=>!!actx&&actx.state!=='running';
+PA.audioReset=()=>{
+  if(!actx) return;
+  try{if(PA.onStopDown) PA.onStopDown();}catch(e){} // ページの再生（伴奏づけの光る場所など）もとめる
+  PA.stopSound();
+  const old=actx; actx=null; master=null;
+  try{old.close().catch(()=>{});}catch(e){}
+};
 ['pointerup','touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>{if(S.sound)PA.audio();},{capture:true,passive:true}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&actx&&actx.state!=='running'&&actx.state!=='closed')actx.resume().catch(()=>{});});
 // ページをひらいたら、さわる前に録音を読んでおく（さいしょの音からピアノになるように）。音を鳴らさないページ（<body data-nosound>）では読まない
@@ -329,6 +359,88 @@ PA.chord=(ms,o={})=>{
   ms.forEach((m,i)=>PA.playNote(m,when+(arp?i*(o.gap||0.36):i*0.012),dur,vel));
 };
 PA.sleep=ms=>new Promise(r=>setTimeout(r,ms));
+
+/* ===== 🎹 電子ピアノ（MIDI） =====
+ * つないだ電子ピアノの鍵盤をおすと、画面のけんばんをおしたのとおなじ（PA.onKey(m)）。
+ *   音は電子ピアノが鳴らすので、アプリは鳴らさない（せってい「アプリでも鳴らす」をオン＝音の出ない MIDI キーボード用）。
+ * 和音でこたえるページは PA.onMidiChord=midis=>{…} をおく：ひいた音がそろったとき1回（midis＝おさえている音、低いじゅん）。
+ *   あるときは PA.onKey のかわりにこちらをよぶ（鍵を1つずつおしたことにはしない）。
+ * つなぎかた
+ *   ・iOS アプリ：assets/native.js が PA.midi.useNative({start, pair}) で CoreMIDI（USB・Bluetooth）をつなぐ。ページをひらくとつなぐ
+ *   ・ウェブ（Chrome・Edge・Android など）：Web MIDI。⚙️ の「🎹 電子ピアノをつなぐ」をおしたときだけ（ゆるしをきかれるので）
+ *   ・iPhone・iPad の Safari には MIDI がない → ⚙️ にも出さない（マイクの 🎤 でこたえる）
+ * PA.midi.available() … つなげる？  PA.midi.connect() → Promise<boolean>  PA.midi.pair() … Bluetooth の画面（アプリだけ）
+ * PA.midi.devices() … つながっている機器の名前  PA.midi.held() … いまおさえている音（Set）  PA.midi.active() … 機器がある
+ * PA.midi.onChange … つながりがかわったとき（⚙️ が書きなおす）。ページは PA.onMidiChange をおいてもよい
+ * PA.midi.note(on, m, vel)・PA.midi.pedal(on)・PA.midi.setDevices(names) … 入力（native.js・Web MIDI・テストから）
+ * PA.midi.CHORD_WAIT … 和音がそろったとみなす時間（さいごの鍵から ミリ秒） */
+PA.midi=(()=>{
+  const M={CHORD_WAIT:90};
+  let nat=null, web=null, devs=[], timer=0, chordDone=false;
+  const held=new Set();
+  const changed=()=>{try{if(M.onChange) M.onChange();}catch(e){}try{if(PA.onMidiChange) PA.onMidiChange();}catch(e){}};
+  const fire=()=>{
+    timer=0; if(!held.size||chordDone) return;
+    chordDone=true;
+    const ms=[...held].sort((a,b)=>a-b);
+    if(PA.onMidiChord) PA.onMidiChord(ms);
+  };
+  M.note=(on,m,vel)=>{
+    m=Math.round(+m); if(!(m>=0&&m<=127)) return;
+    if(on&&vel===0) on=false; // ベロシティ0のノートオン＝はなした
+    if(!on){held.delete(m);if(!held.size) chordDone=false;return;}
+    if(held.has(m)) return;
+    held.add(m); chordDone=false;
+    if(S.midiEcho) PA.playNote(m,0,1.4,Math.max(0.08,Math.min(0.3,(vel||64)/127*0.3)));
+    if(PA.onMidiChord){clearTimeout(timer);timer=setTimeout(fire,M.CHORD_WAIT);return;}
+    // PA.midiIn＝電子ピアノからの鍵（ページは、画面にない高さをけんばんの中へうつすのにつかう）
+    if(PA.onKey){PA.midiIn=true;try{PA.onKey(m);}finally{PA.midiIn=false;}}
+  };
+  M.pedal=()=>{}; // いまはつかわない（おさえている音だけで和音をきめる）
+  M.held=()=>new Set(held);
+  M.reset=()=>{held.clear();clearTimeout(timer);timer=0;chordDone=false;};
+  M.devices=()=>devs.slice();
+  M.active=()=>devs.length>0;
+  M.setDevices=names=>{
+    const next=(Array.isArray(names)?names:[]).filter(n=>typeof n==='string'&&n).map(n=>n.slice(0,60));
+    if(next.join('\n')===devs.join('\n')) return;
+    devs=next; M.reset(); changed(); // 機器がかわったら、おさえている音はわすれる（はずした機器のオフはもうこない）
+  };
+  M.native=()=>!!nat;
+  M.useNative=o=>{nat=o||null;changed();};
+  M.webAvailable=()=>!nat&&typeof navigator!=='undefined'&&typeof navigator.requestMIDIAccess==='function';
+  M.available=()=>!!nat||M.webAvailable();
+  M.canPair=()=>!!(nat&&nat.pair);
+  M.pair=()=>nat&&nat.pair?Promise.resolve(nat.pair()).catch(()=>{}):Promise.resolve();
+  const webList=()=>{const out=[];try{web.inputs.forEach(i=>{if(i.state!=='disconnected') out.push(i.name||'MIDI');});}catch(e){}return out;};
+  const webHook=()=>{
+    try{web.inputs.forEach(i=>{i.onmidimessage=ev=>{
+      const d=ev.data; if(!d||d.length<2) return;
+      const st=d[0]&0xf0;
+      if(st===0x90) M.note(true,d[1],d[2]); else if(st===0x80) M.note(false,d[1],0);
+      else if(st===0xb0&&d[1]===64) M.pedal(d[2]>=64);
+    };});}catch(e){}
+    M.setDevices(webList());
+  };
+  M.connect=()=>{
+    if(nat) return Promise.resolve(nat.start()).then(()=>true,()=>false);
+    if(web){webHook();return Promise.resolve(true);}
+    if(!M.webAvailable()) return Promise.resolve(false);
+    return navigator.requestMIDIAccess({sysex:false}).then(a=>{web=a;web.onstatechange=webHook;webHook();PA.store.set('midi-web',true);return true;},
+      ()=>{PA.store.set('midi-web',false);return false;});
+  };
+  // ウェブで前につないだことがあるなら、ページをひらいたらつなぐ。ただしブラウザがもうゆるしているときだけ
+  // （ゆるしがリセットされていると、さわってもいないのに「MIDI を使ってもいい？」が出てしまうので）
+  if(typeof window!=='undefined'&&window.addEventListener) window.addEventListener('load',()=>{
+    if(nat||!M.webAvailable()||!PA.store.get('midi-web',false)) return;
+    const P=navigator.permissions; if(!P||!P.query) return; // わからないときは ⚙️ の「つなぐ」をまつ
+    P.query({name:'midi',sysex:false}).then(s=>{
+      if(s.state==='granted') M.connect();
+      else if(s.state==='denied') PA.store.set('midi-web',false);
+    },()=>{});
+  });
+  return M;
+})();
 
 /* ===== けんばん SVG =====
  * marks: Map midi -> {fill, label, tc(文字色), ring(わくの色), light(黒鍵をうすく), bubble(黒鍵ラベルのふきだしの色), sub(下の小さな字), subColor, focus(最初に見せたい鍵),
@@ -605,8 +717,10 @@ PA.openSettings=()=>{
     <div class="setrow"><label for="pa-sound">音を鳴らす</label><select id="pa-sound"><option value="1">🔊 鳴らす</option><option value="0">🔇 鳴らさない</option></select></div>
     <div class="setrow"><label for="pa-voice">音色</label><select id="pa-voice"><option value="piano">🎹 ピアノ</option><option value="synth">🔔 シンプルな音</option></select></div>
     <p class="note">音の高さはふつうのピアノと同じです。ラ（A4）の高さを440〜443Hz から選べます。教室のピアノが442Hz なら、442Hz に。<br>iPhone・iPad で音が出ないときは、消音（マナーモード）を解除してください。<br>ピアノの音は、Yamaha C5 の録音（Salamander Grand Piano V3、Alexander Holm、CC BY 3.0）を短く切って使っています。読みこめないときは、シンプルな音で鳴ります。</p>
+    <div id="pa-midi-box">${midiSecHTML()}</div>
     <div class="setsec"><h3>💾 きろくのひかえ</h3>
-      <p class="note">iPhone・iPad では、このサイトを1週間ほどひらかないと、きろくがきえることがあります。ホーム画面に追加するか、ときどきファイルに書きだしておくと、あんしんです。<br>LINE などのリンクは Safari でひらくので、ホーム画面のアプリとは、きろくがべつになるよ。うつすときは、書きだし・読みこみを使ってね。</p>
+      <p class="note">${PA.native?'きろくは、この端末の中にあるよ。ときどきファイルに書きだしておくと、あんしんです。<br>ウェブ（Safari など）で使っていたきろくとはべつだよ。うつすときは、ウェブで書きだしたファイルを、ここで読みこんでね。'
+        :'iPhone・iPad では、このサイトを1週間ほどひらかないと、きろくがきえることがあります。ホーム画面に追加するか、ときどきファイルに書きだしておくと、あんしんです。<br>LINE などのリンクは Safari でひらくので、ホーム画面のアプリとは、きろくがべつになるよ。うつすときは、書きだし・読みこみを使ってね。'}</p>
       <div class="row"><button class="btn small" data-sheet="export">💾 きろくをファイルに書きだす</button><button class="btn small" data-sheet="import">📂 ファイルからよみこむ</button></div>
       <input type="file" id="pa-import" accept=".json,application/json" class="pa-sr" tabindex="-1" aria-hidden="true">
       <p class="note" id="pa-backup-msg" role="status"></p>
@@ -614,12 +728,26 @@ PA.openSettings=()=>{
     </div>`;
   const el=sheet(h);
   el.querySelector('#pa-naming').value=S.naming; el.querySelector('#pa-pitch').value=String(S.pitchA); el.querySelector('#pa-sound').value=S.sound?'1':'0'; el.querySelector('#pa-voice').value=S.voice;
+  const midiBox=el.querySelector('#pa-midi-box'), midiEcho=()=>{const m=el.querySelector('#pa-midiecho');if(m) m.value=S.midiEcho?'1':'0';};
+  midiEcho();
+  // つながりがかわったら書きなおす（フォーカスがあったボタンは、書きなおしたあともおなじボタンに）
+  PA.midi.onChange=()=>{
+    if(!isOpen(el)||!midiBox) return;
+    const f=document.activeElement, fs=f&&midiBox.contains(f)?f.dataset.sheet||f.id:null;
+    midiBox.innerHTML=midiSecHTML(); midiEcho();
+    if(fs){const n=midiBox.querySelector(`[data-sheet="${fs}"],#${fs}`)||midiBox.querySelector('button,select');if(n) n.focus({preventScroll:true});}
+  };
   el.onclick=e=>{
     if(e.target===el||e.target.closest('[data-sheet="close"]')){el.close();return;}
     const b=e.target.closest('[data-sheet]'); if(!b) return;
     if(b.dataset.sheet==='export') exportRecords(el);
     if(b.dataset.sheet==='import') el.querySelector('#pa-import').click();
     if(b.dataset.sheet==='copy') copyBackupText(el);
+    if(b.dataset.sheet==='midi-pair') PA.midi.pair();
+    if(b.dataset.sheet==='midi-connect'){
+      const st=el.querySelector('#pa-midi-st');
+      PA.midi.connect().then(ok=>{if(!ok&&st) st.textContent='つなげなかったよ。電子ピアノをつないでから、もういちどおしてね（「MIDI を使ってもいい？」ときかれたら「許可」）';});
+    }
   };
   el.onchange=e=>{
     const t=e.target;
@@ -627,6 +755,7 @@ PA.openSettings=()=>{
     if(t.id==='pa-naming') S.naming=t.value;
     if(t.id==='pa-pitch'){S.pitchA=+t.value;PA.playNote(69,0,1.6,0.25);}
     if(t.id==='pa-sound'){S.sound=t.value==='1';if(!S.sound)PA.stopSound();}
+    if(t.id==='pa-midiecho') S.midiEcho=t.value==='1';
     if(t.id==='pa-voice'){
       S.voice=t.value;
       if(PA.onStopDown) PA.onStopDown(); // ⏹ とおなじに、ページの再生（ならびの光る場所など）もとめる
@@ -640,6 +769,18 @@ PA.openSettings=()=>{
     PA.saveSettings(); updateSoundBar(); if(PA.onSettings) PA.onSettings();
   };
 };
+// ⚙️ の「🎹 電子ピアノ」（つなげないブラウザ＝iPhone・iPad の Safari などでは出さない）
+function midiSecHTML(){
+  if(!PA.midi.available()) return '';
+  const ds=PA.midi.devices();
+  const st=ds.length?`✅ つながっているよ：${ds.map(PA.esc).join('、')}<br>電子ピアノでひくと、画面のけんばんをおしたのとおなじになるよ。`
+    :PA.native?'USB のケーブルでつなぐか、下のボタンから Bluetooth でつないでね。':'電子ピアノを USB でつないでから、「つなぐ」をおしてね。';
+  const btns=(PA.midi.canPair()?`<button class="btn small" data-sheet="midi-pair">📶 Bluetooth でつなぐ</button>`:'')
+    +(!PA.midi.native()&&!ds.length?`<button class="btn small" data-sheet="midi-connect">🎹 電子ピアノをつなぐ</button>`:'');
+  return `<div class="setsec"><h3>🎹 電子ピアノ（MIDI）</h3><p class="note" id="pa-midi-st" role="status">${st}</p>`
+    +(btns?`<div class="row">${btns}</div>`:'')
+    +`<div class="setrow"><label for="pa-midiecho">アプリでも音を鳴らす</label><select id="pa-midiecho"><option value="0">鳴らさない</option><option value="1">鳴らす（音の出ないキーボードのとき）</option></select></div></div>`;
+}
 /* ----- きろくのひかえ（'pianoapps.' のきろくを JSON ファイルに） ----- */
 // ファイルの中身をたしかめる：{'pianoapps.…': JSON の文字, …}。ちがえば null
 PA.checkBackup=o=>{
@@ -659,7 +800,7 @@ const pad2=n=>(n<10?'0':'')+n;
 // ファイルにできないブラウザ（iOS 12の Safari など）：中身を文字で見せて、コピーできるようにする
 function showBackupText(el,text){
   const box=el.querySelector('#pa-backup-text'); if(!box) return false;
-  box.innerHTML=`<p class="note">このブラウザではファイルにできないので、下の文字をぜんぶコピーして、メモなどにはりつけて、とっておいてね。</p>`
+  box.innerHTML=`<p class="note">${PA.native?'ファイルにできなかったので':'このブラウザではファイルにできないので'}、下の文字をぜんぶコピーして、メモなどにはりつけて、とっておいてね。</p>`
     +`<textarea id="pa-backup-ta" readonly rows="5" aria-label="きろくの中身" style="width:100%;font:16px/1.4 monospace;border:2px solid var(--line);border-radius:12px;padding:8px;background:var(--soft2);color:var(--ink)"></textarea>`
     +`<div class="row" style="margin-top:6px"><button type="button" class="btn small" data-sheet="copy">📋 コピーする</button></div>`;
   box.querySelector('#pa-backup-ta').value=text;
@@ -689,8 +830,9 @@ function exportRecords(el){
   }catch(e){say('書きだせなかったよ');return;}
   const fallback=()=>{if(showBackupText(el,text)) say('');else say('書きだせなかったよ');};
   // ホーム画面のアプリ：ダウンロードするともどれないことがあるので、できれば「共有」でファイルをわたす
-  let standalone=false;
-  try{standalone=navigator.standalone===true||(!!window.matchMedia&&matchMedia('(display-mode: standalone)').matches);}catch(e){}
+  // アプリの中もおなじ（ダウンロードのしくみがないので、ダウンロードにすると何も書きださずに「書きだしたよ」と出てしまう）
+  let standalone=PA.native;
+  try{standalone=standalone||navigator.standalone===true||(!!window.matchMedia&&matchMedia('(display-mode: standalone)').matches);}catch(e){}
   if(standalone&&typeof File==='function'&&navigator.share&&navigator.canShare){
     let file=null;
     try{file=new File([text],name,{type:'application/json'});}catch(e){}
@@ -701,6 +843,7 @@ function exportRecords(el){
       return;
     }
   }
+  if(PA.native){fallback();return;}
   const a=document.createElement('a');
   if(!('download' in a)||typeof Blob!=='function'||!window.URL||!URL.createObjectURL){fallback();return;}
   try{
@@ -723,7 +866,12 @@ function importRecords(file,el){
       PA.store.keys().forEach(k=>localStorage.removeItem('pianoapps.'+k));
       Object.keys(data).forEach(k=>localStorage.setItem(k,data[k]));
     }catch(e){say('ほぞんできなかったよ');return;}
-    location.reload();
+    stored();
+    // アプリ：ひかえを書きおわってから読みなおす（2びょうまでまつ）
+    let go=false; const reload=()=>{if(!go){go=true;location.reload();}};
+    let p=null; try{p=PA.flushStore?PA.flushStore():null;}catch(e){}
+    if(p&&typeof p.then==='function'){p.then(reload,reload);setTimeout(reload,2000);}
+    else reload();
   };
   r.onerror=()=>say('よみこめなかったよ');
   r.readAsText(file);
@@ -797,7 +945,8 @@ PA.parseParams=search=>{
 PA.params=()=>PA.parseParams(location.search);
 PA.fromLink=()=>{const p=PA.params();return PA.PARAM_KEYS.some(k=>hasOwn(p,k));};
 PA.paramInt=(name,lo,hi)=>{const v=PA.params()[name];if(v==null||!/^-?\d{1,6}$/.test(v)) return null;const n=+v;return n>=lo&&n<=hi?n:null;};
-PA.absUrl=rel=>{try{return new URL(rel,location.href).href;}catch(e){return rel;}};
+// アプリの中では capacitor://localhost/… になるので、公開しているサイトのアドレスにする（先生・ウェブでひらけるように）
+PA.absUrl=rel=>{try{return new URL(rel,PA.native?PA.SITE+location.pathname.replace(/^\/+/,''):location.href).href;}catch(e){return rel;}};
 PA.shareHTML=(page,params,label)=>`<button type="button" class="btn small pa-share" data-pa="share" data-url="${PA.esc(PA.absUrl(PA.url(page,params)))}">${label||'🔗 リンクをおくる'}</button>`;
 const flash=(b,t)=>{
   if(b.dataset.orig==null) b.dataset.orig=b.innerHTML;
@@ -833,7 +982,8 @@ document.addEventListener('click',e=>{
     // そのページから来たばかりなら history.back()（れきしがふえない・スクロールももどる）
     const h=(b.getAttribute('href')||'').split(/[?#]/)[0];
     let ref=null; try{ref=document.referrer?new URL(document.referrer):null;}catch(err){}
-    if(h&&ref&&ref.origin===location.origin&&(ref.pathname===h||ref.pathname.slice(-(h.length+1))==='/'+h)&&history.length>1){e.preventDefault();history.back();}
+    // origin ではなく protocol と host でくらべる（アプリの capacitor:// は URL の origin が 'null' になる）
+    if(h&&ref&&ref.protocol===location.protocol&&ref.host===location.host&&(ref.pathname===h||ref.pathname.slice(-(h.length+1))==='/'+h)&&history.length>1){e.preventDefault();history.back();}
   }
 });
 // 「もどる」で前の画面からそのままもどってきたとき（bfcache）。ホームでは「まえのアプリ」をわすれる。ほかのページでかえた設定もよみなおす

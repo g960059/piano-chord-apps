@@ -136,6 +136,32 @@
 - ピアノの録音（`assets/piano/`、30こ・約1MB）は、べつの保存場所にしまいます。サイトを新しくしても、録音がかわっていなければダウンロードしなおしません。
 - `sw.js` の `PRECACHE`・`VERSION`・`AUDIO`・`AUDIO_VERSION` と各ページの `<head>` の説明・シェア用タグは `npm run build:meta` が書きます（手でなおさない）。
 
+## 📱 iOS アプリ（Capacitor）
+
+ウェブとおなじページを、iPhone・iPad のアプリにも入れています（ページを書きなおさない）。アプリのものはぜんぶ `native/` にあり、公開するサイトには入りません（`.assetsignore`）。
+
+- `tools/build-app.mjs` が、いちばん上の `*.html`・`assets/`・`favicon.svg` を `native/www/` にあつめ、各ページの `core.js` のすぐあとに `assets/native.js` を足します。
+  `sw.js`・`manifest.webmanifest`・サーバーのコードは入れません（ページは中にもっているので、ネットがなくてもうごきます）。
+- ページは `capacitor://localhost/…` でひらきます。`PA.native` が true になり、つぎのところがウェブとかわります。
+  - 🏆 ランキングは出しません（`ear.html` の `NO_RANK`）。チャレンジはサーバーにつながずに、じぶんのきろくだけ。
+  - 先生におくるリンクは、公開サイトのアドレス（`PA.SITE`）でつくります。
+  - きろくの書きだしは「共有」でファイルをわたします。「ホーム画面に追加」「ブラウザの設定」などのことばはアプリむけにします。
+- `assets/native.js`（アプリだけ）
+  - きろくのひかえ：`'pianoapps.'` のきろくを Preferences（UserDefaults）にもひかえます。localStorage が iOS に消されたら、ひらいたときにもどします。
+  - 🎹 電子ピアノ（MIDI）：`native/ios/App/App/PianoMidiPlugin.swift`（CoreMIDI）で、USB と Bluetooth の電子ピアノをうけとります。⚙️ の「📶 Bluetooth でつなぐ」で、iOS の Bluetooth MIDI の画面をひらきます。
+    鍵盤をおすと、画面のけんばんをおしたのとおなじです（`PA.onKey`）。和音クイズは、和音をひくとそのままこたえあわせします（`PA.onMidiChord`）。
+    ウェブでも、Web MIDI のあるブラウザ（Chrome・Edge・Android など）なら ⚙️ からつなげます。
+  - アプリにもどったとき、音のしくみがうごかなければつくりなおします（着信のあとなど）。
+
+つくりかた（Mac・Xcode 26 いじょう・Node 22 いじょう）：
+
+```bash
+cd native && npm install && npm run sync && npm run open
+```
+
+`npm run sync` は `native/www/` をつくりなおして `npx cap sync ios` をします。ページをなおしたら、もういちど `npm run sync`。
+アプリの ID は `dev.g960059.pianochord`（App Store Connect に出す前にきめなおしてよい）。
+
 ## しくみ
 
 - ビルド不要の静的サイトです（HTML・CSS・JavaScript だけ）。ファイルをそのまま開いても、静的ホスティングに置いても動きます。

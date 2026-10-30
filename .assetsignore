@@ -1,8 +1,9 @@
 # 公開しない ファイル（wrangler.jsonc の assets.directory が リポジトリの いちばん上 なので）
 # 書きかたは .gitignore と おなじ。ここに ない ものは ぜんぶ だれでも 見られる ページに なる。
 
-# サーバー・テスト・道具・データベース・説明
+# サーバー・テスト・道具・データベース・説明・iOS アプリ（Capacitor・Xcode のプロジェクト）
 src/
+native/
 test/
 tools/
 migrations/

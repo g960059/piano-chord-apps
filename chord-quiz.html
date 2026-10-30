@@ -570,7 +570,7 @@ function render(){
   if(Q.type==='keys'){
     const names=[...Q.picked].sort((a,b)=>a-b).map(m=>PA.H(nameOf(m,key)));
     h+=`<section class="card"><h2>🎹 和音をおさえよう<small>${Q.checked?'緑の○＝あたり・赤の×＝ちがう音・わくだけ＝たりない音':`<b>${c.n}つ</b>の音をタップ・どのオクターブでも OK`}</small></h2>
-      ${kb}<div class="picked">おさえた音：<b>${names.length?names.join('・'):'まだなし'}</b>${Q.checked?'':'<small>もういちどタップするとけせるよ</small>'}</div>${micHTML(key,t)}</section>${fb}${explain}`;
+      ${kb}<div class="picked">おさえた音：<b>${names.length?names.join('・'):'まだなし'}</b>${Q.checked?'':'<small>もういちどタップするとけせるよ</small>'}</div>${!Q.checked&&PA.midi.active()?'<p class="note" style="margin:6px 0 0">🎹 つないだ電子ピアノでひいても、こたえられるよ（和音をいっしょにおさえてね）</p>':''}${micHTML(key,t)}</section>${fb}${explain}`;
   }else{
     h+=`<section class="card"><h2>✋ どれかな？<small>${c.n}つの音のくみあわせを選ぼう</small></h2><div class="choices">`+Q.choices.map((ch,i)=>{
       let cls='';
@@ -630,6 +630,17 @@ PA.onKey=m=>{ // 音は core が鳴らす
   if(MIC.phase==='on'||MIC.phase==='wait') MIC.quietUntil=Date.now()+1500; // 画面のけんばんの音をマイクがひろわないように
   Q.picked.has(m)?Q.picked.delete(m):Q.picked.add(m); render();
 };
+// 🎹 電子ピアノ（MIDI）：和音をひいたら、そのままこたえあわせ（けんばんでおさえて「こたえあわせ」をおしたのとおなじ）。
+// 音のなまえが和音の数そろうまでは、おさえた音を見せるだけ（1つずつおさえても、とちゅうで ×にならない）
+PA.onMidiChord=ms=>{
+  if(Q.view!=='quiz'||Q.type!=='keys'||Q.checked) return;
+  if(MIC.phase==='on'||MIC.phase==='wait') stopMic();
+  const fold=m=>{while(m<LO)m+=12;while(m>HI)m-=12;return m;}; // 画面のけんばんの高さへ（×の印が見えて、タップでけせるように）
+  Q.picked=new Set(ms.map(fold));
+  if(new Set(ms.map(m=>PA.mod(m,12))).size<CHORDS[Q.q.chord].n){render();return;}
+  checkKeys(); save(); render(); showFeedback();
+};
+PA.onMidiChange=render;
 const quizMidis=()=>chordTones(keyOfQ(Q.q),Q.q.chord).map(n=>n.midi);
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-act]'); if(!el||el.disabled) return;

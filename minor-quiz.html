@@ -424,6 +424,7 @@ PA.onPageShow=()=>{PA.stopSound();location.reload();}; // 「もどる」でも�
 PA.onSettings=render;
 PA.onKey=m=>{ // 音は core が鳴らす
   if(Q.sumShow||Q.type!=='chord'||Q.checked) return;
+  if(PA.midiIn){while(m<KB_LO)m+=12;while(m>KB_HI)m-=12;} // 電子ピアノ：画面のけんばんの高さへ
   Q.picked.has(m)?Q.picked.delete(m):Q.picked.add(m);
   render();
 };

@@ -448,7 +448,7 @@ function chShow(){
   state.q=ch.q; state.answer=ch.answer; state.left=ch.left; state.resShown=ch.resShown; state.hinted=false; state.askedAt=0; state.qn++;
   ch.q=null; ch.answer=null; ch.left=null; ch.resShown=false;
 }
-const unsent=()=>!!ch.run&&ch.phase==='result'&&!ch.offline&&!ch.submitted&&!ch.closed&&ch.run.answers.length>0;
+const unsent=()=>!NO_RANK&&!!ch.run&&ch.phase==='result'&&!ch.offline&&!ch.submitted&&!ch.closed&&ch.run.answers.length>0;
 function chSaved(){
   if(!ch.run||!(ch.phase==='play'||unsent())) return null;
   const v=chView();
@@ -464,8 +464,9 @@ function chRestore(c){
   if(!ok||c.startedAt>Date.now()+6e4||Date.now()-c.startedAt>RUN_KEEP) return;
   if(c.phase==='result'&&!c.answers.length) return;
   const rb=rebuildRun(c.seed,c.answers);
+  const off=c.offline||NO_RANK; // アプリ：ウェブのひかえからもどしたチャレンジも、ランキングなし
   // 音色のない前の版の記録は、合成の音で鳴らしていた
-  Object.assign(ch,{voice:c.voice==='piano'?'piano':'synth',runId:c.offline?null:c.runId,seed:c.seed,offline:c.offline,offWhy:c.offline?(c.offWhy==='time'||c.offWhy==='busy'?c.offWhy:'net'):'',startedAt:c.startedAt,
+  Object.assign(ch,{voice:c.voice==='piano'?'piano':'synth',runId:off?null:c.runId,seed:c.seed,offline:off,offWhy:off?(c.offWhy==='time'||c.offWhy==='busy'?c.offWhy:'net'):'',startedAt:c.startedAt,
     run:rb.run,vrng:rb.vrng,heard:false,event:null,capped:false,q:null,answer:null,left:null,resShown:false,
     newBest:c.newBest===true,endedEarly:c.endedEarly===true,sending:false,sendError:null,submitted:null,closed:null});
   const st=rb.run.state;
@@ -493,7 +494,7 @@ function chClear(){
 
 function load(){
   const d0=PA.store.get('ear',{}), d=isObj(d0)?d0:{};
-  if(d.mode==='free'||d.mode==='ch'||d.mode==='rank') state.mode=d.mode;
+  if(d.mode==='free'||d.mode==='ch'||(d.mode==='rank'&&!NO_RANK)) state.mode=d.mode;
   if(isInt(d.level,1,MAXLV)) state.level=d.level;
   if(isInt(d.total,0,1e6)&&isInt(d.right,0,d.total)&&isInt(d.streak,0,d.right)){state.right=d.right;state.total=d.total;state.streak=d.streak;
     if(isInt(d.hint,0,d.total-d.right)) state.hint=d.hint;}
@@ -564,6 +565,8 @@ const BUSY_MSG='いまはランキングがこみあっているよ。すこし�
 // サーバーはあって、ことわられた（回数が多すぎるなど）。404・501・JSON でない答え・つながらないときは「オフライン」
 const isBusy=e=>!!(e&&e.detail&&e.status>=400&&e.status!==404&&e.status!==501);
 const canNet=()=>/^https?:$/.test(location.protocol)&&typeof fetch==='function';
+// iOS アプリ（PA.native）にはランキングを入れない：📊 を出さず、チャレンジはサーバーにつながずに「じぶんのきろく」だけ（api() もよばない）
+const NO_RANK=PA.native;
 const errOf=(status,message,detail)=>Object.assign(new Error(message),{status,detail:detail||''});
 function api(path,opt){
   opt=opt||{};
@@ -743,6 +746,7 @@ function loadRanking(){
 
 /* ===== れんしゅう・チャレンジ・ランキングのきりかえ、レベル ===== */
 function setMode(v){
+  if(NO_RANK&&v==='rank') v='free';
   if(state.mode==='ch'){
     // おわった（ライフ0）けどまだけっかを見ていない：けっかにしておく
     if(ch.phase==='play'&&ch.run&&state.answer&&(ch.run.state.over||ch.capped)) finishRun(false,true);
@@ -870,7 +874,7 @@ function topSumText(){
   if(state.mode==='free') return ['📝 れんしゅう・レベル'+state.level,'（'+LEVELS[state.level].desc+'）'];
   if(state.mode==='rank') return ['📊 ランキング',rk.period==='week'?'（今週）':'（ぜんぶ）'];
   if(ch.phase==='play'&&ch.run) return ['🏆 チャレンジ・レベル'+ch.run.state.level,'（ライフあと'+ch.run.state.lives+'）'];
-  return ['🏆 チャレンジ',ch.best?`（レベル${ch.best}までクリア）`:'（ランキング）'];
+  return ['🏆 チャレンジ',ch.best?`（レベル${ch.best}までクリア）`:NO_RANK?'':'（ランキング）'];
 }
 function recsHTML(){
   const b=loadBest(), w=weekBest(b);
@@ -883,7 +887,7 @@ function topCardHTML(){
     return `<section class="card topsum"><button class="topbtn" data-act="etop" data-v="open" aria-expanded="false" aria-label="${t[0]}${t[1]}。せっていをかえる">`
       +`<span class="ts-t"><span class="ts-a">${t[0]}</span>${t[1]?`<span class="ts-b">${t[1]}</span>`:''}</span><span class="ts-go" aria-hidden="true">かえる</span></button></section>`;
   }
-  let h=`<section class="card">${PA.seg('emode',[['free','📝 れんしゅう'],['ch','🏆 チャレンジ'],['rank','📊 ランキング']],state.mode,'full modeseg')}`;
+  let h=`<section class="card">${PA.seg('emode',[['free','📝 れんしゅう'],['ch','🏆 チャレンジ']].concat(NO_RANK?[]:[['rank','📊 ランキング']]),state.mode,'full modeseg')}`;
   if(state.mode==='free'){
     const lv=state.level, b=state.lvBest[lv];
     h+=lvButtonsHTML(lv);
@@ -894,13 +898,13 @@ function topCardHTML(){
   }else if(state.mode==='ch'){
     const play=ch.phase==='play'&&ch.run;
     if(play){const lv=ch.run.state.level;h+=`<div class="lvhead">🏆 レベル${lv}<small>${LEVELS[lv].name}</small></div>`+chipsHTML(lv)+knobsHTML(lv,'ch');}
-    h+=`<p class="note big-note">ライフ3つで、レベル1から8までどこまで行けるかな？おわったら、ランキングにのせられるよ。</p>`;
+    h+=`<p class="note big-note">ライフ3つで、レベル1から8までどこまで行けるかな？${NO_RANK?'じぶんのきろくをこえられるかな？':'おわったら、ランキングにのせられるよ。'}</p>`;
     h+=`<div class="rec">📒 チャレンジでクリア：<b>${ch.best?`レベル${ch.best}まで`:'まだないよ'}</b>${ch.best>=MAXLV?'<span class="master">🏅 マスター</span>':''}</div>`;
     const tools=(play?`<button class="btn small" data-act="chend" data-confirm="もういちどおすと、おわるよ">🏁 ここでおわる</button>`:'')
       +(ch.best||loadBest().all?`<button class="btn small" data-act="chreset" data-confirm="もういちどおすと、けすよ">🗑️ じぶんのきろくをけす</button>`:'');
     if(tools) h+=`<div class="chtools">${tools}</div>`;
-    if(play) h+=`<p class="note">🏁 でおわると、そこまでのけっかでランキングにのせられるよ（つづきは、できなくなるよ）。</p>`;
-    else if(ch.best||loadBest().all) h+=`<p class="note">🗑️ でけすのは、この端末のきろくだけ。ランキングはそのままだよ。</p>`;
+    if(play) h+=`<p class="note">🏁 でおわると、そこまでのけっかで${NO_RANK?'おわりにするよ':'ランキングにのせられるよ'}（つづきは、できなくなるよ）。</p>`;
+    else if(ch.best||loadBest().all) h+=`<p class="note">🗑️ でけすのは、この端末のきろくだけ。${NO_RANK?'':'ランキングはそのままだよ。'}</p>`;
   }else{
     h+=`<p class="note big-note">🏆 チャレンジのけっかのランキング。<b>ニックネーム</b>だけが出るよ。</p>`;
   }
@@ -915,7 +919,7 @@ function chIntroHTML(){
     <li><span aria-hidden="true">💪</span><span>まちがえると、ライフが1つへって、1つ前のレベルからつづけるよ</span></li>
     <li><span aria-hidden="true">🔁</span><span>レベル5からは、もういちどきける回数がきまるよ</span></li>
     <li><span aria-hidden="true">🏅</span><span>レベル8をクリアすると<b>マスター</b>！</span></li>
-    <li><span aria-hidden="true">📊</span><span>おわったら、<b>ニックネーム</b>でランキングにのせられるよ</span></li></ul>`;
+    ${NO_RANK?'':'<li><span aria-hidden="true">📊</span><span>おわったら、<b>ニックネーム</b>でランキングにのせられるよ</span></li>'}</ul>`;
   if(ch.phase==='offline'){
     h+=`<div class="msg" role="status" style="margin-top:10px">${ch.connectBusy?`⏳ <b>${BUSY_MSG}</b>`:`📴 <b>${OFF_MSG}</b>`}<br>ランキングにはのらないけど、<b>チャレンジはできるよ</b>。じぶんのきろくには、のこるよ。`
       +`${ch.connectError?`<br><span class="note">（${esc(ch.connectError)}）</span>`:''}</div>`;
@@ -944,7 +948,7 @@ function chResultHTML(){
     <div class="bigres"><div class="resbox"><small>とどいたレベル</small>${r.mastered?'<b>8</b><span class="master">🏅 マスター</span>':`<b>${r.level}</b>`}</div>
       <div class="resbox"><small>正解</small><b>${r.correct}</b><small>${r.total}もん中</small></div></div>`;
   if(ch.newBest) h+='<p class="newbest">🎉 じこベストこうしん！</p>';
-  if(ch.offline) h+=`<div class="msg" style="margin-top:10px">${offMsgHTML()}<br>じぶんのきろくには、のこしたよ。</div>`;
+  if(ch.offline) h+=`<div class="msg" style="margin-top:10px">${NO_RANK?'':offMsgHTML()+'<br>'}じぶんのきろくには、のこしたよ。</div>`;
   h+='</section>';
   const rkBtn='<button class="btn night fullbtn" data-act="emode" data-v="rank">📊 ランキングを見る</button>';
   if(ch.submitted&&ch.submitted.ranked===false){
@@ -1013,7 +1017,7 @@ function heroHTML(){
   else score=`<div class="score"><b>⭐ ${state.right} / ${state.total}</b>${state.hint?`<span class="sub" aria-label="ヒントでできた${state.hint}もん">💡 ${state.hint}</span>`:''}<span class="sub">れんぞく${state.streak}</span>${state.streak?`<span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(state.streak,10))}</span>`:''}</div>`;
   const R=replaysOf(lv,state.mode);
   let h=`<section class="card hero"><div class="qhead"><h2>👂 この和音はどれ？</h2>${score}</div>`;
-  if(inCh&&ch.offline) h+=`<span class="offtag">${ch.offWhy==='time'?'⏰ 2時間をすぎたのでランキングなし':ch.offWhy==='busy'?'⏳ こみあっているので、ランキングなしであそんでいるよ':'📴 オフライン：ランキングなしであそんでいるよ'}</span>`;
+  if(inCh&&ch.offline&&!NO_RANK) h+=`<span class="offtag">${ch.offWhy==='time'?'⏰ 2時間をすぎたのでランキングなし':ch.offWhy==='busy'?'⏳ こみあっているので、ランキングなしであそんでいるよ':'📴 オフライン：ランキングなしであそんでいるよ'}</span>`;
   if(!inCh) h+=`<div class="sessline">${sess.n()?sess.progressHTML():'<button type="button" class="btn small" data-act="esess">📝 きょうの5もん</button>'}</div>`;
   if(!q) h+=`<div class="msg" style="margin-top:10px">下の<b>▶️ 始める</b>をおすと、和音が鳴るよ。</div>`;
   else if(waitHear()) h+=`<div class="msg" style="margin-top:10px">下の<b>▶️ きく</b>をおすと、和音が鳴るよ。</div>`;
@@ -1031,12 +1035,12 @@ function actionsHTML(){
   if(sumView()) return ''; // けっかのカードに「もういちど」「じゆうにれんしゅう」があるので、下のボタン列はかくす
   if(state.mode==='rank') return `<button class="btn" data-act="rreload"${rk.loading?' disabled':''}>🔄 さいしんにする</button><button class="btn night" data-act="emode" data-v="ch">🏆 チャレンジ</button>`;
   if(state.mode==='ch'){
-    if(ch.phase==='intro') return `<button class="btn" data-act="emode" data-v="rank">📊 ランキング</button><button class="btn night" data-act="chstart" data-hot="next">🚩 スタート</button>`;
+    if(ch.phase==='intro') return `${NO_RANK?'':'<button class="btn" data-act="emode" data-v="rank">📊 ランキング</button>'}<button class="btn night" data-act="chstart" data-hot="next">🚩 スタート</button>`;
     if(ch.phase==='connecting') return `<button class="btn night" disabled>⏳ じゅんび中…</button>`;
     if(ch.phase==='offline') return `<button class="btn" data-act="chstart">🔁 もういちどつなぐ</button><button class="btn night" data-act="choff" data-hot="next">▶️ のせずにあそぶ</button>`;
     if(ch.phase==='result'){
       if(unsent()) return `<button class="btn primary" data-act="nsend"${ch.sending||!currentName().ok?' disabled':''}>${ch.sending?'⏳ おくっています…':'📮 ランキングにのせる'}</button>`;
-      return `<button class="btn" data-act="emode" data-v="rank">📊 ランキング</button><button class="btn night" data-act="chstart" data-hot="next">🔁 もういちど</button>`;
+      return `${NO_RANK?'':'<button class="btn" data-act="emode" data-v="rank">📊 ランキング</button>'}<button class="btn night" data-act="chstart" data-hot="next">🔁 もういちど</button>`;
     }
     if(q&&!ch.heard) return `<button class="btn night" data-act="chhear" data-hot="listen next">▶️ きく</button>`;
   }
@@ -1102,7 +1106,7 @@ document.addEventListener('click',e=>{
     if(state.topOpen){const f=document.querySelector('#view [data-act="emode"][aria-pressed="true"]');if(f) f.focus({preventScroll:true});}
   }
   else if(a==='emode'){
-    if((v!=='free'&&v!=='ch'&&v!=='rank')||v===state.mode) return;
+    if((v!=='free'&&v!=='ch'&&(v!=='rank'||NO_RANK))||v===state.mode) return;
     PA.stopSound(); setMode(v); render(); if(!el.closest('.seg')) scrollTop();
   }
   else if(a==='elevel'){
@@ -1113,7 +1117,7 @@ document.addEventListener('click',e=>{
   else if(a==='session-again'){if(state.mode!=='free')return;sessStart(sess.n()||5);ask();}
   else if(a==='session-free'){if(state.mode!=='free')return;sessClear();ask();}
   // 🏆 チャレンジ
-  else if(a==='chstart'){if(state.mode!=='ch'||ch.phase==='play'||ch.phase==='connecting'||unsent()) return;chConnect();}
+  else if(a==='chstart'){if(state.mode!=='ch'||ch.phase==='play'||ch.phase==='connecting'||unsent()) return;if(NO_RANK){PA.stopSound();chClear();chBegin(null,randomSeed(),true);return;}chConnect();}
   else if(a==='choff'){if(state.mode!=='ch'||ch.phase!=='offline') return;chBegin(null,randomSeed(),true);}
   else if(a==='chhear'){
     if(state.mode!=='ch'||ch.phase!=='play'||!state.q||ch.heard) return;
