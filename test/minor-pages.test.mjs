@@ -53,3 +53,19 @@ test('Ⅴの家族の「3もん ためしてみる」：見ている 和音と �
   const pair=Function('return '+m[1])();
   for(const f of ['V','V7','V9','DIM']){assert.equal(pair[f][0],f); assert.equal(new Set(pair[f]).size,2);}
 });
+
+test('短調クイズ：記号の もんだい（と 和音 1つ）の key は さいしょの 1もんだけ・チェック表の ことばを なおせる',()=>{
+  const PA=loadPA();
+  const src=read('minor-quiz.html');
+  assert.match(src,/const onceMode=\(\)=>Q\.type==='mark'\|\|FAM_KEYS\.filter\(f=>Q\.fams\[f\]\)\.length===1;/);
+  assert.match(src,/let k=Q\.fixKey&&!\(once&&Q\.fixUsed\)\?KD\.parse\(Q\.fixKey\):null;/);
+  assert.match(src,/fixUsed:Q\.fixUsed/,'読みなおしても おぼえている');
+  assert.doesNotMatch(src,/orderFor|Q\.order/,'おなじ 調が つづかないので 記号の ならびは まぜない');
+  assert.match(src,/else if\(linkKey\) Q\.type='chord';/,'key だけの リンク（にがて ふくしゅう）は 和音を おさえる');
+  assert.match(src,/if\(fixOnce\(\)&&Q\.fixUsed&&!sess\.active\(\)\)\{Q\.fixKey=null;Q\.fixUsed=false;\}/,'回の そとでは 2もんめから 🔑 を けす');
+  // ページが なおす core の ことば（core を かえたら ページの PICK_NOTE・PICK_SR も）
+  const m=/PICK_NOTE='([^']*)', PICK_SR='([^']*)'/.exec(src); assert.ok(m);
+  const h=PA.keyDeck.checkTableHTML('minor-quiz',{modes:['minor'],pickable:true});
+  assert.ok(h.includes(m[1]),'チェック表の 説明に「'+m[1]+'」');
+  assert.ok(h.includes(m[2]),'ますの aria-label に「'+m[2]+'」');
+});

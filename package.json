@@ -5,6 +5,8 @@
   "scripts": {
     "test": "node --test test/*.test.mjs",
     "build:meta": "node tools/build-meta.mjs",
-    "check": "node tools/build-meta.mjs --check && node --test test/*.test.mjs"
+    "check": "node tools/build-meta.mjs --check && node --test test/*.test.mjs",
+    "dev": "npx wrangler d1 migrations apply DB --local && npx wrangler dev",
+    "deploy": "npx wrangler deploy"
   }
 }

@@ -1,0 +1,35 @@
+// ピアノ和音アプリ：Cloudflare Workers（無料プラン）の 設定
+// - ページ（*.html・assets/ など）は リポジトリの いちばん上 から そのまま 公開する（ビルドなし）。
+//   公開しない ファイル（src/・test/・docs/・migrations/ など）は .assetsignore に 書く。
+// - /api/* だけ Worker（src/worker.js）。「和音の 聴きわけ」の ランキング。
+// - D1 は もとの「和音ききわけ」と おなじ waon-ranking（いままでの ランキングが そのまま つづく）。
+// - ADMIN_KEY（先生用キー、24文字以上）は Cloudflare の 画面か `npx wrangler secret put ADMIN_KEY` で 入れる。ここには 書かない。
+//   つかいかたは docs/RANKING-ADMIN.md、うつしかえの 手順は docs/MIGRATION-RANKING.md。
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "piano-chord-apps",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-10-01",
+  "workers_dev": true,
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS",
+    // /api/* は ファイルが あっても かならず Worker へ。ほかは 静的ファイルを 先に さがし、なければ Worker へ（404）。
+    "run_worker_first": ["/api/*"],
+    // いままでと おなじ（/ear.html → /ear へ うつる、/ は index.html）。書かなくても これが きまり
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "waon-ranking",
+      "database_id": "43b354cf-87c0-411f-b2f0-5fd06a1efdec",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // 毎日 16:05 UTC（日本時間 1:05）に 古い run・塩・週の 記録を そうじする（無料プランで つかえる）
+  "triggers": { "crons": ["5 16 * * *"] },
+  // console.error などの ログだけ のこす。1回ごとの リクエストの 記録（URL・場所の 情報など）は のこさない
+  "observability": { "enabled": true, "logs": { "enabled": true, "invocation_logs": false } }
+}
