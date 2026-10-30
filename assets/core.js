@@ -988,7 +988,8 @@ PA.mountBar=o=>{
   const bar=document.getElementById('appbar');
   PA.currentApp=o.app||null;
   const r=PA.store.get('return-to',null);
-  let backEl=`<a class="iconbtn" href="${o.back||'index.html'}" aria-label="ホームにもどる">${PA.icon('back')}</a>`;
+  // data-pa="back"：ホームから来たばかりなら history.back()（アプリの左はしのスワイプでもどるのとおなじ れきしにする）
+  let backEl=`<a class="iconbtn" href="${o.back||'index.html'}" data-pa="back" aria-label="ホームにもどる">${PA.icon('back')}</a>`;
   if(!o.back&&r&&typeof r.app==='string'&&/^[a-z0-9-]+$/.test(r.app)&&r.app!==o.app&&Date.now()-r.t<36e5){
     const prev=PA.app(r.app), name=prev?prev.title:'前のアプリ';
     backEl=`<a class="backpill" href="${r.app}.html" data-pa="back" aria-label="${PA.esc(name)}にもどる"><span class="bp-ar" aria-hidden="true">${PA.icon('back')}</span><span class="bp-tx">${PA.esc(name)}</span>へ</a>`;
@@ -1068,7 +1069,9 @@ document.addEventListener('click',e=>{
     const h=(b.getAttribute('href')||'').split(/[?#]/)[0];
     let ref=null; try{ref=document.referrer?new URL(document.referrer):null;}catch(err){}
     // origin ではなく protocol と host でくらべる（アプリの capacitor:// は URL の origin が 'null' になる）
-    if(h&&ref&&ref.protocol===location.protocol&&ref.host===location.host&&(ref.pathname===h||ref.pathname.slice(-(h.length+1))==='/'+h)&&history.length>1){e.preventDefault();history.back();}
+    // ホーム（index.html）は / でひらいていることもある（アプリのさいしょ・公開サイトのトップ）
+    const same=ref&&(ref.pathname===h||ref.pathname.slice(-(h.length+1))==='/'+h||(h==='index.html'&&/\/$/.test(ref.pathname)));
+    if(h&&ref&&ref.protocol===location.protocol&&ref.host===location.host&&same&&history.length>1){e.preventDefault();history.back();}
   }
 });
 // 「もどる」で前の画面からそのままもどってきたとき（bfcache）。ホームでは「まえのアプリ」をわすれる。ほかのページでかえた設定もよみなおす

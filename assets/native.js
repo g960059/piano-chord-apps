@@ -84,5 +84,6 @@ PA.midi.useNative({
 });
 PA.midi.connect();
 // 「もどる」でもどったページ：Capacitor がうけとりをはずしているので、つけなおして、いまの機器をきく
-window.addEventListener('pageshow',e=>{if(!e.persisted) return;PA.midi.reset();hook();PA.midi.connect();});
+// 左はしのスワイプでもどったページも、ここをとおる。音のしくみがとまっていたらつくりなおす
+window.addEventListener('pageshow',e=>{if(!e.persisted) return;PA.midi.reset();hook();PA.midi.connect();if(PA.audioStuck&&PA.audioStuck()) PA.audioReset();});
 })();
