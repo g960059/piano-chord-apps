@@ -526,25 +526,24 @@ function newEar(){
   state.q=makeQ(lv,state.q&&state.q.type,state.mode);
   state.answer=null; state.resShown=false; state.left=replaysOf(lv,state.mode); state.hinted=false; state.qn++; save();
 }
-// チャレンジがピアノではじまったのに、まだ録音が読めていない（とちゅうでページをひらきなおした）：読めるのをまってから鳴らす。
+// チャレンジがピアノではじまったのに、まだ録音が読めていない（とちゅうでページをひらきなおした）：
+// 読めるまで、チャレンジの音を出すボタン（CH_SOUND）はうけつけない（音色がとちゅうでかわらないように・回数だけへらないように）。
 // 読めなければ、このチャレンジはさいごまで合成の音にする（あとから読めてもかえない）
-// まっているあいだは「もういちどきく」をうけつけない（回数だけへって鳴らないことがないように）。鳴らすのは、さいごにたのんだ音だけ
-let chWait=null;
-const chWaiting=()=>!!chWait;
-function chVoiceThen(fn){
-  if(state.mode!=='ch'||ch.phase!=='play'||ch.voice!=='piano'||PA.pianoReady()){fn();return;}
-  const first=!chWait;
-  chWait={fn,q:state.q,g:PA.soundGen()};
-  if(!first) return;
+const CH_SOUND=new Set(['chhear','eplay','earp','eans','eab','eres','ecmp','enew']);
+const chGated=()=>state.mode==='ch'&&ch.phase==='play'&&ch.voice==='piano'&&!PA.pianoReady();
+let chGateBusy=false;
+function chGateLoad(){
+  if(chGateBusy||!chGated()) return;
+  chGateBusy=true;
   PA.loadPiano().then(ok=>{
-    const w=chWait; chWait=null;
-    if(!ok){ch.voice='synth';save();render();}
-    if(w&&state.q===w.q&&state.mode==='ch'&&PA.soundGen()===w.g) w.fn(); // そのあいだに音をとめた・つぎへすすんだときは鳴らさない
+    chGateBusy=false;
+    if(!ok&&ch.phase==='play'&&ch.voice==='piano'){ch.voice='synth';save();}
+    render();
   });
 }
 function playEar(arp=false){
   const q=state.q; if(!q) return;
-  PA.stopSound(); chVoiceThen(()=>PA.chord(q.notes.map(n=>n.midi),arp?{arp:true}:{dur:2.2}));
+  PA.stopSound(); PA.chord(q.notes.map(n=>n.midi),arp?{arp:true}:{dur:2.2});
 }
 // 問題の和音とおなじ高さで解決する：鳴っている1つ1つの音が、そのオクターブのままとなりの音へすすむ
 function resInfo(){
@@ -555,7 +554,7 @@ function resInfo(){
 }
 function playRes(){
   const q=state.q, res=resInfo(); if(!res) return;
-  PA.stopSound(); chVoiceThen(()=>{PA.chord(q.notes.map(n=>n.midi),{dur:1.3}); PA.chord(res.map(n=>n.midi),{when:1.25,dur:2.2});});
+  PA.stopSound(); PA.chord(q.notes.map(n=>n.midi),{dur:1.3}); PA.chord(res.map(n=>n.midi),{when:1.25,dur:2.2});
 }
 
 /* ===== ランキングのサーバー（/api/*。ないところ＝file://・ふつうの静的サーバーでは「オフライン」） ===== */
@@ -895,6 +894,7 @@ function topCardHTML(){
   }else if(state.mode==='ch'){
     const play=ch.phase==='play'&&ch.run;
     if(play){const lv=ch.run.state.level;h+=`<div class="lvhead">🏆 レベル${lv}<small>${LEVELS[lv].name}</small></div>`+chipsHTML(lv)+knobsHTML(lv,'ch');}
+    if(chGated()) h+=`<div class="msg" role="status" style="margin-top:10px">⏳ ピアノの音を用意しているよ。少しまってね</div>`;
     h+=`<p class="note big-note">ライフ3つで、レベル1から8までどこまで行けるかな？おわったら、ランキングにのせられるよ。</p>`;
     h+=`<div class="rec">📒 チャレンジでクリア：<b>${ch.best?`レベル${ch.best}まで`:'まだないよ'}</b>${ch.best>=MAXLV?'<span class="master">🏅 マスター</span>':''}</div>`;
     const tools=(play?`<button class="btn small" data-act="chend" data-confirm="もういちどおすと、おわるよ">🏁 ここでおわる</button>`:'')
@@ -1054,6 +1054,7 @@ function actionsHTML(){
 }
 function render(){
   PA.lockVoice(state.mode==='ch'&&ch.phase==='play'?ch.voice:null); // チャレンジの画面だけ、はじめた時の音色（れんしゅう・せっていはふつうの音色）
+  chGateLoad();
   // チャレンジでこたえる前は「くらべてきく」をつかえない。れんしゅうではつかえるが「ヒントでできた」になる
   const open=!!state.q&&!state.answer&&!sumView(), lock=open&&state.mode==='ch';
   const cmp=state.mode==='rank'?'':`<section class="card">
@@ -1093,6 +1094,7 @@ PA.onSettings=render;
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-act]'); if(!el||el.disabled) return;
   const a=el.dataset.act, v=el.dataset.v;
+  if(CH_SOUND.has(a)&&chGated()){PA.announce('ピアノの音を用意しているよ。少しまってね');chGateLoad();return;}
   if(a==='etop'){
     state.topOpen=v==='open'; render();
     // ひらいたら、カードのいちばん上（えらんでいるれんしゅう・チャレンジ）へフォーカス。とじたら PA.paint が1行のボタンへもどす
@@ -1113,7 +1115,7 @@ document.addEventListener('click',e=>{
   else if(a==='chstart'){if(state.mode!=='ch'||ch.phase==='play'||ch.phase==='connecting'||unsent()) return;chConnect();}
   else if(a==='choff'){if(state.mode!=='ch'||ch.phase!=='offline') return;chBegin(null,randomSeed(),true);}
   else if(a==='chhear'){
-    if(state.mode!=='ch'||ch.phase!=='play'||!state.q||ch.heard||chWaiting()) return;
+    if(state.mode!=='ch'||ch.phase!=='play'||!state.q||ch.heard) return;
     if(!PA.settings.sound){PA.announce('音がオフだよ');return;} // 鳴らないのに「きいた」にしない
     ch.heard=true; state.askedAt=Date.now(); save(); render(); playEar(!!LEVELS[state.q.lv].arp);
     reveal(document.querySelector('#view .echoices'),document.querySelector('#view .hero'));
@@ -1156,7 +1158,7 @@ document.addEventListener('click',e=>{
     ask();
   }
   else if(a==='eplay'||a==='earp'){
-    if(!state.q||waitHear()||chWaiting()) return;
+    if(!state.q||waitHear()) return;
     // 「つぎ」の2どおしで、その場所に出たボタンがおされて回数がへらないように
     if(!state.answer&&Date.now()-(state.askedAt||0)<600) return;
     // 音がオフのときは鳴らないので、のこりの回数はへらさない（「🔇 音がオフだよ」はいつも出ている）

@@ -247,6 +247,8 @@ let voiceLock=null;
 PA.voice=()=>{const v=voiceLock||S.voice;return v==='piano'&&pianoBufs?'piano':'synth';};
 PA.lockVoice=v=>{voiceLock=v==='piano'||v==='synth'?v:null;if(voiceLock==='piano') PA.loadPiano();return voiceLock;};
 const wantPiano=()=>(voiceLock||S.voice)==='piano';
+// 音を鳴らさないページ（<body data-nosound>＝ホーム）：さわっても録音は読まない（鳴らすときは合成の音。せっていのためしの音は読む）
+const noSoundPage=()=>{try{return !!(document.body&&document.body.hasAttribute&&document.body.hasAttribute('data-nosound'));}catch(e){return false;}};
 PA.audio=()=>{
   if(!actx){
     try{if(navigator.audioSession) navigator.audioSession.type='playback';}catch(e){}
@@ -257,14 +259,14 @@ PA.audio=()=>{
     master.connect(comp); comp.connect(actx.destination);
   }
   if(actx.state!=='running'&&actx.state!=='closed') actx.resume().catch(()=>{});
-  if(wantPiano()&&!pianoBufs) PA.loadPiano();
+  if(wantPiano()&&!pianoBufs&&!noSoundPage()) PA.loadPiano();
   return actx;
 };
 PA.audioRunning=()=>!!(actx&&actx.state==='running');
 ['pointerup','touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>{if(S.sound)PA.audio();},{capture:true,passive:true}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&actx&&actx.state!=='running'&&actx.state!=='closed')actx.resume().catch(()=>{});});
 // ページをひらいたら、さわる前に録音を読んでおく（さいしょの音からピアノになるように）。音を鳴らさないページ（<body data-nosound>）では読まない
-if(typeof window.addEventListener==='function') window.addEventListener('load',()=>{if(S.sound&&wantPiano()&&!(document.body&&document.body.hasAttribute&&document.body.hasAttribute('data-nosound'))) PA.loadPiano();});
+if(typeof window.addEventListener==='function') window.addEventListener('load',()=>{if(S.sound&&wantPiano()&&!noSoundPage()) PA.loadPiano();});
 const pianoNote=(ac,midi,t,dur,vel)=>{
   const s=PA.pianoNearest(pianoBufs,midi), src=ac.createBufferSource(), g=ac.createGain(), a=vel/0.22*PIANO.gain;
   src.buffer=s.buf; src.playbackRate.value=PA.pianoRate(midi,s.midi,S.pitchA);
@@ -622,8 +624,9 @@ PA.openSettings=()=>{
       S.voice=t.value;PA.stopSound();
       // ためしの音。録音を読むあいだに、とじた・音をとめた・音色をかえたときは鳴らさない
       const g=soundGen;
-      if(S.voice==='piano') PA.loadPiano().then(()=>{if(g===soundGen&&isOpen(el)&&S.voice==='piano') PA.playNote(60,0,1.6,0.25);});
-      else PA.playNote(60,0,1.6,0.25);
+      const preview=()=>{const keep=voiceLock;voiceLock=null;PA.playNote(60,0,1.6,0.25);voiceLock=keep;}; // チャレンジでとめた音色ではなく、えらんだ音色で
+      if(S.voice==='piano') PA.loadPiano().then(()=>{if(g===soundGen&&isOpen(el)&&S.voice==='piano') preview();});
+      else preview();
     }
     PA.saveSettings(); updateSoundBar(); if(PA.onSettings) PA.onSettings();
   };
