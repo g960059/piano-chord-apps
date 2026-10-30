@@ -3,7 +3,7 @@
      → 古い ページに とじこめない。?key=… つきの しゅくだいリンクも 同じ ページとして 出す
    ・js・css・画像は 保存して ある ものを すぐ 出して、うらで 新しく しておく
    ・VERSION と PRECACHE は tools/build-meta.mjs が 書きかえる（手で なおさない） */
-const VERSION='7cb66c6bfb';
+const VERSION='4d723a1041';
 const PRECACHE=[
   './',
   'accompaniment.html',
@@ -22,6 +22,8 @@ const PRECACHE=[
   'ending.html',
   'enharmonic.html',
   'index.html',
+  'interval.html',
+  'inversion.html',
   'minor-family.html',
   'minor-quiz.html',
   'minor-signature.html',
