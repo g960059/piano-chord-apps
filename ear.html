@@ -419,7 +419,7 @@ const state={mode:'free',level:1,q:null,answer:null,left:null,right:0,hint:0,tot
  *  q・answer・left・resShown：れんしゅう・ランキングを見ているあいだとっておくチャレンジのもんだい
  *  best：チャレンジでクリアしたいちばん上のレベル（レベルのボタンの 🏆）
  *  けっか：newBest・endedEarly・name（{cands,sel,pick,custom}）・sending・sendError・submitted（サーバーのへんじ）・closed（{kind:'already'|'gone',msg}） */
-const ch={phase:'intro',runId:null,seed:0,offline:false,offWhy:'',startedAt:0,run:null,vrng:null,heard:false,event:null,capped:false,
+const ch={phase:'intro',voice:null,runId:null,seed:0,offline:false,offWhy:'',startedAt:0,run:null,vrng:null,heard:false,event:null,capped:false,
   q:null,answer:null,left:null,resShown:false,best:0,connectError:'',connectBusy:false,newBest:false,endedEarly:false,
   name:{cands:[],sel:0,pick:0,custom:''},sending:false,sendError:null,submitted:null,closed:null};
 // 📊 ランキング：period＝'week'｜'all'、data[period]＝{top, me, week}
@@ -452,7 +452,7 @@ const unsent=()=>!!ch.run&&ch.phase==='result'&&!ch.offline&&!ch.submitted&&!ch.
 function chSaved(){
   if(!ch.run||!(ch.phase==='play'||unsent())) return null;
   const v=chView();
-  return {runId:ch.runId,seed:ch.seed,offline:ch.offline,offWhy:ch.offWhy,startedAt:ch.startedAt,answers:ch.run.answers.slice(),phase:ch.phase,
+  return {voice:ch.voice,runId:ch.runId,seed:ch.seed,offline:ch.offline,offWhy:ch.offWhy,startedAt:ch.startedAt,answers:ch.run.answers.slice(),phase:ch.phase,
     q:v.answer?v.q:null,answer:v.answer||null,event:v.answer?ch.event:null,resShown:!!(v.answer&&v.resShown),
     left:v.answer?null:v.left,heard:!v.answer&&ch.heard,newBest:ch.newBest,endedEarly:ch.endedEarly};
 }
@@ -464,7 +464,7 @@ function chRestore(c){
   if(!ok||c.startedAt>Date.now()+6e4||Date.now()-c.startedAt>RUN_KEEP) return;
   if(c.phase==='result'&&!c.answers.length) return;
   const rb=rebuildRun(c.seed,c.answers);
-  Object.assign(ch,{runId:c.offline?null:c.runId,seed:c.seed,offline:c.offline,offWhy:c.offline?(c.offWhy==='time'||c.offWhy==='busy'?c.offWhy:'net'):'',startedAt:c.startedAt,
+  Object.assign(ch,{voice:PA.lockVoice(c.voice==='synth'?'synth':'piano'),runId:c.offline?null:c.runId,seed:c.seed,offline:c.offline,offWhy:c.offline?(c.offWhy==='time'||c.offWhy==='busy'?c.offWhy:'net'):'',startedAt:c.startedAt,
     run:rb.run,vrng:rb.vrng,heard:false,event:null,capped:false,q:null,answer:null,left:null,resShown:false,
     newBest:c.newBest===true,endedEarly:c.endedEarly===true,sending:false,sendError:null,submitted:null,closed:null});
   const st=rb.run.state;
@@ -485,7 +485,7 @@ function chRestore(c){
   }
 }
 function chClear(){
-  Object.assign(ch,{phase:'intro',runId:null,seed:0,offline:false,offWhy:'',startedAt:0,run:null,vrng:null,heard:false,event:null,capped:false,
+  Object.assign(ch,{voice:PA.lockVoice(null),phase:'intro',runId:null,seed:0,offline:false,offWhy:'',startedAt:0,run:null,vrng:null,heard:false,event:null,capped:false,
     q:null,answer:null,left:null,resShown:false,connectError:'',connectBusy:false,newBest:false,endedEarly:false,sending:false,sendError:null,submitted:null,closed:null});
   if(state.mode==='ch'){state.q=null;state.answer=null;state.left=null;state.resShown=false;}
 }
@@ -609,6 +609,7 @@ function recordBest(r){
 function chConnect(){
   if(ch.phase==='connecting') return;
   PA.stopSound(); chClear(); ch.phase='connecting'; save(); render();
+  if(PA.settings.voice==='piano') PA.loadPiano(); // つなぐあいだに読んでおく（はじめた時の音色でさいごまで）
   api('api/run',{method:'POST',body:{}}).then(d=>{
     if(typeof d.runId!=='string'||!UUID_RE.test(d.runId)||!isSeed(d.seed)) throw errOf(0,OFF_MSG);
     if(ch.phase==='connecting') chBegin(d.runId.toLowerCase(),d.seed,false);
@@ -619,7 +620,8 @@ function chConnect(){
 }
 function chBegin(runId,seed,offline){
   const rb=rebuildRun(seed,[]);
-  Object.assign(ch,{phase:'play',runId,seed,offline,offWhy:offline?(ch.connectBusy?'busy':'net'):'',startedAt:Date.now(),run:rb.run,vrng:rb.vrng,connectError:'',connectBusy:false,
+  // とちゅうでピアノの録音が読めても音色がかわらないように、はじめた時の音色でとめる
+  Object.assign(ch,{phase:'play',voice:PA.lockVoice(PA.voice()),runId,seed,offline,offWhy:offline?(ch.connectBusy?'busy':'net'):'',startedAt:Date.now(),run:rb.run,vrng:rb.vrng,connectError:'',connectBusy:false,
     newBest:false,endedEarly:false,sending:false,sendError:null,submitted:null,closed:null});
   chAsk(state.mode==='ch');
 }
@@ -639,7 +641,7 @@ function chAsk(play){
 function finishRun(early,record){
   if(state.mode==='ch'){state.q=null;state.answer=null;state.left=null;state.resShown=false;}
   ch.q=null; ch.answer=null; ch.left=null; ch.resShown=false; ch.event=null; ch.heard=false;
-  ch.phase='result'; ch.endedEarly=!!early;
+  ch.phase='result'; ch.endedEarly=!!early; ch.voice=PA.lockVoice(null);
   // ランキングにのせられるのははじめてから2時間まで（サーバーとおなじ）
   if(!ch.offline&&Date.now()-ch.startedAt>CH.runTtlMs){ch.offline=true;ch.offWhy='time';ch.runId=null;}
   if(record) ch.newBest=recordBest(ch.run.result());

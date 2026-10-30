@@ -5,8 +5,43 @@
      うごかなくなるのをふせぐ
    ・画像などは保存してあるものをすぐ出して、うらで新しくしておく
    ・インストールでとれなかったファイルは前の保存ぶんからうつす（オフラインでこわれないように）
-   ・VERSION と PRECACHE は tools/build-meta.mjs が書きかえる（手でなおさない） */
-const VERSION='fa1544433e';
+   ・ピアノの録音（assets/piano/）は、べつの保存場所（AUDIO_CACHE）にしまう。サイトを新しくしても、
+     録音がかわっていなければ読みなおさない（毎回 0.8MB をダウンロードしないように）
+   ・VERSION・PRECACHE・AUDIO_VERSION・AUDIO は tools/build-meta.mjs が書きかえる（手でなおさない） */
+const AUDIO_VERSION='9867d88125';
+const AUDIO=[
+  'assets/piano/A0.mp3',
+  'assets/piano/A1.mp3',
+  'assets/piano/A2.mp3',
+  'assets/piano/A3.mp3',
+  'assets/piano/A4.mp3',
+  'assets/piano/A5.mp3',
+  'assets/piano/A6.mp3',
+  'assets/piano/A7.mp3',
+  'assets/piano/C1.mp3',
+  'assets/piano/C2.mp3',
+  'assets/piano/C3.mp3',
+  'assets/piano/C4.mp3',
+  'assets/piano/C5.mp3',
+  'assets/piano/C6.mp3',
+  'assets/piano/C7.mp3',
+  'assets/piano/C8.mp3',
+  'assets/piano/Ds1.mp3',
+  'assets/piano/Ds2.mp3',
+  'assets/piano/Ds3.mp3',
+  'assets/piano/Ds4.mp3',
+  'assets/piano/Ds5.mp3',
+  'assets/piano/Ds6.mp3',
+  'assets/piano/Ds7.mp3',
+  'assets/piano/Fs1.mp3',
+  'assets/piano/Fs2.mp3',
+  'assets/piano/Fs3.mp3',
+  'assets/piano/Fs4.mp3',
+  'assets/piano/Fs5.mp3',
+  'assets/piano/Fs6.mp3',
+  'assets/piano/Fs7.mp3',
+];
+const VERSION='feca5ed91c';
 const PRECACHE=[
   './',
   'accompaniment.html',
@@ -47,6 +82,8 @@ const PRECACHE=[
 ];
 const PREFIX='pca-';
 const CACHE=PREFIX+VERSION;
+const AUDIO_CACHE=PREFIX+'audio-'+AUDIO_VERSION;
+const AUDIO_RE=/\/assets\/piano\/[^/]+\.mp3$/;
 const NAV_TIMEOUT=3000;
 const CODE_TIMEOUT=3000;
 const ASSET_RE=/\.(?:js|css|png|svg|webmanifest|json|jpe?g|webp|ico|woff2?)$/i;
@@ -69,19 +106,27 @@ function copyOld(c,url){
   return caches.match(url,{ignoreSearch:true}).then(old=>old?c.put(url,old):undefined).catch(()=>{});
 }
 
+/* 録音：まだ保存していないものだけとってくる（1つだめでもほかは保存する。だめなものは、ページが読むときにまたとる） */
+function fillAudio(){
+  return caches.open(AUDIO_CACHE).then(c=>Promise.all(AUDIO.map(p=>{
+    const url=new URL(p,self.registration.scope).href;
+    return c.match(url).then(hit=>hit||fetch(url).then(res=>okToKeep(res)?c.put(url,res):undefined)).catch(()=>{});
+  })));
+}
+
 self.addEventListener('install',e=>{
-  e.waitUntil(caches.open(CACHE).then(c=>Promise.all(PRECACHE.map(p=>{
+  e.waitUntil(Promise.all([caches.open(CACHE).then(c=>Promise.all(PRECACHE.map(p=>{
     const url=new URL(p,self.registration.scope).href;
     // 1つだめでもほかは保存する
     return fetch(new Request(url,{cache:'reload'})).then(res=>{
       if(!okToKeep(res)) return copyOld(c,url);
       return clean(res).then(r=>c.put(url,r));
     }).catch(()=>copyOld(c,url));
-  }))).then(()=>self.skipWaiting()));
+  }))),fillAudio()]).then(()=>self.skipWaiting()));
 });
 
 self.addEventListener('activate',e=>{
-  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.indexOf(PREFIX)===0&&k!==CACHE).map(k=>caches.delete(k))))
+  e.waitUntil(caches.keys().then(keys=>Promise.all(keys.filter(k=>k.indexOf(PREFIX)===0&&k!==CACHE&&k!==AUDIO_CACHE).map(k=>caches.delete(k))))
     .then(()=>self.clients.claim()));
 });
 
@@ -131,6 +176,15 @@ function onCode(e){
   });
 }
 
+/* 録音：保存してあればそれ（中身はかわらない）。なければネットからとって、録音の保存場所にしまう */
+function onAudio(e){
+  const req=e.request;
+  return caches.open(AUDIO_CACHE).then(c=>c.match(req).then(hit=>hit||fetch(req).then(res=>{
+    if(okToKeep(res)){const copy=res.clone();e.waitUntil(c.put(req,copy).catch(()=>{}));}
+    return res;
+  })));
+}
+
 function onAsset(e){
   const req=e.request;
   const hit=caches.open(CACHE).then(c=>c.match(req)).catch(()=>null);
@@ -149,6 +203,7 @@ self.addEventListener('fetch',e=>{
     e.respondWith(onPage(e));
     return;
   }
-  if(CODE_RE.test(url.pathname)) e.respondWith(onCode(e));
+  if(AUDIO_RE.test(url.pathname)) e.respondWith(onAudio(e));
+  else if(CODE_RE.test(url.pathname)) e.respondWith(onCode(e));
   else if(ASSET_RE.test(url.pathname)) e.respondWith(onAsset(e));
 });
