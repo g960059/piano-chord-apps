@@ -17,6 +17,7 @@
  *   PA.nm＝ただの文字（aria-label・title・data-*・SVG の中はこちら）。
  *   PA.nmH／PA.namesH＝HTML（<span class="nw">ファ♯</span>：♯・♭の前で行がかわらない）。HTML の文の中だけでつかう
  * 音  ：PA.playNote(midi,when,dur,vel)、PA.chord(midis,{when,dur,arp,vel})、PA.stopSound()
+ *       PA.voice()＝いまの音色（'piano'｜'synth'）、PA.lockVoice(v)、PA.loadPiano()、PA.pianoReady()
  * 図  ：PA.kbSVG(lo,hi,marks,opts)、PA.staffSVG(key,cols,opts)
  *   kbSVG の marks の1つに sr:'えらんだ・まちがい' を入れると、読み上げで「ミ、えらんだ・まちがい」になる
  * UI  ：PA.keyChip(key)、PA.openKeySheet({minor,idx,onPick,both})、PA.seg(act,opts,cur)
@@ -110,12 +111,13 @@ PA.store={
   keys(){const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf('pianoapps.')===0) out.push(k.slice(10));}}catch(e){}return out;}
 };
 PA.esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
-const S=PA.settings={naming:'solfa',sound:true,pitchA:440};
+const S=PA.settings={naming:'solfa',sound:true,pitchA:440,voice:'piano'};
 const loadSettings=()=>{
   const d=PA.store.get('settings',{})||{};
   if(['solfa','en','ja'].includes(d.naming)) S.naming=d.naming;
   if(typeof d.sound==='boolean') S.sound=d.sound;
   if([440,441,442,443].includes(d.pitchA)) S.pitchA=d.pitchA;
+  if(d.voice==='piano'||d.voice==='synth') S.voice=d.voice;
 };
 loadSettings();
 PA.saveSettings=()=>PA.store.set('settings',S);
@@ -191,9 +193,67 @@ PA.keyName=k=>(k.a>0?'嬰':k.a<0?'変':'')+PA.LET_JA[k.l]+(k.minor?'短調':'長
 PA.keyEn=k=>PA.H(PA.LET_EN[k.l]+PA.ACC[k.a]+(k.minor?'m':''));
 PA.sigLabel=k=>{const s=PA.sigInfo(k);return s.letters.length?(s.type>0?'♯':'♭')+s.letters.length+'つ':'調号なし';};
 
-/* ===== 音 ===== */
-let actx=null,master=null;
+/* ===== 音 =====
+ * ピアノの録音（assets/piano/）を鳴らす。録音がまだ読めていない・読めないとき、
+ * または せってい で「シンプルな音」をえらんだときは、合成の音（三角波＋サイン波）。
+ * 録音：Salamander Grand Piano V3（Yamaha C5、Alexander Holm、CC BY 3.0）を Tone.js が公開している版（3半音おき・30こ）。
+ *       tools/trim-piano.mjs で、はじめの6.3秒だけに切っている（音はもとのまま）。
+ * 高さ：いちばん近い録音を再生速度でずらす。録音のピアノ全体のずれ（PIANO.cents）を直して、A4＝基準ピッチの平均律にそろえる。
+ *       （高い音・低い音の少しのずれは、ほんとうのピアノと同じにのこす） */
+let actx=null,master=null,soundGen=0;
 const voices=new Set();
+// PA.stopSound のたびにふえる。あとで鳴らす予定の音（録音を読みおわってから鳴らす音など）は、ふえていたら鳴らさない
+PA.soundGen=()=>soundGen;
+const PIANO=PA.PIANO={
+  base:(()=>{try{return new URL('piano/',document.currentScript.src).href;}catch(e){return 'assets/piano/';}})(),
+  keep:6,     // 鳴りはじめから何秒まで使うか（伴奏づけのおそいテンポの長い音＝約5.2秒まで。それより長い音は自然に小さくなる）
+  cents:3.6,  // 録音のピアノ全体の高さのずれ（ド3〜ド6の、A4＝440Hz の平均律からのずれの中央値。聴き比べページではかった）
+  gain:0.86,  // ド4の最初の1秒の大きさを、合成の音にそろえる
+  wait:15,    // 読みこみをまつ時間（秒）。こえたら合成の音のまま
+  notes:[]
+};
+{const N={9:'A',0:'C',3:'Ds',6:'Fs'};for(let m=21;m<=108;m+=3) PIANO.notes.push({midi:m,file:N[m%12]+(Math.floor(m/12)-1)+'.mp3'});}
+// いちばん近い録音（同じ近さなら下の録音を上げて使う）。list は midi の小さいじゅん
+PA.pianoNearest=(list,m)=>{let best=null,bd=1e9;for(const s of list){const d=Math.abs(s.midi-m);if(d<bd){best=s;bd=d;}}return best;};
+// 再生速度：録音の midi から target へ。全体のずれを直して、a4（基準ピッチ）に合わせる
+PA.pianoRate=(target,sampleMidi,a4)=>Math.pow(2,(target-sampleMidi)/12-PIANO.cents/1200)*((a4||440)/440);
+let pianoBufs=null,pianoLoading=null,pianoFailAt=0;
+PA.pianoReady=()=>!!pianoBufs;
+// 頭の無音をとって、PIANO.keep 秒だけのモノラルにする（メモリを小さく。おわりは0.4秒でフェード）
+const pianoTrim=(oc,b)=>{
+  const sr=b.sampleRate,c=b.numberOfChannels,x=b.getChannelData(0),scan=Math.min(b.length,Math.round(sr*0.3));
+  let pk=0;for(let i=0;i<scan;i++){const v=Math.abs(x[i]);if(v>pk)pk=v;}
+  let on=0;while(on<scan&&Math.abs(x[on])<=pk*0.02) on++;
+  on=Math.max(0,on-Math.round(sr*0.002));
+  const n=Math.min(b.length-on,Math.round(sr*PIANO.keep)),out=oc.createBuffer(1,n,sr),d=out.getChannelData(0),fade=Math.round(sr*0.4);
+  for(let ch=0;ch<c;ch++){const y=b.getChannelData(ch);for(let i=0;i<n;i++) d[i]+=y[on+i]/c;}
+  for(let i=Math.max(0,n-fade);i<n;i++) d[i]*=(n-i)/fade;
+  return out;
+};
+// 録音を読みこむ（音を出さない OfflineAudioContext でひらくので、さわる前でも読める）。読めたら true
+PA.loadPiano=()=>{
+  if(pianoBufs) return Promise.resolve(true);
+  if(pianoLoading) return pianoLoading;
+  if(Date.now()-pianoFailAt<30000||typeof fetch!=='function'||typeof OfflineAudioContext!=='function') return Promise.resolve(false);
+  const oc=new OfflineAudioContext(1,1,44100);
+  const all=Promise.all(PIANO.notes.map(n=>fetch(PIANO.base+n.file)
+    .then(r=>{if(!r.ok) throw new Error(n.file+' '+r.status);return r.arrayBuffer();})
+    .then(ab=>oc.decodeAudioData(ab)).then(b=>({midi:n.midi,buf:pianoTrim(oc,b)}))))
+    .then(list=>{pianoBufs=list;return true;});
+  // 1つでもとまったままのときは、PIANO.wait 秒で「読めなかった」にする（あとから読めたら、そのときから使う）
+  const late=new Promise(r=>setTimeout(()=>r(false),PIANO.wait*1000));
+  pianoLoading=Promise.race([all,late])
+    .then(ok=>{pianoLoading=null;if(!ok) pianoFailAt=Date.now();return ok;},()=>{pianoLoading=null;pianoFailAt=Date.now();return false;});
+  all.catch(()=>{});
+  return pianoLoading;
+};
+// いま鳴らす音色：'piano'｜'synth'。lockVoice＝チャレンジの画面で、はじめた時の音色にとめる（null で とく）
+let voiceLock=null;
+PA.voice=()=>{const v=voiceLock||S.voice;return v==='piano'&&pianoBufs?'piano':'synth';};
+PA.lockVoice=v=>{voiceLock=v==='piano'||v==='synth'?v:null;if(voiceLock==='piano') PA.loadPiano();return voiceLock;};
+const wantPiano=()=>(voiceLock||S.voice)==='piano';
+// 音を鳴らさないページ（<body data-nosound>＝ホーム）：さわっても録音は読まない（鳴らすときは合成の音。せっていのためしの音は読む）
+const noSoundPage=()=>{try{return !!(document.body&&document.body.hasAttribute&&document.body.hasAttribute('data-nosound'));}catch(e){return false;}};
 PA.audio=()=>{
   if(!actx){
     try{if(navigator.audioSession) navigator.audioSession.type='playback';}catch(e){}
@@ -204,14 +264,30 @@ PA.audio=()=>{
     master.connect(comp); comp.connect(actx.destination);
   }
   if(actx.state!=='running'&&actx.state!=='closed') actx.resume().catch(()=>{});
+  if(wantPiano()&&!pianoBufs&&!noSoundPage()) PA.loadPiano();
   return actx;
 };
 PA.audioRunning=()=>!!(actx&&actx.state==='running');
 ['pointerup','touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>{if(S.sound)PA.audio();},{capture:true,passive:true}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&actx&&actx.state!=='running'&&actx.state!=='closed')actx.resume().catch(()=>{});});
+// ページをひらいたら、さわる前に録音を読んでおく（さいしょの音からピアノになるように）。音を鳴らさないページ（<body data-nosound>）では読まない
+if(typeof window.addEventListener==='function') window.addEventListener('load',()=>{if(S.sound&&wantPiano()&&!noSoundPage()) PA.loadPiano();});
+const pianoNote=(ac,midi,t,dur,vel)=>{
+  const s=PA.pianoNearest(pianoBufs,midi), src=ac.createBufferSource(), g=ac.createGain(), a=vel/0.22*PIANO.gain;
+  src.buffer=s.buf; src.playbackRate.value=PA.pianoRate(midi,s.midi,S.pitchA);
+  g.gain.setValueAtTime(a,t);
+  // 鍵盤をはなす（ダンパー）。合成の音と同じく、dur でほぼ消えているようにする（つぎの和音とかさならない）
+  const off=Math.max(t+0.05,t+dur-0.15);
+  g.gain.setValueAtTime(a,off); g.gain.setTargetAtTime(0.0001,off,0.05);
+  src.connect(g); g.connect(master); src.start(t); src.stop(t+dur+0.3);
+  const voice={os:[src],g,t0:t}; voices.add(voice);
+  src.onended=()=>{try{src.disconnect();g.disconnect();}catch(e){}voices.delete(voice);};
+};
 PA.playNote=(midi,when=0,dur=1.6,vel=0.22)=>{
   if(!S.sound) return; const ac=PA.audio(); if(!ac) return;
-  const t=ac.currentTime+when+0.01, f=S.pitchA*Math.pow(2,(midi-69)/12); // 平均律・A4＝基準ピッチ
+  const t=ac.currentTime+when+0.01;
+  if(PA.voice()==='piano'){pianoNote(ac,midi,t,dur,vel);return;}
+  const f=S.pitchA*Math.pow(2,(midi-69)/12); // 平均律・A4＝基準ピッチ
   const g=ac.createGain(), lp=ac.createBiquadFilter();
   lp.type='lowpass';
   lp.frequency.setValueAtTime(Math.min(9000,f*9),t);
@@ -232,6 +308,7 @@ PA.playNote=(midi,when=0,dur=1.6,vel=0.22)=>{
   });
 };
 PA.stopSound=()=>{
+  soundGen++;
   if(actx){
     const t=actx.currentTime;
     voices.forEach(v=>{try{
@@ -463,7 +540,9 @@ PA.seg=(act,opts,cur,cls='')=>`<div class="seg ${cls}" role="group">`+opts.map((
 PA.keyChip=key=>`<button class="keychip" data-pa="keysheet" aria-haspopup="dialog">${PA.keyName(key)}<small>${PA.sigLabel(key)}</small></button>`;
 let sheetEl=null, sheetPrev=null;
 const isOpen=el=>!!el&&(el.open===true||(!!el.hasAttribute&&el.hasAttribute('open')));
+let sheetSeq=0;
 function sheet(html){
+  sheetSeq++;
   if(!sheetEl){
     sheetEl=document.createElement('dialog');sheetEl.className='sheet';
     // <dialog>がない古いブラウザ（iOS 15.3までなど）：open の印だけで出し入れする（.pa-fb＝画面いっぱいのうすい幕）
@@ -524,7 +603,8 @@ PA.openSettings=()=>{
     <div class="setrow"><label for="pa-naming">音の名前</label><select id="pa-naming"><option value="solfa">ドレミ</option><option value="en">CDE</option><option value="ja">ハニホ</option></select></div>
     <div class="setrow"><label for="pa-pitch">基準の音（ラ）</label><select id="pa-pitch"><option value="440">440Hz</option><option value="441">441Hz</option><option value="442">442Hz</option><option value="443">443Hz</option></select></div>
     <div class="setrow"><label for="pa-sound">音を鳴らす</label><select id="pa-sound"><option value="1">🔊 鳴らす</option><option value="0">🔇 鳴らさない</option></select></div>
-    <p class="note">音の高さはふつうのピアノと同じです。ラ（A4）の高さを440〜443Hz から選べます。教室のピアノが442Hz なら、442Hz に。<br>iPhone・iPad で音が出ないときは、消音（マナーモード）を解除してください。</p>
+    <div class="setrow"><label for="pa-voice">音色</label><select id="pa-voice"><option value="piano">🎹 ピアノ</option><option value="synth">🔔 シンプルな音</option></select></div>
+    <p class="note">音の高さはふつうのピアノと同じです。ラ（A4）の高さを440〜443Hz から選べます。教室のピアノが442Hz なら、442Hz に。<br>iPhone・iPad で音が出ないときは、消音（マナーモード）を解除してください。<br>ピアノの音は、Yamaha C5 の録音（Salamander Grand Piano V3、Alexander Holm、CC BY 3.0）を短く切って使っています。読みこめないときは、シンプルな音で鳴ります。</p>
     <div class="setsec"><h3>💾 きろくのひかえ</h3>
       <p class="note">iPhone・iPad では、このサイトを1週間ほどひらかないと、きろくがきえることがあります。ホーム画面に追加するか、ときどきファイルに書きだしておくと、あんしんです。<br>LINE などのリンクは Safari でひらくので、ホーム画面のアプリとは、きろくがべつになるよ。うつすときは、書きだし・読みこみを使ってね。</p>
       <div class="row"><button class="btn small" data-sheet="export">💾 きろくをファイルに書きだす</button><button class="btn small" data-sheet="import">📂 ファイルからよみこむ</button></div>
@@ -533,7 +613,7 @@ PA.openSettings=()=>{
       <div id="pa-backup-text" hidden></div>
     </div>`;
   const el=sheet(h);
-  el.querySelector('#pa-naming').value=S.naming; el.querySelector('#pa-pitch').value=String(S.pitchA); el.querySelector('#pa-sound').value=S.sound?'1':'0';
+  el.querySelector('#pa-naming').value=S.naming; el.querySelector('#pa-pitch').value=String(S.pitchA); el.querySelector('#pa-sound').value=S.sound?'1':'0'; el.querySelector('#pa-voice').value=S.voice;
   el.onclick=e=>{
     if(e.target===el||e.target.closest('[data-sheet="close"]')){el.close();return;}
     const b=e.target.closest('[data-sheet]'); if(!b) return;
@@ -547,6 +627,16 @@ PA.openSettings=()=>{
     if(t.id==='pa-naming') S.naming=t.value;
     if(t.id==='pa-pitch'){S.pitchA=+t.value;PA.playNote(69,0,1.6,0.25);}
     if(t.id==='pa-sound'){S.sound=t.value==='1';if(!S.sound)PA.stopSound();}
+    if(t.id==='pa-voice'){
+      S.voice=t.value;
+      if(PA.onStopDown) PA.onStopDown(); // ⏹ とおなじに、ページの再生（ならびの光る場所など）もとめる
+      PA.stopSound();
+      // ためしの音。録音を読むあいだに、とじた・音をとめた・音色をかえたときは鳴らさない
+      const g=soundGen, sq=sheetSeq;
+      const preview=()=>{const keep=voiceLock;voiceLock=null;PA.playNote(60,0,1.6,0.25);voiceLock=keep;}; // チャレンジでとめた音色ではなく、えらんだ音色で
+      if(S.voice==='piano') PA.loadPiano().then(()=>{if(g===soundGen&&sq===sheetSeq&&isOpen(el)&&S.voice==='piano') preview();});
+      else preview();
+    }
     PA.saveSettings(); updateSoundBar(); if(PA.onSettings) PA.onSettings();
   };
 };

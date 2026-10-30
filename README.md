@@ -133,7 +133,8 @@
 - `manifest.webmanifest` とアイコン（`assets/icons/`・`favicon.svg`）で、スマホのホーム画面に追加できます。
 - https では `sw.js`（サービスワーカー）を登録します。ページはネットがさき（3びょうまってこなければ保存したページ）、js・css・画像は保存したものをすぐ出してうらで新しくします。
   一度ひらけばネットがなくてもつかえます。
-- `sw.js` の `PRECACHE`・`VERSION` と各ページの `<head>` の説明・シェア用タグは `npm run build:meta` が書きます（手でなおさない）。
+- ピアノの録音（`assets/piano/`、30こ・約1MB）は、べつの保存場所にしまいます。サイトを新しくしても、録音がかわっていなければダウンロードしなおしません。
+- `sw.js` の `PRECACHE`・`VERSION`・`AUDIO`・`AUDIO_VERSION` と各ページの `<head>` の説明・シェア用タグは `npm run build:meta` が書きます（手でなおさない）。
 
 ## しくみ
 
@@ -142,7 +143,15 @@
 - 共通部分は `assets/core.js`（音楽理論・音の再生・鍵盤と楽譜の描画・設定・目次・リンク・れんしゅうの回・調のきろく）と `assets/app.css`。
   つかいかたは `assets/core.js` のさいしょのコメント「つかいかた」にまとめています。
 - 音は Web Audio で、平均律・ラ（A4）＝440〜443Hz（設定で切りかえ）の正しい高さで鳴らします。表示する音の高さ＝鳴る音の高さです。
+  ふだんはピアノの録音（Yamaha C5）を鳴らします。いちばん近い録音を再生速度で高さ合わせし、録音のピアノ全体のずれ（＋3.6セント）を直しています。
+  録音が読めないとき・古いブラウザ・設定で「シンプルな音」のときは、合成の音で鳴ります。🏆 チャレンジは、はじめた時の音色でさいごまで鳴らします。
 - iOS Safari 12でもうごくように、`?.`・`??`・クラスのフィールドはつかいません。
+
+## 音のクレジット
+
+- ピアノの音：[Salamander Grand Piano V3](https://sfzinstruments.github.io/pianos/salamander/)（Yamaha C5、Alexander Holm、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)）。
+  [Tone.js が公開している版](https://tonejs.github.io/audio/salamander/)（3半音おき）を、`tools/trim-piano.mjs` ではじめの6.3秒だけに切って使っています（音のつくりなおしはしていません）。
+  アプリの中では、頭の無音をとってモノラルにし、高さを上のように直して鳴らします。
 
 ## ローカルで動かす・テスト
 

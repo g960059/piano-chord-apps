@@ -419,7 +419,7 @@ const state={mode:'free',level:1,q:null,answer:null,left:null,right:0,hint:0,tot
  *  q・answer・left・resShown：れんしゅう・ランキングを見ているあいだとっておくチャレンジのもんだい
  *  best：チャレンジでクリアしたいちばん上のレベル（レベルのボタンの 🏆）
  *  けっか：newBest・endedEarly・name（{cands,sel,pick,custom}）・sending・sendError・submitted（サーバーのへんじ）・closed（{kind:'already'|'gone',msg}） */
-const ch={phase:'intro',runId:null,seed:0,offline:false,offWhy:'',startedAt:0,run:null,vrng:null,heard:false,event:null,capped:false,
+const ch={phase:'intro',voice:null,runId:null,seed:0,offline:false,offWhy:'',startedAt:0,run:null,vrng:null,heard:false,event:null,capped:false,
   q:null,answer:null,left:null,resShown:false,best:0,connectError:'',connectBusy:false,newBest:false,endedEarly:false,
   name:{cands:[],sel:0,pick:0,custom:''},sending:false,sendError:null,submitted:null,closed:null};
 // 📊 ランキング：period＝'week'｜'all'、data[period]＝{top, me, week}
@@ -452,7 +452,7 @@ const unsent=()=>!!ch.run&&ch.phase==='result'&&!ch.offline&&!ch.submitted&&!ch.
 function chSaved(){
   if(!ch.run||!(ch.phase==='play'||unsent())) return null;
   const v=chView();
-  return {runId:ch.runId,seed:ch.seed,offline:ch.offline,offWhy:ch.offWhy,startedAt:ch.startedAt,answers:ch.run.answers.slice(),phase:ch.phase,
+  return {voice:ch.voice,runId:ch.runId,seed:ch.seed,offline:ch.offline,offWhy:ch.offWhy,startedAt:ch.startedAt,answers:ch.run.answers.slice(),phase:ch.phase,
     q:v.answer?v.q:null,answer:v.answer||null,event:v.answer?ch.event:null,resShown:!!(v.answer&&v.resShown),
     left:v.answer?null:v.left,heard:!v.answer&&ch.heard,newBest:ch.newBest,endedEarly:ch.endedEarly};
 }
@@ -464,7 +464,8 @@ function chRestore(c){
   if(!ok||c.startedAt>Date.now()+6e4||Date.now()-c.startedAt>RUN_KEEP) return;
   if(c.phase==='result'&&!c.answers.length) return;
   const rb=rebuildRun(c.seed,c.answers);
-  Object.assign(ch,{runId:c.offline?null:c.runId,seed:c.seed,offline:c.offline,offWhy:c.offline?(c.offWhy==='time'||c.offWhy==='busy'?c.offWhy:'net'):'',startedAt:c.startedAt,
+  // 音色のない前の版の記録は、合成の音で鳴らしていた
+  Object.assign(ch,{voice:c.voice==='piano'?'piano':'synth',runId:c.offline?null:c.runId,seed:c.seed,offline:c.offline,offWhy:c.offline?(c.offWhy==='time'||c.offWhy==='busy'?c.offWhy:'net'):'',startedAt:c.startedAt,
     run:rb.run,vrng:rb.vrng,heard:false,event:null,capped:false,q:null,answer:null,left:null,resShown:false,
     newBest:c.newBest===true,endedEarly:c.endedEarly===true,sending:false,sendError:null,submitted:null,closed:null});
   const st=rb.run.state;
@@ -485,7 +486,7 @@ function chRestore(c){
   }
 }
 function chClear(){
-  Object.assign(ch,{phase:'intro',runId:null,seed:0,offline:false,offWhy:'',startedAt:0,run:null,vrng:null,heard:false,event:null,capped:false,
+  Object.assign(ch,{voice:null,phase:'intro',runId:null,seed:0,offline:false,offWhy:'',startedAt:0,run:null,vrng:null,heard:false,event:null,capped:false,
     q:null,answer:null,left:null,resShown:false,connectError:'',connectBusy:false,newBest:false,endedEarly:false,sending:false,sendError:null,submitted:null,closed:null});
   if(state.mode==='ch'){state.q=null;state.answer=null;state.left=null;state.resShown=false;}
 }
@@ -524,6 +525,21 @@ function newEar(){
   const lv=curLevel();
   state.q=makeQ(lv,state.q&&state.q.type,state.mode);
   state.answer=null; state.resShown=false; state.left=replaysOf(lv,state.mode); state.hinted=false; state.qn++; save();
+}
+// チャレンジがピアノではじまったのに、まだ録音が読めていない（とちゅうでページをひらきなおした）：
+// 読めるまで、チャレンジの音を出すボタン（CH_SOUND）はうけつけない（音色がとちゅうでかわらないように・回数だけへらないように）。
+// 読めなければ、このチャレンジはさいごまで合成の音にする（あとから読めてもかえない）
+const CH_SOUND=new Set(['chhear','eplay','earp','eans','eab','eres','ecmp','enew']);
+const chGated=()=>state.mode==='ch'&&ch.phase==='play'&&ch.voice==='piano'&&!PA.pianoReady();
+let chGateBusy=false;
+function chGateLoad(){
+  if(chGateBusy||!chGated()) return;
+  chGateBusy=true;
+  PA.loadPiano().then(ok=>{
+    chGateBusy=false;
+    if(!ok&&ch.phase==='play'&&ch.voice==='piano'){ch.voice='synth';save();}
+    render();
+  });
 }
 function playEar(arp=false){
   const q=state.q; if(!q) return;
@@ -609,6 +625,7 @@ function recordBest(r){
 function chConnect(){
   if(ch.phase==='connecting') return;
   PA.stopSound(); chClear(); ch.phase='connecting'; save(); render();
+  if(PA.settings.voice==='piano') PA.loadPiano(); // つなぐあいだに読んでおく（はじめた時の音色でさいごまで）
   api('api/run',{method:'POST',body:{}}).then(d=>{
     if(typeof d.runId!=='string'||!UUID_RE.test(d.runId)||!isSeed(d.seed)) throw errOf(0,OFF_MSG);
     if(ch.phase==='connecting') chBegin(d.runId.toLowerCase(),d.seed,false);
@@ -619,7 +636,8 @@ function chConnect(){
 }
 function chBegin(runId,seed,offline){
   const rb=rebuildRun(seed,[]);
-  Object.assign(ch,{phase:'play',runId,seed,offline,offWhy:offline?(ch.connectBusy?'busy':'net'):'',startedAt:Date.now(),run:rb.run,vrng:rb.vrng,connectError:'',connectBusy:false,
+  // とちゅうでピアノの録音が読めても音色がかわらないように、はじめた時の音色でさいごまで鳴らす（render で PA.lockVoice）
+  Object.assign(ch,{phase:'play',voice:PA.voice(),runId,seed,offline,offWhy:offline?(ch.connectBusy?'busy':'net'):'',startedAt:Date.now(),run:rb.run,vrng:rb.vrng,connectError:'',connectBusy:false,
     newBest:false,endedEarly:false,sending:false,sendError:null,submitted:null,closed:null});
   chAsk(state.mode==='ch');
 }
@@ -989,6 +1007,8 @@ function heroHTML(){
     const st=ch.run.state, e=ch.event, streak=state.answer&&(e==='up'||e==='master')?CLEAR:st.streak;
     score=`<div class="score"><b>🏆 レベル${lv}</b> ${heartsHTML(st.lives,!!state.answer&&state.answer!==q.type)}`
       +`<span role="img" aria-label="${CLEAR}もん中${streak}もんれんぞく正解">${dots(CLEAR,streak,'pdots')}</span></div>`;
+    // ひらきなおしたピアノのチャレンジで、録音を読んでいるあいだ（ボタンはうけつけない）
+    if(chGated()) score+=`<div class="msg" role="status" style="margin-top:8px">⏳ ピアノの音を用意しているよ。少しまってね</div>`;
   }
   else score=`<div class="score"><b>⭐ ${state.right} / ${state.total}</b>${state.hint?`<span class="sub" aria-label="ヒントでできた${state.hint}もん">💡 ${state.hint}</span>`:''}<span class="sub">れんぞく${state.streak}</span>${state.streak?`<span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(state.streak,10))}</span>`:''}</div>`;
   const R=replaysOf(lv,state.mode);
@@ -1034,6 +1054,8 @@ function actionsHTML(){
   return `<button class="btn night" data-act="eplay" data-hot="listen"${off}>🔁 もういちどきく</button><button class="btn" data-act="earp"${off}>🎶 ばらばらにきく</button>`;
 }
 function render(){
+  PA.lockVoice(state.mode==='ch'&&ch.phase==='play'?ch.voice:null); // チャレンジの画面だけ、はじめた時の音色（れんしゅう・せっていはふつうの音色）
+  chGateLoad();
   // チャレンジでこたえる前は「くらべてきく」をつかえない。れんしゅうではつかえるが「ヒントでできた」になる
   const open=!!state.q&&!state.answer&&!sumView(), lock=open&&state.mode==='ch';
   const cmp=state.mode==='rank'?'':`<section class="card">
@@ -1073,6 +1095,7 @@ PA.onSettings=render;
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-act]'); if(!el||el.disabled) return;
   const a=el.dataset.act, v=el.dataset.v;
+  if(CH_SOUND.has(a)&&chGated()){PA.announce('ピアノの音を用意しているよ。少しまってね');chGateLoad();return;}
   if(a==='etop'){
     state.topOpen=v==='open'; render();
     // ひらいたら、カードのいちばん上（えらんでいるれんしゅう・チャレンジ）へフォーカス。とじたら PA.paint が1行のボタンへもどす

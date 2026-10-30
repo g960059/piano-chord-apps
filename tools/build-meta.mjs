@@ -106,12 +106,21 @@ const hash=crypto.createHash('sha256');
 files.forEach(f=>{hash.update(f+'\0');hash.update(now(f));hash.update('\0');});
 const VERSION=hash.digest('hex').slice(0,10);
 const PRECACHE=['./',...files];
+// ピアノの録音：べつの保存場所（sw.js の AUDIO_CACHE）。録音がかわったときだけ AUDIO_VERSION がかわる
+const pianoDir='assets/piano';
+const AUDIO=fs.existsSync(path.join(ROOT,pianoDir))?fs.readdirSync(path.join(ROOT,pianoDir)).filter(f=>/\.mp3$/.test(f)).sort().map(f=>pianoDir+'/'+f):[];
+const ah=crypto.createHash('sha256');
+AUDIO.forEach(f=>{ah.update(f+'\0');ah.update(fs.readFileSync(path.join(ROOT,f)));ah.update('\0');});
+const AUDIO_VERSION=AUDIO.length?ah.digest('hex').slice(0,10):'none';
 const swFile='sw.js';
 if(fs.existsSync(path.join(ROOT,swFile))){
   const sw=rd(swFile);
   if(!/const VERSION='[^']*';/.test(sw)||!/const PRECACHE=\[[\s\S]*?\];/.test(sw)) throw new Error('sw.js に const VERSION / const PRECACHE が見つかりません');
+  if(!/const AUDIO_VERSION='[^']*';/.test(sw)||!/const AUDIO=\[[\s\S]*?\];/.test(sw)) throw new Error('sw.js に const AUDIO_VERSION / const AUDIO が見つかりません');
   const n=sw.replace(/const VERSION='[^']*';/,()=>`const VERSION='${VERSION}';`)
-    .replace(/const PRECACHE=\[[\s\S]*?\];/,()=>'const PRECACHE=[\n'+PRECACHE.map(f=>`  '${f}',`).join('\n')+'\n];');
+    .replace(/const PRECACHE=\[[\s\S]*?\];/,()=>'const PRECACHE=[\n'+PRECACHE.map(f=>`  '${f}',`).join('\n')+'\n];')
+    .replace(/const AUDIO_VERSION='[^']*';/,()=>`const AUDIO_VERSION='${AUDIO_VERSION}';`)
+    .replace(/const AUDIO=\[[\s\S]*?\];/,()=>'const AUDIO=['+(AUDIO.length?'\n'+AUDIO.map(f=>`  '${f}',`).join('\n')+'\n':'')+'];');
   if(n!==sw) out.set(swFile,n);
 }else console.warn('build-meta: sw.js がありません');
 
