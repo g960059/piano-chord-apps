@@ -457,7 +457,8 @@ PA.midi=(()=>{
   };
   M.pedal=()=>{}; // いまはつかわない（おさえている音だけで和音をきめる）
   M.held=()=>new Set(held);
-  M.reset=()=>{held.clear();clearTimeout(timer);timer=0;chordDone=false;};
+  // おさえていた鍵の画面のへこみも、もどしてからわすれる（機器がはずれたら、はなした知らせはもうこない）
+  M.reset=()=>{held.forEach(m=>{try{PA.keyLight(m,false);}catch(e){}});held.clear();clearTimeout(timer);timer=0;chordDone=false;};
   M.devices=()=>devs.slice();
   M.active=()=>devs.length>0;
   M.setDevices=names=>{

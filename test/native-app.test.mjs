@@ -179,3 +179,12 @@ test('app.css：おしたときの見た目（:active と .is-pressed）・動�
   // ページごとの .echoice:active はなくして app.css にまとめた
   ['chroma-quiz.html','ending-quiz.html','ear.html'].forEach(f=>assert.ok(!fs.readFileSync(path.join(root,f),'utf8').includes('.echoice:not([disabled]):active'),f));
 });
+
+test('PA.midi.reset：おさえていた鍵の画面のへこみも、もどす（機器がはずれたとき）',()=>{
+  const PA=loadPA(); const lit=[];
+  PA.keyLight=(m,on)=>lit.push([m,on]);
+  PA.midi.setDevices(['Piano']); PA.midi.note(true,60,90); PA.midi.note(true,64,90);
+  PA.midi.setDevices([]);
+  assert.deepEqual(lit,[[60,true],[64,true],[60,false],[64,false]]);
+  assert.equal(PA.midi.held().size,0);
+});
