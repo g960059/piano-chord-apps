@@ -16,7 +16,7 @@ test('目次：PA.UNITS・PA.APPS・PA.app',()=>{
   eq(PA.UNITS[0].apps,['chord-build','chord-quiz','cadence','chord-table']);
   eq(PA.UNITS[2].apps,['diatonic','inversion','interval']);
   eq(PA.UNITS[5].apps,['doppel','secondary','aug6','neapolitan','borrowed','dim-halfdim','enharmonic','chroma-quiz']);
-  eq(PA.UNITS[6].apps,['ear']);
+  eq(PA.UNITS[6].apps,['ear','progression']);
   const ids=PA.UNITS.flatMap(u=>u.apps);
   assert.equal(new Set(ids).size,ids.length,'おなじアプリは1回だけ');
   eq(PA.APPS.map(a=>a.id).sort(),[...ids].sort());

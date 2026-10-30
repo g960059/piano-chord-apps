@@ -1,0 +1,525 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- meta:start -->
+<meta name="description" content="Ⅰ→Ⅳ→Ⅴ7→Ⅰ などのならびを聴いて、「？」の和音を当てる。おちつく・もどりたい感じ、いちばん下と上の音の動きも">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ピアノ和音アプリ">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="ならびの聴きわけ｜ピアノ和音アプリ">
+<meta property="og:description" content="Ⅰ→Ⅳ→Ⅴ7→Ⅰ などのならびを聴いて、「？」の和音を当てる。おちつく・もどりたい感じ、いちばん下と上の音の動きも">
+<meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/progression.html">
+<meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ピアノ和音アプリ">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<!-- meta:end -->
+<meta name="theme-color" content="#fdf8f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>ならびの聴きわけ</title>
+<link rel="stylesheet" href="assets/app.css">
+<style>
+.hero{border-top:6px solid #c98500;scroll-margin-top:64px}
+.score{font-size:16px;display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;margin-top:8px}
+.qtitle{font-size:clamp(19px,5.6vw,24px);font-weight:800;display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;line-height:1.3;margin-top:10px}
+.qkey{background:var(--soft);border-radius:12px;padding:2px 12px}
+.qsub{color:var(--sub);font-size:15px;margin:4px 0 0}
+/* ステップ：せまい画面は2れつ（5つめは1行）、広い画面は5つならぶ */
+.seg.stseg{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-radius:18px}
+.seg.stseg button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:0;min-width:0;min-height:54px;padding:4px 4px;border-radius:15px;line-height:1.2}
+.seg.stseg button:last-child{grid-column:1/-1}
+.stseg b{font-size:15px;white-space:nowrap}
+.stseg .mk{margin-left:3px;font-size:13px;color:var(--ok)}
+.stseg small{font-size:12px;font-weight:700;color:var(--sub);word-break:keep-all;overflow-wrap:anywhere}
+.stseg button.on small{color:var(--ink)}
+@media (min-width:600px){.seg.stseg{grid-template-columns:repeat(5,minmax(0,1fr))}.seg.stseg button:last-child{grid-column:auto}}
+.stdesc{font-size:14px;color:var(--sub);margin:6px 2px 0;line-height:1.45}
+.stnow{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:15px;padding-bottom:8px;border-bottom:1px dashed var(--line);margin-bottom:8px}
+.stnow .btn{min-height:40px;padding:2px 12px;font-size:14px}
+.stdesc b{color:var(--ink)}
+.rec{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;margin-top:6px;font-size:14px;color:var(--sub);font-weight:700}
+.rec b{color:var(--ink)}
+.rinfo{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:8px;font-size:14px;color:var(--sub);font-weight:700}
+.soundhint{background:#fff4d6;color:#6e4c00;border-radius:12px;padding:4px 4px 4px 10px}
+.soundhint .btn{background:#fff;border:2px solid #ecc967}
+.sessrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:8px}
+.sessrow .btn{min-height:44px;padding-top:6px;padding-bottom:6px}
+/* ならび（カード） */
+.seq{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
+.seq.n5{grid-template-columns:repeat(5,minmax(0,1fr))}
+.scw{position:relative;min-width:0;display:flex}
+.scw:not(:last-child)::after{content:"→";position:absolute;right:-11px;top:20px;font-size:12px;font-weight:800;color:var(--sub);pointer-events:none}
+.scard{flex:1 1 auto;border-radius:14px;padding:6px 2px 4px;background:var(--l);color:var(--t,var(--c));border:3px solid var(--c);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:64px;min-width:0}
+.scard .num{font-size:22px;font-weight:800;line-height:1.2}
+.scard .inv{font-size:11px;font-weight:800;line-height:1.2;text-align:center;word-break:keep-all;overflow-wrap:anywhere}
+.scard .nm{font-size:12px;font-weight:700;line-height:1.3;text-align:center;display:flex;flex-direction:column-reverse;align-items:center;margin-top:2px}
+.scard .nm>span{display:block;white-space:nowrap}
+.scard .nm>.lh{border-top:1px dashed currentColor;margin-top:2px;padding-top:1px;opacity:.85}
+.scard.ask{border-style:dashed}
+.scard.hid .num{font-size:18px}
+.scard.ask .num{font-size:24px}
+.scard.on{background:var(--c);color:#fff;transform:translateY(-3px);box-shadow:0 4px 10px rgba(40,30,50,.15)}
+@media (max-width:479px){.scard .inv.fm{display:none}}
+@media (max-width:374px){.seq{gap:8px}.scw:not(:last-child)::after{right:-9px}.seq.n5 .scard .num{font-size:19px}.seq.n5 .scard .nm{font-size:11px}}
+.keyline{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:6px 8px;margin-top:8px}
+.keyline .kn{font-size:14px;color:var(--sub);font-weight:700}
+.tgl{min-height:44px;padding:6px 12px;border-radius:999px;font-size:14.5px;background:var(--soft2);border:2px solid var(--line);color:var(--sub);font-weight:800}
+.tgl[aria-pressed="true"]{background:#fff1cc;border-color:#c98500;color:#6e4c00}
+/* こたえのボタン */
+.echoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 0;scroll-margin-bottom:96px}
+.echoices.odd .echoice:last-child{grid-column:1/-1}
+.echoices.one{grid-template-columns:1fr}
+.echoice{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:72px;padding:8px 6px;border-radius:18px;
+  background:var(--soft2);color:var(--t,var(--c));border:3px solid transparent;font-weight:800;line-height:1.25;text-align:center;min-width:0}
+.echoice .wd{font-size:24px}
+.echoice .wd.sm{font-size:16.5px;word-break:keep-all;overflow-wrap:anywhere}
+.echoice .lb{font-size:13px;font-weight:700}
+.echoice .ctr{display:block;margin-top:2px}
+.echoice.right{background:#dcf5e8;border-color:var(--ok);color:#137a4f}
+.echoice.wrong{background:#fde4e7;border-color:var(--ng);color:#a3273a}
+.echoice[disabled]{cursor:default}
+.echoice.dim[disabled]{opacity:.55}
+@media (min-width:520px){.echoices.n3,.echoices.n5{grid-template-columns:repeat(3,minmax(0,1fr))}.echoices.n4{grid-template-columns:repeat(4,minmax(0,1fr))}.echoices.odd .echoice:last-child{grid-column:auto}.echoices.one{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-height:500px) and (orientation:landscape){.echoice{min-height:56px;padding-top:4px;padding-bottom:4px}.qtitle{scroll-margin-top:56px}}
+/* ためしに入れて聴く */
+.trybox{margin-top:10px}
+.trybtns{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,128px),1fr));gap:8px;margin-top:8px}
+.trybtns .btn{min-height:48px;padding:6px 8px;border-radius:14px;background:#fff;border:3px solid var(--c);color:var(--ink);font-size:15px;line-height:1.25;white-space:normal;word-break:keep-all;overflow-wrap:anywhere}
+.trybtns .btn.on{background:var(--c);color:#fff}
+.fb,.msg{scroll-margin-bottom:96px;scroll-margin-top:72px}
+.fb{margin-top:12px}
+.fb .sm{display:block;font-size:15px;margin-top:6px}
+.fb.still{animation:none}
+.fb .row{margin-top:10px}
+.abrow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
+.abrow .btn{flex-direction:column;gap:0;min-height:56px;padding:6px 8px;border-radius:16px;line-height:1.25;background:#fff;border:3px solid var(--c);color:var(--ink);word-break:keep-all;overflow-wrap:anywhere}
+.abrow .btn small{font-size:13px;font-weight:700;color:var(--c)}
+.abrow .btn.on{background:var(--c);color:#fff}
+.abrow .btn.on small{color:#fff}
+.abrow .btn span svg.ic,.trybtns .btn span svg.ic{margin-right:4px} /* PA.icon と字のあいだ */
+.staffw{margin:0 auto}
+.sumtx{display:flex;flex-direction:column;line-height:1.35;padding:6px 0}
+.sumtx small{font-weight:400;color:var(--sub);font-size:13px}
+.opt{display:flex;flex-direction:column;gap:6px;margin-top:12px}
+.opt>small{font-size:13px;color:var(--sub)}
+.tips ul{margin:0;padding-left:1.3em}
+.tips li{margin:6px 0}
+.nw{white-space:nowrap}
+.actionbar .btn{flex:1 1 auto}
+</style>
+</head>
+<body>
+<header class="appbar" id="appbar"></header>
+<main class="page" id="view"></main>
+<div class="actionbar" id="actions"></div>
+<script src="assets/core.js"></script>
+<script>
+/* ならびの聴きわけ：Ⅰからはじまる和音のならびを聴いて、「？」の1つについて答える（ステップ1〜5。れんしゅうだけ）。
+ * ならび・もんだい・説明は PA.prog（core.js）。音の高さは PA.ending とおなじ左手のえらびかた。
+ * 保存（'progression'）：step（1〜5）・slow（🐢 ゆっくり）・rec（ステップごとの {right, hint, total, streak, best}）・openSet・mixAt（その回のとちゅうでステップをかえた：回の startedAt）・
+ *   いまのもんだい q（PA.prog.validQ でたしかめる）・ans・hint（こたえる前に「ためしに入れて聴く」をつかった）・played・bags（こたえのふくろ）
+ * れんしゅうの回（📝 きょうの5もん・リンクの n）は PA.session（sig＝'step=…'）。回のステップは sig からよむ（とっておいた回にもどったときも）。
+ * こたえる前は、カードの名前をかくす（P.shown。ほかの和音の名前からこたえがわかってしまわないように）
+ * リンク：step＝1〜5、n＝1〜20、slow＝1（PA.prog.readLink）。よんだらアドレスからはずす */
+const P=PA.prog, E=PA.ending, QUIZ='progression', mod=PA.mod;
+const STEPS=P.STEPS, ST=n=>STEPS[n-1]||STEPS[0];
+const CLEAR=10; // れんぞくで ✓
+const isInt=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
+const isObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
+const KD=PA.keyDeck;
+
+/* ===== リンク（先生がおくる宿題） ===== */
+const LINK=P.readLink(PA.params());
+const FROM_LINK=LINK.step!=null||LINK.n!=null||LINK.slow;
+const sigOf=step=>'step='+step;
+
+/* ===== 状態 ===== */
+const newRec=()=>({right:0,hint:0,total:0,streak:0,best:0});
+const Q={step:1,slow:false,rec:{1:newRec(),2:newRec(),3:newRec(),4:newRec(),5:newRec()},openSet:false,mixAt:0,
+  q:null,qid:0,ans:null,hint:false,played:false,cur:-1,playing:null,muteHint:false,fresh:false,sum:false};
+let bags={};
+function cleanRec(r){
+  if(!isObj(r)||!isInt(r.total,0,1e6)||!isInt(r.right,0,r.total)) return null;
+  const hint=isInt(r.hint,0,r.total-r.right)?r.hint:0, streak=isInt(r.streak,0,r.right+hint)?r.streak:0;
+  return {right:r.right,hint,total:r.total,streak,best:isInt(r.best,streak,1e6)?r.best:streak};
+}
+let sess;
+// れんしゅうの回のステップ（回の sig＝'step=…' から。回がなければ 0）
+const sessStepOf=()=>{const st=sess&&sess.state(), m=st&&/^step=([1-5])$/.exec(st.sig||'');return m?+m[1]:0;};
+// その回のとちゅうでステップをかえたか（mixAt＝その回の startedAt）
+const sessMixed=()=>{const st=sess&&sess.state();return !!st&&!!Q.mixAt&&st.startedAt===Q.mixAt;};
+const markMix=()=>{const st=sess&&sess.state();if(st) Q.mixAt=st.startedAt;};
+(function load(){
+  const d0=PA.store.get(QUIZ,{}), d=isObj(d0)?d0:{};
+  if(isInt(d.step,1,5)) Q.step=d.step;
+  Q.slow=d.slow===true; Q.openSet=d.openSet===true;
+  if(isObj(d.rec)) [1,2,3,4,5].forEach(n=>{const r=cleanRec(d.rec[n]);if(r) Q.rec[n]=r;});
+  if(isObj(d.bags)) P.BAG_NAMES.forEach(k=>{const b=d.bags[k];if(Array.isArray(b)&&b.length<=20&&b.every(x=>typeof x==='string'&&x.length<=12)) bags[k]=b.slice();});
+  if(isInt(d.mixAt,1,1e15)) Q.mixAt=d.mixAt;
+  if(LINK.step) Q.step=LINK.step;
+  if(LINK.slow) Q.slow=true;
+  // とちゅうのもんだい（読みなおし・「もどる」）はそのまま
+  if(P.validQ(d.q)&&d.q.step===Q.step){
+    startQ({step:d.q.step,type:d.q.type,t:d.q.t,i:d.q.i,minor:d.q.minor,keyIdx:d.q.keyIdx});
+    if(P.choices(Q.q).indexOf(d.ans)>=0) Q.ans=d.ans;
+    Q.hint=d.hint===true; Q.played=d.played===true;
+  }
+  // れんしゅうの回：リンクに n があればはじめる（おなじリンクのとちゅうならつづき）。なければのこっている回をよむだけ
+  sess=LINK.n?PA.session(QUIZ,{n:LINK.n,sig:sigOf(Q.step)}):PA.session(QUIZ,{sig:sigOf(Q.step)});
+  // おわった回：おわってすぐ（「もどる」で読みなおした）ならけっかのカード。前におわった回はかたづける
+  if(sess.finished()){const st=sess.state(); if(st&&st.endedAt!=null&&Date.now()-st.endedAt<10*6e4) Q.sum=true; else sess.clear();}
+  if(!sessMixed()) Q.mixAt=0;
+  // とちゅうの回とちがうステップでひらいた（リンクの step だけ・前のステップのまま）：ステップをかえたことにする
+  if(sess.active()&&sessStepOf()&&sessStepOf()!==Q.step) markMix();
+})();
+if(FROM_LINK||location.search){try{history.replaceState(history.state,'',PA.url(QUIZ)+location.hash);}catch(e){}}
+function save(){
+  PA.store.set(QUIZ,{v:1,step:Q.step,slow:Q.slow,rec:Q.rec,openSet:Q.openSet,mixAt:Q.mixAt,bags,
+    q:Q.q,ans:Q.ans,hint:Q.hint,played:Q.played});
+}
+
+/* ===== もんだい ===== */
+function startQ(q){Object.assign(Q,{q,qid:Q.qid+1,ans:null,hint:false,played:false,cur:-1,muteHint:false});}
+function newQ(){startQ(P.make(Q.step,{bags,prev:Q.q}));}
+const keyOfQ=()=>P.key(Q.q);
+const dataOf=()=>P.build(Q.q);
+const feel=c=>P.FEEL[c]||'';
+// こたえの名前（ただの文字）
+const ansText=c=>Q.q.type==='chord'?`${E.LABEL[c]}「${feel(c)}」`:P.choiceLabel(Q.q,c);
+// ならびの名前（ただの文字）。「？」の場所：chord はこたえる前は「？」、bass は名前に（？）
+const seqText=(data,reveal)=>data.map((c,i)=>i!==Q.q.i?c.label:Q.q.type==='chord'&&!reveal?'？':Q.q.type==='bass'?c.label+'（？）':c.label).join('→');
+const recLabel=(q,c)=>q.type==='bass'?P.BASS_ROLES[c].name+'（'+P.BASS_ROLES[c].form+'）':P.choiceLabel(q,c);
+function answer(v){
+  const q=Q.q, ok=v===P.answer(q), hint=ok&&Q.hint, r=Q.rec[Q.step];
+  Q.ans=v; r.total++; PA.answerFx(ok);
+  if(ok&&!hint){r.right++;r.streak++;r.best=Math.max(r.best,r.streak);}
+  else if(hint) r.hint++; // ヒントでできた：⭐ はふえないが、れんぞくもきれない
+  else r.streak=0;
+  if(sess.active()){
+    const data=dataOf(), what=q.type==='chord'?'？の和音':q.type==='bass'?'？のいちばん下':'いちばん上';
+    const label=`${PA.keyName(keyOfQ())}　${seqText(data)}　${what}：${recLabel(q,P.answer(q))}${ok?'':'（選んだ：'+recLabel(q,v)+'）'}`;
+    sess.record({ok,hint,label:label.slice(0,80),key:KD?KD.id(q.minor,q.keyIdx):undefined});
+  }
+}
+
+/* ===== 音 ===== */
+let token=0, playAt=0;
+const freshPlay=()=>Date.now()-playAt<600; // 2どおしの2回めで ⏹ をおしてすぐとまらないように
+function stop(){token++;Q.playing=null;Q.cur=-1;alt=false;PA.stopSound();PA.lockVoice(null);}
+const SF=()=>Q.slow?1.5:1;
+// 鳴っている和音だけを目立たせる（描きなおさない：フォーカスやひらいたところがそのまま）。i＝-1 でもとにもどす
+// alt＝画面とちがうならび（ためし・選んだほう）を鳴らしている：がくふは目立たせない。こたえたあとはカードも（名前や音がちがうので）
+let alt=false;
+const curCard=()=>alt&&Q.ans?-1:Q.cur, curStaff=()=>alt?-1:Q.cur;
+function setCur(i){
+  Q.cur=i;
+  const ci=curCard(), si=curStaff();
+  document.querySelectorAll('#view .scard').forEach((el,j)=>el.classList.toggle('on',j===ci));
+  document.querySelectorAll('#view .staffw g[data-col]').forEach(g=>g.setAttribute('opacity',si<0||+g.dataset.col===si?1:0.35));
+}
+// ならびのはじめ：とちゅうでピアノの録音が読めても音色がかわらないように、はじめの音色でさいごまで（stop でとく）
+function begin(what){stop(); Q.playing=what; playAt=Date.now(); PA.lockVoice(PA.voice()); return token;}
+function finish(my){if(my!==token) return; Q.playing=null; Q.cur=-1; PA.lockVoice(null); render();}
+// ならびをながす。what＝鳴らしているもの（'q'｜'try:…'｜'mine'｜'right'）。カードは鳴っている和音を目立たせる
+async function playSeq(data,what){
+  const my=begin(what), sf=SF();
+  alt=what!=='q'&&what!=='right';
+  Q.cur=0; render(); // ボタンを「⏹ とめる」に（描きなおすのは、はじめとおわりだけ）
+  for(let i=0;i<data.length;i++){
+    const last=i===data.length-1;
+    setCur(i);
+    PA.chord([...data[i].lh,...data[i].rh].map(n=>n.midi),{dur:last?2.6*sf:1.15*sf});
+    await PA.sleep((last?2000:1000)*sf); if(my!==token) return;
+  }
+  finish(my);
+}
+// 1つの和音だけ（鳴りおわったら目立たせるのをやめる）
+async function playOne(i){
+  const d=dataOf(); if(!d[i]) return;
+  const was=Q.playing; stop(); const my=token;
+  if(was) render(); // ならびのとちゅう：ボタンを「⏹ とめる」からもどす
+  setCur(i);
+  PA.chord([...d[i].lh,...d[i].rh].map(n=>n.midi),{dur:2.2});
+  await PA.sleep(2200); if(my===token) setCur(-1);
+}
+// いちばん上の音だけ（メロディーのように）
+async function playTop(){
+  const tl=P.topLine(dataOf()), my=begin('top'), sf=SF();
+  Q.cur=0; render();
+  for(let i=0;i<tl.length;i++){
+    setCur(i);
+    PA.playNote(tl[i].midi,0,i===tl.length-1?2*sf:1.1*sf,0.22);
+    await PA.sleep((i===tl.length-1?1500:800)*sf); if(my!==token) return;
+  }
+  finish(my);
+}
+const soundOff=()=>{if(PA.settings.sound) return false; Q.muteHint=true; render(); return true;};
+
+/* ===== 画面 ===== */
+const N=n=>PA.nmH(n);
+const recOf=n=>Q.rec[n];
+// ステップのえらびかた：はじめての人（まだ1もんもこたえていない）と「かえる」をおしたときだけ大きくひらく。
+// ふだんは「ステップN：…［かえる］」の1行（こたえる画面の主役は もんだい なので）
+let stepOpen=null;
+const stepsOpen=()=>stepOpen!=null?stepOpen:!STEPS.some(s=>recOf(s.n).total>0);
+function stepsHTML(){
+  if(!stepsOpen()) return `<div class="stnow"><span><b>ステップ${Q.step}</b>：${ST(Q.step).name}</span><button class="btn small" data-act="pstepopen" aria-expanded="false">かえる</button></div>`;
+  return `<div class="seg stseg" role="group" aria-label="ステップ">`+STEPS.map(s=>{
+    const on=s.n===Q.step, done=recOf(s.n).best>=CLEAR;
+    return `<button class="${on?'on':''}" data-act="pstep" data-v="${s.n}" aria-pressed="${on}" aria-label="ステップ${s.n}：${s.name}${done?`。${CLEAR}もんれんぞくできた`:''}">`
+      +`<b>ステップ${s.n}${done?'<span class="mk" aria-hidden="true">✓</span>':''}</b><small aria-hidden="true">${s.name}</small></button>`;
+  }).join('')+`</div><p class="stdesc"><b>ステップ${Q.step}</b>：${ST(Q.step).desc}</p>`;
+}
+function scoreHTML(){
+  const r=recOf(Q.step), rec=stepsOpen(); // ステップごとのさいこうは、ステップをえらぶときだけ
+  return `<div class="score">⭐ ${r.right} / ${r.total}もん正解${r.hint?` <span class="note" style="margin:0">💡 ヒントでできた${r.hint}</span>`:''} <span class="note" style="margin:0">れんぞく${r.streak}</span></div>`
+    +(!rec?'':`<div class="rec">📒 ステップ${Q.step}のさいこう：<b>${r.best?`${r.best}もんれんぞく`:'まだないよ'}</b>${r.best>=CLEAR?'✓':`<span>（${CLEAR}もんれんぞくで ✓）</span>`}</div>`);
+}
+const sessHTML=()=>`<div class="sessrow">${sess.active()||sess.finished()?sess.progressHTML():`<button class="btn small" data-act="sess5">${PA.icon('session')}きょうの5もん</button>`}</div>`;
+const titleText=q=>q.type==='chord'?'「？」の和音は？':q.type==='bass'?'「？」の和音の、いちばん下の音は？':'いちばん上の音は、どう動いた？';
+function subText(q){
+  if(q.type==='chord') return 'ならびが鳴るよ。「？」のところをよく聴こう。ほかの和音の名前は、こたえたあとに出るよ。';
+  if(q.type==='bass') return '「？」の和音の名前は書いてあるよ。いちばん下の音を聴こう。ほかの和音の名前は、こたえたあとに出るよ。';
+  return 'いちばん上の音を、メロディーのように追いかけて聴こう。';
+}
+// 和音の名前の字の色（うすい地の上でも読めるこい色）
+const TXT={I:'#c0392b',II:'#9a4f10',IV:'#137a4f',V:'#2363c4',V7:'#7a3fd0',VI:'#0b7373'};
+// ならびのカード。reveal＝こたえたあと（名前・音名・形を見せる）。こたえる前は P.shown でない和音の名前をかくす
+function cardsHTML(data,reveal){
+  const q=Q.q;
+  return `<div class="seq n${data.length}">`+data.map((c,i)=>{
+    const ask=q.type!=='top'&&i===q.i, hideName=!reveal&&!P.shown(q,i), hideBass=ask&&q.type==='bass'&&!reveal;
+    const cc=hideName?'#5b5266':PA.COL[c.ch], ll=hideName?'#f1ebf6':PA.LCOL[c.ch], tc=hideName?'#5b5266':TXT[c.ch]||cc;
+    const form=reveal&&c.inv?P.BASS_ROLES[P.roleOf(c)].form:'';
+    const nm=reveal?`<span class="nm"><span class="lh">${N(c.lh[0])}</span>${c.rh.map(n=>`<span>${N(n)}</span>`).join('')}</span>`:'';
+    const al=`${i+1}つめ${ask&&hideName?'「？」':hideName?'':c.label}${hideBass?'。いちばん下は？':''}${form?'（'+form+'）':''}`;
+    return `<div class="scw"><button class="scard ${ask?'ask':''} ${hideName&&!ask?'hid':''} ${i===curCard()?'on':''}" style="--c:${cc};--l:${ll};--t:${tc}" data-act="pcard" data-v="${i}" aria-label="${al}。タップで鳴らす">`
+      +`<span class="num">${ask&&hideName?'？':hideName?'♪':c.label}</span>${hideBass?'<span class="inv">下は？</span>':form?`<span class="inv fm">${form}</span>`:''}${nm}</button></div>`;
+  }).join('')+`</div>`;
+}
+// いちばん上の音の動き（小さな線）
+function contourSVG(line){
+  const ks=line.map(n=>n.k), lo=Math.min(...ks), hi=Math.max(...ks), dx=22, dy=5, h=(hi-lo)*dy+10, w=(ks.length-1)*dx+10;
+  const pts=ks.map((k,i)=>[5+i*dx,5+(hi-k)*dy]);
+  return `<svg class="ctr" width="${w}" height="${h}" style="width:${w}px;height:${h}px" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>${pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="currentColor"/>`).join('')}</svg>`;
+}
+function topLineOf(c){return P.topLine(P.buildT(keyOfQ(),c));}
+function choiceHTML(c){
+  const q=Q.q, A=Q.ans, right=P.answer(q);
+  let cls=''; if(A){if(c===right)cls='right';else if(c===A)cls='wrong';else cls='dim';}
+  const dis=A?'disabled':'';
+  if(q.type==='chord') return `<button class="echoice ${cls}" style="--c:${PA.COL[c]};--t:${TXT[c]}" data-act="pans" data-v="${c}" ${dis} aria-label="${E.LABEL[c]}（${feel(c)}）"><span class="wd">${E.LABEL[c]}</span><span class="lb">${feel(c)}</span></button>`;
+  if(q.type==='bass'){const R=P.BASS_ROLES[c];return `<button class="echoice ${cls}" style="--c:#8a5a00" data-act="pans" data-v="${c}" ${dis} aria-label="いちばん下が${R.name}（${R.form}）"><span class="wd sm">いちばん下が${R.name}</span><span class="lb">${R.form}</span></button>`;}
+  const tl=topLineOf(c);
+  return `<button class="echoice ${cls}" style="--c:#3b4fa8" data-act="pans" data-v="${c}" ${dis} aria-label="いちばん上が${PA.namesT(tl,'、')}"><span class="wd sm">${tl.map(N).join('→<wbr>')}</span>${contourSVG(tl)}</button>`;
+}
+// ためしに入れて聴く（こたえる前はヒント）。こたえたあとも、ほかのを入れて聴ける
+function tryHTML(){
+  const q=Q.q, ch=P.choices(q);
+  const lab=c=>q.type==='chord'?`${E.LABEL[c]}を入れる`:q.type==='bass'?`下を${P.BASS_ROLES[c].name}に`:topLineOf(c).map(N).join('→<wbr>');
+  const col=c=>q.type==='chord'?PA.COL[c]:q.type==='bass'?'#8a5a00':'#3b4fa8';
+  const what=q.type==='top'?'3つのならびを聴きくらべる':'「？」のところに入れて聴く';
+  const sum=q.type==='top'?'3つのならびを<span class="nw">聴きくらべる</span>':Q.ans?'ほかのも「？」に<span class="nw">入れて聴く</span>':'ためしに「？」に<span class="nw">入れて聴く</span>';
+  return `<details class="more trybox" data-d="try"><summary><span>💡 ${sum}</span></summary>
+    ${Q.ans?'':PA.once('hint-rule',`<p class="note" style="margin:0">${what}よ。こたえる前に聴いても、×にはならないよ。正解すると「ヒントでできた」になるよ。</p>`)}
+    <div class="trybtns">${ch.map(c=>{const on=Q.playing==='try:'+c;return `<button class="btn ${on?'on':''}" style="--c:${col(c)}" data-act="ptry" data-v="${c}" aria-pressed="${on}"><span>${on?PA.icon('stop')+'とめる':lab(c)}</span></button>`;}).join('')}</div></details>`;
+}
+function abBtn(v,label,sub,color){
+  const on=Q.playing===v;
+  return `<button class="btn ${on?'on':''}" style="--c:${color}" data-act="pcmp" data-v="${v}" aria-pressed="${on}"><span>${on?PA.icon('stop')+'とめる':label}</span><small>${sub}</small></button>`;
+}
+function fbHTML(){
+  const q=Q.q, right=P.answer(q), ok=Q.ans===right;
+  const head=ok?(Q.hint?'💡 正解！「ヒントでできた」だよ。':'🎉 正解！'):'🤔 おしい！';
+  const col=c=>q.type==='chord'?PA.COL[c]:q.type==='bass'?'#8a5a00':'#3b4fa8';
+  let h=`<div class="fb ${ok?'good':'bad'}${Q.fresh?'':' still'}" id="fb" role="status">${head}こたえは<b>${q.type==='top'?topLineOf(right).map(N).join('→<wbr>'):PA.esc(ansText(right))}</b>`;
+  h+=`<span class="sm">${P.why(q)}</span>`;
+  if(!ok){
+    if(q.type==='chord') h+=`<span class="sm">選んだ${E.LABEL[Q.ans]}は「${feel(Q.ans)}」。</span>`;
+    h+=`<div class="abrow">${abBtn('mine',PA.icon('repeat')+'選んだほう',q.type==='top'?topLineOf(Q.ans).map(N).join('→<wbr>'):PA.esc(ansText(Q.ans)),col(Q.ans))}${abBtn('right',PA.icon('repeat')+'正解',q.type==='top'?topLineOf(right).map(N).join('→<wbr>'):PA.esc(ansText(right)),col(right))}</div>`;
+  }
+  if(q.type==='top'){const on=Q.playing==='top';h+=`<div class="row"><button class="btn small ${on?'on':''}" data-act="ptop" aria-pressed="${on}">${on?PA.icon('stop')+'とめる':PA.icon('music')+'上の音だけ'}</button></div>`;}
+  return h+`</div>`;
+}
+// がくふ（こたえたあと）：「？」の列に色、いちばん下の問題はその音にわ、いちばん上の問題は上の音に線
+function staffHTML(data){
+  const q=Q.q, key=keyOfQ();
+  const cols=data.map((c,i)=>{
+    const ask=q.type!=='top'&&i===q.i;
+    return {notes:c.rh,lh:c.lh,color:PA.COL[c.ch],accColor:'#d1495b',op:curStaff()<0||i===curStaff()?1:0.35,label:c.label,
+      sub:c.inv?P.BASS_ROLES[P.roleOf(c)].form:'',labelColor:PA.COL[c.ch],hl:ask?'#fff3c4':null,lhRing:ask&&q.type==='bass'?'#c98500':null};
+  });
+  const arrows=q.type==='top'?data.slice(1).map((c,i)=>({c1:i,i1:2,c2:i+1,i2:2,color:'#3b4fa8'})):[];
+  const ns=PA.sigInfo(key).letters.length, W=50+ns*10+(ns?24:14)+data.length*66+8;
+  return `<section class="card"><h2>🎼 がくふ<small>${q.type==='top'?'青い線が、いちばん上の音の動き':q.type==='bass'?'まるでかこんだのが「？」のいちばん下の音':'うすい黄色が「？」のところ'}</small></h2>`
+    +`<div class="scroll" data-sk="staff"><div class="staffw" style="min-width:${Math.round(W*0.64)}px">${PA.staffSVG(key,cols,{grand:true,colW:66,arrows})}</div></div></section>`;
+}
+function settingsText(step){const s=ST(step);return `ステップ${s.n}（${s.name}）${Q.slow?'・🐢 ゆっくり':''}`;}
+const linkParams=step=>({step,slow:Q.slow?1:null});
+function settingsHTML(){
+  return `<details class="more" id="psetd" ${Q.openSet?'open':''}><summary><span class="sumtx">🎛 せってい・先生へ<small>ステップ${Q.step}${Q.slow?'・🐢 ゆっくり':''}</small></span></summary>
+    <div class="opt"><div class="row">${PA.shareHTML(QUIZ,Object.assign(linkParams(Q.step),{n:5}),PA.icon('send')+'れんしゅうをおくる')}</div><small>リンクをひらくと、いまのせってい（${PA.esc(settingsText(Q.step))}）で5もんできるよ</small></div>
+    <div class="opt"><div class="row"><button class="btn small" data-act="preset" data-v="${Q.step}" data-confirm="もういちどおすと、0にもどすよ">ステップ${Q.step}のきろくを0にもどす</button></div></div>
+  </details>`;
+}
+function tipsHTML(){
+  const C=l=>N({letter:l,acc:0});
+  return `<details class="more tips" data-d="tips"><summary>💡 聴きかたのコツ</summary><ul>
+    <li><b>Ⅰ「おちつく」</b>：おうちにかえった感じ。さいごに来ると「おしまい」。</li>
+    <li><b>Ⅳ「ひろがる」</b>：Ⅰから、ふわっとひろがる感じ。</li>
+    <li><b>Ⅴ「もどりたい」</b>：Ⅰへもどりたくなる。Ⅴ7は第7音（${C(4)}${C(6)}${C(1)}${C(3)}なら${C(3)}）が入って、もっともどりたい。</li>
+    <li><b>Ⅵ「Ⅰのかわり」</b>：Ⅰとにた和音。Ⅴ7のあとⅠのかわりに来ると「あれっ？」となる。</li>
+    <li><b>いちばん下の音</b>：根音（和音の土台の音。${C(0)}${C(2)}${C(4)}なら${C(0)}）がいちばん下なら「基本の形」、第3音（${C(2)}）なら「第1転回形」、第5音（${C(4)}）なら「第2転回形」。</li>
+    <li><b>いちばん上の音</b>：メロディーのように、上の音だけを追いかけて聴こう。</li>
+  </ul><p class="row" style="margin:10px 0 0"><a class="btn small" href="inversion.html">${PA.icon('refresh')}和音のかたち</a><a class="btn small" href="ending.html">${PA.icon('flag')}おわりかた</a></p></details>`;
+}
+function render(){
+  if(!Q.q) newQ();
+  const view=document.getElementById('view');
+  if(Q.sum&&sess.finished()){ // れんしゅうの回がおわった：けっかのカード
+    const L=sessStepOf()||Q.step;
+    PA.paint(view,`<div class="stack">${sess.summaryHTML({title:'ならびの聴きわけ',page:QUIZ,params:linkParams(L),settings:settingsText(L)+(sessMixed()?'・とちゅうでステップをかえた':'')})}${settingsHTML()}</div>`,'sum');
+    renderActions(); return;
+  }
+  Q.sum=false;
+  const q=Q.q, key=keyOfQ(), data=dataOf(), ch=P.choices(q), reveal=!!Q.ans;
+  let h=`<div class="stack"><section class="card hero">${stepsHTML()}${scoreHTML()}${sessHTML()}
+    <div class="qtitle"><span>👂 ${titleText(q)}</span></div>
+    <p class="qsub">${subText(q)}${Q.played||Q.ans?'':PA.once('prog-play','下の<b>聴く</b>をおすと鳴るよ。')}</p>
+    ${cardsHTML(data,reveal)}
+    <div class="keyline"><span class="kn">${PA.keyName(key)}（${PA.sigLabel(key)}）</span><button class="tgl" data-act="pslow" aria-pressed="${Q.slow}">🐢 ゆっくり</button></div>`;
+  if(Q.muteHint&&!PA.settings.sound) h+=`<div class="rinfo soundhint" role="status">🔇 音がオフだよ<button type="button" class="btn small" data-pa="sound-on">${PA.icon('listen')}音を出す</button></div>`;
+  if(Q.hint&&!Q.ans) h+=`<div class="msg" role="status" style="margin-top:10px">💡 ためしに入れて聴いたよ。正解すると「ヒントでできた」になるよ。</div>`;
+  const cls=q.type==='top'?'one':`n${ch.length}${ch.length%2?' odd':''}`;
+  h+=`<div class="echoices ${cls}">${ch.map(choiceHTML).join('')}</div>`;
+  h+=tryHTML();
+  if(Q.ans) h+=fbHTML();
+  h+=`</section>`;
+  if(Q.ans) h+=staffHTML(data);
+  h+=settingsHTML()+tipsHTML()+`</div>`;
+  PA.paint(view,h,Q.qid+':'+(Q.ans?1:0));
+  Q.fresh=false;
+  renderActions();
+}
+let lastActions=null;
+function renderActions(){
+  const bar=document.getElementById('actions');
+  const main=Q.playing==='q'?`<button class="btn" data-act="stop" data-hot="listen">${PA.icon('stop')}とめる</button>`
+    :`<button class="btn night" data-act="pplay" data-hot="listen">${Q.played||Q.ans?PA.icon('repeat')+'もういちど':PA.icon('play')+'聴く'}</button>`;
+  let a='';
+  if(Q.sum) a='';
+  else if(Q.ans) a=main+`<button class="btn primary" data-act="pnext" data-hot="next">${sess.finished()?'🎉 けっかを見る':PA.icon('next')+'つぎへ'}</button>`;
+  else a=main+(Q.q.type!=='top'?`<button class="btn" data-act="ponly">「？」だけ</button>`:'');
+  bar.style.display=a?'':'none';
+  if(a!==lastActions){PA.paint(bar,a,'bar');lastActions=a;}
+}
+// あたらしい問題：こたえのボタンが下のバーの上に見えるように（問題の行は上のバーにかくさない）
+function showQ(){
+  const t=document.querySelector('.qtitle'), g=document.querySelector('.echoices');
+  const ab=document.getElementById('actions'), hb=document.getElementById('appbar');
+  if(!t||!g) return;
+  const abs=el=>scrollY+el.getBoundingClientRect().top, hbB=hb?hb.getBoundingClientRect().bottom:0, view=innerHeight-(ab?ab.offsetHeight:0);
+  const need=scrollY+g.getBoundingClientRect().bottom+24-view;
+  window.scrollTo(0,Math.max(0,Math.min(need,abs(t)-hbB-8)));
+}
+function reveal(el){
+  if(!el||!el.getBoundingClientRect) return;
+  const r=el.getBoundingClientRect(), ab=document.getElementById('actions'), bottom=innerHeight-(ab?ab.offsetHeight:0);
+  if(r.bottom>bottom&&el.scrollIntoView) el.scrollIntoView({block:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});
+}
+
+/* ===== 操作 ===== */
+PA.mountBar({title:'ならびの聴きわけ',app:QUIZ});
+PA.onSettings=render;
+PA.onPageShow=()=>{stop();location.reload();}; // 「もどる」でもどったら読みなおす
+PA.onStopDown=()=>{if(!freshPlay()) stop();};
+PA.onStopCancel=render;
+function listen(){
+  if(soundOff()) return; // 音がオフ：聴いたことにしない
+  Q.muteHint=false;
+  if(!Q.ans&&!Q.played){Q.played=true;save();}
+  playSeq(dataOf(),'q');
+}
+function goNext(){
+  stop(); newQ(); save(); askedAt=Date.now(); render(); showQ();
+  listen();
+}
+function setStep(n){
+  if(sess.active()&&sessStepOf()&&n!==sessStepOf()) markMix(); // 5もんのとちゅうでステップをかえた
+  Q.step=n;
+}
+let askedAt=0;
+document.addEventListener('click',e=>{
+  const el=e.target.closest('[data-act]'); if(!el||el.disabled) return;
+  const a=el.dataset.act, v=el.dataset.v;
+  switch(a){
+    case 'pstep': {const n=+v; if(!isInt(n,1,5)) return; if(n===Q.step){stepOpen=false;break;} stop(); setStep(n); newQ(); stepOpen=false; break;}
+    case 'pstepopen': stepOpen=true; render(); {const f=document.querySelector('#view .stseg button.on');if(f) f.focus({preventScroll:true});} return;
+    case 'pslow': Q.slow=!Q.slow; break;
+    case 'preset': if(+v!==Q.step) return; Q.rec[Q.step]=newRec(); break; // 2回おすたしかめは core（data-v でステップごと）
+    case 'sess5': stop(); sess=PA.session(QUIZ,{sig:sigOf(Q.step)}); sess.start(5); Q.mixAt=0; Q.sum=false; goNext(); return;
+    case 'session-again': {if(!sess.n()) return; stop(); const n=sess.n(), st=sessStepOf(); if(st) Q.step=st;
+      sess=PA.session(QUIZ,{sig:sigOf(Q.step)}); sess.start(n); Q.mixAt=0; Q.sum=false; goNext(); return;}
+    case 'session-free': stop(); sess.clear(); Q.mixAt=0; Q.sum=false; goNext(); return;
+    case 'pplay':
+      if(Q.playing==='q') return;
+      if(!Q.ans&&Date.now()-askedAt<600) return; // 「つぎへ」の2どおしですぐ鳴りなおさないように
+      listen(); return;
+    case 'stop': if(freshPlay()) return; stop(); render(); return;
+    // 「つぎへ」の2どおしの2回めがここにおちても、鳴りはじめたならびを止めない
+    case 'ponly': if(Q.q.type==='top'||(!Q.ans&&Date.now()-askedAt<600)||soundOff()) return; playOne(Q.q.i); return;
+    case 'pcard': {const i=+v, d=dataOf(); if(!isInt(i,0,d.length-1)) return; if(soundOff()) return; playOne(i); return;}
+    case 'ptry': {
+      if(P.choices(Q.q).indexOf(v)<0) return;
+      if(Q.playing==='try:'+v){if(freshPlay()) return; stop(); render(); return;}
+      if(soundOff()) return; // 鳴らないので「ヒント」にもしない
+      const d=P.subst(Q.q,v); if(!d) return;
+      if(!Q.ans&&!Q.hint){Q.hint=true;save();}
+      playSeq(d,'try:'+v); return;
+    }
+    case 'pcmp': {
+      if(!Q.ans||(v!=='mine'&&v!=='right')) return;
+      if(Q.playing===v){if(freshPlay()) return; stop(); render(); return;}
+      if(soundOff()) return;
+      const d=v==='mine'?P.subst(Q.q,Q.ans):dataOf(); if(!d) return;
+      playSeq(d,v); return;
+    }
+    case 'ptop': {
+      if(!Q.ans||Q.q.type!=='top') return;
+      if(Q.playing==='top'){if(freshPlay()) return; stop(); render(); return;}
+      if(soundOff()) return;
+      playTop(); return;
+    }
+    case 'pans': {
+      if(Q.ans||P.choices(Q.q).indexOf(v)<0) return;
+      // キーボード・読み上げでこたえたら、フォーカスは「つぎへ」へ（こたえのボタンは描きなおしで消える）
+      const kf=!!document.activeElement&&!!document.activeElement.dataset&&document.activeElement.dataset.act==='pans';
+      stop(); answer(v); save(); Q.fresh=true; render();
+      if(kf){const n=document.querySelector('#actions [data-act="pnext"]');if(n) n.focus({preventScroll:true});}
+      reveal(document.getElementById('fb')); return;
+    }
+    case 'pnext': {
+      if(!Q.ans) return;
+      stop();
+      if(sess.finished()){Q.sum=true; save(); render(); window.scrollTo(0,0); return;} // さいごのもんだいのあと：けっかのカード
+      goNext(); return;
+    }
+    default: return;
+  }
+  save(); render();
+});
+document.addEventListener('toggle',e=>{if(e.target.id==='psetd'&&Q.openSet!==e.target.open){Q.openSet=e.target.open;save();}},true);
+if(!Q.q) newQ();
+save(); render();
+if(!Q.ans&&!Q.sum&&!window.scrollY) showQ();
+</script>
+</body>
+</html>

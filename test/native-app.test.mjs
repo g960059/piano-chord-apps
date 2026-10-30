@@ -156,7 +156,7 @@ test('PA.haptic・PA.answerFx：ウェブではなにもしない。こたえた
 });
 
 test('クイズ：こたえあわせのところで PA.answerFx をよぶ',()=>{
-  const want={'chord-quiz.html':2,'minor-quiz.html':2,'chroma-quiz.html':2,'ending-quiz.html':1,'ear.html':2};
+  const want={'chord-quiz.html':2,'minor-quiz.html':2,'chroma-quiz.html':2,'ending-quiz.html':1,'ear.html':2,'progression.html':1};
   Object.entries(want).forEach(([f,n])=>assert.equal((fs.readFileSync(path.join(root,f),'utf8').match(/PA\.answerFx\(/g)||[]).length,n,f));
 });
 
@@ -177,7 +177,7 @@ test('app.css：おしたときの見た目（:active と .is-pressed）・動�
   const rm=css.split('@media (prefers-reduced-motion:reduce)').slice(1).join('');
   assert.match(rm,/transform:none/); assert.match(rm,/animation:none/);
   // ページごとの .echoice:active はなくして app.css にまとめた
-  ['chroma-quiz.html','ending-quiz.html','ear.html'].forEach(f=>assert.ok(!fs.readFileSync(path.join(root,f),'utf8').includes('.echoice:not([disabled]):active'),f));
+  ['chroma-quiz.html','ending-quiz.html','ear.html','progression.html'].forEach(f=>assert.ok(!fs.readFileSync(path.join(root,f),'utf8').includes('.echoice:not([disabled]):active'),f));
 });
 
 test('PA.midi.reset：おさえていた鍵の画面のへこみも、もどす（機器がはずれたとき）',()=>{
