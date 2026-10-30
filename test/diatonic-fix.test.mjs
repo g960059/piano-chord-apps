@@ -1,4 +1,4 @@
-// 7つの 和音（diatonic.html）の なおし：なかまの もんだいと ひびきの ことば
+// 7つの和音（diatonic.html）のなおし：なかまのもんだいとひびきのことば
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -13,7 +13,7 @@ const m=html.match(/\/\/ <dia-logic>[^\n]*\n([\s\S]*?)\/\/ <\/dia-logic>/);
 const DIA=new Function('PA',m[1]+'\nreturn DIA;')(PA);
 const KEYS=[...Array(13).keys()].flatMap(i=>[PA.keyOf(false,i,60),PA.keyOf(true,i,60)]);
 
-test('なかまの もんだい：「おなじ 音が 2つ」で こたえが 1つに きまる 和音だけ 出す',()=>{
+test('なかまのもんだい：「おなじ音が2つ」でこたえが1つにきまる和音だけ出す',()=>{
   let s=7;const rnd=()=>{s=(s*16807)%2147483647;return (s-1)/2147483646;};
   for(let r=0;r<300;r++){
     const b=DIA.quiz(rnd)[1];
@@ -24,7 +24,7 @@ test('なかまの もんだい：「おなじ 音が 2つ」で こたえが 1�
   }
 });
 
-test('ひびきの ことばは 聴きわけ（ear.html）と おなじ',()=>{
+test('ひびきのことばは聴きわけ（ear.html）とおなじ',()=>{
   const ear=fs.readFileSync(path.join(dir,'ear.html'),'utf8');
   for(const [q,em,w] of [['min','🌧️','さびしい'],['dim','😖','きゅうくつ']]){
     assert.match(ear,new RegExp(`${q}:\\{[^}]*word:'${w}',emoji:'${em}'`));

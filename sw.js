@@ -1,12 +1,12 @@
-/* オフラインでも ひらけるように（サービスワーカー）
-   ・ページ（HTML）は ネットが さき。3びょう まっても こなければ 保存して ある ページを 出す
-     → 古い ページに とじこめない。?key=… つきの しゅくだいリンクも 同じ ページとして 出す
-   ・js・css も ネットが さき（3びょうで 保存ぶん）。新しい ページと 古い core.js が まざって
-     うごかなく なるのを ふせぐ
-   ・画像などは 保存して ある ものを すぐ 出して、うらで 新しく しておく
-   ・インストールで とれなかった ファイルは 前の 保存ぶんから うつす（オフラインで こわれないように）
-   ・VERSION と PRECACHE は tools/build-meta.mjs が 書きかえる（手で なおさない） */
-const VERSION='b5160013b9';
+/* オフラインでもひらけるように（サービスワーカー）
+   ・ページ（HTML）はネットがさき。3びょうまってもこなければ保存してあるページを出す
+     → 古いページにとじこめない。?key=… つきのしゅくだいリンクも同じページとして出す
+   ・js・css もネットがさき（3びょうで保存ぶん）。新しいページと古い core.js がまざって
+     うごかなくなるのをふせぐ
+   ・画像などは保存してあるものをすぐ出して、うらで新しくしておく
+   ・インストールでとれなかったファイルは前の保存ぶんからうつす（オフラインでこわれないように）
+   ・VERSION と PRECACHE は tools/build-meta.mjs が書きかえる（手でなおさない） */
+const VERSION='fa1544433e';
 const PRECACHE=[
   './',
   'accompaniment.html',
@@ -50,9 +50,9 @@ const CACHE=PREFIX+VERSION;
 const NAV_TIMEOUT=3000;
 const CODE_TIMEOUT=3000;
 const ASSET_RE=/\.(?:js|css|png|svg|webmanifest|json|jpe?g|webp|ico|woff2?)$/i;
-const CODE_RE=/\.(?:js|css|json|webmanifest)$/i; // ページと いっしょに 新しく ならないと こまる もの
+const CODE_RE=/\.(?:js|css|json|webmanifest)$/i; // ページといっしょに新しくならないとこまるもの
 
-/* リダイレクトされた レスポンスは そのまま ページに つかえないので、中身だけ うつす */
+/* リダイレクトされたレスポンスはそのままページにつかえないので、中身だけうつす */
 function clean(res){
   if(!res||!res.redirected) return Promise.resolve(res);
   return res.blob().then(b=>new Response(b,{status:res.status,statusText:res.statusText,headers:res.headers}));
@@ -64,7 +64,7 @@ function put(req,res){
   return clean(res).then(r=>caches.open(CACHE).then(c=>c.put(req,r))).catch(()=>{});
 }
 
-/* とれなかった ときは 前の バージョンの 保存ぶん（まだ けしていない）を あたらしい 保存場所へ うつす */
+/* とれなかったときは前のバージョンの保存ぶん（まだけしていない）をあたらしい保存場所へうつす */
 function copyOld(c,url){
   return caches.match(url,{ignoreSearch:true}).then(old=>old?c.put(url,old):undefined).catch(()=>{});
 }
@@ -72,7 +72,7 @@ function copyOld(c,url){
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>Promise.all(PRECACHE.map(p=>{
     const url=new URL(p,self.registration.scope).href;
-    // 1つ だめでも ほかは 保存する
+    // 1つだめでもほかは保存する
     return fetch(new Request(url,{cache:'reload'})).then(res=>{
       if(!okToKeep(res)) return copyOld(c,url);
       return clean(res).then(r=>c.put(url,r));
@@ -85,7 +85,7 @@ self.addEventListener('activate',e=>{
     .then(()=>self.clients.claim()));
 });
 
-/* ページの 保存ぶんを さがす。/chord-build ⇔ /chord-build.html、/ ⇔ /index.html の どちらでも 見つける */
+/* ページの保存ぶんをさがす。/chord-build ⇔ /chord-build.html、/ ⇔ /index.html のどちらでも見つける */
 function matchPage(url){
   const u=new URL(noSearch(url)), p=u.pathname, keys=[u.href];
   if(/\/$/.test(p)) keys.push(u.origin+p+'index.html');
@@ -99,14 +99,14 @@ function matchPage(url){
   });
 }
 
-/* waitUntil は その場で よぶ（あとから よぶと うごかない ブラウザが ある） */
+/* waitUntil はその場でよぶ（あとからよぶとうごかないブラウザがある） */
 function fetchAndKeep(e,key){
   let saving=null;
   const net=fetch(e.request).then(res=>{
     if(okToKeep(res)) saving=put(key,res.clone());
     return res;
   });
-  e.waitUntil(net.then(()=>saving).catch(()=>{})); // まにあわなくても、とどいたら 保存しておく
+  e.waitUntil(net.then(()=>saving).catch(()=>{})); // まにあわなくても、とどいたら保存しておく
   return net;
 }
 
@@ -116,11 +116,11 @@ function onPage(e){
   const timer=new Promise(resolve=>setTimeout(()=>resolve('late'),NAV_TIMEOUT));
   return Promise.race([net.catch(()=>null),timer]).then(r=>{
     if(r&&r!=='late') return r;
-    return matchPage(req.url).then(hit=>hit||net); // 保存も ないときは ネットを まつ（だめなら ブラウザの エラー）
+    return matchPage(req.url).then(hit=>hit||net); // 保存もないときはネットをまつ（だめならブラウザのエラー）
   });
 }
 
-/* js・css：ネットが さき。おそい・つながらない ときだけ 保存ぶん */
+/* js・css：ネットがさき。おそい・つながらないときだけ保存ぶん */
 function onCode(e){
   const req=e.request;
   const net=fetchAndKeep(e,req);
@@ -142,7 +142,7 @@ self.addEventListener('fetch',e=>{
   const req=e.request;
   if(req.method!=='GET') return;
   const url=new URL(req.url);
-  if(url.origin!==self.location.origin) return; // よそ（ランキングの アプリ など）は さわらない
+  if(url.origin!==self.location.origin) return; // よそ（ランキングのアプリなど）はさわらない
   if(url.pathname===new URL(self.registration.scope).pathname+'sw.js') return;
   const accept=req.headers.get('accept')||'';
   if(req.mode==='navigate'||req.destination==='document'||/\.html$/.test(url.pathname)||accept.indexOf('text/html')>=0){

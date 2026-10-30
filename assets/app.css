@@ -1,11 +1,11 @@
-/* ピアノ和音アプリ 共通スタイル（スマホを基準に作り、広い画面では横に広げる）
+/* ピアノ和音アプリ共通スタイル（スマホを基準に作り、広い画面では横に広げる）
    紙の色＋和音ごとの色。白鍵・黒鍵を実物どおりに見せるため、明るい単一テーマ */
 :root{
   --bg:#fdf8f0; --card:#fff; --ink:#3a3245; --sub:#6f667a; --line:#ece3d6; --soft:#f1e9dd; --soft2:#f7f1e8;
   --night:#3b4fa8; --nightl:#e6eafb; --red:#c94255; --redl:#fde4e7;
   --c1:#e8553d; --c4:#22a06b; --c5:#2f7ee8; --c7:#8a4fe0;
   --c1l:#fde5df; --c4l:#daf3e6; --c5l:#dfeafd; --c7l:#ece2fb;
-  /* 文字の 色は 白・紙の 色の 上で 4.5:1 いじょう（--ok は 白い 字を のせても 4.9:1。和音Ⅳの 緑・和音Ⅰの 赤とは べつの 色） */
+  /* 文字の色は白・紙の色の上で4.5:1いじょう（--ok は白い字をのせても4.9:1。和音Ⅳの緑・和音Ⅰの赤とはべつの色） */
   --ok:#15804f; --ng:#c22f45; --pick:#ffd66b; --hint:#fffaf0; --hintline:#f0d9a8; --mifa:#f4a100;
   --font:"Hiragino Maru Gothic ProN","Hiragino Maru Gothic Pro","BIZ UDPGothic","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
   color-scheme:light;
@@ -14,7 +14,7 @@
 }
 *{box-sizing:border-box}
 html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%;
-  /* キーボードで うごいた ところが 上と 下の バーの 下に かくれない */
+  /* キーボードでうごいたところが上と下のバーの下にかくれない */
   scroll-padding-top:calc(64px + env(safe-area-inset-top,0px));scroll-padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
 body{font-family:var(--font);font-size:16px;line-height:1.6;-webkit-tap-highlight-color:transparent}
@@ -47,7 +47,7 @@ select{font:inherit;font-size:16px;min-height:44px;padding:6px 10px;border-radiu
 .grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,340px),1fr));gap:12px}
 .grid2>*{min-width:0}
 
-/* ===== 下のボタンバー（親指で おしやすい位置） ===== */
+/* ===== 下のボタンバー（親指でおしやすい位置） ===== */
 .actionbar{position:-webkit-sticky;position:sticky;bottom:0;z-index:25;display:flex;gap:8px;justify-content:center;
   padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));
   background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid var(--line);
@@ -130,12 +130,12 @@ details.more[open]{padding-bottom:12px}
   .appbar h1{font-size:20px}
 }
 
-/* ===== iPhone・iPad で 自然に つかえるように ===== */
-/* ボタンを 長おししても 文字が 選ばれない */
+/* ===== iPhone・iPad で自然につかえるように ===== */
+/* ボタンを長おししても文字が選ばれない */
 button,.btn,.seg,.keychip,.kbtn,.appcard,.choice{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-/* 文の中の リンクは、見た目は そのままで タップできる はんいを 広げる */
+/* 文の中のリンクは、見た目はそのままでタップできるはんいを広げる */
 #view p a:not(.btn),#view li a:not(.btn),#view .note a:not(.btn),#view .msg a:not(.btn){display:inline-block;padding:12px 2px;margin:-12px 0;text-underline-offset:3px}
-/* スマホを 横にしたとき：上と下の バーを うすくして、見える はんいを 広げる */
+/* スマホを横にしたとき：上と下のバーをうすくして、見えるはんいを広げる */
 @media (max-height:500px) and (orientation:landscape){
   .appbar{min-height:46px;padding-top:3px;padding-bottom:3px}
   .appbar h1{font-size:16px}
@@ -143,50 +143,50 @@ button,.btn,.seg,.keychip,.kbtn,.appcard,.choice{-webkit-user-select:none;user-s
   .actionbar .btn{min-height:44px;padding-top:6px;padding-bottom:6px}
   .page{padding-top:8px;padding-bottom:16px}
 }
-/* とても せまい 画面（320px など）：下の バーの 3つの ボタンの 文字が はみださないように */
+/* とてもせまい画面（320px など）：下のバーの3つのボタンの文字がはみださないように */
 @media (max-width:359px){
   .actionbar{gap:6px;padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
   .actionbar .btn{font-size:13.5px;padding-left:4px;padding-right:4px;letter-spacing:-.03em}
   .seg button{padding-left:8px;padding-right:8px}
-  .seg.full button{flex:1 1 auto} /* 長い ことばの ボタンを すこし 広く（ことばの とちゅうで おれない） */
+  .seg.full button{flex:1 1 auto} /* 長いことばのボタンをすこし広く（ことばのとちゅうでおれない） */
 }
-/* iPad など：1行が 長くなりすぎないように ページの はばは そのまま、ボタンバーも まん中に まとめる */
+/* iPad など：1行が長くなりすぎないようにページのはばはそのまま、ボタンバーもまん中にまとめる */
 @media (min-width:700px){
   .actionbar{padding-left:max(12px,calc((100vw - 760px)/2));padding-right:max(12px,calc((100vw - 760px)/2))}
 }
 
 
-/* ===== 音名：♯・♭ の 前で 行が かわらない（PA.nmH） ===== */
+/* ===== 音名：♯・♭の前で行がかわらない（PA.nmH） ===== */
 .nw{white-space:nowrap}
-/* 画面には 出さず、読み上げソフトだけ */
+/* 画面には出さず、読み上げソフトだけ */
 .pa-sr{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
 
-/* ===== 上のバー：まえの アプリへ もどる ボタン（‹ 和音クイズへ） ===== */
+/* ===== 上のバー：まえのアプリへもどるボタン（‹ 和音クイズへ） ===== */
 .backpill{flex:0 1 auto;min-width:0;max-width:46%;display:inline-flex;align-items:center;gap:2px;min-height:44px;padding:0 12px 0 8px;border-radius:999px;
   background:var(--soft);font-weight:700;font-size:14px;line-height:1.2;text-decoration:none;white-space:nowrap}
 .backpill .bp-ar{flex:none;font-size:22px;line-height:1;margin-top:-2px}
 .backpill .bp-tx{min-width:0;overflow:hidden;text-overflow:ellipsis}
 @media (hover:hover){.backpill:hover{filter:brightness(.97)}}
-/* 音が オフの おしらせ */
+/* 音がオフのおしらせ */
 .soundoff{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 10px;padding:4px max(12px,env(safe-area-inset-right,0px)) 4px max(12px,env(safe-area-inset-left,0px));
   background:#fff4d6;color:#6e4c00;border-bottom:1px solid #ecc967;font-size:14px;font-weight:700}
 .soundoff .btn{background:#fff;border:2px solid #ecc967}
 
-/* ===== 2回 おす ボタン（data-confirm） ===== */
+/* ===== 2回おすボタン（data-confirm） ===== */
 .armed,.btn.armed{outline:3px solid var(--ng);outline-offset:2px;background:#fde4e7;color:#8f2233}
 
-/* ===== <dialog> の ない ブラウザ（シートを 下から 出す） ===== */
+/* ===== <dialog>のないブラウザ（シートを下から出す） ===== */
 dialog.sheet.pa-fb{position:fixed;top:0;left:0;right:0;bottom:0;z-index:60;width:auto;max-width:none;max-height:none;margin:0;border-radius:0;
   background:rgba(40,30,50,.35);box-shadow:none;flex-direction:column;justify-content:flex-end;align-items:center}
 dialog.sheet.pa-fb[open]{display:flex}
 dialog.sheet.pa-fb:not([open]){display:none}
 dialog.sheet.pa-fb>.sheet-in{width:100%;max-width:640px;background:var(--card);border-radius:22px 22px 0 0;box-shadow:0 -8px 30px rgba(40,30,50,.2)}
-/* せっていの まとまり */
+/* せっていのまとまり */
 .setsec{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
 .setsec h3{margin:0 0 4px;font-size:16px}
 .setsec .row{margin-top:8px}
 
-/* ===== 広い 画面：2れつ（.page.duo と .duo-grid。1000px より せまいと ふつうに たてに ならぶ） ===== */
+/* ===== 広い画面：2れつ（.page.duo と .duo-grid。1000px よりせまいとふつうにたてにならぶ） ===== */
 .duo-grid{display:flex;flex-direction:column;gap:12px}
 .duo-grid>*{min-width:0}
 @media (min-width:1000px){
@@ -195,7 +195,7 @@ dialog.sheet.pa-fb>.sheet-in{width:100%;max-width:640px;background:var(--card);b
   .duo-side{position:-webkit-sticky;position:sticky;top:calc(64px + env(safe-area-inset-top,0px))}
 }
 
-/* ===== 学ぶ ページの「ためしてみる」カード（PA.tryHTML。色は 行き先の アプリの 種類） ===== */
+/* ===== 学ぶページの「ためしてみる」カード（PA.tryHTML。色は行き先のアプリの種類） ===== */
 .try-card{border:3px solid var(--tc,var(--ink));background:var(--card)}
 .try-card h2{color:var(--tc,var(--ink))}
 .try-card .lead{color:var(--ink);margin-bottom:10px}
@@ -203,10 +203,10 @@ dialog.sheet.pa-fb>.sheet-in{width:100%;max-width:640px;background:var(--card);b
 .try-card .try-more{margin-top:10px}
 .try-card .try-more .btn{background:var(--tl,var(--soft))}
 
-/* ===== れんしゅうの 回：チップと けっかの カード（PA.session） ===== */
+/* ===== れんしゅうの回：チップとけっかのカード（PA.session） ===== */
 .pa-sess{background:var(--nightl);color:#24316f;font-size:14px}
 .sess-card h2{font-size:20px}
-/* ことばの まとまり（スペースの ところ）で 行を かえる */
+/* ことばのまとまり（スペースのところ）で行をかえる */
 .sess-msg,.sess-counts span,.sess-btns .btn,.try-card .btn{word-break:keep-all;overflow-wrap:break-word}
 .sess-big{margin:4px 0 0;font-size:18px;display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 12px}
 .sess-big b{font-size:30px;line-height:1.2}
@@ -232,12 +232,12 @@ dialog.sheet.pa-fb>.sheet-in{width:100%;max-width:640px;background:var(--card);b
 .sess-btns{margin-top:12px}
 .sess-btns .btn{flex:1 1 140px}
 
-/* チェック表の ます（pickable） */
+/* チェック表のます（pickable） */
 .kd-cell{cursor:pointer}
 @media (hover:hover){.kd-cell:hover{filter:brightness(.97)}}
 
-/* ===== 古い iPhone・iPad（Safari 14.0 まで）：flex の gap が ないので、すきまを margin で つくる =====
-   inset は flex の gap と おなじ Safari 14.1 から。新しい ブラウザには きかない */
+/* ===== 古い iPhone・iPad（Safari 14.0まで）：flex の gap がないので、すきまを margin でつくる =====
+   inset は flex の gap とおなじ Safari 14.1から。新しいブラウザにはきかない */
 @supports not (inset:0){
   .row>*+*,.actionbar>*+*,.appbar>*+*,.sheet-head>*+*,.keychip>*+*{margin-left:8px}
   .chips>*+*,.btn>*+*{margin-left:6px}

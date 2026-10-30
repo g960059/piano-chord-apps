@@ -1,10 +1,10 @@
-// ピアノ和音アプリ：Cloudflare Workers（無料プラン）の 設定
-// - ページ（*.html・assets/ など）は リポジトリの いちばん上 から そのまま 公開する（ビルドなし）。
-//   公開しない ファイル（src/・test/・docs/・migrations/ など）は .assetsignore に 書く。
-// - /api/* だけ Worker（src/worker.js）。「和音の 聴きわけ」の ランキング。
-// - D1 は もとの「和音ききわけ」と おなじ waon-ranking（いままでの ランキングが そのまま つづく）。
-// - ADMIN_KEY（先生用キー、24文字以上）は Cloudflare の 画面か `npx wrangler secret put ADMIN_KEY` で 入れる。ここには 書かない。
-//   つかいかたは docs/RANKING-ADMIN.md、うつしかえの 手順は docs/MIGRATION-RANKING.md。
+// ピアノ和音アプリ：Cloudflare Workers（無料プラン）の設定
+// - ページ（*.html・assets/ など）はリポジトリのいちばん上からそのまま公開する（ビルドなし）。
+//   公開しないファイル（src/・test/・docs/・migrations/ など）は .assetsignore に書く。
+// - /api/* だけ Worker（src/worker.js）。「和音の聴きわけ」のランキング。
+// - D1はもとの「和音ききわけ」とおなじ waon-ranking（いままでのランキングがそのままつづく）。
+// - ADMIN_KEY（先生用キー、24文字以上）は Cloudflare の画面か `npx wrangler secret put ADMIN_KEY` で入れる。ここには書かない。
+//   つかいかたは docs/RANKING-ADMIN.md、うつしかえの手順は docs/MIGRATION-RANKING.md。
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "piano-chord-apps",
@@ -14,9 +14,9 @@
   "assets": {
     "directory": ".",
     "binding": "ASSETS",
-    // /api/* は ファイルが あっても かならず Worker へ。ほかは 静的ファイルを 先に さがし、なければ Worker へ（404）。
+    // /api/* はファイルがあってもかならず Worker へ。ほかは静的ファイルを先にさがし、なければ Worker へ（404）。
     "run_worker_first": ["/api/*"],
-    // いままでと おなじ（/ear.html → /ear へ うつる、/ は index.html）。書かなくても これが きまり
+    // いままでとおなじ（/ear.html → /ear へうつる、/ は index.html）。書かなくてもこれがきまり
     "html_handling": "auto-trailing-slash",
     "not_found_handling": "none"
   },
@@ -28,12 +28,12 @@
       "migrations_dir": "migrations"
     }
   ],
-  // 毎日 16:05 UTC（日本時間 1:05）に 古い run・塩・週の 記録を そうじする（無料プランで つかえる）
+  // 毎日16:05 UTC（日本時間1:05）に古い run・塩・週の記録をそうじする（無料プランでつかえる）
   "triggers": { "crons": ["5 16 * * *"] },
-  // console.error などの ログだけ のこす。1回ごとの リクエストの 記録（URL・場所の 情報など）は のこさない
+  // console.error などのログだけのこす。1回ごとのリクエストの記録（URL・場所の情報など）はのこさない
   "observability": { "enabled": true, "logs": { "enabled": true, "invocation_logs": false } },
-  // ブランチの Preview（main いがい の ビルド）の 設定。Preview は 上の 設定を うけつがない。
-  // わざと D1 を つながない：Preview で あそんでも 本物の ランキングに のらない（/api は 501 → 画面は「オフライン」で あそべる）。
-  // Preview でも ランキングを ためしたい ときは、べつの D1（例 waon-ranking-preview）を つくって ここに "d1_databases" を 書く。
+  // ブランチの Preview（main いがいのビルド）の設定。Preview は上の設定をうけつがない。
+  // わざと D1をつながない：Preview であそんでも本物のランキングにのらない（/api は501 → 画面は「オフライン」であそべる）。
+  // Preview でもランキングをためしたいときは、べつの D1（例 waon-ranking-preview）をつくってここに "d1_databases" を書く。
   "previews": {}
 }

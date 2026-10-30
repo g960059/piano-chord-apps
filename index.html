@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- meta:start -->
-<meta name="description" content="ピアノを 習う人の ための、和音を「見て・聴いて・さわって」おぼえる 小さな アプリ集。Ⅰ・Ⅳ・Ⅴ7 から 短調・おわりかた・変化和音、伴奏づけ、聴きわけまで。">
+<meta name="description" content="ピアノを習う人のための、和音を「見て・聴いて・さわって」おぼえる小さなアプリ集。Ⅰ・Ⅳ・Ⅴ7から短調・おわりかた・変化和音、伴奏づけ、聴きわけまで。">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ピアノ和音アプリ">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="ピアノ和音アプリ">
-<meta property="og:description" content="ピアノを 習う人の ための、和音を「見て・聴いて・さわって」おぼえる 小さな アプリ集。Ⅰ・Ⅳ・Ⅴ7 から 短調・おわりかた・変化和音、伴奏づけ、聴きわけまで。">
+<meta property="og:description" content="ピアノを習う人のための、和音を「見て・聴いて・さわって」おぼえる小さなアプリ集。Ⅰ・Ⅳ・Ⅴ7から短調・おわりかた・変化和音、伴奏づけ、聴きわけまで。">
 <meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/">
 <meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -28,18 +28,18 @@
 <title>ピアノ和音アプリ</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
-/* 入口は「しずかに」：目立たせるのは「つづき」と「つぎ」の 単元だけ（こい 墨色）。種類の ラベルは 灰色の 文字で、和音の 色（赤・緑・青・むらさき）は つかわない */
+/* 入口は「しずかに」：目立たせるのは「つづき」と「つぎ」の単元だけ（こい墨色）。種類のラベルは灰色の文字で、和音の色（赤・緑・青・むらさき）はつかわない */
 .home h2{margin:0;font-size:17px}
 .home h2 small{display:block;font-weight:400;color:var(--sub);font-size:13px;margin-top:2px}
 .lbl{margin:4px 4px -4px;font-size:15px;font-weight:800;color:var(--ink)}
-/* はじめての 人 */
+/* はじめての人 */
 .hero{text-align:center;padding:18px 16px}
 .hero .big{font-size:44px;line-height:1}
 .hero h2{font-size:22px;margin-top:6px}
 .hero .lead{color:var(--ink);font-size:16px;margin:6px 0 12px;word-break:keep-all;overflow-wrap:anywhere}
 .hero .btn{display:flex;width:100%;min-height:56px;font-size:18px}
 .hero .site{margin:12px 0 0;color:var(--sub);font-size:13px;line-height:1.6;text-align:left}
-/* きょうの れんしゅう（つづき＋にがて） */
+/* きょうのれんしゅう（つづき＋にがて） */
 .go{display:flex;align-items:center;gap:12px;min-height:68px;padding:10px 14px;border-radius:16px;background:var(--ink);color:#fff;text-decoration:none}
 .go .ic{flex:none;width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,.95);display:grid;place-items:center;font-size:24px}
 .go .tx{flex:1;min-width:0}
@@ -58,7 +58,7 @@
 .tool b{font-size:14px;line-height:1.3;word-break:keep-all;overflow-wrap:anywhere}
 .tool small{color:var(--sub);font-size:11.5px;line-height:1.3;white-space:nowrap}
 @media (max-width:360px){.tool{padding:8px 2px}.tool b{font-size:13px}.tool small{font-size:11px}}
-/* コース：番号つきの 単元。ひらくのは「つぎ」の 単元だけ */
+/* コース：番号つきの単元。ひらくのは「つぎ」の単元だけ */
 .units{display:flex;flex-direction:column;gap:8px}
 details.unit{background:var(--card);border-radius:16px;box-shadow:0 2px 0 #eadfce;min-width:0}
 details.unit>summary{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 12px;cursor:pointer;list-style:none}
@@ -95,29 +95,29 @@ details.unit[open]>summary::after{transform:rotate(180deg)}
 <main class="page" id="view"></main>
 <script src="assets/core.js"></script>
 <script>
-/* 入口：きょうの れんしゅう（つづき＋にがて）・いつでも（どうぐ）・コース（番号つきの 単元）
- *   目次は core の PA.UNITS・PA.APPS・PA.APP_TYPES（このページでは もたない）。app.title は ただの 文字、app.d は HTML
- *   「いつでも」の 3つ（TOOLS）は コースの 単元には ならべない（おなじ ものを 2回 出さない）
- *   ひらいた アプリ：PA.store 'visited'（PA.mountBar が きろく）。まえからの 人は 'last'・'keystats-…' なども 見る
- *   コースの ひらく／とじる：PA.store 'home-units'＝{unit の id: true/false}（じぶんで おした ときだけ ほぞん） */
+/* 入口：きょうのれんしゅう（つづき＋にがて）・いつでも（どうぐ）・コース（番号つきの単元）
+ *   目次は core の PA.UNITS・PA.APPS・PA.APP_TYPES（このページではもたない）。app.title はただの文字、app.d は HTML
+ *   「いつでも」の3つ（TOOLS）はコースの単元にはならべない（おなじものを2回出さない）
+ *   ひらいたアプリ：PA.store 'visited'（PA.mountBar がきろく）。まえからの人は 'last'・'keystats-…' なども見る
+ *   コースのひらく／とじる：PA.store 'home-units'＝{unit の id: true/false}（じぶんでおしたときだけほぞん） */
 const T=PA.APP_TYPES, ESC=PA.esc;
-const TOOLS=[['accompaniment','曲に つける'],['ear','まいにち すこし'],['chord-table','ぜんぶの 調']];
+const TOOLS=[['accompaniment','曲につける'],['ear','まいにちすこし'],['chord-table','ぜんぶの調']];
 const TOOL_IDS=TOOLS.map(t=>t[0]);
-const TALLY_MODES={'minor-quiz':['minor']}; // 短調クイズは 短調だけ（12）。ほかは 長調・短調（24）
+const TALLY_MODES={'minor-quiz':['minor']}; // 短調クイズは短調だけ（12）。ほかは長調・短調（24）
 const isObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const rec=k=>{const v=PA.store.get(k,null);return isObj(v)&&typeof v.app==='string'&&PA.app(v.app)?v:null;};
 const typeOf=a=>T[a.type]||T.learn;
-// コースに ならべる 単元（「いつでも」の アプリを のぞいて、のこりが ある 単元だけ）
+// コースにならべる単元（「いつでも」のアプリをのぞいて、のこりがある単元だけ）
 const COURSE=PA.UNITS.map(u=>({id:u.id,title:u.title,sub:u.sub,apps:u.apps.filter(id=>PA.app(id)&&TOOL_IDS.indexOf(id)<0)})).filter(u=>u.apps.length);
-// 単元の 名前の 先頭の 絵文字は 番号に かえる（「🎹 はじめの 和音」→「はじめの 和音」）
+// 単元の名前の先頭の絵文字は番号にかえる（「🎹 はじめの和音」→「はじめの和音」）
 const plainTitle=t=>String(t).replace(/^(?:[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u266C\u2670-\u27BF])\uFE0F?\s*/,'');
 
-// ひらいた ことの ある アプリ（id の Set）
+// ひらいたことのあるアプリ（id の Set）
 function visitedSet(){
   const out=new Set(), v=PA.store.get('visited',{});
   if(isObj(v)) Object.keys(v).forEach(id=>{if(PA.app(id)) out.add(id);});
   ['last','last-practice','last-learn'].forEach(k=>{const r=rec(k);if(r) out.add(r.app);});
-  // 'visited' が できる 前から つかっている 人：クイズの きろくや ページの 設定が あれば ひらいた ことが ある
+  // 'visited' ができる前からつかっている人：クイズのきろくやページの設定があればひらいたことがある
   PA.store.keys().forEach(k=>{const id=k.replace(/^(keystats|session)-/,'');if(PA.app(id)) out.add(id);});
   return out;
 }
@@ -126,23 +126,23 @@ function when(t){
   if(!(t>0)) return '';
   const d0=new Date(); d0.setHours(0,0,0,0);
   const days=Math.ceil((d0.getTime()-t)/864e5);
-  return days<=0?'きょう':days===1?'きのう':days<7?days+'日まえ':days<30?Math.floor(days/7)+'週間まえ':'しばらく まえ';
+  return days<=0?'きょう':days===1?'きのう':days<7?days+'日前':days<30?Math.floor(days/7)+'週間前':'しばらく前';
 }
-// その アプリで さいごに やった こと（わかれば）。ただの 文字
+// そのアプリでさいごにやったこと（わかれば）。ただの文字
 function lastDone(app){
   if(!/^(quiz|ear)$/.test(app.type)) return '';
   let st=null; try{st=PA.session(app.id).state();}catch(e){}
-  if(st&&st.done.length<st.n) return `📝 ${st.n}もんの とちゅう（${st.done.length} / ${st.n}）`;
-  if(st){const t=PA.sessionTally(st.done,st.n);return `📝 ${st.n}もん中 ${t.ok}もん できた`;}
+  if(st&&st.done.length<st.n) return `📝 ${st.n}もんのとちゅう（${st.done.length} / ${st.n}）`;
+  if(st){const t=PA.sessionTally(st.done,st.n);return `📝 ${st.n}もん中${t.ok}もんできた`;}
   if(app.type!=='quiz') return '';
   const s=PA.keyDeck.stats(app.id); let best=null;
   Object.keys(s).forEach(id=>{if(!best||(s[id].last||0)>(s[best].last||0)) best=id;});
   const p=best&&PA.keyDeck.parse(best);
-  return p?'さいごの 調：'+PA.keyName(PA.keyOf(p.minor,p.idx)):'';
+  return p?'さいごの調：'+PA.keyName(PA.keyOf(p.minor,p.idx)):'';
 }
 
-/* ----- 上：はじめての 人／きょうの れんしゅう ----- */
-// 'last…' が ない けれど ひらいた ことが ある 人：さいごに ひらいた アプリ（'visited' の 時こく）、なければ つぎの 単元の まだ ひらいて いない アプリ
+/* ----- 上：はじめての人／きょうのれんしゅう ----- */
+// 'last…' がないけれどひらいたことがある人：さいごにひらいたアプリ（'visited' の時こく）、なければつぎの単元のまだひらいていないアプリ
 function fallbackRec(vis){
   const v=PA.store.get('visited',{}); let best=null;
   if(isObj(v)) Object.keys(v).forEach(id=>{const t=v[id];if(PA.app(id)&&typeof t==='number'&&t>0&&(!best||t>best.t)) best={app:id,t};});
@@ -155,29 +155,29 @@ function topHTML(vis){
   const lp=rec('last-practice'), ll=rec('last-learn'), old=rec('last');
   if(!vis.size&&!lp){
     return `<section class="card hero" aria-labelledby="hero-h"><div class="big" aria-hidden="true">🐸</div>
-      <h2 id="hero-h">はじめての 和音</h2>
-      <p class="lead">ド・ミ・ソを 見て・聴いて・つくって みよう</p>
-      <a class="btn primary" href="chord-build.html">ここから はじめる ›</a>
-      <p class="site">Ⅰ・Ⅳ・Ⅴ から 7つの 和音、短調、おわりかた、変化和音、伴奏づけ、耳の れんしゅうまで。「見て・聴いて・さわって」おぼえよう。</p></section>`;
+      <h2 id="hero-h">はじめての和音</h2>
+      <p class="lead">ド・ミ・ソを見て・聴いて・つくってみよう</p>
+      <a class="btn primary" href="chord-build.html">ここから始める ›</a>
+      <p class="site">Ⅰ・Ⅳ・Ⅴから7つの和音、短調、おわりかた、変化和音、伴奏づけ、耳のれんしゅうまで。「見て・聴いて・さわって」おぼえよう。</p></section>`;
   }
   const main=lp||ll||old||fallbackRec(vis);
-  // にがて ふくしゅう：クイズの ページだけ（key と n で その 調の 3もん）
+  // にがてふくしゅう：クイズのページだけ（key と n でその調の3もん）
   const ws=PA.weakSummary(30).filter(w=>{const a=PA.app(w.quiz);return a&&a.type==='quiz';}).slice(0,3);
   if(!main&&!ws.length) return '';
-  let h=`<section class="card" aria-labelledby="today-h"><h2 id="today-h" class="pa-sr">きょうの れんしゅう</h2>`;
+  let h=`<section class="card" aria-labelledby="today-h"><h2 id="today-h" class="pa-sr">きょうのれんしゅう</h2>`;
   if(main){
     const app=PA.app(main.app), meta=[when(main.t),lastDone(app)].filter(Boolean).join('・');
     h+=`<a class="go" href="${app.id}.html"><span class="ic" aria-hidden="true">${app.ic}</span><span class="tx"><span class="eye">▶️ つづきから</span><b>${ESC(app.title)}</b>${meta?`<span class="meta">${ESC(meta)}</span>`:''}</span></a>`;
   }
-  // さいごが しくみの ページ（練習は まだ）：その 練習を すすめる
+  // さいごがしくみのページ（練習はまだ）：その練習をすすめる
   const pr=!lp&&main?PA.app(PA.app(main.app).practice||''):null;
-  if(pr) h+=`<div class="weakrow"><a href="${pr.id}.html"><span aria-hidden="true">${pr.ic}</span>${ESC(pr.title)}で れんしゅう</a></div>`;
+  if(pr) h+=`<div class="weakrow"><a href="${pr.id}.html"><span aria-hidden="true">${pr.ic}</span>${ESC(pr.title)}でれんしゅう</a></div>`;
   if(ws.length){
-    // クイズが 1つだけ なら 見出しに 書き、ボタンは 調の 名前だけ
+    // クイズが1つだけなら見出しに書き、ボタンは調の名前だけ
     const one=ws.every(w=>w.quiz===ws[0].quiz), q0=PA.app(ws[0].quiz);
-    h+=`<div class="weakrow"><span class="wl">🔁 にがてを 3もん${one?`（${ESC(q0.title)}）`:''}</span>`
+    h+=`<div class="weakrow"><span class="wl">🔁 にがてを3もん${one?`（${ESC(q0.title)}）`:''}</span>`
       +ws.map(w=>{const a=PA.app(w.quiz);
-        return `<a href="${ESC(PA.url(w.quiz,{key:w.id,n:3}))}" aria-label="${ESC(w.name+'（'+a.title+'）を 3もん')}">${ESC(w.name)}${one?'':`<small>${ESC(a.title)}</small>`}</a>`;}).join('')
+        return `<a href="${ESC(PA.url(w.quiz,{key:w.id,n:3}))}" aria-label="${ESC(w.name+'（'+a.title+'）を3もん')}">${ESC(w.name)}${one?'':`<small>${ESC(a.title)}</small>`}</a>`;}).join('')
       +`</div>`;
   }
   return h+`</section>`;
@@ -191,7 +191,7 @@ function toolsHTML(){
     +`</nav>`;
 }
 
-/* ----- コース：番号つきの 単元 ----- */
+/* ----- コース：番号つきの単元 ----- */
 function nextUnitId(vis){
   const u=COURSE.find(u=>u.apps.some(id=>!vis.has(id)));
   return u?u.id:null;
@@ -203,7 +203,7 @@ function quizStat(id){
 function appRow(app,vis){
   const ty=typeOf(app), seen=vis.has(app.id);
   let st=`<span class="ty">${ty.label}</span>`;
-  if(app.type==='quiz'&&seen){const q=quizStat(app.id);st+=`<span class="kd">できた 調 ${q.good}／${q.total}</span>`;}
+  if(app.type==='quiz'&&seen){const q=quizStat(app.id);st+=`<span class="kd">できた調${q.good}／${q.total}</span>`;}
   else if(seen) st+=`<span class="seen">✓ ひらいた</span>`;
   return `<li><a class="arow" href="${app.href?ESC(app.href):app.id+'.html'}"><span class="ic" aria-hidden="true">${app.ic}</span>`
     +`<span class="tx"><b>${ESC(app.title)}</b><span class="d">${app.d}</span></span><span class="st">${st}</span></a></li>`;
@@ -215,20 +215,20 @@ function courseHTML(vis){
     const apps=u.apps.map(PA.app), n=apps.filter(a=>vis.has(a.id)).length, done=n===apps.length;
     const isNext=u.id===nx, open=typeof sv[u.id]==='boolean'?sv[u.id]:isNext;
     return `<details class="unit${isNext?' next':''}${done?' done':''}" data-d="unit-${u.id}" data-u="${u.id}"${open?' open':''}>`
-      +`<summary><span class="no" aria-hidden="true">${done?'✓':i+1}</span><span class="ut"><b>${ESC(plainTitle(u.title))}${isNext?'<span class="nexttag">つぎ</span>':''}</b>${u.sub?`<small>${ESC(u.sub)}</small>`:''}</span>`
-      +`<span class="prog">${done?'<span class="pa-sr">おわった、</span>':''}${n}/${apps.length}<span class="pa-sr"> ひらいた</span></span></summary>`
+      +`<summary><span class="no" aria-hidden="true">${done?'✓':i+1}</span><span class="ut"><b>${ESC(plainTitle(u.title))}${isNext?'<span class="nexttag">次</span>':''}</b>${u.sub?`<small>${ESC(u.sub)}</small>`:''}</span>`
+      +`<span class="prog">${done?'<span class="pa-sr">おわった、</span>':''}${n}/${apps.length}<span class="pa-sr">ひらいた</span></span></summary>`
       +`<ul class="alist">${apps.map(a=>appRow(a,vis)).join('')}</ul></details>`;
   }).join('');
   return `<h2 class="lbl">コース</h2><div class="units">${cards}</div>`;
 }
 
-/* ----- さいごの おしらせ ----- */
+/* ----- さいごのおしらせ ----- */
 function footHTML(){
-  return `<details class="note foot" data-d="foot"><summary>ℹ️ つかいかたの メモ（⚙️ 設定・ホーム画面・きろくの ひかえ）</summary>
-    <p>⚙️（右上）：音の 名前（ドレミ／CDE／ハニホ）と 基準の 音（ラ＝440〜443Hz）。どの アプリも おなじ 設定です。</p>
-    <p>📱 ホーム画面に 追加すると、アプリのように ひらけて、ネットが なくても つかえます。</p>
-    <p>💾 きろくは この 端末の 中だけ。ときどき ⚙️ → 💾 で ファイルに ひかえて おこう。</p>
-    <p>🏆 ランキングは「和音の 聴きわけ」の 🏆 チャレンジで のせられるよ（なまえは ニックネームで）。</p></details>`;
+  return `<details class="note foot" data-d="foot"><summary>ℹ️ 使いかたのメモ（⚙️ 設定・ホーム画面・きろくのひかえ）</summary>
+    <p>⚙️（右上）：音の名前（ドレミ／CDE／ハニホ）と基準の音（ラ＝440〜443Hz）。どのアプリも同じ設定です。</p>
+    <p>📱 ホーム画面に追加すると、アプリのようにひらけて、ネットがなくても使えます。</p>
+    <p>💾 きろくはこの端末の中だけ。ときどき ⚙️ → 💾 でファイルにひかえておこう。</p>
+    <p>🏆 ランキングには、「和音の聴きわけ」の 🏆 チャレンジでのせられるよ（名前はニックネームで）。</p></details>`;
 }
 
 function render(){
@@ -236,7 +236,7 @@ function render(){
   const h=`<div class="stack home">${topHTML(vis)}${toolsHTML()}${courseHTML(vis)}${footHTML()}</div>`;
   PA.paint(document.getElementById('view'),h,'home');
 }
-// じぶんで ひらいた／とじた 単元だけ おぼえる
+// じぶんでひらいた／とじた単元だけおぼえる
 document.getElementById('view').addEventListener('click',e=>{
   const sm=e.target.closest&&e.target.closest('details.unit>summary'); if(!sm) return;
   const d=sm.parentNode;

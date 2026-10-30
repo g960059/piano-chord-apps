@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- meta:start -->
-<meta name="description" content="ドから ミは 3度。文字を かぞえて、広い・せまいを 知る">
+<meta name="description" content="ドからミは3度。文字をかぞえて、広い・せまいを知る">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ピアノ和音アプリ">
 <meta property="og:locale" content="ja_JP">
-<meta property="og:title" content="音の へだたり｜ピアノ和音アプリ">
-<meta property="og:description" content="ドから ミは 3度。文字を かぞえて、広い・せまいを 知る">
+<meta property="og:title" content="音のへだたり｜ピアノ和音アプリ">
+<meta property="og:description" content="ドからミは3度。文字をかぞえて、広い・せまいを知る">
 <meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/interval.html">
 <meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -24,12 +24,12 @@
 <meta name="theme-color" content="#fdf8f0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<title>音の へだたり</title>
+<title>音のへだたり</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
 .toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .nw{white-space:nowrap}
-.mf{color:#8f5a00} /* 字は こい オレンジ（印・わくは #c98500 / #f4a100） */
+.mf{color:#8f5a00} /* 字はこいオレンジ（印・わくは #c98500 / #f4a100） */
 .ink{color:var(--ink)}
 .hero{border-top:6px solid var(--c5)}
 .ivtop{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
@@ -39,7 +39,7 @@
 .ivnum b{font-size:clamp(30px,9vw,42px);font-weight:800;color:var(--c5);line-height:1.1}
 .qn{font-size:14px;font-weight:800;color:var(--ink);line-height:1.35}
 .qn small{font-weight:400;color:var(--sub);font-size:12.5px}
-/* 文字で かぞえる：1・2・3 … の まる数字つき */
+/* 文字でかぞえる：1・2・3 … のまる数字つき */
 .cnt{display:flex;flex-wrap:wrap;gap:4px 2px;margin:8px 0 0;align-items:center}
 .cnt>span{display:inline-flex;align-items:center;gap:3px;padding:3px 9px 3px 4px;border-radius:999px;background:var(--c5l);font-weight:800;font-size:15px;white-space:nowrap}
 .cnt>span.end{background:var(--c5);color:#fff}
@@ -47,7 +47,7 @@
 .cnt>.mfx{display:inline-block;width:5px;height:16px;border-radius:3px;background:var(--mifa);margin:0 1px}
 .kbbox{margin-top:10px}
 .ivstaff{max-width:220px;margin:6px auto 0}
-/* 白鍵だけの 3度・5度 */
+/* 白鍵だけの3度・5度 */
 .srow{padding:8px 10px;border-radius:12px;background:var(--soft2);margin-top:6px}
 .srow .lab{line-height:1.35;margin-bottom:6px}
 .srow .lab b{font-size:15px}
@@ -57,7 +57,7 @@
 .srow.wide .lab b{color:#b4441f}
 .srow.narrow .lab b{color:var(--night)}
 .sub3{margin:14px 0 0;font-size:15px}
-/* ♯・♭で 広さを かえる */
+/* ♯・♭で広さをかえる */
 .wcol{--w:#8a4fe0;--wl:#ece2fb}
 .wcol .ivpair{color:var(--ink)}
 .rungs{display:grid;gap:4px;margin-top:10px}
@@ -85,7 +85,7 @@
 @media (min-width:600px){
   .wfig{grid-template-columns:240px 1fr}
 }
-/* 📖 ことばメモ（くわしく 知りたい人むけ。ふだんは とじておく） */
+/* 📖 ことばメモ（くわしく知りたい人むけ。ふだんはとじておく） */
 .tips ol{margin:0;padding-left:1.3em}
 .tips li{margin:6px 0}
 .terms dl{margin:0}
@@ -101,20 +101,20 @@
 <div class="actionbar" id="actions"></div>
 <script src="assets/core.js"></script>
 <script>
-/* 音の へだたり：2つの 音の へだたり（何度か）を「文字で かぞえる」。広い・せまいは ミファ・シド を またぐかで おぼえ、
- * ♯・♭で 1だんずつ 広げたり せばめたり（増・減）する。半音の 数は 画面に 出さない
- * 保存（'interval'）：minor・keyIdx・picks（えらんだ 2つの 音）・wn（♯・♭の 場所の 度）・ml・mh（下・上の 音に つけた ♯・♭） */
+/* 音のへだたり：2つの音のへだたり（何度か）を「文字でかぞえる」。広い・せまいはミファ・シドをまたぐかでおぼえ、
+ * ♯・♭で1だんずつ広げたりせばめたり（増・減）する。半音の数は画面に出さない
+ * 保存（'interval'）：minor・keyIdx・picks（えらんだ2つの音）・wn（♯・♭の場所の度）・ml・mh（下・上の音につけた♯・♭） */
 
-/* IV:start（音の へだたりの 計算。test/interval.test.mjs も この ぶぶんを 読んで たしかめる） */
+/* IV:start（音のへだたりの計算。test/interval.test.mjs もこのぶぶんを読んでたしかめる） */
 const IV=(()=>{
   const mod=PA.mod;
-  const PERF=[1,0,0,1,1,0,0,1];    // 1・4・5・8度は「ちょうどよい（完全）」の なかま
-  const BASE=[0,2,4,5,7,9,11];     // 広い・ちょうどよい 形の はば（中の 計算だけ。画面には 出さない）
+  const PERF=[1,0,0,1,1,0,0,1];    // 1・4・5・8度は「ちょうどよい（完全）」のなかま
+  const BASE=[0,2,4,5,7,9,11];     // 広い・ちょうどよい形のはば（中の計算だけ。画面には出さない）
   const QN={P:['ちょうどよい','完全'],M:['広い','長'],m:['せまい','短'],A:['ひろげた','増'],D:['せばめた','減']};
-  // 五線の 位置（ド4＝28）から 音を つくる
+  // 五線の位置（ド4＝28）から音をつくる
   const noteAt=(step,acc)=>{const L=mod(step,7);return {letter:L,acc:acc||0,midi:12*(Math.floor(step/7)+1)+PA.NAT[L]+(acc||0)};};
   const white=n=>({letter:n.letter,acc:0,midi:n.midi-n.acc});
-  // lo（下の音）から hi（上の音）への へだたり。steps＝文字の 差、num＝度（はじめの 音も 1つめに かぞえる）
+  // lo（下の音）から hi（上の音）へのへだたり。steps＝文字の差、num＝度（はじめの音も1つめにかぞえる）
   function info(lo,hi){
     const steps=PA.stepOf(hi)-PA.stepOf(lo), semis=hi.midi-lo.midi;
     const oct=Math.floor(steps/7), s=mod(steps,7), d=semis-12*oct-BASE[s];
@@ -122,23 +122,23 @@ const IV=(()=>{
     if(steps>=0){
       if(PERF[s]) q=d===0?'P':d===1?'A':d===-1?'D':null;
       else q=d===0?'M':d===-1?'m':d===1?'A':d===-2?'D':null;
-      if(steps===0&&d<0) q=null; // 1度は 下へは せまく ならない
+      if(steps===0&&d<0) q=null; // 1度は下へはせまくならない
     }
-    return {lo,hi,steps,num:steps+1,oct,sn:steps>0&&s===0?8:s+1,q}; // sn＝オクターブを とった 度（8度は 8、10度は 3）
+    return {lo,hi,steps,num:steps+1,oct,sn:steps>0&&s===0?8:s+1,q}; // sn＝オクターブをとった度（8度は8、10度は3）
   }
-  // 2つの 音を 低い じゅんに
+  // 2つの音を低いじゅんに
   const pair=(a,b)=>(a.midi<b.midi||(a.midi===b.midi&&PA.stepOf(a)<=PA.stepOf(b)))?info(a,b):info(b,a);
-  // 広さの はしご（せまい → 広い）
+  // 広さのはしご（せまい → 広い）
   const rungs=sn=>PERF[sn-1]?['D','P','A']:['D','m','M','A'];
-  // 名前：[ふだんの ことば, 本の 名前]
+  // 名前：[ふだんのことば, 本の名前]
   function label(i){
     if(!i.q) return [i.num+'度',i.num+'度'];
-    if(i.num===1&&i.q==='P') return ['おなじ音の 1度','完全1度'];
+    if(i.num===1&&i.q==='P') return ['同じ音の1度','完全1度'];
     return [QN[i.q][0]+i.sn+'度',QN[i.q][1]+i.sn+'度'];
   }
-  // ミ・ファ（2）と シ・ド（6）の どこを またぐか：文字の ならびで しらべる
+  // ミ・ファ（2）とシ・ド（6）のどこをまたぐか：文字のならびでしらべる
   const crosses=(lo,steps)=>{const r=[];for(let k=0;k<steps;k++){const L=mod(lo.letter+k,7);if(L===2||L===6) r.push(L);}return r;};
-  // けんばんの 音（midi）の 書きかたの こうほ。調の 音は 0、白鍵そのままは 0.4、♯・♭が 1つの 黒鍵は 1、ミ♯・ド♭ などは 2
+  // けんばんの音（midi）の書きかたのこうほ。調の音は0、白鍵そのままは0.4、♯・♭が1つの黒鍵は1、ミ♯・ド♭などは2
   function cands(m,key){
     const pc=mod(m,12), sc=key.scale.concat(key.nat||[]), si=PA.sigInfo(key), pref=si.letters.length?si.type:1;
     const out=[];
@@ -146,14 +146,14 @@ const IV=(()=>{
       const a=PA.spell(L,pc), n={letter:L,acc:a,midi:m}, inKey=sc.some(x=>x.letter===L&&x.acc===a);
       if(Math.abs(a)>1&&!inKey) continue;
       let cost=inKey?0:a===0?0.4:PA.BLACK.has(pc)?1:2;
-      if(!inKey&&a!==0&&Math.sign(a)!==pref) cost+=0.1; // ♯の 調は ♯、♭の 調は ♭ を すこし えらびやすく
+      if(!inKey&&a!==0&&Math.sign(a)!==pref) cost+=0.1; // ♯の調は♯、♭の調は♭をすこしえらびやすく
       out.push({n,cost});
     }
     return out.sort((x,y)=>x.cost-y.cost);
   }
   const spell1=(m,key)=>cands(m,key)[0].n;
-  // 2つ いっしょに 書きかたを きめる：2つとも 調の 音なら 調の 書きかた。
-  // そうでなければ 調の 音を えらびつつ、とくべつな へだたり（増・減）に ならない 書きかたを えらぶ
+  // 2ついっしょに書きかたをきめる：2つとも調の音なら調の書きかた。
+  // そうでなければ調の音をえらびつつ、とくべつなへだたり（増・減）にならない書きかたをえらぶ
   function spell2(m1,m2,key){
     const c1=cands(m1,key), c2=cands(m2,key);
     if(c1[0].cost===0&&c2[0].cost===0) return [c1[0].n,c2[0].n];
@@ -165,7 +165,7 @@ const IV=(()=>{
     }));
     return best?best.ns:[spell1(m1,key),spell1(m2,key)];
   }
-  // ♯・♭で 広さを かえる：調の 主音から wn 度上の 音（音階の 音）に、下の音へ ml・上の音へ mh の ♯（＋）・♭（−）
+  // ♯・♭で広さをかえる：調の主音から wn 度上の音（音階の音）に、下の音へ ml・上の音へ mh の♯（＋）・♭（−）
   function widget(key,wn,ml,mh){
     const lo0=PA.at(key.scale,0), hi0=PA.at(key.scale,wn-1);
     const lo={letter:lo0.letter,acc:lo0.acc+ml,midi:lo0.midi+ml}, hi={letter:hi0.letter,acc:hi0.acc+mh,midi:hi0.midi+mh};
@@ -178,14 +178,14 @@ const IV=(()=>{
 /* IV:end */
 
 const BLUE='#2f7ee8', BLUEL='#dfeafd', PUR='#8a4fe0', PURL='#ece2fb';
-const KB_LO=60, KB_HI=84; // まんなかの ド から 2オクターブ
-const L=l=>PA.nmH({letter:l,acc:0}); // ♯・♭の ない 文字の 名前（音名の せっていに あわせる）
+const KB_LO=60, KB_HI=84; // まんなかのドから2オクターブ
+const L=l=>PA.nmH({letter:l,acc:0}); // ♯・♭のない文字の名前（音名のせっていにあわせる）
 const MIFA=()=>`<b class="mf nw">${L(2)}・${L(3)}</b>`, SIDO=()=>`<b class="mf nw">${L(6)}・${L(0)}</b>`;
 const yomi=(w,y)=>`<ruby>${w}<rt>${y}</rt></ruby>`; // ふりがな
-// 名前：8度より 広い ときは「1オクターブと 広い3度（長10度）」の ように、本の 名前は 10度の まま
+// 名前：8度より広いときは「1オクターブと広い3度（長10度）」のように、本の名前は10度のまま
 const fullLabel=i=>{
   if(!i.q||i.num<=8) return IV.label(i);
-  const Q=IV.QN[i.q], easy=i.sn===8?(i.q==='P'?'':Q[0]+' ')+i.oct+'オクターブ':`${i.oct}オクターブと ${Q[0]}${i.sn}度`;
+  const Q=IV.QN[i.q], easy=i.sn===8?(i.q==='P'?'':Q[0])+i.oct+'オクターブ':`${i.oct}オクターブと${Q[0]}${i.sn}度`;
   return [easy,Q[1]+i.num+'度'];
 };
 const lab=i=>{const l=fullLabel(i);return l[0]===l[1]?l[0]:`${l[0]}<small>（${l[1]}）</small>`;};
@@ -194,9 +194,9 @@ const rnd=n=>Math.floor(Math.random()*n);
 
 /* ===== 状態 ===== */
 const saved=(d=>d&&typeof d==='object'?d:{})(PA.store.get('interval',{}));
-const state={minor:!!saved.minor,keyIdx:0,picks:[],wn:3,ml:0,mh:0,wlast:null}; // wlast＝さいごに おした ♯・♭の ボタン
+const state={minor:!!saved.minor,keyIdx:0,picks:[],wn:3,ml:0,mh:0,wlast:null}; // wlast＝さいごにおした♯・♭のボタン
 if(Number.isInteger(saved.keyIdx)&&saved.keyIdx>=0&&saved.keyIdx<PA.keyCount(state.minor)) state.keyIdx=saved.keyIdx;
-const curKey=()=>PA.keyOf(state.minor,state.keyIdx,60); // 主音は ド4〜シ4
+const curKey=()=>PA.keyOf(state.minor,state.keyIdx,60); // 主音はド4〜シ4
 const okNote=n=>n&&Number.isInteger(n.letter)&&n.letter>=0&&n.letter<7&&Number.isInteger(n.acc)&&Math.abs(n.acc)<=2&&Number.isInteger(n.midi)&&n.midi>=KB_LO-2&&n.midi<=KB_HI+2&&PA.mod(PA.NAT[n.letter]+n.acc-n.midi,12)===0;
 const defPicks=key=>[PA.at(key.scale,0),PA.at(key.scale,2)].map(n=>({letter:n.letter,acc:n.acc,midi:n.midi}));
 state.picks=Array.isArray(saved.picks)&&saved.picks.length<=2&&saved.picks.every(okNote)?saved.picks.map(n=>({letter:n.letter,acc:n.acc,midi:n.midi})):defPicks(curKey());
@@ -206,32 +206,32 @@ const save=()=>PA.store.set('interval',{minor:state.minor,keyIdx:state.keyIdx,pi
 const curPair=()=>state.picks.length===2?IV.pair(state.picks[0],state.picks[1]):null;
 
 /* ===== ことば ===== */
-// 文字で かぞえる：はしの 2つは 本当の 名前、あいだは 文字だけ
+// 文字でかぞえる：はしの2つは本当の名前、あいだは文字だけ
 const countNames=i=>Array.from({length:i.steps+1},(_,k)=>k===0?i.lo:k===i.steps?i.hi:{letter:PA.mod(i.lo.letter+k,7),acc:0});
 const countText=i=>countNames(i).map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・');
 const crossText=cr=>{
   const m=cr.filter(x=>x===2).length, s=cr.filter(x=>x===6).length, p=[];
   if(m) p.push(MIFA()+(m>1?`（${m}かい）`:''));
   if(s) p.push(SIDO()+(s>1?`（${s}かい）`:''));
-  return p.join(' と ');
+  return p.join('と');
 };
-// 広い・せまいの わけ：まず ♯・♭を とった 白鍵の 形 → ♯・♭で 1だんずつ 広げる・せばめる
+// 広い・せまいのわけ：まず♯・♭をとった白鍵の形 → ♯・♭で1だんずつ広げる・せばめる
 function why(i){
-  if(i.num===1) return i.lo.acc===i.hi.acc?'おなじ 音 → <b>1度</b>':`文字が おなじなので <b>1度</b>。♯・♭が ちがうので <b>${lab(i)}</b>`;
-  if(i.steps>7) return i.sn===8?`${i.steps/7}オクターブ。`:`${i.oct}オクターブと ${i.sn}度。広さは ${i.sn}度と おなじ ように かんがえるよ。`;
+  if(i.num===1) return i.lo.acc===i.hi.acc?'同じ音 → <b>1度</b>':`文字が同じなので<b>1度</b>。♯・♭がちがうので<b>${lab(i)}</b>`;
+  if(i.steps>7) return i.sn===8?`${i.steps/7}オクターブ。`:`${i.oct}オクターブと${i.sn}度。広さは${i.sn}度と同じように見るよ。`;
   const wl=IV.white(i.lo), wh=IV.white(i.hi), w=IV.info(wl,wh), cr=IV.crosses(i.lo,i.steps);
   const acc=i.lo.acc||i.hi.acc;
-  let s=acc?`♯・♭を とると ${PA.nmH(wl)}→${PA.nmH(wh)}。`:'';
-  s+=cr.length?`${crossText(cr)} を またぐ`:`${MIFA()} も ${SIDO()} も またがない`;
+  let s=acc?`♯・♭をとると${PA.nmH(wl)}→${PA.nmH(wh)}。`:'';
+  s+=cr.length?`${crossText(cr)}をまたぐ`:`${MIFA()}も${SIDO()}もまたがない`;
   s+=` → ${acc?lab(w):`<b>${lab(w)}</b>`}`;
   if(!acc) return s;
-  const eff=[], up='1だん 広く', dn='1だん せまく';
-  if(i.hi.acc>0) eff.push(`上の「${PA.nmH(i.hi)}」の ♯${i.hi.acc>1?'♯':''}で ${i.hi.acc>1?'2だん 広く':up}`);
-  if(i.hi.acc<0) eff.push(`上の「${PA.nmH(i.hi)}」の ♭${i.hi.acc<-1?'♭':''}で ${i.hi.acc<-1?'2だん せまく':dn}`);
-  if(i.lo.acc>0) eff.push(`下の「${PA.nmH(i.lo)}」の ♯${i.lo.acc>1?'♯':''}で ${i.lo.acc>1?'2だん せまく':dn}`);
-  if(i.lo.acc<0) eff.push(`下の「${PA.nmH(i.lo)}」の ♭${i.lo.acc<-1?'♭':''}で ${i.lo.acc<-1?'2だん 広く':up}`);
+  const eff=[], up='1だん広く', dn='1だんせまく';
+  if(i.hi.acc>0) eff.push(`上の「${PA.nmH(i.hi)}」の♯${i.hi.acc>1?'♯':''}で${i.hi.acc>1?'2だん広く':up}`);
+  if(i.hi.acc<0) eff.push(`上の「${PA.nmH(i.hi)}」の♭${i.hi.acc<-1?'♭':''}で${i.hi.acc<-1?'2だんせまく':dn}`);
+  if(i.lo.acc>0) eff.push(`下の「${PA.nmH(i.lo)}」の♯${i.lo.acc>1?'♯':''}で${i.lo.acc>1?'2だんせまく':dn}`);
+  if(i.lo.acc<0) eff.push(`下の「${PA.nmH(i.lo)}」の♭${i.lo.acc<-1?'♭':''}で${i.lo.acc<-1?'2だん広く':up}`);
   const same=w.q===i.q;
-  return s+`。<br>${eff.join('、')}${same?' → 広さは かわらず':''} → <b>${lab(i)}</b>`;
+  return s+`。<br>${eff.join('、')}${same?' → 広さはかわらず':''} → <b>${lab(i)}</b>`;
 }
 
 /* ===== 画面のパーツ ===== */
@@ -245,33 +245,33 @@ function heroCard(key){
       const st=PA.stepOf(i.lo)+k, w=IV.noteAt(st,0);
       if(w.midi>=KB_LO&&w.midi<=KB_HI&&!marks.has(w.midi)) marks.set(w.midi,{fill:BLUEL,label:String(k+1),tc:BLUE});
     });
-    [[i.hi,String(i.num)],[i.lo,'1']].forEach(([n,c])=>{ // 黒鍵の 下には 数字を 書かない（白鍵の 名前と かさなるので）
+    [[i.hi,String(i.num)],[i.lo,'1']].forEach(([n,c])=>{ // 黒鍵の下には数字を書かない（白鍵の名前とかさなるので）
       marks.set(n.midi,{fill:BLUE,label:PA.nm(n),focus:true,sub:PA.BLACK.has(PA.mod(n.midi,12))?'':c,subColor:BLUE});
     });
     top=`<div class="ivpair"><span class="nw">${PA.nmH(i.lo)}</span><span class="ar">→</span><span class="nw">${PA.nmH(i.hi)}</span></div>
       <div class="ivnum"><b>${i.num}度</b><span class="qn">${lab(i)}</span></div>`;
-    // 文字の ならび（ミファ・シド の ところに オレンジの 印）
+    // 文字のならび（ミファ・シドのところにオレンジの印）
     cnt=`<div class="cnt" aria-hidden="true">`+countNames(i).map((n,k)=>{
       const mark=k<i.steps&&(PA.mod(i.lo.letter+k,7)===2||PA.mod(i.lo.letter+k,7)===6)?'<b class="mfx"></b>':'';
       return `<span class="${k===0||k===i.steps?'end':''}"><i>${k+1}</i>${PA.nmH(n)}</span>${mark}`;
     }).join('')+`</div>`;
-    line=`${countText(i)} の <b>${i.num}${i.num<10?'つ':'こ'}</b> → <b>${i.num}度</b>${i.num===8?'（オクターブ）':''}<br>📏 ${why(i)}`;
+    line=`${countText(i)}の<b>${i.num}${i.num<10?'つ':'こ'}</b> → <b>${i.num}度</b>${i.num===8?'（オクターブ）':''}<br>📏 ${why(i)}`;
   }else{
     p.forEach(n=>marks.set(n.midi,{fill:BLUE,label:PA.nm(n),focus:true,sub:'1',subColor:BLUE}));
     top=`<div class="ivpair">${p.length?`<span class="nw">${PA.nmH(p[0])}</span><span class="ar">→</span>？`:'？<span class="ar">→</span>？'}</div><div class="ivnum"><b>？度</b></div>`;
-    line=p.length?`「${PA.nmH(p[0])}」を えらんだよ。<b>もう 1つ</b> タップしてね。`:'👇 けんばんを <b>2つ</b> タップしてね。';
+    line=p.length?`「${PA.nmH(p[0])}」を選んだよ。<b>もう1つ</b>タップしてね。`:'👇 けんばんを<b>2つ</b>タップしてね。';
   }
   const staff=i?PA.staffSVG(key,[{notes:i.num===1&&i.lo.acc===i.hi.acc?[i.lo]:[i.lo,i.hi],color:BLUE,label:i.num+'度',labelColor:BLUE}],{minW:150,maxScale:1.4}):'';
   return `<section class="card hero">
-    <h2>🔢 文字で かぞえる<small>けんばんを 2つ タップしてね。はじめの 音も「1つめ」に かぞえるよ</small></h2>
+    <h2>🔢 文字でかぞえる<small>けんばんを2つタップしてね。はじめの音も「1つめ」にかぞえるよ</small></h2>
     <div class="ivtop" aria-live="polite">${top}</div>${cnt}
     <div class="msg" style="margin-top:10px">${line}</div>
     <div class="kbbox scroll" data-sk="kb" data-kbpick="1">${PA.kbSVG(KB_LO,KB_HI,marks)}</div>
-    <p class="note">数字＝かぞえた 文字。<span class="mf">オレンジの印</span>＝${MIFA()} と ${SIDO()}（白鍵どうしが となりで、あいだに 黒鍵が ない せまい ところ）</p>
-    ${staff?`<div class="ivstaff">${staff}</div><p class="note" style="text-align:center;margin-top:0">がくふでも 線・間・線… と 1つずつ かぞえれば おなじ 数</p>`:''}
+    <p class="note">数字＝かぞえた文字。<span class="mf">オレンジの印</span>＝${MIFA()}と${SIDO()}（白鍵どうしがとなりで、あいだに黒鍵がない、せまいところ）</p>
+    ${staff?`<div class="ivstaff">${staff}</div><p class="note" style="text-align:center;margin-top:0">がくふでも、線・間・線…と1つずつかぞえれば同じ数</p>`:''}
   </section>`;
 }
-// 白鍵だけの 3度・5度
+// 白鍵だけの3度・5度
 const EX3W=[0,3,4], EX3N=[1,2,5,6], EX5P=[0,1,2,3,4,5], EX5D=[6];
 function exChip(l,steps,i){
   const on=i&&i.steps===steps&&i.lo.acc===0&&i.hi.acc===0&&i.lo.letter===l;
@@ -281,22 +281,22 @@ function whiteCard(){
   const i=curPair();
   const row=(cls,name,formal,rule,ls,steps)=>`<div class="srow ${cls}"><div class="lab"><b>${name}</b><small>${formal}</small><small>… ${rule}</small></div><div class="chips">${ls.map(l=>exChip(l,steps,i)).join('')}</div></div>`;
   return `<section class="card">
-    <h2>📏 広い・せまいを 白鍵で おぼえる<small>おなじ 3度でも、広い 3度と せまい 3度が あるよ。タップすると 鳴るよ</small></h2>
-    <p class="note ink" style="margin-top:0">白鍵の となりどうしで、${MIFA()} と ${SIDO()} だけは あいだに 黒鍵が ない「せまい ところ」。ここを <b>またぐか どうか</b> で きまるよ。</p>
+    <h2>📏 広い・せまいを白鍵でおぼえる<small>同じ3度でも、広い3度とせまい3度があるよ。タップすると鳴るよ</small></h2>
+    <p class="note ink" style="margin-top:0">白鍵のとなりどうしで、${MIFA()}と${SIDO()}だけは、あいだに黒鍵がない。この<b>「せまいところ」をまたぐかどうか</b>で、広さがかわるよ。</p>
     <p class="sub3"><b>3度</b></p>
     ${row('wide','広い3度','（長3度）','またがない',EX3W,2)}
-    ${row('narrow','せまい3度','（短3度）','1つ またぐ',EX3N,2)}
+    ${row('narrow','せまい3度','（短3度）','1つまたぐ',EX3N,2)}
     <p class="sub3"><b>5度</b></p>
-    ${row('wide','ちょうどよい5度','（完全5度）','1つ またぐ',EX5P,4)}
-    ${row('narrow','せばめた5度','（減5度）','2つとも またぐ',EX5D,4)}
-    <p class="note">5度は ほとんどが ちょうどよい 5度。${L(6)}→${L(3)} だけ ${MIFA()} と ${SIDO()} の 2つを またぐので、せまく なるよ。</p>
+    ${row('wide','ちょうどよい5度','（完全5度）','1つまたぐ',EX5P,4)}
+    ${row('narrow','せばめた5度','（減5度）','2つともまたぐ',EX5D,4)}
+    <p class="note">5度のほとんどは、ちょうどよい5度。${L(6)}→${L(3)}だけ${MIFA()}と${SIDO()}の2つをまたぐので、せまくなるよ。</p>
   </section>`;
 }
-// ♯・♭で 広さを かえる
+// ♯・♭で広さをかえる
 const W_LINKS=[
-  ['aug6.html','🎺 増六の和音','いちばん下と いちばん上が <b>ひろげた6度（増6度）</b>'],
-  ['neapolitan.html','🌋 ナポリの六','つぎの 和音へ <b>せばめた3度（減3度）</b> で 下がる 音が ある'],
-  ['dim-halfdim.html','🌀 減七と 半減七','いちばん下と いちばん上が <b>せばめた7度（減7度）</b>']
+  ['aug6.html','🎺 増六の和音','いちばん下といちばん上が<b>ひろげた6度（増6度）</b>'],
+  ['neapolitan.html','🌋 ナポリの六','次の和音へ<b>せばめた3度（減3度）</b>で下がる音がある'],
+  ['dim-halfdim.html','🌀 減七と半減七','いちばん下といちばん上が<b>せばめた7度（減7度）</b>']
 ];
 function widgetCard(key){
   const W=IV.widget(key,state.wn,state.ml,state.mh), i=W.i, rs=IV.rungs(i.sn);
@@ -307,35 +307,35 @@ function widgetCard(key){
   const marks=new Map();
   marks.set(W.lo.midi,{fill:PUR,label:PA.nm(W.lo),focus:true,sub:'下',subColor:PUR});
   marks.set(W.hi.midi,{fill:PUR,label:PA.nm(W.hi),focus:true,sub:'上',subColor:PUR});
-  const [klo,khi]=kbRange(W.lo0.midi-3,W.hi0.midi+3); // ♯・♭は 2つまで なので、もとの 音の まわりで たりる
+  const [klo,khi]=kbRange(W.lo0.midi-3,W.hi0.midi+3); // ♯・♭は2つまでなので、もとの音のまわりでたりる
   const staff=PA.staffSVG(key,[{notes:[W.lo,W.hi],color:PUR,accColor:PUR,label:i.sn+'度',labelColor:PUR}],{minW:150,maxScale:1.3});
   return `<section class="card wcol">
-    <h2>🎚 ♯・♭で 広さを かえる<small>文字が おなじなら 何度かは かわらない。かわるのは 広さだけ</small></h2>
+    <h2>🎚 ♯・♭で広さをかえる<small>文字が同じなら、何度かはかわらない。かわるのは広さだけ</small></h2>
     ${PA.seg('wn',[['3','3度'],['5','5度'],['6','6度'],['7','7度']],String(state.wn),'full')}
     <div class="ivtop" style="margin-top:10px" aria-live="polite"><div class="ivpair"><span class="nw">${PA.nmH(W.lo)}</span><span class="ar">→</span><span class="nw">${PA.nmH(W.hi)}</span></div>
       <div class="ivnum"><b style="color:${PUR}">${i.sn}度</b><span class="qn">${lab(i)}</span></div></div>
     ${rungs}
     <div class="wbtns">
-      ${b(0,1,'上の音を 上げる ♯','→ 1だん 広く')}${b(0,-1,'上の音を 下げる ♭','→ 1だん せまく')}
-      ${b(1,0,'下の音を 上げる ♯','→ 1だん せまく')}${b(-1,0,'下の音を 下げる ♭','→ 1だん 広く')}
+      ${b(0,1,'上の音を上げる♯','→ 1だん広く')}${b(0,-1,'上の音を下げる♭','→ 1だんせまく')}
+      ${b(1,0,'下の音を上げる♯','→ 1だんせまく')}${b(-1,0,'下の音を下げる♭','→ 1だん広く')}
     </div>
-    <div class="msg" style="margin-top:10px">${wMsg(key)||`${PA.keyName(key)}の 主音「${PA.nmH(W.lo0)}」から ${state.wn}度 上の「${PA.nmH(W.hi0)}」。ボタンで ♯・♭を つけて みよう。`}</div>
+    <div class="msg" style="margin-top:10px">${wMsg(key)||`${PA.keyName(key)}の主音「${PA.nmH(W.lo0)}」から${state.wn}度上の「${PA.nmH(W.hi0)}」。ボタンで♯・♭をつけてみよう。`}</div>
     <div class="wfig"><div class="wst">${staff}</div><div class="scroll" data-sk="wkb">${PA.kbSVG(klo,khi,marks)}</div></div>
-    <div class="row" style="margin-top:8px"><button class="btn small" data-act="wplay">🔊 聴く</button><button class="btn small" data-act="wreset" ${state.ml||state.mh?'':'disabled'}>↩ もとに もどす</button></div>
-    <p class="note">いちばん 広い 形より もう 1だん 広げると <b>増（ひろげた）</b>、いちばん せまい 形より もう 1だん せばめると <b>減（せばめた）</b>。</p>
-    <h3>🔗 この 名前が 出てくる ページ</h3>
+    <div class="row" style="margin-top:8px"><button class="btn small" data-act="wplay">🔊 聴く</button><button class="btn small" data-act="wreset" ${state.ml||state.mh?'':'disabled'}>↩ もとにもどす</button></div>
+    <p class="note">いちばん広い形よりもう1だん広げると<b>増（ひろげた）</b>、いちばんせまい形よりもう1だんせばめると<b>減（せばめた）</b>。</p>
+    <h3>🔗 この名前が出てくるページ</h3>
     <div class="links">${W_LINKS.map(([h,t,s])=>`<a class="btn" href="${h}">${t}<small>${s}</small></a>`).join('')}</div>
   </section>`;
 }
-// さいごに おした ボタンの せつめい（音名の せっていが かわっても 書きなおせるように、ここで つくる）
+// さいごにおしたボタンのせつめい（音名のせっていがかわっても書きなおせるように、ここでつくる）
 function wMsg(key){
   const d=state.wlast; if(!d) return '';
   const B=IV.widget(key,state.wn,state.ml-d[0],state.mh-d[1]), W=IV.widget(key,state.wn,state.ml,state.mh);
   if(!B.ok||!W.ok) return '';
   const wider=d[1]>0||d[0]<0, who=d[1]?'上の音':'下の音', n=d[1]?W.hi:W.lo, was=d[1]?B.hi:B.lo;
-  return `${who}「${PA.nmH(was)}」を ${d[0]+d[1]>0?'上げて':'下げて'}「${PA.nmH(n)}」→ 1だん ${wider?'広く':'せまく'} なって <b>${labT(W.i)}</b>。<br>文字は おなじ なので ${W.i.sn}度の まま。`;
+  return `${who}「${PA.nmH(was)}」を${d[0]+d[1]>0?'上げて':'下げて'}「${PA.nmH(n)}」→ 1だん${wider?'広く':'せまく'}なって<b>${labT(W.i)}</b>。<br>文字は同じなので${W.i.sn}度のまま。`;
 }
-// けんばんの はんい：白鍵で はじまり 白鍵で おわる（8つ 以上）
+// けんばんのはんい：白鍵ではじまり白鍵でおわる（8つ以上）
 function kbRange(lo,hi){
   const wk=m=>!PA.BLACK.has(PA.mod(m,12));
   while(!wk(lo)) lo--; while(!wk(hi)) hi++;
@@ -344,7 +344,7 @@ function kbRange(lo,hi){
   return [lo,hi];
 }
 
-/* ===== たしかめよう（4もん。きろくは のこさない） ===== */
+/* ===== たしかめよう（4もん。きろくはのこさない） ===== */
 const QTYPES=['num','wide','num','wide'];
 let Q=null;
 function makeQ(key,type){
@@ -355,7 +355,7 @@ function makeQ(key,type){
   let opts;
   if(type==='wide') opts=[['M','広い3度'],['m','せまい3度']];
   else{
-    // ちかい 数を 3つ（2度〜8度）
+    // ちかい数を3つ（2度〜8度）
     const near=[2,3,4,5,6,7,8].filter(x=>x!==i.num).sort((a,b)=>Math.abs(a-i.num)-Math.abs(b-i.num)||rnd(3)-1).slice(0,3);
     opts=near.concat([i.num]).sort((a,b)=>a-b).map(n=>[String(n),n+'度']);
   }
@@ -367,14 +367,14 @@ function newQuiz(){
 }
 function quizCard(key){
   const q=Q.list[Q.n], i=q.i, done=q.ans!=null, right=done&&q.ans===(q.type==='wide'?i.q:String(i.num));
-  const ask=q.type==='wide'?'広い 3度？ せまい 3度？':'何度かな？';
+  const ask=q.type==='wide'?'広い3度？せまい3度？':'何度かな？';
   const staff=PA.staffSVG(key,[{notes:[i.lo,i.hi],color:'#3a3245'}],{minW:130,maxScale:1.3});
   let fb='';
   if(done){
-    const head=right?'⭕ せいかい！':'❌ おしい！';
-    const body=q.type==='wide'?why(i):`${countText(i)} の ${i.num}つ → <b>${i.num}度</b>`;
+    const head=right?'⭕ 正解！':'❌ おしい！';
+    const body=q.type==='wide'?why(i):`${countText(i)}の${i.num}つ → <b>${i.num}度</b>`;
     const last=Q.n===Q.list.length-1;
-    fb=`<div class="fb ${right?'good':'bad'}" role="status"><b>${head}</b><br>${body}${last?`<br>🎉 <b>${Q.list.length}もん中 ${Q.ok}もん</b> できたよ！`:''}</div>`;
+    fb=`<div class="fb ${right?'good':'bad'}" role="status"><b>${head}</b><br>${body}${last?`<br>🎉 <b>${Q.list.length}問中${Q.ok}問</b>できたよ！`:''}</div>`;
   }
   const choices=q.opts.map(([v,t])=>{
     let cls='';
@@ -383,45 +383,45 @@ function quizCard(key){
   }).join('');
   const last=Q.n===Q.list.length-1;
   return `<section class="card quiz">
-    <h2 class="qhead">✅ たしかめよう<span class="qno">${Q.n+1} / ${Q.list.length}もん</span></h2>
-    <p class="note" style="margin-top:-6px">${PA.keyName(key)}の 音階の 音から 出すよ</p>
+    <h2 class="qhead">✅ たしかめよう<span class="qno">${Q.n+1} / ${Q.list.length}問</span></h2>
+    <p class="note" style="margin-top:-6px">${PA.keyName(key)}の音階の音から出すよ</p>
     <div class="ivpair" style="text-align:center;margin-top:6px"><span class="nw">${PA.nmH(i.lo)}</span><span class="ar">→</span><span class="nw">${PA.nmH(i.hi)}</span></div>
     <div class="qstaff">${staff}</div>
     <p class="askline">${ask}</p>
     <div class="choices" ${q.opts.length===2?'style="grid-template-columns:repeat(2,1fr)"':''}>${choices}</div>
     ${fb}
-    <div class="row" style="margin-top:10px"><button class="btn small" data-act="qplay">🔊 聴く</button>${done?`<button class="btn small primary" data-act="qnext" data-hot="next">${last?'🔁 もういちど':'つぎ ➡'}</button>`:''}</div>
+    <div class="row" style="margin-top:10px"><button class="btn small" data-act="qplay">🔊 聴く</button>${done?`<button class="btn small primary" data-act="qnext" data-hot="next">${last?'🔁 もういちど':'次 ➡'}</button>`:''}</div>
   </section>`;
 }
 
 /* ===== 💡・📖 ===== */
 function tipsHTML(){
-  return `<details class="more tips" data-d="tips"><summary>💡 おぼえかたの コツ</summary><ol>
-    <li><b>何度か は 文字で かぞえる</b>。はじめの 音も「1つめ」。${L(0)}→${L(2)} は ${L(0)}・${L(1)}・${L(2)} の 3つで <b>3度</b>。</li>
-    <li><b>おなじ 音は 1度</b>、${L(0)}から 上の ${L(0)} は <b>8度</b>（オクターブ）。</li>
-    <li>がくふでは、<b>線→線</b> か <b>間→間</b> なら 3度・5度・7度。<b>線→間</b> なら 2度・4度・6度。</li>
-    <li><b>♯・♭は 何度か を かえない</b>。${L(0)}→${L(2)} も ${L(0)}→${PA.nmH({letter:2,acc:-1})} も 3度。かわるのは 広さ だけ。</li>
-    <li><b>3度</b>：${MIFA()} か ${SIDO()} を またぐと せまい 3度、またがなければ 広い 3度。</li>
-    <li><b>5度</b>：ほとんど ちょうどよい 5度。${L(6)}→${L(3)} だけ せばめた 5度。</li>
-    <li><b>上の音に ♯ ・ 下の音に ♭</b> → 1だん 広く。<b>上の音に ♭ ・ 下の音に ♯</b> → 1だん せまく。</li>
-    <li>和音は 3度の つみかさね。${L(0)}・${L(2)}・${L(4)} は 広い 3度 ＋ せまい 3度 で 明るい ひびき。</li>
+  return `<details class="more tips" data-d="tips"><summary>💡 おぼえかたのコツ</summary><ol>
+    <li><b>何度かは文字でかぞえる</b>。はじめの音も「1つめ」。${L(0)}→${L(2)}は${L(0)}・${L(1)}・${L(2)}の3つで<b>3度</b>。</li>
+    <li><b>同じ音は1度</b>、${L(0)}から上の${L(0)}は<b>8度</b>（オクターブ）。</li>
+    <li>がくふでは、<b>線→線</b>か<b>間→間</b>なら3度・5度・7度。<b>線→間</b>なら2度・4度・6度。</li>
+    <li><b>♯・♭は何度かをかえない</b>。${L(0)}→${L(2)}も${L(0)}→${PA.nmH({letter:2,acc:-1})}も3度。かわるのは広さだけ。</li>
+    <li><b>3度</b>：${MIFA()}か${SIDO()}をまたぐと、せまい3度。またがなければ、広い3度。</li>
+    <li><b>5度</b>：ほとんどは、ちょうどよい5度。${L(6)}→${L(3)}だけせばめた5度。</li>
+    <li><b>上の音に♯・下の音に♭</b> → 1だん広く。<b>上の音に♭・下の音に♯</b> → 1だんせまく。</li>
+    <li>和音は3度のつみかさね。${L(0)}・${L(2)}・${L(4)}は広い3度＋せまい3度で明るいひびき。</li>
   </ol></details>`;
 }
 function termsHTML(){
-  const i=curPair(), ex=i&&i.q?`いまの ${PA.nmH(i.lo)}→${PA.nmH(i.hi)} は ${fullLabel(i)[1]}。`:'';
-  return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary><dl>
+  const i=curPair(), ex=i&&i.q?`いまの${PA.nmH(i.lo)}→${PA.nmH(i.hi)}は${fullLabel(i)[1]}。`:'';
+  return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や楽譜で見かける名前）</summary><dl>
     <dt>${yomi('音程','おんてい')}</dt>
-    <dd>2つの 音の へだたりの こと。この ページの「音の へだたり」。${ex}</dd>
+    <dd>2つの音のへだたりのこと。このページの「音のへだたり」。${ex}</dd>
     <dt>${yomi('度','ど')}</dt>
-    <dd>音程の 数。文字（${L(0)}・${L(1)}・${L(2)}…）を、はじめの 音も 入れて かぞえる。</dd>
+    <dd>音程の数。文字（${L(0)}・${L(1)}・${L(2)}…）を、はじめの音も入れてかぞえる。</dd>
     <dt>${yomi('長','ちょう')}・${yomi('短','たん')}</dt>
-    <dd>2度・3度・6度・7度 の 広い・せまい。<b>長3度</b>＝広い 3度、<b>短3度</b>＝せまい 3度。</dd>
+    <dd>2度・3度・6度・7度の広い・せまい。<b>長3度</b>＝広い3度、<b>短3度</b>＝せまい3度。</dd>
     <dt>${yomi('完全','かんぜん')}</dt>
-    <dd>1度・4度・5度・8度 の ふつうの 広さ。この ページでは「ちょうどよい」と よんでいるよ。<b>完全5度</b>＝ちょうどよい 5度。</dd>
+    <dd>1度・4度・5度・8度のふつうの広さ。このページでは「ちょうどよい」とよんでいるよ。<b>完全5度</b>＝ちょうどよい5度。</dd>
     <dt>${yomi('増','ぞう')}・${yomi('減','げん')}</dt>
-    <dd><b>増</b>は いちばん 広い 形より もう 1だん 広げた もの（ひろげた）。<b>減</b>は いちばん せまい 形より もう 1だん せばめた もの（せばめた）。<b>増6度</b>・<b>減3度</b>・<b>減7度</b> などが 変化和音の ページに 出てくるよ。</dd>
+    <dd><b>増</b>はいちばん広い形よりもう1だん広げたもの（ひろげた）。<b>減</b>はいちばんせまい形よりもう1だんせばめたもの（せばめた）。<b>増6度</b>・<b>減3度</b>・<b>減7度</b>などが変化和音のページに出てくるよ。</dd>
     <dt>オクターブ</dt>
-    <dd>8度の こと。${L(0)}から 上の ${L(0)}まで。名前が おなじ 音どうし。</dd>
+    <dd>8度のこと。${L(0)}から上の${L(0)}まで。名前が同じ音どうし。</dd>
   </dl></details>`;
 }
 
@@ -430,15 +430,15 @@ function render(){
   const key=curKey();
   if(!Q) newQuiz();
   const h=`<div class="stack">
-    <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}・えらんだ 調の ♯・♭で 書くよ</span></div>
+    <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}・選んだ調の♯・♭で書くよ</span></div>
     ${heroCard(key)}${whiteCard()}${widgetCard(key)}${quizCard(key)}${tipsHTML()}${termsHTML()}</div>`;
   PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx);
   PA.paint(document.getElementById('actions'),
-    `<button class="btn primary" data-act="play" data-hot="listen">🔊 2つの音を 聴く</button><button class="btn" data-act="rnd">🎲 べつの れい</button>`,'bar');
+    `<button class="btn primary" data-act="play" data-hot="listen">🔊 2つの音を聴く</button><button class="btn" data-act="rnd">🎲 べつのれい</button>`,'bar');
 }
 
 /* ===== 音 ===== */
-// 1つずつ（下 → 上）鳴らして から、いっしょに
+// 1つずつ（下 → 上）鳴らしてから、いっしょに
 function playPair(lo,hi){
   PA.stopSound();
   PA.playNote(lo.midi,0,1.1,0.22); PA.playNote(hi.midi,0.6,1.1,0.22);
@@ -451,23 +451,23 @@ function playPicks(){
 }
 
 /* ===== 操作 ===== */
-PA.mountBar({title:'音の へだたり',app:'interval'});
+PA.mountBar({title:'音のへだたり',app:'interval'});
 PA.onSettings=render;
 PA.onPageShow=render;
 PA.onKeySheet=()=>PA.openKeySheet({minor:state.minor,idx:state.keyIdx,both:true,onPick:(minor,idx)=>{
   PA.stopSound(); state.minor=minor; state.keyIdx=idx; const key=curKey();
   state.picks=defPicks(key); state.ml=0; state.mh=0; state.wlast=null; newQuiz(); save(); render(); playPicks();
 }});
-// 上の けんばん（data-kbpick）を さわった ときだけ 2つの 音を えらぶ（♯・♭の けんばんは 鳴らすだけ）
+// 上のけんばん（data-kbpick）をさわったときだけ2つの音をえらぶ（♯・♭のけんばんは鳴らすだけ）
 let pickSrc=false;
 const srcOf=e=>{pickSrc=!!(e.target&&e.target.closest&&e.target.closest('[data-kbpick]'));};
 document.addEventListener('pointerdown',srcOf,true);
 document.addEventListener('keydown',srcOf,true);
-if(!window.PointerEvent){ // iOS 12 など：core は click で 鳴らすので、その 前の さわりはじめで しらべる
+if(!window.PointerEvent){ // iOS 12など：core は click で鳴らすので、その前のさわりはじめでしらべる
   document.addEventListener('touchstart',srcOf,{capture:true,passive:true});
   document.addEventListener('mousedown',srcOf,true);
 }
-PA.onKey=m=>{ // 音は core が 鳴らす
+PA.onKey=m=>{ // 音は core が鳴らす
   if(!pickSrc) return;
   const key=curKey();
   if(state.picks.length!==1) state.picks=[IV.spell1(m,key)];

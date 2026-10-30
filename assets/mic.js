@@ -1,73 +1,73 @@
-/* 🎤 本物の ピアノで ひいた 和音を マイクで たしかめる（PA.mic）
+/* 🎤 本物のピアノでひいた和音をマイクでたしかめる（PA.mic）
  *
- * iPhone・iPad の Safari には MIDI が ないので、生のピアノで ひいてもらい、ページが 耳で きく。
- * これは「楽譜に おこす」ものでは なく「こたえあわせ」。こたえの 和音（音の なまえ＝pc 0〜11）は
- * わかっているので、「いま 鳴っている 音の なまえが ちょうど それだけか」だけを しらべる。
- * どの 高さ（オクターブ）で ひいても OK。
+ * iPhone・iPad の Safari には MIDI がないので、生のピアノでひいてもらい、ページが耳できく。
+ * これは「楽譜におこす」ものではなく「こたえあわせ」。こたえの和音（音のなまえ＝pc 0〜11）は
+ * わかっているので、「いま鳴っている音のなまえがちょうどそれだけか」だけをしらべる。
+ * どの高さ（オクターブ）でひいても OK。
  *
  * よみこみ：<script src="assets/core.js"></script><script src="assets/mic.js"></script>
  *
- * つかいかた（ページの くみこみかた・たとえば chord-quiz.html）
- *   - PA.mic.supported() が false なら ボタンを 出さない（または 「この ブラウザでは つかえないよ」）。
- *   - ボタン：「🎤 ピアノで ひいて こたえる」（44px 以上、aria-pressed で オン・オフ）。
- *   - はじめて おす まえに、子どもと おうちの 人むけに みじかく 書いておく：
- *       「マイクで ピアノの 音を きいて、あっているか しらべるよ。
- *         音は この 端末の 中だけで しらべて、どこにも 送らないよ。録音も しないよ。
- *         『マイクを つかっても いい？』と きかれたら『許可』を おしてね。」
- *   - おした（タップの 中で よぶ。iOS は タップの 中でないと 音の しくみが うごかない）：
+ * つかいかた（ページのくみこみかた・たとえば chord-quiz.html）
+ *   - PA.mic.supported() が false ならボタンを出さない（または「このブラウザではつかえないよ」）。
+ *   - ボタン：「🎤 ピアノでひいてこたえる」（44px 以上、aria-pressed でオン・オフ）。
+ *   - はじめておすまえに、子どもとおうちの人むけにみじかく書いておく：
+ *       「マイクでピアノの音をきいて、あっているかしらべるよ。
+ *         音はこの端末の中だけでしらべて、どこにも送らないよ。録音もしないよ。
+ *         『マイクをつかってもいい？』ときかれたら『許可』をおしてね。」
+ *   - おした（タップの中でよぶ。iOS はタップの中でないと音のしくみがうごかない）：
  *       const L=new PA.mic.Listener({target:pcs, onVerdict:v=>{ v.ok ? せいかい() : もういちど(v.missing,v.extra) }});
- *       PA.mic.start({onFrame:f=>L.feed(f), onError:msg=>{ 画面に msg を 出す; ボタンを もどす }});
- *     L.feed(f) は f.t（ミリ秒）を 時計に つかう。
- *   - 問題が かわったら L.setTarget(新しい pcs)。
- *   - おてほんの 音（PA.chord など）を 鳴らしている あいだは マイクが それを ひろうので、
- *     鳴らしおわるまで feed しないで、おわったら L.reset()（reset の あとは 新しく ひいた 音だけ きく）。
- *   - 画面を はなれる（pagehide・visibilitychange で hidden）・クイズを おえる・もういちど ボタン → PA.mic.stop()。
- *   - 画面の ようす：L.state が 'idle'＝「ひいてみてね」、'listen'＝「きいているよ…」、'done'＝こたえを 出した。
- *     v.missing／v.extra は 音の なまえ（pc）なので、PA.nm などで やさしく 出す
- *     （「ミ が きこえないよ」「ファ♯ も 鳴っているみたい」）。むずかしい ことばは つかわない。
- *   - しずかな 部屋で、端末を ピアノの 近く（譜面台など）に おくと よく きこえる、と 書いておく。
+ *       PA.mic.start({onFrame:f=>L.feed(f), onError:msg=>{ 画面に msg を出す; ボタンをもどす }});
+ *     L.feed(f) は f.t（ミリ秒）を時計につかう。
+ *   - 問題がかわったら L.setTarget(新しい pcs)。
+ *   - おてほんの音（PA.chord など）を鳴らしているあいだはマイクがそれをひろうので、
+ *     鳴らしおわるまで feed しないで、おわったら L.reset()（reset のあとは新しくひいた音だけきく）。
+ *   - 画面をはなれる（pagehide・visibilitychange で hidden）・クイズをおえる・もういちどボタン → PA.mic.stop()。
+ *   - 画面のようす：L.state が 'idle'＝「ひいてみてね」、'listen'＝「きいているよ…」、'done'＝こたえを出した。
+ *     v.missing／v.extra は音のなまえ（pc）なので、PA.nm などでやさしく出す
+ *     （「ミがきこえないよ」「ファ♯も鳴っているみたい」）。むずかしいことばはつかわない。
+ *   - しずかな部屋で、端末をピアノの近く（譜面台など）におくとよくきこえる、と書いておく。
  *
- * テストできる ところ（ブラウザなしで うごく）
- *   PA.mic.peaks(spec, sampleRate, fftSize, opts)   … スペクトルの 山（ピーク）を ひろう
- *   PA.mic.chroma(spec, sampleRate, fftSize, opts)  … 12この 音の なまえごとの 強さ（いちばん強い ものが 1）
+ * テストできるところ（ブラウザなしでうごく）
+ *   PA.mic.peaks(spec, sampleRate, fftSize, opts)   … スペクトルの山（ピーク）をひろう
+ *   PA.mic.chroma(spec, sampleRate, fftSize, opts)  … 12この音のなまえごとの強さ（いちばん強いものが1）
  *   PA.mic.match(chroma, targetPcs, {strict})       … こたえあわせ {ok, score, missing, extra}
- *   PA.mic.Listener                                 … 音が おちつくのを まって 1回だけ こたえを 出す
- *   PA.mic.onsetTracker()                           … 音の 大きさから「いま ひいた」「しずか」を きめる
+ *   PA.mic.Listener                                 … 音がおちつくのをまって1回だけこたえを出す
+ *   PA.mic.onsetTracker()                           … 音の大きさから「いまひいた」「しずか」をきめる
  */
 (function(){
 'use strict';
 const PA=window.PA; if(!PA) return;
 const M=PA.mic={};
 
-/* ===== きまりの 数（しきい値）と その わけ ===== */
+/* ===== きまりの数（しきい値）とそのわけ ===== */
 const T={
-  minHz:60, maxHz:2100,   // 60Hz（シ1 あたり）〜 2100Hz（ド7 あたり）。ここより 上は ほとんど 倍音なので 見ない
-  peakRelDb:-40,          // いちばん強い 山より 40dB 以上 小さい 山は すてる（窓の すそ・小さな 雑音）
-  peakOverMedDb:12,       // その帯の まんなかの 強さ（中央値＝ふつうの 雑音の 高さ）より 12dB 以上 大きい 山だけ
-  centOk:25, centMax:45,  // 平均律から 25セント までは そのまま 数える。45セント で 0 に なるよう だんだん へらす
-                          // （ピアノの 調律の ずれ・高い倍音の ずれは 小さい。半音の まんなかに ある 山は 音では ない）
-  harmLo:-35, harmHi:60,  // 「下の 音の h倍」と みなす はば（セント）。ピアノの 弦は 倍音が 少し 高めに ずれるので 上を 広く
-  octRef:0.7,             // 下の 音の 基音が 小さい（低い音・スマホの マイクは 低音が 苦手）ときは 1オクターブ上の 山も 手がかりに
-  envK:1.2,               // 倍音の 大きさは、となりの 倍音（h-1倍・h+1倍の 小さいほう）の 1.2倍 までと みなす
-  envHz:4200              // となりの 倍音を さがすため、山は 4200Hz まで ひろう（数えるのは maxHz まで）
+  minHz:60, maxHz:2100,   // 60Hz（シ1あたり）〜2100Hz（ド7あたり）。ここより上はほとんど倍音なので見ない
+  peakRelDb:-40,          // いちばん強い山より40dB 以上小さい山はすてる（窓のすそ・小さな雑音）
+  peakOverMedDb:12,       // その帯のまんなかの強さ（中央値＝ふつうの雑音の高さ）より12dB 以上大きい山だけ
+  centOk:25, centMax:45,  // 平均律から25セントまではそのまま数える。45セントで0になるようだんだんへらす
+                          // （ピアノの調律のずれ・高い倍音のずれは小さい。半音のまんなかにある山は音ではない）
+  harmLo:-35, harmHi:60,  // 「下の音の h倍」とみなすはば（セント）。ピアノの弦は倍音が少し高めにずれるので上を広く
+  octRef:0.7,             // 下の音の基音が小さい（低い音・スマホのマイクは低音が苦手）ときは1オクターブ上の山も手がかりに
+  envK:1.2,               // 倍音の大きさは、となりの倍音（h-1倍・h+1倍の小さいほう）の1.2倍までとみなす
+  envHz:4200              // となりの倍音をさがすため、山は4200Hz までひろう（数えるのは maxHz まで）
 };
-/* 倍音で 音の なまえが かわる もの（2・4・8倍は 同じ なまえ なので そのまま）。
- * 数は「下の 音の 強さの 何わり まで 倍音として ひくか」の 上限。本物の ピアノは 低い音ほど 倍音が 強いので、
- * やや 大きめに しておき、となりの 倍音の 大きさ（envK）で おさえる。本当に ひいた 音は 倍音より ずっと 強いので のこる。
- * 3倍＝ド→ソ、5倍＝ド→ミ、6倍＝ソ、7倍＝シ♭（少し 低い）、9倍＝レ、10倍＝ミ、11倍は 半音の あいだ、12倍＝ソ */
+/* 倍音で音のなまえがかわるもの（2・4・8倍は同じなまえなのでそのまま）。
+ * 数は「下の音の強さの何わりまで倍音としてひくか」の上限。本物のピアノは低い音ほど倍音が強いので、
+ * やや大きめにしておき、となりの倍音の大きさ（envK）でおさえる。本当にひいた音は倍音よりずっと強いのでのこる。
+ * 3倍＝ド→ソ、5倍＝ド→ミ、6倍＝ソ、7倍＝シ♭（少し低い）、9倍＝レ、10倍＝ミ、11倍は半音のあいだ、12倍＝ソ */
 const HR={3:0.6,5:0.4,6:0.45,7:0.35,9:0.3,10:0.3,11:0.25,12:0.3};
-/* こたえあわせの しきい値（いちばん強い 音の なまえを 1 とした わりあい）。
- * テストの ピアノの 音（test/mic.test.mjs）で、○を ○、まちがいを × に する わりあいが いちばん よい ところ。
- * あいだ（0.12〜0.2）は「こたえの 音なら ある、ほかの 音なら むし」：倍音の のこりで × に しないため。 */
-const PRES=0.12, PRES_STRICT=0.12;  // こたえの 音は これ以上 あれば「鳴っている」
-const EXTRA=0.2, EXTRA_STRICT=0.15; // こたえに ない 音が これ以上 あれば ×（strict は きびしめ）
+/* こたえあわせのしきい値（いちばん強い音のなまえを1としたわりあい）。
+ * テストのピアノの音（test/mic.test.mjs）で、○を ○、まちがいを × にするわりあいがいちばんよいところ。
+ * あいだ（0.12〜0.2）は「こたえの音ならある、ほかの音ならむし」：倍音ののこりで × にしないため。 */
+const PRES=0.12, PRES_STRICT=0.12;  // こたえの音はこれ以上あれば「鳴っている」
+const EXTRA=0.2, EXTRA_STRICT=0.15; // こたえにない音がこれ以上あれば ×（strict はきびしめ）
 M.T=T;
 
 const log2=x=>Math.log(x)/Math.LN2;
 const zeros=()=>[0,0,0,0,0,0,0,0,0,0,0,0];
 
-/* スペクトル（AnalyserNode の getFloatFrequencyData＝dB、または ふつうの 大きさ）から 山を ひろう。
- * かえす もの：[{f:周波数Hz, a:大きさ}]（低い じゅん） */
+/* スペクトル（AnalyserNode の getFloatFrequencyData＝dB、またはふつうの大きさ）から山をひろう。
+ * かえすもの：[{f:周波数Hz, a:大きさ}]（低いじゅん） */
 M.peaks=(spec,sampleRate,fftSize,opts)=>{
   opts=opts||{};
   const n=spec.length, binHz=sampleRate/fftSize;
@@ -76,7 +76,7 @@ M.peaks=(spec,sampleRate,fftSize,opts)=>{
   if(typeof db!=='boolean'){db=false;for(let i=0;i<n;i++){if(spec[i]<0){db=true;break;}}}
   const k0=Math.max(2,Math.floor(minHz/binHz)), k1=Math.min(n-3,Math.ceil(maxHz/binHz));
   if(k1<=k0) return [];
-  // dB に そろえる（-Infinity は とても小さい 数に）
+  // dB にそろえる（-Infinity はとても小さい数に）
   const lo=k0-2, len=k1-k0+5, L=new Float32Array(len);
   for(let i=0;i<len;i++){
     const v=spec[lo+i];
@@ -90,7 +90,7 @@ M.peaks=(spec,sampleRate,fftSize,opts)=>{
   for(let i=2;i<len-2;i++){
     const b=L[i];
     if(b<thr||!(b>L[i-1])||b<L[i+1]||b<L[i-2]||b<L[i+2]) continue;
-    // となりの 3つで 山の てっぺんを 細かく さがす（放物線）
+    // となりの3つで山のてっぺんを細かくさがす（放物線）
     const a=L[i-1], c=L[i+1], den=a-2*b+c;
     let d=den<0?0.5*(a-c)/den:0; if(d>0.5) d=0.5; if(d<-0.5) d=-0.5;
     out.push({f:(lo+i+d)*binHz, a:Math.pow(10,(b-0.25*(a-c)*d)/20)});
@@ -98,16 +98,16 @@ M.peaks=(spec,sampleRate,fftSize,opts)=>{
   return out;
 };
 
-/* 12この 音の なまえ（ド＝0 … シ＝11）ごとの 強さ。いちばん強い ものが 1。
- * ピアノの 音には 倍音が あるので（ドの 3倍＝ソ、5倍＝ミ）、そのまま 数えると 鳴らしていない 音が 出てくる。
- * そこで、低い 山から じゅんに 見て、下の 山の「3・5・6・7…倍」に ある 山は、倍音の ぶんを ひいてから 数える。 */
+/* 12この音のなまえ（ド＝0 … シ＝11）ごとの強さ。いちばん強いものが1。
+ * ピアノの音には倍音があるので（ドの3倍＝ソ、5倍＝ミ）、そのまま数えると鳴らしていない音が出てくる。
+ * そこで、低い山からじゅんに見て、下の山の「3・5・6・7…倍」にある山は、倍音のぶんをひいてから数える。 */
 M.chroma=(spec,sampleRate,fftSize,opts)=>{
   opts=opts||{};
   const pitchA=opts.pitchA||(PA.settings&&PA.settings.pitchA)||440;
   const maxHz=opts.maxHz||T.maxHz;
   const ps=M.peaks(spec,sampleRate,fftSize,{db:opts.db,minHz:opts.minHz,maxHz:Math.max(maxHz,T.envHz)}), n=ps.length, out=zeros();
   if(!n) return out;
-  // A(j,h)：山 j の h倍の ところに ある 山の 大きさ（なければ 0）
+  // A(j,h)：山 j の h倍のところにある山の大きさ（なければ0）
   const A=(j,h)=>{
     if(h===1) return ps[j].a;
     const f=h*ps[j].f; let o=0;
@@ -123,14 +123,14 @@ M.chroma=(spec,sampleRate,fftSize,opts)=>{
       if(!w) continue;
       const c=1200*log2(r/h);
       if(c<T.harmLo||c>T.harmHi) continue;
-      // 倍音の 大きさの 見つもり：基音（または 1オクターブ上）の w わり。
-      // ただし となりの 倍音（h-1倍・h+1倍）より ずっと 大きい ことは ないので、そこで おさえる
-      // （低い ド と 1オクターブ半 上の ソ を 両方 ひいた とき、ソ を けしすぎない。
-      //   ぴったり 重なる 音は 波が 強めあったり 弱めあったり するので、どうしても まちがう ことが ある）
+      // 倍音の大きさの見つもり：基音（または1オクターブ上）の w わり。
+      // ただしとなりの倍音（h-1倍・h+1倍）よりずっと大きいことはないので、そこでおさえる
+      // （低いドと1オクターブ半上のソを両方ひいたとき、ソをけしすぎない。
+      //   ぴったり重なる音は波が強めあったり弱めあったりするので、どうしてもまちがうことがある）
       let s=Math.max(eff[j],T.octRef*A(j,2))*w;
-      const a=A(j,h-1), b=A(j,h+1), e=a&&b?Math.min(a,b):a+b;  // 小さいほう（片方が 本当に ひいた 音でも だいじょうぶ）
+      const a=A(j,h-1), b=A(j,h+1), e=a&&b?Math.min(a,b):a+b;  // 小さいほう（片方が本当にひいた音でもだいじょうぶ）
       if(e>0) s=Math.min(s,T.envK*e);
-      // 足しあわせず いちばん 大きい ものだけ（ド の 6倍 と ド の 1オクターブ上の 3倍 は 同じ 山なので 2回 ひかない）
+      // 足しあわせずいちばん大きいものだけ（ドの6倍とドの1オクターブ上の3倍は同じ山なので2回ひかない）
       if(s>sub) sub=s;
     }
     eff[i]=Math.max(0,q.a-sub);
@@ -148,9 +148,9 @@ M.chroma=(spec,sampleRate,fftSize,opts)=>{
   return out;
 };
 
-/* こたえあわせ。ok＝こたえの 音が ぜんぶ はっきり 鳴っていて、ほかの 音が 小さい。
- * score（0〜1）＝ぜんぶの 強さの うち こたえの 音の わりあい（いちばん弱い こたえの 音が 小さいと へる）
- * strict：ほかの 音に きびしく（上級むけ） */
+/* こたえあわせ。ok＝こたえの音がぜんぶはっきり鳴っていて、ほかの音が小さい。
+ * score（0〜1）＝ぜんぶの強さのうちこたえの音のわりあい（いちばん弱いこたえの音が小さいとへる）
+ * strict：ほかの音にきびしく（上級むけ） */
 M.match=(chroma,target,opts)=>{
   opts=opts||{};
   const strict=!!opts.strict;
@@ -168,19 +168,19 @@ M.match=(chroma,target,opts)=>{
   return {ok:nT>0&&all>0&&!missing.length&&!extra.length, score:Math.round(score*1000)/1000, missing, extra};
 };
 
-/* 音の 大きさ（dB）から「しずか」「いま ひいた（音が ぐっと 大きく なった）」を きめる。
- * ずっと しずかな ときの 大きさ（floor）を おぼえて、それより 10dB 大きければ「鳴っている」。
- * 250ms の あいだの いちばん小さい ときより 6dB 以上 大きく なったら「いま ひいた」。
- * 1回 ひくと 音が 立ちあがる あいだ 2回 数えて しまうので、250ms は あける。 */
+/* 音の大きさ（dB）から「しずか」「いまひいた（音がぐっと大きくなった）」をきめる。
+ * ずっとしずかなときの大きさ（floor）をおぼえて、それより10dB 大きければ「鳴っている」。
+ * 250ms のあいだのいちばん小さいときより6dB 以上大きくなったら「いまひいた」。
+ * 1回ひくと音が立ちあがるあいだ2回数えてしまうので、250ms はあける。 */
 M.onsetTracker=o=>{
   o=o||{};
   const rise=o.riseDb||6, gate=o.gateDb||10, absMin=o.minDb||-72, back=o.backMs||250, gap=o.gapMs||250;
   let floor=null, lastOn=-1e9; const hist=[];
   return (level,t)=>{
     if(!(level>-200)) level=-200;
-    if(floor==null) floor=Math.min(level,-55);  // さいしょから 鳴っていても しずかと まちがえないように
+    if(floor==null) floor=Math.min(level,-55);  // さいしょから鳴っていてもしずかとまちがえないように
     else if(level<floor) floor=level;
-    else floor+=Math.min(level-floor,0.06);       // ゆっくり 上げる（1秒で 1dB くらい。部屋の 音が かわっても ついていく）
+    else floor+=Math.min(level-floor,0.06);       // ゆっくり上げる（1秒で1dB くらい。部屋の音がかわってもついていく）
     const silent=level<Math.max(absMin,floor+gate);
     while(hist.length&&t-hist[0].t>back) hist.shift();
     let lo=Infinity; for(let i=0;i<hist.length;i++) if(hist[i].l<lo) lo=hist[i].l;
@@ -191,17 +191,17 @@ M.onsetTracker=o=>{
   };
 };
 
-/* 音が おちつくのを まって、1回だけ こたえを 出す しくみ。
+/* 音がおちつくのをまって、1回だけこたえを出すしくみ。
  *   new PA.mic.Listener({target:[0,4,7], strict:false, onVerdict:v=>{}, stableMs:300, maxWaitMs:2500})
- *   feed({chroma, level, onset, silent, t}) … こたえが きまった ときだけ v を かえす（ほかは null）
+ *   feed({chroma, level, onset, silent, t}) … こたえがきまったときだけ v をかえす（ほかは null）
  * きまり：
- *   - しずか（silent）な ときは なにも しない（とちゅうなら やめる）。
- *   - 「いま ひいた」（onset、または しずか→鳴った）から きき はじめる。
- *     ばらばらに ひいても、新しい 音が 入るたびに きき なおす。
- *   - さいごの stableMs（300ms）の あいだ、12この 強さが ほとんど かわらない（ならした 形との にかよりが 0.9 以上）
- *     ときに、その ならした 形で こたえあわせ。これで ひいた しゅんかんの まざった 音では きめない。
- *   - maxWaitMs すぎても おちつかないときは、それまでの ならした 形で こたえる（v.stable＝false）。
- *   - こたえを 出したら、つぎに ひくまで まつ。reset() の あとも、しずか か 新しく ひいた 音を まつ。 */
+ *   - しずか（silent）なときはなにもしない（とちゅうならやめる）。
+ *   - 「いまひいた」（onset、またはしずか→鳴った）からききはじめる。
+ *     ばらばらにひいても、新しい音が入るたびにききなおす。
+ *   - さいごの stableMs（300ms）のあいだ、12この強さがほとんどかわらない（ならした形とのにかよりが0.9以上）
+ *     ときに、そのならした形でこたえあわせ。これでひいたしゅんかんのまざった音ではきめない。
+ *   - maxWaitMs すぎてもおちつかないときは、それまでのならした形でこたえる（v.stable＝false）。
+ *   - こたえを出したら、つぎにひくまでまつ。reset() のあとも、しずかか新しくひいた音をまつ。 */
 function Listener(o){
   if(!(this instanceof Listener)) return new Listener(o);
   o=o||{};
@@ -222,7 +222,7 @@ Listener.prototype.feed=function(fr,t){
   if(this.state!=='listen'||!fr.chroma) return null;
   this.buf.push({t:t,c:fr.chroma});
   const from=t-this.stableMs;
-  while(this.buf.length>1&&this.buf[1].t<=from) this.buf.shift(); // まどの はじめ（from）より 前の ものは 1つだけ のこす
+  while(this.buf.length>1&&this.buf[1].t<=from) this.buf.shift(); // まどのはじめ（from）より前のものは1つだけのこす
   const win=this.buf, m=zeros();
   win.forEach(x=>{for(let i=0;i<12;i++) m[i]+=x.c[i];});
   let mx=0; for(let i=0;i<12;i++) if(m[i]>mx) mx=m[i];
@@ -245,20 +245,20 @@ M.Listener=Listener;
 M.supported=()=>{
   try{return !!(navigator.mediaDevices&&navigator.mediaDevices.getUserMedia&&(window.AudioContext||window.webkitAudioContext));}catch(e){return false;}
 };
-// こまったときの ことば（子どもにも わかるように）
+// こまったときのことば（子どもにもわかるように）
 M.errorText=err=>{
   const n=err&&err.name||'';
   if(n==='NotAllowedError'||n==='PermissionDeniedError'||n==='SecurityError')
-    return 'マイクが つかえないよ。「マイクを つかっても いい？」で「許可」を おしてね。まちがえて「許可しない」を おしたときは、ブラウザの 設定で この ページの マイクを「許可」に して、ページを 読みなおしてね。';
+    return 'マイクが使えないよ。「マイクを使ってもいい？」で「許可」をおしてね。まちがえて「許可しない」をおしたときは、ブラウザの設定でこのページのマイクを「許可」にして、ページを読みなおしてね。';
   if(n==='NotFoundError'||n==='DevicesNotFoundError'||n==='OverconstrainedError')
-    return 'マイクが 見つからないよ。マイクの ある 端末で ためしてね。';
+    return 'マイクが見つからないよ。マイクのある端末でためしてね。';
   if(n==='NotReadableError'||n==='TrackStartError'||n==='AbortError')
-    return 'マイクを ほかの アプリが つかっているみたい。ほかの アプリを とじてから、もういちど おしてね。';
+    return 'マイクを、ほかのアプリが使っているみたい。ほかのアプリをとじてから、もういちどおしてね。';
   if(n==='unsupported')
-    return 'この ブラウザでは マイクが つかえないよ。画面の 鍵盤で こたえてね。';
+    return 'このブラウザではマイクが使えないよ。画面の鍵盤でこたえてね。';
   if(n==='ended')
-    return 'マイクが とまったよ。もういちど 🎤 を おしてね。';
-  return 'マイクが うまく うごかなかったよ。もういちど おしてね。';
+    return 'マイクがとまったよ。もういちど 🎤 をおしてね。';
+  return 'マイクがうまく動かなかったよ。もういちどおしてね。';
 };
 
 let cur=null;
@@ -268,18 +268,18 @@ M.start=o=>{
   const onFrame=o.onFrame||function(){}, onError=o.onError||function(){};
   M.stop();
   if(!M.supported()){onError(M.errorText({name:'unsupported'})); return Promise.resolve(false);}
-  // 音の しくみは タップの 中で 用意する（iOS は あとからだと うごかない）。core と 同じ ものを つかう
+  // 音のしくみはタップの中で用意する（iOS はあとからだとうごかない）。core と同じものをつかう
   let ac=null;
   try{ac=PA.audio?PA.audio():null;}catch(e){}
   if(!ac){try{const AC=window.AudioContext||window.webkitAudioContext; ac=new AC();}catch(e){}}
   if(!ac){onError(M.errorText({name:'unsupported'})); return Promise.resolve(false);}
-  // iOS 17〜：core は 'playback'（鳴らすだけ）に しているので、きく あいだは 'play-and-record' に
+  // iOS 17〜：core は 'playback'（鳴らすだけ）にしているので、きくあいだは 'play-and-record' に
   try{if(navigator.audioSession) navigator.audioSession.type='play-and-record';}catch(e){}
   const sess={stopped:false, ac:ac, onError:onError};
   cur=sess;
   let p;
   try{
-    // 声むけの くふう（エコー・雑音けし・音量の 自動調整）は ピアノの 音を こわすので ぜんぶ オフ
+    // 声むけのくふう（エコー・雑音けし・音量の自動調整）はピアノの音をこわすのでぜんぶオフ
     p=navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false,noiseSuppression:false,autoGainControl:false}});
   }catch(e){p=Promise.reject(e);}
   return p.then(stream=>{
@@ -287,18 +287,18 @@ M.start=o=>{
     sess.stream=stream;
     if(ac.state!=='running'&&ac.state!=='closed') ac.resume().catch(()=>{});
     const src=ac.createMediaStreamSource(stream), an=ac.createAnalyser(), mute=ac.createGain();
-    // 16384：48kHz で 1目もり 約3Hz（低い ドと レも わけられる）。ただし 0.34秒ぶんを まとめて 見るので、
-    // ひいた 直後は 前の 音が まざる → Listener が おちつくのを まつ
+    // 16384：48kHz で1目もり約3Hz（低いドとレもわけられる）。ただし0.34秒ぶんをまとめて見るので、
+    // ひいた直後は前の音がまざる → Listener がおちつくのをまつ
     try{an.fftSize=o.fftSize||16384;}catch(e){an.fftSize=8192;}
     an.smoothingTimeConstant=o.smoothing!=null?o.smoothing:0.5;
     an.minDecibels=-110; an.maxDecibels=-10;
-    mute.gain.value=0;                       // スピーカーには 出さない（ハウリングしない）。つなぐのは 古い Safari でも うごかすため
+    mute.gain.value=0;                       // スピーカーには出さない（ハウリングしない）。つなぐのは古い Safari でもうごかすため
     src.connect(an); an.connect(mute); mute.connect(ac.destination);
     sess.nodes=[src,an,mute];
     const freq=new Float32Array(an.frequencyBinCount);
     const useF=typeof an.getFloatTimeDomainData==='function';
     const td=useF?new Float32Array(an.fftSize):new Uint8Array(an.fftSize);
-    const tail=Math.min(2048,an.fftSize);  // 音の 大きさは さいごの 約40ms で（ひいた しゅんかんが わかるように）
+    const tail=Math.min(2048,an.fftSize);  // 音の大きさはさいごの約40ms で（ひいたしゅんかんがわかるように）
     const track=M.onsetTracker(o.onset);
     stream.getTracks().forEach(tr=>{tr.onended=()=>{if(cur===sess){M.stop(); onError(M.errorText({name:'ended'}));}};});
     const tick=()=>{
@@ -307,15 +307,15 @@ M.start=o=>{
         if(useF) an.getFloatTimeDomainData(td); else an.getByteTimeDomainData(td);
         let s=0; const N=td.length;
         for(let i=N-tail;i<N;i++){const v=useF?td[i]:(td[i]-128)/128; s+=v*v;}
-        const level=10*Math.log(s/tail+1e-12)/Math.LN10;   // dBFS（0 が いちばん 大きい）
+        const level=10*Math.log(s/tail+1e-12)/Math.LN10;   // dBFS（0がいちばん大きい）
         const now=Date.now(), st=track(level,now);
-        // しずかな ときも 読む（analyser の ならし（smoothing）は 読んだ ときに 進むので、読まないと 前の 和音が のこる）
+        // しずかなときも読む（analyser のならし（smoothing）は読んだときに進むので、読まないと前の和音がのこる）
         an.getFloatFrequencyData(freq);
         const chroma=st.silent?zeros():M.chroma(freq,ac.sampleRate,an.fftSize,{db:true,pitchA:o.pitchA});
         onFrame({chroma:chroma, level:level, onset:st.onset, silent:st.silent, t:now});
       }catch(e){}
     };
-    sess.timer=setInterval(tick,o.intervalMs||60); // requestAnimationFrame より かるい・画面に 関係なく まわる
+    sess.timer=setInterval(tick,o.intervalMs||60); // requestAnimationFrame よりかるい・画面に関係なくまわる
     return true;
   },err=>{
     if(cur===sess){M.stop(); onError(M.errorText(err));}

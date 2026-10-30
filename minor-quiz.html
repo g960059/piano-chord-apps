@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- meta:start -->
-<meta name="description" content="短調の Ⅴの家族を おさえる／臨時記号を えらぶ">
+<meta name="description" content="短調のⅤの家族をおさえる／臨時記号を選ぶ">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ピアノ和音アプリ">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="短調クイズ｜ピアノ和音アプリ">
-<meta property="og:description" content="短調の Ⅴの家族を おさえる／臨時記号を えらぶ">
+<meta property="og:description" content="短調のⅤの家族をおさえる／臨時記号を選ぶ">
 <meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/minor-quiz.html">
 <meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -71,47 +71,47 @@ details.more>summary small{font-weight:400;color:var(--sub);font-size:13px}
 <div class="actionbar" id="actions"></div>
 <script src="assets/core.js"></script>
 <script>
-/* 短調クイズ：短調の Ⅴの家族（Ⅴ・Ⅴ7・Ⅴ9・減七）を けんばんで おさえる ／ 7ばんめに つける 記号を えらぶ
- * リンクの パラメータ（先生の 宿題用。その 1回だけ。ちがう 値は すてる）：
- *   mode＝chord（和音を おさえる）｜mark（記号を えらぶ）、key＝m0〜m12（その 短調だけ 出す。記号を えらぶ ときと、
- *   和音を 1つだけ えらんだ ときは、おなじ もんだいが つづかないように さいしょの 1もんだけ その 調。あとは tier の 調）、
- *   chord＝V,V7,V9,DIM（カンマで いくつでも）、tier＝easy｜normal｜hard｜all、n＝1〜20（📝 n もんの 回）
- *   key が あって mode が ない ときは 和音を おさえる（にがて ふくしゅう：その 調を つづけて れんしゅう）
+/* 短調クイズ：短調のⅤの家族（Ⅴ・Ⅴ7・Ⅴ9・減七）をけんばんでおさえる／7ばんめにつける記号をえらぶ
+ * リンクのパラメータ（先生の宿題用。その1回だけ。ちがう値はすてる）：
+ *   mode＝chord（和音をおさえる）｜mark（記号をえらぶ）、key＝m0〜m12（その短調だけ出す。記号をえらぶときと、
+ *   和音を1つだけえらんだときは、おなじもんだいがつづかないようにさいしょの1もんだけその調。あとは tier の調）、
+ *   chord＝V,V7,V9,DIM（カンマでいくつでも）、tier＝easy｜normal｜hard｜all、n＝1〜20（📝 n もんの回）
+ *   key があって mode がないときは和音をおさえる（にがてふくしゅう：その調をつづけてれんしゅう）
  *   例：minor-quiz.html?mode=mark&key=m3&n=3 */
-// Ⅴの家族：和声的短音階の なんばんめ を ひとつとばしで（4＝第5音から）
+// Ⅴの家族：和声的短音階のなんばんめをひとつとばしで（4＝第5音から）
 const FAM={
   V:{label:'Ⅴ',ks:[4,6,8],title:'Ⅴ'},
   V7:{label:'Ⅴ7',ks:[4,6,8,10],title:'Ⅴ7'},
   V9:{label:'Ⅴ9',ks:[4,6,8,10,12],title:'Ⅴ9'},
-  DIM:{label:'減七',ks:[6,8,10,12],title:'減七の和音（Ⅴ9 から 根音を はぶいた 和音）'}
+  DIM:{label:'減七',ks:[6,8,10,12],title:'減七の和音（Ⅴ9から根音をはぶいた和音）'}
 };
 const FAM_KEYS=['V','V7','V9','DIM'];
-// 主音が高い調では、和音を1オクターブ下に置いて 五線の中に おさめる
+// 主音が高い調では、和音を1オクターブ下に置いて五線の中におさめる
 const famShift=key=>key.tonicMidi+7>70?-7:0;
 const famTones=(key,f)=>FAM[f].ks.map(k=>PA.at(key.harm,k+famShift(key)));
 const MARK={1:'♯',0:'♮',2:'𝄪'};
 const MARK_NAME={1:'シャープ',0:'ナチュラル',2:'ダブルシャープ'};
-const MARKS=[1,0,2,-1]; // えらぶ 記号（ふだんの じゅん）
-const QUIZ='minor-quiz', KD=PA.keyDeck, MODES=['minor']; // 短調だけ：「ぜんぶ」は 短調の 13の 書きかた
+const MARKS=[1,0,2,-1]; // えらぶ記号（ふだんのじゅん）
+const QUIZ='minor-quiz', KD=PA.keyDeck, MODES=['minor']; // 短調だけ：「ぜんぶ」は短調の13の書きかた
 const TYPES=['chord','mark'];
 const TIER_IDS=KD.TIERS.map(t=>t.id);
-// まえの「調号の数（〜つまで）」＝ 0〜N の 調 → 出る 調が いちばん 近い むずかしさ（ちがう 調の 数が 少ない もの）。
-// まえの きほん（2つまで）は「やさしい」（イ・ホ・ニ短調）に。ロ・ト短調は へるけれど、いきなり むずかしく しない
+// まえの「調号の数（〜つまで）」＝0〜N の調 → 出る調がいちばん近いむずかしさ（ちがう調の数が少ないもの）。
+// まえのきほん（2つまで）は「やさしい」（イ・ホ・ニ短調）に。ロ・ト短調はへるけれど、いきなりむずかしくしない
 const LEVEL_TIER=new Map([[0,'easy'],[1,'easy'],[2,'easy'],[3,'normal'],[4,'all'],[5,'all'],[7,'all']]);
-const KEYS=Array.from({length:PA.keyCount(true)},(_,i)=>PA.minorKey(i)); // 主音は ラ3〜ソ♯4
-const KB_LO=53, KB_HI=86; // ファ3〜レ6（こたえは ぜんぶ この中）
+const KEYS=Array.from({length:PA.keyCount(true)},(_,i)=>PA.minorKey(i)); // 主音はラ3〜ソ♯4
+const KB_LO=53, KB_HI=86; // ファ3〜レ6（こたえはぜんぶこの中）
 const mod=PA.mod;
 const isBlack=m=>PA.BLACK.has(mod(m,12));
-const AFTER_END=10*6e4; // おわった 回の けっかを、読みなおしても 出す 時間（core と おなじ 10分）
+const AFTER_END=10*6e4; // おわった回のけっかを、読みなおしても出す時間（core とおなじ10分）
 
 /* ===== 状態 ===== */
-// fixKey＝この 調だけ 出す（リンクの key・チェック表の ます）。peeked＝こたえる まえに「つくりかた」を 見た
-// fixUsed＝さいしょの 1もんだけ fixKey の とき（fixOnce）、もう その 調を 出した
+// fixKey＝この調だけ出す（リンクの key・チェック表のます）。peeked＝こたえるまえに「つくりかた」を見た
+// fixUsed＝さいしょの1もんだけ fixKey のとき（fixOnce）、もうその調を出した
 const Q={type:'chord',tier:'all',weak:true,peeked:false,fams:{V:true,V7:true,V9:false,DIM:false},fixKey:null,fixUsed:false,q:null,id:0,picked:new Set(),checked:false,result:null,lastOk:null,right:0,total:0,streak:0,hint:0,chosen:null,sumShow:false,sessDoneId:null};
-let fixQid=0; // fixOnce の さいしょの 1もん（その 調）の もんだい番号。🔑 は この もんだいの あいだだけ 出す
+let fixQid=0; // fixOnce のさいしょの1もん（その調）のもんだい番号。🔑 はこのもんだいのあいだだけ出す
 const isInt=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
 const saved=(d=>d&&typeof d==='object'&&!Array.isArray(d)?d:{})(PA.store.get('minor-quiz',{}));
-const minorId=v=>{const p=KD.parse(v);return p&&p.minor?p.id:null;}; // m0〜m12 だけ
+const minorId=v=>{const p=KD.parse(v);return p&&p.minor?p.id:null;}; // m0〜m12だけ
 (function(){
   const d=saved;
   if(TYPES.includes(d.type)) Q.type=d.type;
@@ -125,9 +125,9 @@ const minorId=v=>{const p=KD.parse(v);return p&&p.minor?p.id:null;}; // m0〜m12
   if(isInt(d.total,0,1e6)&&isInt(d.right,0,d.total)&&isInt(d.streak,0,d.right)){Q.total=d.total;Q.right=d.right;Q.streak=d.streak;
     if(isInt(d.hint,0,d.total-d.right)) Q.hint=d.hint;}
 })();
-// ふだんの 設定（保存する）。リンクの しゅるい・むずかしさ・和音は ov（その 1回だけ）に 入れて、ふだんの 設定は かえない
+// ふだんの設定（保存する）。リンクのしゅるい・むずかしさ・和音は ov（その1回だけ）に入れて、ふだんの設定はかえない
 const base={type:Q.type,tier:Q.tier,fams:Object.assign({},Q.fams)};
-const cleanOv=o=>{ // ov の 形を たしかめる（ゆるした 値だけ）
+const cleanOv=o=>{ // ov の形をたしかめる（ゆるした値だけ）
   if(!o||typeof o!=='object') return null;
   const r={};
   if(TYPES.includes(o.type)) r.type=o.type;
@@ -135,12 +135,12 @@ const cleanOv=o=>{ // ov の 形を たしかめる（ゆるした 値だけ）
   if(o.fams&&typeof o.fams==='object'){const f={};FAM_KEYS.forEach(k=>{f[k]=o.fams[k]===true;});if(FAM_KEYS.some(k=>f[k])) r.fams=f;}
   return Object.keys(r).length?r:null;
 };
-// リンクの パラメータ（ゆるした 値だけ。この 1回に つかい、ほぞんした 設定は かえない）
+// リンクのパラメータ（ゆるした値だけ。この1回につかい、ほぞんした設定はかえない）
 const P=PA.params(), linkKey=minorId(P.key);
-// いったん Q に のせて、ふだんの 設定と ちがう ところだけ ov に とる（Q は あとの applyEff で かさねなおす）
+// いったん Q にのせて、ふだんの設定とちがうところだけ ov にとる（Q はあとの applyEff でかさねなおす）
 const linkOv=(function(){
   if(TYPES.includes(P.mode)) Q.type=P.mode;
-  // key だけで mode の ない リンク（ホームの にがて ふくしゅう「3もんずつ」）：和音を おさえる で その 調を つづけて 出す
+  // key だけで mode のないリンク（ホームのにがてふくしゅう「3もんずつ」）：和音をおさえるでその調をつづけて出す
   else if(linkKey) Q.type='chord';
   if(TIER_IDS.includes(P.tier)) Q.tier=P.tier;
   if(P.chord){
@@ -151,95 +151,95 @@ const linkOv=(function(){
   return cleanOv({type:Q.type!==base.type?Q.type:null,tier:Q.tier!==base.tier?Q.tier:null,fams:fd?Q.fams:null});
 })();
 let ov=null;
-// いまの 設定＝ふだんの 設定の 上に ov を かさねた もの
+// いまの設定＝ふだんの設定の上に ov をかさねたもの
 const applyEff=()=>{Q.type=ov&&ov.type||base.type;Q.tier=ov&&ov.tier||base.tier;Q.fams=Object.assign({},ov&&ov.fams||base.fams);};
-// じぶんで かえた 設定：ふだんの 設定に のこし、その ことは もう リンクの 値を つかわない
+// じぶんでかえた設定：ふだんの設定にのこし、そのことはもうリンクの値をつかわない
 const setBase=(k,v)=>{base[k]=k==='fams'?Object.assign({},v):v; if(ov){delete ov[k]; if(!Object.keys(ov).length) ov=null;}};
-// リンクの 1回が おわった：ふだんの 設定に もどす。いまの 設定が かわったら true
+// リンクの1回がおわった：ふだんの設定にもどす。いまの設定がかわったら true
 function endOv(){
   if(!ov) return false;
   const was=JSON.stringify([Q.type,Q.tier,Q.fams]); ov=null; applyEff();
   if(JSON.stringify([Q.type,Q.tier,Q.fams])===was) return false;
   deck.setOptions({tier:Q.tier}); return true;
 }
-// 📝 れんしゅうの 回：リンクに n が あれば はじめる（おなじ リンクの とちゅうなら つづき）
+// 📝 れんしゅうの回：リンクに n があればはじめる（おなじリンクのとちゅうならつづき）
 let sess=(()=>{
   const n=PA.paramInt('n',1,20);
   if(n) return PA.session(QUIZ,{n});
   const s=PA.session(QUIZ), st=s.state();
-  // n の ない ひらきかた：とちゅうの 回は つづける。おわった 回は、おわって すぐ（「もどる」の 読みなおし）だけ けっかを 出す
+  // n のないひらきかた：とちゅうの回はつづける。おわった回は、おわってすぐ（「もどる」の読みなおし）だけけっかを出す
   if(st&&s.finished()&&!(st.endedAt!=null&&Date.now()-st.endedAt<AFTER_END)) s.clear();
   return s;
 })();
 const sessOn=()=>sess.active()||sess.finished();
-// リンクで 来た ひらきかた（この れきしの ページ）。読みなおしても おぼえている
+// リンクで来たひらきかた（このれきしのページ）。読みなおしてもおぼえている
 let fromLinkVisit=false; try{fromLinkVisit=!!(history.state&&history.state.mqLink);}catch(e){}
-// リンクの 値：リンクで 来たら その 値。なければ、つづきの 回か おなじ リンクの 読みなおしの ときだけ のこした 値
+// リンクの値：リンクで来たらその値。なければ、つづきの回かおなじリンクの読みなおしのときだけのこした値
 ov=PA.fromLink()?linkOv:(sessOn()||fromLinkVisit?cleanOv(saved.ov):null);
 applyEff();
-// この 調だけ：リンクの key。なければ、つづきの 回か、おなじ リンクの 読みなおしで えらんでいた 調
+// この調だけ：リンクの key。なければ、つづきの回か、おなじリンクの読みなおしでえらんでいた調
 Q.fixKey=linkKey||(sessOn()||fromLinkVisit?minorId(saved.fixKey):null);
-// 記号の もんだいは 1つの 調に 1もん。和音も 1つだけなら 1もん。このときは fixKey を さいしょの 1もんだけ つかう
-// （おなじ もんだいを 3〜5かい くりかえさない。2もんめからは ふくろの 調＝えらんだ むずかしさ）
+// 記号のもんだいは1つの調に1もん。和音も1つだけなら1もん。このときは fixKey をさいしょの1もんだけつかう
+// （おなじもんだいを3〜5かいくりかえさない。2もんめからはふくろの調＝えらんだむずかしさ）
 const onceMode=()=>Q.type==='mark'||FAM_KEYS.filter(f=>Q.fams[f]).length===1;
 const fixOnce=()=>!!Q.fixKey&&onceMode();
-// もう 出したか：読みなおし・おなじ 回の つづきでは おぼえておく。新しい リンクの key なら はじめから
+// もう出したか：読みなおし・おなじ回のつづきではおぼえておく。新しいリンクの key ならはじめから
 Q.fixUsed=!!Q.fixKey&&Q.fixKey===minorId(saved.fixKey)&&saved.fixUsed===true&&(!linkKey||(sess.active()&&sess.count()>0));
-// リンクの パラメータは 1回だけ つかう：アドレスから けす（「つくりかたを 見る」から もどって 読みなおしても、
-// きりかえた もんだい・やめた 回・チェック表から はじめた 回を リンクで もとに もどさない）
+// リンクのパラメータは1回だけつかう：アドレスからけす（「つくりかたを見る」からもどって読みなおしても、
+// きりかえたもんだい・やめた回・チェック表からはじめた回をリンクでもとにもどさない）
 if(location.search){try{history.replaceState({mqLink:true},'',location.pathname+location.hash);}catch(e){}}
 Q.sumShow=sess.finished();
-// スコアと、まだ こたえていない もんだいも 保存する（「つくりかたを 見る」から もどったとき つづけられるように）
+// スコアと、まだこたえていないもんだいも保存する（「つくりかたを見る」からもどったときつづけられるように）
 const save=()=>PA.store.set('minor-quiz',{type:base.type,tier:base.tier,weak:Q.weak,fams:base.fams,ov:ov,right:Q.right,total:Q.total,streak:Q.streak,hint:Q.hint,fixKey:Q.fixKey,fixUsed:Q.fixUsed,
   q:Q.q?{keyIdx:Q.q.keyIdx,fam:Q.q.fam,type:Q.type}:null,fixQ:!!Q.q&&fixQid===Q.id,answered:Q.result!==null,peeked:Q.peeked,deck:deckState()});
-const openD={}; // ひらいている <details>（描きなおしても とじないように）
+const openD={}; // ひらいている<details>（描きなおしてもとじないように）
 
-/* ===== もんだい（調は PA.keyDeck の ふくろから。fixKey の ときは その 調だけ。fixOnce の ときは さいしょの 1もんだけ） ===== */
+/* ===== もんだい（調は PA.keyDeck のふくろから。fixKey のときはその調だけ。fixOnce のときはさいしょの1もんだけ） ===== */
 const deck=KD.create({quiz:QUIZ,tier:Q.tier,modes:MODES,weak:Q.weak});
 const keyIdOf=q=>KD.id(true,q.keyIdx);
-const restoreDeck=s=>deck.restore(s); // ひらきなおしても ふくろの つづきから。もどせたら true
+const restoreDeck=s=>deck.restore(s); // ひらきなおしてもふくろのつづきから。もどせたら true
 const deckState=()=>deck.state();
-const hasBag=restoreDeck(saved.deck); // ひらきなおしても ふくろの つづきから
-let lastQ=null; // ひらいたとき、まえに 出ていた もんだい（つづけて おなじ もんだいに しない）
+const hasBag=restoreDeck(saved.deck); // ひらきなおしてもふくろのつづきから
+let lastQ=null; // ひらいたとき、まえに出ていたもんだい（つづけておなじもんだいにしない）
 function newQuestion(){
-  // けっかを 見ないで ほかの もんだいへ（せっていを かえた など）：おわった 回は しまう
-  if(sess.finished()){sess.clear(); endOv();} // 回が おわった：リンクの 設定も おしまい
+  // けっかを見ないでほかのもんだいへ（せっていをかえたなど）：おわった回はしまう
+  if(sess.finished()){sess.clear(); endOv();} // 回がおわった：リンクの設定もおしまい
   Q.sumShow=false;
   const prev=Q.q||lastQ, pid=prev?keyIdOf(prev):null;
-  // さいしょの 1もんに こたえないまま かえた（しゅるい・和音）：つぎも その 調から
+  // さいしょの1もんにこたえないままかえた（しゅるい・和音）：つぎもその調から
   if(Q.q&&Q.result===null&&keyIdOf(Q.q)===Q.fixKey) Q.fixUsed=false;
-  // れんしゅうの 回の そとで さいしょの 1もんが おわった：もう ふつう（🔑 も けす）。回の あいだは「もういちど」の ために のこす
+  // れんしゅうの回のそとでさいしょの1もんがおわった：もうふつう（🔑 もけす）。回のあいだは「もういちど」のためにのこす
   if(fixOnce()&&Q.fixUsed&&!sess.active()){Q.fixKey=null;Q.fixUsed=false;}
   const once=fixOnce();
   let k=Q.fixKey&&!(once&&Q.fixUsed)?KD.parse(Q.fixKey):null;
   fixQid=once&&k?Q.id+1:0;
-  Q.fixUsed=once; // fixOnce なら、いま 出したか もう 出した。そうでなければ つぎに fixOnce に なったとき また さいしょから
-  // まえと ちがう 調を とる（まえの 調は ふくろに のこる）。ふつうは deck が つづけて 同じ 調を 出さない
+  Q.fixUsed=once; // fixOnce なら、いま出したかもう出した。そうでなければつぎに fixOnce になったときまたさいしょから
+  // まえとちがう調をとる（まえの調はふくろにのこる）。ふつうは deck がつづけて同じ調を出さない
   if(!k) k=deck.draw(x=>x.id!==pid)||deck.draw();
   if(!k||!k.minor) k={minor:true,idx:0};
   let fams=FAM_KEYS.filter(f=>Q.fams[f]); if(!fams.length) fams=['V7'];
-  if(prev&&k.idx===prev.keyIdx&&fams.length>1) fams=fams.filter(f=>f!==prev.fam); // 調が おなじなら 和音を かえる
+  if(prev&&k.idx===prev.keyIdx&&fams.length>1) fams=fams.filter(f=>f!==prev.fam); // 調がおなじなら和音をかえる
   lastQ=null;
   const q={keyIdx:k.idx,fam:fams[Math.floor(Math.random()*fams.length)]};
   Object.assign(Q,{q,id:Q.id+1,picked:new Set(),checked:false,result:null,lastOk:null,chosen:null,peeked:false});
 }
-(function(){ // まだ こたえていない もんだいを そのまま つづける
+(function(){ // まだこたえていないもんだいをそのままつづける
   const q=saved.q;
   if(!q||typeof q!=='object'||!isInt(q.keyIdx,0,KEYS.length-1)||!FAM_KEYS.includes(q.fam)) return;
   const id=keyIdOf(q), fixNow=Q.fixKey&&!(fixOnce()&&Q.fixUsed);
   const fits=fixNow?id===Q.fixKey:deck.ids.includes(id)||id===Q.fixKey;
-  // おなじ しゅるいの もんだい（和音／記号）の ときだけ（「見た」しるしを ほかの もんだいに つけない）
+  // おなじしゅるいのもんだい（和音／記号）のときだけ（「見た」しるしをほかのもんだいにつけない）
   if(!saved.answered&&!Q.sumShow&&q.type===Q.type&&Q.fams[q.fam]&&fits){
     Q.q={keyIdx:q.keyIdx,fam:q.fam};Q.id++;Q.peeked=saved.peeked===true;
-    if(fixOnce()&&id===Q.fixKey&&(!Q.fixUsed||saved.fixQ===true)){Q.fixUsed=true;fixQid=Q.id;} // さいしょの 1もんを つづける
-    if(!hasBag&&id!==Q.fixKey) deck.draw(x=>x.id===id); // ふくろの きろくが ないときも、この 調は「出た」ことに
+    if(fixOnce()&&id===Q.fixKey&&(!Q.fixUsed||saved.fixQ===true)){Q.fixUsed=true;fixQid=Q.id;} // さいしょの1もんをつづける
+    if(!hasBag&&id!==Q.fixKey) deck.draw(x=>x.id===id); // ふくろのきろくがないときも、この調は「出た」ことに
   }
   else lastQ={keyIdx:q.keyIdx,fam:q.fam};
 })();
-// もんだいの ことば（けっかの カードに のこす。ただの 文字）
-const qLabel=()=>{const key=KEYS[Q.q.keyIdx];return Q.type==='mark'?`${PA.keyName(key)}の 7ばんめの 記号`:`${PA.keyName(key)}の ${FAM[Q.q.fam].label}`;};
-// さいしょの 答えだけ かぞえる（Q.result が まだ null のときに よぶ）。
-// こたえる まえに「つくりかた」を 見て できた＝ヒントで できた：⭐は ふえないけれど、れんぞくも きれない（チェック表は 💡）
+// もんだいのことば（けっかのカードにのこす。ただの文字）
+const qLabel=()=>{const key=KEYS[Q.q.keyIdx];return Q.type==='mark'?`${PA.keyName(key)}の7ばんめの記号`:`${PA.keyName(key)}の${FAM[Q.q.fam].label}`;};
+// さいしょの答えだけかぞえる（Q.result がまだ null のときによぶ）。
+// こたえるまえに「つくりかた」を見てできた＝ヒントでできた：⭐はふえないけれど、れんぞくもきれない（チェック表は 💡）
 function scoreFirst(ok){
   const hint=ok&&Q.peeked;
   Q.result=ok; Q.total++;
@@ -248,9 +248,9 @@ function scoreFirst(ok){
   else if(!ok) Q.streak=0;
   deck.record(keyIdOf(Q.q),ok,hint?{hint:true}:undefined);
   const r=sess.active()?sess.record({ok,hint,label:qLabel(),key:keyIdOf(Q.q)}):null;
-  if(r&&r.finished) Q.sessDoneId=Q.id; // この もんだいで 回が おわった
+  if(r&&r.finished) Q.sessDoneId=Q.id; // このもんだいで回がおわった
 }
-// 調号だけの 小さな 五線（こたえる前に ヒーローの 中で 見せる）。上下の あきを けずって 低くする
+// 調号だけの小さな五線（こたえる前にヒーローの中で見せる）。上下のあきをけずって低くする
 const sigStaff=key=>PA.staffSVG(key,[],{minW:130,maxScale:1}).replace(/viewBox="0 0 (\d+(?:\.\d+)?) \d+(?:\.\d+)?"/,'viewBox="0 38 $1 100"');
 const nameForMidi=(m,key)=>PA.nm(PA.spellMidi(m,key));
 function gradeChord(t){
@@ -263,75 +263,75 @@ function checkChord(){
   Q.checked=true; Q.lastOk=ok;
   if(Q.result===null) scoreFirst(ok);
   if(ok) PA.chord(t.map(n=>n.midi));
-  PA.announce(ok?`せいかい！ ${PA.keyName(key)}の ${FAM[f].label}は ${PA.namesT(t)}`:`ざんねん。こたえは ${PA.namesT(t)}`);
+  PA.announce(ok?`正解！${PA.keyName(key)}の${FAM[f].label}は${PA.namesT(t)}`:`ざんねん。こたえは${PA.namesT(t)}`);
 }
-// ヒントで できた ときの ひとこと
-const hintDone=()=>Q.result===true&&Q.peeked?`<br>💡 つくりかたを 見てから できたので「ヒントで できた」に なるよ。つぎは 見ないで やってみよう！`:'';
-// こたえあわせの メッセージ（描くたびに つくるので、音名の 設定を かえても あう）
+// ヒントでできたときのひとこと
+const hintDone=()=>Q.result===true&&Q.peeked?`<br>💡 つくりかたを見てからできたので「ヒントでできた」になるよ。次は見ないでやってみよう！`:'';
+// こたえあわせのメッセージ（描くたびにつくるので、音名の設定をかえてもあう）
 function chordMsg(key,f,t){
   const g=gradeChord(t), pk=g.pk, extra=g.extra, missing=g.missing;
-  if(Q.lastOk) return `🎉 せいかい！ ${PA.keyName(key)}の ${FAM[f].label} は <b>${PA.namesH(t)}</b>`+hintDone();
+  if(Q.lastOk) return `🎉 正解！${PA.keyName(key)}の${FAM[f].label}は<b>${PA.namesH(t)}</b>`+hintDone();
   const hints=[];
   if(missing.some(n=>n.raised)&&extra.includes(mod(key.natLT.midi,12)))
-    hints.push(`7ばんめ「${PA.nmH(key.natLT)}」を 半音上げるのを わすれていない？ ${PA.keyName(key)}では <b>${PA.nmH(key.lt)}</b>（${PA.H(MARK[key.ltType])} ${MARK_NAME[key.ltType]}）だよ。`);
+    hints.push(`7ばんめ「${PA.nmH(key.natLT)}」を半音上げるのを、わすれていない？${PA.keyName(key)}では<b>${PA.nmH(key.lt)}</b>（${PA.H(MARK[key.ltType])}${MARK_NAME[key.ltType]}）だよ。`);
   else if(missing.some(n=>n.raised)){
-    let m=`導音（7ばんめを 上げた音）は <b>${PA.nmH(key.lt)}</b>（${PA.H(MARK[key.ltType])} ${MARK_NAME[key.ltType]}）だよ。主音「${PA.nmH(key.nat[0])}」の すぐ下（となり）。`;
-    if(extra.includes(mod(key.nat[0].midi,12))) m+=`<br>上げるのは すぐ上の けんばんまで。主音まで 上げすぎて いない？`;
+    let m=`導音（7ばんめを上げた音）は<b>${PA.nmH(key.lt)}</b>（${PA.H(MARK[key.ltType])}${MARK_NAME[key.ltType]}）だよ。主音「${PA.nmH(key.nat[0])}」のすぐ下（となり）。`;
+    if(extra.includes(mod(key.nat[0].midi,12))) m+=`<br>上げるのはすぐ上のけんばんまで。主音まで上げすぎていない？`;
     hints.push(m);
   }
   const root=PA.at(key.harm,4), nin=PA.at(key.harm,12), pnin=PA.at(key.par.scale,12);
-  if(f==='DIM'&&pk.has(mod(root.midi,12))) hints.push(`減七は Ⅴ9 から 根音「${PA.nmH(root)}」を <b>はぶいた</b> 和音だよ。`);
+  if(f==='DIM'&&pk.has(mod(root.midi,12))) hints.push(`減七はⅤ9から根音「${PA.nmH(root)}」を<b>はぶいた</b>和音だよ。`);
   if((f==='V9'||f==='DIM')&&!pk.has(mod(nin.midi,12))&&extra.includes(mod(pnin.midi,12)))
-    hints.push(`${FAM[f].label} の いちばん上の音（第9音）は 6ばんめ「${PA.nmH(nin)}」で、調号どおり。「${PA.nmH(pnin)}」は ${PA.keyName(key.par)}の 音だよ。`);
-  if(pk.size!==t.length) hints.push(`${FAM[f].label} は <b>${t.length}つ</b>の音だよ（いま ${pk.size}つ）。`);
-  return `🤔 おしい！ こたえは <b>${PA.namesH(t)}</b><br>`+(hints.join('<br>')||(f==='DIM'?`導音「${PA.nmH(key.lt)}」から ひとつとばしで 4つ（根音「${PA.nmH(root)}」は はぶく）。`:`音階の 5ばんめ「${PA.nmH(root)}」から ひとつとばしで かさねてみよう。`));
+    hints.push(`${FAM[f].label}のいちばん上の音（第9音）は6ばんめ「${PA.nmH(nin)}」で、調号どおり。「${PA.nmH(pnin)}」は${PA.keyName(key.par)}の音だよ。`);
+  if(pk.size!==t.length) hints.push(`${FAM[f].label}は<b>${t.length}つ</b>の音だよ（いま${pk.size}つ）。`);
+  return `🤔 おしい！こたえは<b>${PA.namesH(t)}</b><br>`+(hints.join('<br>')||(f==='DIM'?`導音「${PA.nmH(key.lt)}」からひとつとばしで4つ（根音「${PA.nmH(root)}」ははぶく）。`:`音階の5ばんめ「${PA.nmH(root)}」からひとつとばしで、かさねてみよう。`));
 }
 const markGlyph=a=>a===2?'<span class="ds">x</span>':a===1?'♯':a===0?'♮':'♭';
 const markWord=a=>a===2?'ダブルシャープ':a===1?'シャープ':a===0?'ナチュラル':'フラット';
 
 /* ===== 画面 ===== */
 const famParam=()=>FAM_KEYS.filter(f=>Q.fams[f]).join(',');
-// いまの せってい（先生に おくる リンク・けっかの カード）
-// fixOnce の ときは 2もんめからの むずかしさも のせる
+// いまのせってい（先生におくるリンク・けっかのカード）
+// fixOnce のときは2もんめからのむずかしさものせる
 const linkParams=()=>({mode:Q.type,key:Q.fixKey,chord:Q.type==='chord'?famParam():null,tier:Q.fixKey&&!fixOnce()?null:Q.tier});
 function settingsText(){
   const famTxt=FAM_KEYS.filter(f=>Q.fams[f]).map(f=>FAM[f].label).join('・');
   const tr=KD.TIERS.find(t=>t.id===Q.tier), fk=Q.fixKey?KD.parse(Q.fixKey):null;
-  return (Q.type==='chord'?`和音を おさえる（${famTxt}）`:'7ばんめの 記号を えらぶ')+'・'
-    +(fk&&!fixOnce()?'調：'+PA.keyName(KEYS[fk.idx]):(fk?`さいしょは ${PA.keyName(KEYS[fk.idx])}・`:'')+`むずかしさ：${tr.name}（調号 ${tr.min}〜${tr.max}）`);
+  return (Q.type==='chord'?`和音をおさえる（${famTxt}）`:'7ばんめの記号を選ぶ')+'・'
+    +(fk&&!fixOnce()?'調：'+PA.keyName(KEYS[fk.idx]):(fk?`さいしょは${PA.keyName(KEYS[fk.idx])}・`:'')+`むずかしさ：${tr.name}（調号${tr.min}〜${tr.max}）`);
 }
 function settingsHTML(){
   const famTxt=FAM_KEYS.filter(f=>Q.fams[f]).map(f=>FAM[f].label).join('／');
-  const tr=KD.TIERS.find(t=>t.id===Q.tier), lvTxt=`${tr.emoji} ${tr.name}（調号 ${tr.min}〜${tr.max}）`;
-  let h=`<details class="more" data-d="set" ${openD.set?'open':''}><summary>⚙️ もんだいの えらびかた<small>${lvTxt}${Q.type==='chord'?'・'+famTxt:''}${Q.weak?'・📈':''}</small></summary>
+  const tr=KD.TIERS.find(t=>t.id===Q.tier), lvTxt=`${tr.emoji} ${tr.name}（調号${tr.min}〜${tr.max}）`;
+  let h=`<details class="more" data-d="set" ${openD.set?'open':''}><summary>⚙️ 問題の選びかた<small>${lvTxt}${Q.type==='chord'?'・'+famTxt:''}${Q.weak?'・📈':''}</small></summary>
     <div class="optlabel">むずかしさ（調号の数）</div>${KD.tierSeg('qtier',Q.tier)}
-    <div class="tog" role="group"><button class="${Q.weak?'on':''}" data-act="qweak" aria-pressed="${Q.weak}">${Q.weak?'✅':'⬜'} 📈 にがてな調を 多めに</button></div><p class="tognote">まちがえた 調が すこし 多く 出るよ</p>`;
+    <div class="tog" role="group"><button class="${Q.weak?'on':''}" data-act="qweak" aria-pressed="${Q.weak}">${Q.weak?'✅':'⬜'} 📈 にがてな調を多めに</button></div><p class="tognote">まちがえた調がすこし多く出るよ</p>`;
   if(Q.type==='chord') h+=`<div class="optlabel">和音（いくつでも）</div><div class="seg grid4" role="group">${FAM_KEYS.map(k=>`<button class="${Q.fams[k]?'on':''}" data-act="qfam" data-v="${k}" aria-pressed="${Q.fams[k]}">${Q.fams[k]?'✅':'⬜'} ${FAM[k].label}</button>`).join('')}</div>`;
-  return h+`<div class="row" style="margin-top:10px"><button class="btn small" data-act="qreset">スコアを 0 に もどす</button>${PA.shareHTML(QUIZ,Object.assign(linkParams(),{n:5}),'👩‍🏫 この れんしゅうを おくる')}</div>
-    <p class="tognote">「おくる」で いまの えらびかたの 5もんの リンクが できるよ</p></details>`;
+  return h+`<div class="row" style="margin-top:10px"><button class="btn small" data-act="qreset">スコアを0にもどす</button>${PA.shareHTML(QUIZ,Object.assign(linkParams(),{n:5}),'👩‍🏫 れんしゅうをおくる')}</div>
+    <p class="tognote">「おくる」で、いまの選びかたの5もんのリンクができるよ</p></details>`;
 }
 function tipsHTML(){
   return `<details class="more tips" data-d="tips" ${openD.tips?'open':''}><summary>💡 おぼえておこう</summary><ul>
-    <li><b>Ⅴ</b> は 音階の 5ばんめ（根音）から ひとつとばしで 3つ。<b>Ⅴ7</b> は もうひとつ とばして 4つ、<b>Ⅴ9</b> は さらに のせて 5つ。</li>
-    <li><b>減七</b> は Ⅴ9 から いちばん下の 根音を <b>はぶいた</b> 4つの音。</li>
-    <li>短調の 和音は、<b>7ばんめの音を 半音上げた 音階</b>で つくるよ（本では 和声的短音階 と いう）。上げた音（導音）は 主音の すぐ下（となり）。</li>
-    <li>Ⅴ9 の いちばん上の音（第9音）は 6ばんめの音。調号どおりで 上げないよ。</li>
-    <li>調号の ♭ が ついた音は ♮ で、何も ついていない音は ♯ で、調号の ♯ が ついた音は ダブルシャープ（<span class="ds">x</span>）で 上げるよ。</li>
-  </ul><p class="note">くわしくは：</p><div class="row" style="margin-top:6px"><a class="btn small" href="minor-family.html">🏠 Ⅴの家族 ›</a><a class="btn small" href="minor-signature.html">♮ 調号と 臨時記号 ›</a></div></details>`;
+    <li><b>Ⅴ</b>は音階の5ばんめ（根音）からひとつとばしで3つ。<b>Ⅴ7</b>は、もうひとつとばして4つ。<b>Ⅴ9</b>は、さらにもう1つのせて5つ。</li>
+    <li><b>減七</b>はⅤ9からいちばん下の根音を<b>はぶいた</b>4つの音。</li>
+    <li>短調の和音は、<b>7ばんめの音を半音上げた音階</b>でつくるよ（本では和声的短音階という）。上げた音（導音）は主音のすぐ下（となり）。</li>
+    <li>Ⅴ9のいちばん上の音（第9音）は6ばんめの音。調号どおりで、上げないよ。</li>
+    <li>調号の♭がついた音は♮で、何もついていない音は♯で、調号の♯がついた音はダブルシャープ（<span class="ds">x</span>）で上げるよ。</li>
+  </ul><p class="note">くわしくは：</p><div class="row" style="margin-top:6px"><a class="btn small" href="minor-family.html">🏠 Ⅴの家族 ›</a><a class="btn small" href="minor-signature.html">♮調号と臨時記号 ›</a></div></details>`;
 }
-// 短調の チェック表（たたんでおく）。おなじ 音の 調（嬰ニ短調・変ホ短調）は 1つの ます。ますを おすと その 調を 3もん
-// （onceMode では その 調から はじめて 3もん。core の ことばを なおす）
-const PICK_NOTE='その 調を 3もん れんしゅう できます。', PICK_SR=' を 3もん れんしゅう（';
+// 短調のチェック表（たたんでおく）。おなじ音の調（嬰ニ短調・変ホ短調）は1つのます。ますをおすとその調を3もん
+// （onceMode ではその調からはじめて3もん。core のことばをなおす）
+const PICK_NOTE='その調を3もん、れんしゅうできます。', PICK_SR='を3もんれんしゅう（';
 function checkHTML(){
   const T=KD.tally(QUIZ,{modes:MODES});
-  let table=KD.checkTableHTML(QUIZ,{modes:MODES,pickable:true,title:'🌙 12の 短調'});
-  if(onceMode()) table=table.split(PICK_NOTE).join('その 調から はじめて 3もん れんしゅう できます（2もんめからは ほかの 調も 出ます）。').split(PICK_SR).join(' から はじめて 3もん れんしゅう（');
-  return `<details class="more" data-d="check" ${openD.check?'open':''}><summary>📋 短調 チェック表<small>できた 調 ${T.good} ／ ${T.total}・にがてな 調が わかるよ</small></summary>${table}</details>`;
+  let table=KD.checkTableHTML(QUIZ,{modes:MODES,pickable:true,title:'🌙 12の短調'});
+  if(onceMode()) table=table.split(PICK_NOTE).join('その調から始めて3もん、れんしゅうできます（2もんめからは、ほかの調も出ます）。').split(PICK_SR).join('から始めて3もんれんしゅう（');
+  return `<details class="more" data-d="check" ${openD.check?'open':''}><summary>📋 短調チェック表<small>できた調${T.good}／${T.total}・にがてな調がわかるよ</small></summary>${table}</details>`;
 }
 function markView(key){
   const done=Q.chosen!=null;
   let h=`<section class="card hero"><div class="qtitle"><span class="qkey">${PA.keyName(key)}</span><span class="qsig">（${PA.sigLabel(key)}）</span></div>
-    <p class="qtext">7ばんめ「<b>${PA.nmH(key.natLT)}</b>」を 主音の 半音下に するには、どの 記号を つける？</p>
+    <p class="qtext">7ばんめ「<b>${PA.nmH(key.natLT)}</b>」を主音の半音下にするには、どの記号をつける？</p>
     <div class="qstaff">${PA.staffSVG(key,[{notes:[done?key.lt:key.natLT],color:done?'#d1495b':'#3b4fa8',accColor:'#d1495b',accRing:true},{notes:[PA.at(key.nat,7)],color:'#3b4fa8'}],{minW:220,colW:70})}</div>
     <div class="choices">`+MARKS.map(a=>{
       let cls=''; if(done){if(a===key.ltType)cls='right';else if(a===Q.chosen)cls='wrong';}
@@ -339,56 +339,56 @@ function markView(key){
     }).join('')+`</div>`;
   if(done){
     const sacc=key.sig[key.natLT.letter]||0, d=Q.chosen-sacc, cn=PA.nmH({letter:key.natLT.letter,acc:Q.chosen});
-    const why=Q.lastOk?'':d>=2?`「${cn}」だと 主音「${PA.nmH(key.nat[0])}」と おなじ 高さ（か それより上）に なっちゃう。上げるのは すぐ上の けんばんまで。<br>`:d===0?`その記号だと「${PA.nmH(key.natLT)}」の まま。上がらないよ。<br>`:`それだと「${cn}」で 下がっちゃう。<br>`;
-    h+=`<div class="fb ${Q.lastOk?'good':'bad'}" role="status">${Q.lastOk?'🎉 せいかい！':'🤔 おしい！'} ${why}${PA.keyName(key)}では「${PA.nmH(key.natLT)}」に ${PA.H(MARK[key.ltType])} を つけて <b>${PA.nmH(key.lt)}</b>。
-      ${key.ltType===0?'調号の ♭ を とると 半音 上がるよ。':key.ltType===2?'調号で もう ♯ が ついているので、もう1つ 上げて ダブルシャープ。':'調号に 何も ついていない音なので、♯ で 上げるよ。'}</div>
-      <div class="row" style="margin-top:10px"><button class="btn small" data-act="qexplain">🐸 つくりかたを 見る</button></div>`;
+    const why=Q.lastOk?'':d>=2?`「${cn}」だと主音「${PA.nmH(key.nat[0])}」と同じ高さ（かそれより上）になっちゃう。上げるのはすぐ上のけんばんまで。<br>`:d===0?`その記号だと「${PA.nmH(key.natLT)}」のまま。上がらないよ。<br>`:`それだと「${cn}」で下がっちゃう。<br>`;
+    h+=`<div class="fb ${Q.lastOk?'good':'bad'}" role="status">${Q.lastOk?'🎉 正解！':'🤔 おしい！'}${why}${PA.keyName(key)}では「${PA.nmH(key.natLT)}」に${PA.H(MARK[key.ltType])}をつけて<b>${PA.nmH(key.lt)}</b>。
+      ${key.ltType===0?'調号の♭をとると半音上がるよ。':key.ltType===2?'調号でもう♯がついているので、もう1つ上げてダブルシャープ。':'調号に何もついていない音なので、♯で上げるよ。'}</div>
+      <div class="row" style="margin-top:10px"><button class="btn small" data-act="qexplain">🐸 つくりかたを見る</button></div>`;
   }
   return h+`</section>`;
 }
 function chordView(key){
   const f=Q.q.fam, t=famTones(key,f), marks=new Map(), set=(m,o)=>marks.set(m,Object.assign(marks.get(m)||{},o));
   if(!Q.checked){
-    Q.picked.forEach(m=>set(m,{fill:isBlack(m)?'#e9a800':'#ffd66b',label:nameForMidi(m,key),tc:'#3a3245',sr:'えらんだ'}));
-    // はじめに見せる位置：主音（どの 和音にも 入らない音）の あたり。こたえの 鍵には 何も つけない
+    Q.picked.forEach(m=>set(m,{fill:isBlack(m)?'#e9a800':'#ffd66b',label:nameForMidi(m,key),tc:'#3a3245',sr:'選んだ'}));
+    // はじめに見せる位置：主音（どの和音にも入らない音）のあたり。こたえの鍵には何もつけない
     set(PA.at(key.harm,7+famShift(key)).midi,{focus:true});
   }else{
     const g=gradeChord(t);
-    Q.picked.forEach(m=>{const ok=g.ans.has(mod(m,12));set(m,{fill:ok?'#22a06b':'#d1495b',tc:'#fff',label:(ok?'○':'×')+nameForMidi(m,key),sr:ok?'えらんだ・せいかい':'えらんだ・まちがい',focus:true});});
-    t.forEach(n=>{if(!g.pk.has(mod(n.midi,12))&&!marks.has(n.midi)) set(n.midi,{fill:isBlack(n.midi)?undefined:'#fff',label:PA.nm(n),tc:'#3b4fa8',ring:'#3b4fa8',sr:'たりない 音',focus:true});});
+    Q.picked.forEach(m=>{const ok=g.ans.has(mod(m,12));set(m,{fill:ok?'#22a06b':'#d1495b',tc:'#fff',label:(ok?'○':'×')+nameForMidi(m,key),sr:ok?'選んだ・正解':'選んだ・まちがい',focus:true});});
+    t.forEach(n=>{if(!g.pk.has(mod(n.midi,12))&&!marks.has(n.midi)) set(n.midi,{fill:isBlack(n.midi)?undefined:'#fff',label:PA.nm(n),tc:'#3b4fa8',ring:'#3b4fa8',sr:'たりない音',focus:true});});
   }
   const names=[...Q.picked].sort((a,b)=>a-b).map(m=>PA.H(nameForMidi(m,key)));
-  return `<section class="card hero"><div class="qhead"><div class="qtitle"><span class="qkey">${PA.keyName(key)}</span>の <span class="badge qbadge">${FAM[f].label}</span>は？</div>
+  return `<section class="card hero"><div class="qhead"><div class="qtitle"><span class="qkey">${PA.keyName(key)}</span>の<span class="badge qbadge">${FAM[f].label}</span>は？</div>
     ${Q.checked?'':`<div class="sigstaff">${sigStaff(key)}</div>`}</div>
-    <p class="note">${PA.sigLabel(key)}・${t.length}つの音${f==='DIM'?'（Ⅴ9 から 根音を はぶいた 和音）':''}</p>
-    <p class="inst">${Q.checked?'<b style="color:#22a06b">緑の○</b>＝あたり、<b style="color:#d1495b">赤の×</b>＝ちがう音、<b style="color:#3b4fa8">青わく</b>＝たりない音':`けんばんを タップして <b>${t.length}つ</b>の音を おさえよう（もういちど タップで けせる）`}</p>
+    <p class="note">${PA.sigLabel(key)}・${t.length}つの音${f==='DIM'?'（Ⅴ9から根音をはぶいた和音）':''}</p>
+    <p class="inst">${Q.checked?'<b style="color:#22a06b">緑の○</b>＝あたり、<b style="color:#d1495b">赤の×</b>＝ちがう音、<b style="color:#3b4fa8">青わく</b>＝たりない音':`けんばんをタップして<b>${t.length}つ</b>の音をおさえよう（もういちどタップすると、けせる）`}</p>
     <div class="scroll" data-sk="kb">${PA.kbSVG(KB_LO,KB_HI,marks)}</div>
-    <div class="picked">おさえた音： <b>${names.length?names.join('・'):'まだ なし'}</b></div>
+    <div class="picked">おさえた音：<b>${names.length?names.join('・'):'まだなし'}</b></div>
     ${Q.checked?`<div class="fb ${Q.lastOk?'good':'bad'}" role="status">${chordMsg(key,f,t)}</div>`:''}
-    <div class="row" style="margin-top:10px"><button class="btn small" data-act="qexplain">🐸 つくりかたを 見る</button></div>
+    <div class="row" style="margin-top:10px"><button class="btn small" data-act="qexplain">🐸 つくりかたを見る</button></div>
     ${Q.result===null?`<p class="hintnote">${PA.HINT_NOTE}</p>`:''}
   </section>
-  ${Q.checked?`<section class="card"><h2>🎼 がくふ<small>${PA.keyName(key)}の ${FAM[f].label}（赤い音＝導音）</small></h2>
+  ${Q.checked?`<section class="card"><h2>🎼 がくふ<small>${PA.keyName(key)}の${FAM[f].label}（赤い音＝導音）</small></h2>
     <div class="qstaff">${PA.staffSVG(key,[{notes:t,color:'#3b4fa8',ltColor:'#d1495b',accColor:'#d1495b'}],{minW:200,maxScale:1.3})}</div></section>`:''}`;
 }
-// 回の さいごの もんだいに こたえて、まだ けっかを 見ていない：つぎは「けっかを 見る」
+// 回のさいごのもんだいにこたえて、まだけっかを見ていない：つぎは「けっかを見る」
 const sessLast=()=>Q.sessDoneId===Q.id&&sess.finished()&&!Q.sumShow;
-// 上の 行：⭐ と、📝 きょうの 5もん（とちゅうなら すすみぐあい）
+// 上の行：⭐ と、📝 きょうの5もん（とちゅうならすすみぐあい）
 function topHTML(){
-  // ヒントで できた もんだいは べつに 出す（まちがいに 見えないように）
-  const sc=`<div class="score">⭐ ${Q.hint?`じぶんで ${Q.right}・💡 ヒントで ${Q.hint} ／ ${Q.total} もん`:`${Q.right} / ${Q.total}`}　<span>れんぞく ${Q.streak}</span> <span class="stars">${'🌟'.repeat(Math.min(Q.streak,10))}</span></div>`;
+  // ヒントでできたもんだいはべつに出す（まちがいに見えないように）
+  const sc=`<div class="score">⭐ ${Q.hint?`じぶんで${Q.right}・💡 ヒントで${Q.hint}／${Q.total}もん`:`${Q.right}／${Q.total}`}　<span>れんぞく${Q.streak}</span> <span class="stars">${'🌟'.repeat(Math.min(Q.streak,10))}</span></div>`;
   const ss=sess.active()?`<div class="sessrow">${sess.progressHTML()}<button class="btn small" data-act="sessstop">やめる</button></div>`
     :sessLast()?`<div class="sessrow">${sess.progressHTML()}</div>`
-    :Q.sumShow?'':`<button class="btn small" data-act="sess5">📝 きょうの 5もん</button>`;
+    :Q.sumShow?'':`<button class="btn small" data-act="sess5">📝 きょうの5もん</button>`;
   const fk=Q.fixKey?KD.parse(Q.fixKey):null;
-  const fix=!fk||fixOnce()&&(Q.sumShow||Q.fixUsed&&fixQid!==Q.id)?'':fixOnce()?`<div class="fixrow"><span class="chip">🔑 さいしょは ${PA.keyName(KEYS[fk.idx])}</span><button class="btn small" data-act="qunfix">ふつうに もどす</button></div>`
-    :`<div class="fixrow"><span class="chip">🔑 ${PA.keyName(KEYS[fk.idx])}だけ</span><button class="btn small" data-act="qunfix">ほかの 調も 出す</button></div>`;
+  const fix=!fk||fixOnce()&&(Q.sumShow||Q.fixUsed&&fixQid!==Q.id)?'':fixOnce()?`<div class="fixrow"><span class="chip">🔑 さいしょは${PA.keyName(KEYS[fk.idx])}</span><button class="btn small" data-act="qunfix">ふつうにもどす</button></div>`
+    :`<div class="fixrow"><span class="chip">🔑 ${PA.keyName(KEYS[fk.idx])}だけ</span><button class="btn small" data-act="qunfix">ほかの調も出す</button></div>`;
   return `<div class="toprow">${sc}${ss}</div>${fix}`;
 }
 function render(){
-  if(!Q.q&&!Q.sumShow) newQuestion(); // けっかの カードの あいだは もんだいを つくらない（ふくろを へらさない）
+  if(!Q.q&&!Q.sumShow) newQuestion(); // けっかのカードのあいだはもんだいをつくらない（ふくろをへらさない）
   const key=Q.q?KEYS[Q.q.keyIdx]:KEYS[0];
-  let h=`<div class="stack">${PA.seg('qtype',[['chord','🎹 和音を おさえる'],['mark','✋ 記号を えらぶ']],Q.type,'full')}${topHTML()}`;
+  let h=`<div class="stack">${PA.seg('qtype',[['chord','🎹 和音をおさえる'],['mark','✋ 記号を選ぶ']],Q.type,'full')}${topHTML()}`;
   if(Q.sumShow) h+=sess.summaryHTML({title:'短調クイズ',page:QUIZ,params:linkParams(),settings:settingsText()})+checkHTML()+`</div>`;
   else h+=`${settingsHTML()}
     ${Q.type==='mark'?markView(key):chordView(key)}
@@ -401,28 +401,28 @@ function render(){
 function renderActions(key){
   const bar=document.getElementById('actions');
   const last=sessLast();
-  const next=lab=>last?`<button class="btn primary wide" data-act="qsum" data-hot="next">📝 けっかを 見る</button>`:`<button class="btn primary wide" data-act="qnext" data-hot="next">${lab}</button>`;
+  const next=lab=>last?`<button class="btn primary wide" data-act="qsum" data-hot="next">📝 けっかを見る</button>`:`<button class="btn primary wide" data-act="qnext" data-hot="next">${lab}</button>`;
   let h='';
   if(Q.sumShow) h='';
   else if(Q.type==='mark'){
-    if(Q.chosen!=null) h=next('➡️ つぎの もんだい')+`<button class="btn" data-act="qplaylt" data-hot="listen">🔊 ${PA.nmH(key.lt)}→${PA.nmH(key.nat[0])}</button>`;
+    if(Q.chosen!=null) h=next('➡️ 次の問題')+`<button class="btn" data-act="qplaylt" data-hot="listen">🔊 ${PA.nmH(key.lt)}→${PA.nmH(key.nat[0])}</button>`;
   }else if(!Q.checked){
     h=`<button class="btn ok wide" data-act="qcheck" data-hot="check" ${Q.picked.size?'':'disabled'}>✅ こたえあわせ</button><button class="btn" data-act="qtry" data-hot="listen" ${Q.picked.size?'':'disabled'}>🔊 きく</button><button class="btn" data-act="qclear" ${Q.picked.size?'':'disabled'}>🧽 けす</button>`;
   }else{
-    h=next('➡️ つぎへ')+`${Q.lastOk?'':`<button class="btn" data-act="qretry">🔁 もういちど</button>`}<button class="btn" data-act="qplay" data-hot="listen">🔊 こたえ</button>`;
+    h=next('➡️ 次へ')+`${Q.lastOk?'':`<button class="btn" data-act="qretry">🔁 もういちど</button>`}<button class="btn" data-act="qplay" data-hot="listen">🔊 こたえ</button>`;
   }
-  PA.paint(bar,h,'bar'); bar.hidden=!h; // フォーカスの もどし先は core が きめる
+  PA.paint(bar,h,'bar'); bar.hidden=!h; // フォーカスのもどし先は core がきめる
 }
 const showFb=()=>{const fb=document.querySelector('#view .fb'); if(fb&&fb.scrollIntoView) fb.scrollIntoView({block:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});};
 const playLT=k=>{PA.playNote(k.lt.midi,0,0.9,0.24);PA.playNote(k.lt.midi+1,0.8,1.4,0.24);};
-// 新しい もんだいで 上から（回の はじまり・つぎへ）
+// 新しいもんだいで上から（回のはじまり・つぎへ）
 const fresh=()=>{PA.stopSound();newQuestion();render();PA.scrollTop();};
 
 /* ===== 操作 ===== */
 PA.mountBar({title:'短調クイズ',app:'minor-quiz'});
-PA.onPageShow=()=>{PA.stopSound();location.reload();}; // 「もどる」で もどったら 読みなおす（べつの ページで すすめた きろくを 古い きろくで 上書きしない）
+PA.onPageShow=()=>{PA.stopSound();location.reload();}; // 「もどる」でもどったら読みなおす（べつのページですすめたきろくを古いきろくで上書きしない）
 PA.onSettings=render;
-PA.onKey=m=>{ // 音は core が 鳴らす
+PA.onKey=m=>{ // 音は core が鳴らす
   if(Q.sumShow||Q.type!=='chord'||Q.checked) return;
   Q.picked.has(m)?Q.picked.delete(m):Q.picked.add(m);
   render();
@@ -435,22 +435,22 @@ document.addEventListener('click',e=>{
     case 'qtype': {
       if(Q.type===v||!TYPES.includes(v)) return;
       PA.stopSound(); Q.type=v; setBase('type',v);
-      save(); newQuestion(); break; // おわった 回（けっかを 見ないで ほかへ）は newQuestion が しまう
+      save(); newQuestion(); break; // おわった回（けっかを見ないでほかへ）は newQuestion がしまう
     }
     case 'qtier': if(Q.tier===v||!TIER_IDS.includes(v)) return; PA.stopSound(); Q.tier=v; setBase('tier',v); Q.fixKey=null; deck.setOptions({tier:v}); save(); newQuestion(); break;
-    case 'qweak': {Q.weak=!Q.weak; const s=deckState(); deck.setOptions({weak:Q.weak}); restoreDeck(s); break;} // 今の もんだいも ふくろの のこりも そのまま。つぎの ふくろから
-    case 'qunfix': {const once=fixOnce(); Q.fixKey=null; Q.fixUsed=false; if(Q.result!==null&&!once) newQuestion(); break;} // こたえる まえの もんだいは そのまま（fixOnce は つぎから もう ふつう）
-    case 'keystats-reset': if(v!==QUIZ) return; deck.reset(); render(); return; // 2回 おす しくみ（data-confirm）は core
-    case 'kd-pick': { // チェック表の ます：その 調を 3もん（onceMode では その 調から はじめて 3もん）
+    case 'qweak': {Q.weak=!Q.weak; const s=deckState(); deck.setOptions({weak:Q.weak}); restoreDeck(s); break;} // 今のもんだいもふくろののこりもそのまま。つぎのふくろから
+    case 'qunfix': {const once=fixOnce(); Q.fixKey=null; Q.fixUsed=false; if(Q.result!==null&&!once) newQuestion(); break;} // こたえるまえのもんだいはそのまま（fixOnce はつぎからもうふつう）
+    case 'keystats-reset': if(v!==QUIZ) return; deck.reset(); render(); return; // 2回おすしくみ（data-confirm）は core
+    case 'kd-pick': { // チェック表のます：その調を3もん（onceMode ではその調からはじめて3もん）
       const id=minorId(v); if(!id) return;
       Q.fixKey=id; Q.fixUsed=false; sess=PA.session(QUIZ,{sig:'key='+id}); sess.start(3);
-      fresh(); PA.announce(`${PA.keyName(KEYS[KD.parse(id).idx])}${onceMode()?'から はじめて':'を'} 3もん れんしゅう`); return;
+      fresh(); PA.announce(`${PA.keyName(KEYS[KD.parse(id).idx])}${onceMode()?'から始めて':'を'}3もんれんしゅう`); return;
     }
-    case 'sess5': sess=PA.session(QUIZ); sess.start(5); Q.fixUsed=false; fresh(); PA.announce('きょうの 5もん、はじめ！'); return;
-    case 'sessstop': sess.clear(); if(endOv()) newQuestion(); break; // リンクの 設定も おしまい（かわったら 新しい もんだい）
+    case 'sess5': sess=PA.session(QUIZ); sess.start(5); Q.fixUsed=false; fresh(); PA.announce('きょうの5もん、始め！'); return;
+    case 'sessstop': sess.clear(); if(endOv()) newQuestion(); break; // リンクの設定もおしまい（かわったら新しいもんだい）
     case 'qsum': if(!sess.finished()) return; PA.stopSound(); Q.sumShow=true; render(); PA.scrollTop(); return;
     case 'session-again': {const n=sess.n()||5; sess.start(n); Q.fixUsed=false; fresh(); return;}
-    case 'session-free': sess.clear(); Q.fixKey=null; endOv(); fresh(); return; // ふだんの 設定に もどして
+    case 'session-free': sess.clear(); Q.fixKey=null; endOv(); fresh(); return; // ふだんの設定にもどして
     case 'qfam': if(!FAM[v]) return; if(Q.fams[v]&&FAM_KEYS.filter(f=>Q.fams[f]).length===1) return; PA.stopSound(); Q.fams[v]=!Q.fams[v]; setBase('fams',Q.fams); save(); newQuestion(); break;
     case 'qreset': Q.right=Q.total=Q.streak=Q.hint=0; break;
     case 'qcheck': if(Q.checked||!Q.picked.size) return; checkChord(); render(); showFb(); return;
@@ -464,12 +464,12 @@ document.addEventListener('click',e=>{
       if(Q.chosen!=null||!MARKS.includes(+v)) return;
       const k=KEYS[Q.q.keyIdx], ch=+v, ok=ch===k.ltType;
       Q.chosen=ch; Q.lastOk=ok; scoreFirst(ok);
-      PA.announce(ok?`せいかい！ ${markWord(k.ltType)}で ${PA.nm(k.lt)}`:`ざんねん。こたえは ${markWord(k.ltType)}で ${PA.nm(k.lt)}`);
+      PA.announce(ok?`正解！${markWord(k.ltType)}で${PA.nm(k.lt)}`:`ざんねん。こたえは${markWord(k.ltType)}で${PA.nm(k.lt)}`);
       playLT(k); render(); showFb(); return;
     }
-    case 'qexplain': { // Ⅴの家族で、この調・和音の「つくりかた」を はじめから
+    case 'qexplain': { // Ⅴの家族で、この調・和音の「つくりかた」をはじめから
       PA.stopSound();
-      if(Q.result===null) Q.peeked=true; // こたえる まえに 見た：このあと できたら「ヒントで できた」（×には しない）
+      if(Q.result===null) Q.peeked=true; // こたえるまえに見た：このあとできたら「ヒントでできた」（×にはしない）
       save();
       const prev=PA.store.get('minor-family',{});
       PA.store.set('minor-family',Object.assign({},prev&&typeof prev==='object'?prev:{},{keyIdx:Q.q.keyIdx,fam:Q.type==='chord'?Q.q.fam:'V'}));

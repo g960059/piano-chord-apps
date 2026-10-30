@@ -1,5 +1,5 @@
-// core.js を ブラウザなしで 読みこむ（node --test 用の 最小の スタブ）
-// loadPA(source?, {search:'?n=5', storage:Map}) … search＝location.search、storage＝localStorage の かわり（Map）
+// core.js をブラウザなしで読みこむ（node --test 用の最小のスタブ）
+// loadPA(source?, {search:'?n=5', storage:Map}) … search＝location.search、storage＝localStorage のかわり（Map）
 import vm from 'node:vm';
 import fs from 'node:fs';
 import path from 'node:path';

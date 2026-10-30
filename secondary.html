@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- meta:start -->
-<meta name="description" content="Ⅱ・Ⅲ・Ⅳ・Ⅵ を いっとき Ⅰ に みたてる「その和音の ための Ⅴ7」">
+<meta name="description" content="Ⅱ・Ⅲ・Ⅳ・Ⅵを、いっときⅠにみたてる「その和音のためのⅤ7」">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ピアノ和音アプリ">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="副属和音｜ピアノ和音アプリ">
-<meta property="og:description" content="Ⅱ・Ⅲ・Ⅳ・Ⅵ を いっとき Ⅰ に みたてる「その和音の ための Ⅴ7」">
+<meta property="og:description" content="Ⅱ・Ⅲ・Ⅳ・Ⅵを、いっときⅠにみたてる「その和音のためのⅤ7」">
 <meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/secondary.html">
 <meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -99,9 +99,9 @@
 <div class="actionbar" id="actions"></div>
 <script src="assets/core.js"></script>
 <script>
-/* 副属和音：目標の 和音（Ⅱ・Ⅲ・Ⅳ・Ⅴ・Ⅵ／短調は Ⅲ・Ⅳ・Ⅴ・Ⅵ・Ⅶ）を いっときの 主和音（Ⅰ）と 考えて、その調の Ⅴ7（または Ⅶ7）を 前に おく。
- * 和音の つづり・高さ・解決は ぜんぶ PA.henka（Ⅴ7/Ⅴ は PA.chroma の ドッペルドミナントと おなじ 音）。
- * ながれ（Ⅰ → 副属和音 → 目標 → … → Ⅴ7 → Ⅰ）の 前後の 和音は、調の 音で つくり、連続5度・8度・対斜・増2度が ない ならびを さがす */
+/* 副属和音：目標の和音（Ⅱ・Ⅲ・Ⅳ・Ⅴ・Ⅵ／短調はⅢ・Ⅳ・Ⅴ・Ⅵ・Ⅶ）をいっときの主和音（Ⅰ）と考えて、その調のⅤ7（またはⅦ7）を前におく。
+ * 和音のつづり・高さ・解決はぜんぶ PA.henka（Ⅴ7/Ⅴは PA.chroma のドッペルドミナントとおなじ音）。
+ * ながれ（Ⅰ → 副属和音 → 目標 → … → Ⅴ7 → Ⅰ）の前後の和音は、調の音でつくり、連続5度・8度・対斜・増2度がないならびをさがす */
 const H=PA.henka, ROMAN=H.ROMAN;
 const SEC='#8a4fe0', TGT='#0f8a8a', I_COL=PA.COL.I, V_COL='#3b4fa8', OTHER='#8a6d3b', RED='#d1495b', LOW='#2f7ee8';
 const LIGHT={[SEC]:'#dccbf6',[TGT]:'#bfe6e6',[I_COL]:'#f8c9bd',[V_COL]:'#cdd5f3',[OTHER]:'#eadcc4'};
@@ -116,19 +116,19 @@ if(KINDS.includes(saved.kind)) state.kind=saved.kind;
 const curKey=()=>PA.keyOf(state.minor,state.keyIdx);
 if(Number.isInteger(saved.target)&&H.targets(curKey()).includes(saved.target)) state.target=saved.target;
 const save=()=>PA.store.set('secondary',{minor:state.minor,keyIdx:state.keyIdx,target:state.target,kind:state.kind});
-// えらんだ 形が この 目標で つかえない（半減七は 長三和音で 長9度が 調の 音の ときだけ）ときは 減七
+// えらんだ形がこの目標でつかえない（半減七は長三和音で長9度が調の音のときだけ）ときは減七
 const effKind=key=>H.secondary(key,state.target,state.kind)?state.kind:'vii7';
-state.kind=effKind(curKey()); // 表示する 形と 保存する 形を そろえる
+state.kind=effKind(curKey()); // 表示する形と保存する形をそろえる
 
-/* ===== 音の しらべかた ===== */
+/* ===== 音のしらべかた ===== */
 const pcN=n=>PA.mod(PA.NAT[n.letter]+n.acc,12);
 const sigOf=(key,L)=>key.sig[L]||0;
-const chg=(key,n)=>n.acc-sigOf(key,n.letter); // ＞0＝調号より 半音上げた、＜0＝下げた
+const chg=(key,n)=>n.acc-sigOf(key,n.letter); // ＞0＝調号より半音上げた、＜0＝下げた
 const midisOf=ns=>[...new Set(ns.map(n=>n.midi))];
-const stackOrder=ns=>[ns[0],ns[3],ns[1],ns[2]]; // PA.henka の ならび [ベース | 上の3つ] → 3度ずつ つみかさねた じゅん
+const stackOrder=ns=>[ns[0],ns[3],ns[1],ns[2]]; // PA.henka のならび [ベース | 上の3つ] → 3度ずつつみかさねたじゅん
 const shortLab=s=>String(s).replace('（自然）','');
 const roleName=r=>String(r).replace(/（.*$/,'');
-const dia=(key,n)=>({...n,acc:sigOf(key,n.letter),midi:n.midi-chg(key,n),tag:null}); // 調の 音に もどした 音
+const dia=(key,n)=>({...n,acc:sigOf(key,n.letter),midi:n.midi-chg(key,n),tag:null}); // 調の音にもどした音
 
 /* ===== 名前 ===== */
 const cls=(key,n)=>n.tag==='lt'||chg(key,n)>0?'up':chg(key,n)<0?'lo':'';
@@ -138,49 +138,49 @@ const q=n=>`「${nmW(n)}」`;
 const qC=(key,n)=>`「${nmC(key,n)}」`;
 const namesC=(key,ns,sep='・')=>ns.map(n=>nmC(key,n)).join(sep);
 const namesW=(ns,sep='・')=>ns.map(nmW).join(sep);
-// 目標の 和音・いっときの 調
+// 目標の和音・いっときの調
 function info(key){
   const t=state.target, k=effKind(key), X=H.secondary(key,t,k), R=H.resolveSecondary(key,t,k), T=H.targetTriad(key,t);
   const tmin=H.targetIsMinor(key,t), root=T[0];
   const tk={l:root.letter,a:root.acc,minor:tmin};
   const lab=H.label(key,'secondary',t,k), tl=H.label(key,'target',t), tkName=PA.keyName(tk), pm=PA.keyName({...tk,minor:true});
-  // 目標が 長三和音の 減七は、いっときの 調（長調）の Ⅶ7 ではなく、その 同主短調の Ⅶ7（長調の Ⅶ7 は 半減七）
+  // 目標が長三和音の減七は、いっときの調（長調）のⅦ7ではなく、その同主短調のⅦ7（長調のⅦ7は半減七）
   const vb=k==='vii7'&&!tmin;
   return {t,k,X,R,T,tmin,root,tk,tkName,tkEn:PA.keyEn(tk),pm,vb,src:vb?pm:tkName,lab,tl,tls:ROMAN[t-1],sym:H.symbol(key,'secondary',t,k),tsym:H.symbol(key,'target',t),jun:lab.startsWith(H.JUN)};
 }
-// 「どの 調の どの 和音か」（例：ト長調の Ⅴ7、ト短調の Ⅶ7（減七））
-const srcWhat=I=>I.k==='V7'?`${I.tkName}の Ⅴ7`:`${I.src}の Ⅶ7（${KNAME[I.k]}）`;
-// コードネーム（調の 音だけの 形の めやす）
+// 「どの調のどの和音か」（例：ト長調のⅤ7、ト短調のⅦ7（減七））
+const srcWhat=I=>I.k==='V7'?`${I.tkName}のⅤ7`:`${I.src}のⅦ7（${KNAME[I.k]}）`;
+// コードネーム（調の音だけの形のめやす）
 function symOf(ns){
   const d=i=>PA.mod(ns[i].midi-ns[0].midi,12), r=PA.LET_EN[ns[0].letter]+PA.ACC[ns[0].acc];
   const S={'4-7-10':'7','3-7-10':'m7','3-6-10':'m7(♭5)','4-7-11':'maj7','3-6-9':'dim7','3-7-11':'mM7','4-8-11':'aug(maj7)'}[d(1)+'-'+d(2)+'-'+d(3)];
   return PA.H(r+(S||''));
 }
-// 調の 音だけで つくった 七の和音の 和音記号。短調は 調号（自然的短音階）の 音なので、第7音（導音に しない 音）を ふくむ 和音は「（自然）」
+// 調の音だけでつくった七の和音の和音記号。短調は調号（自然的短音階）の音なので、第7音（導音にしない音）をふくむ和音は「（自然）」
 const diaLabel=(key,X)=>{
   const d=PA.mod(stackOrder(X)[0].letter-key.l,7);
   return ROMAN[d]+'7'+(key.minor&&[0,2,4,6].includes(d)?'（自然）':'');
 };
-// いちばん下の 音（Ⅴ7 は 根音、Ⅶ7 は 導音）を 半音 かえたか。かえたなら「調の 音だけ」の 形は 根音から ちがう 和音
+// いちばん下の音（Ⅴ7は根音、Ⅶ7は導音）を半音かえたか。かえたなら「調の音だけ」の形は根音からちがう和音
 const lowChanged=(key,I)=>!!chg(key,stackOrder(I.X)[0]);
-// 調の 音だけ → 副属和音（どの 音を 半音上げ・下げしたか）
+// 調の音だけ → 副属和音（どの音を半音上げ・下げしたか）
 function shapeChain(key,I){
   const st=stackOrder(I.X), d=st.map(n=>dia(key,n)), changed=st.filter(n=>chg(key,n));
-  const res=`${namesC(key,st)}（${I.sym}）＝ ${I.lab}`;
-  if(!changed.length) return `<div class="der"><div class="dr q-s">調の 音だけで できる：${namesW(st)}（${I.sym}）</div></div>`;
-  const how=changed.map(n=>`${qC(key,n)}は ${q(dia(key,n))}を 半音${chg(key,n)>0?'上げた':'下げた'} 音`).join('<br>');
+  const res=`${namesC(key,st)}（${I.sym}）＝${I.lab}`;
+  if(!changed.length) return `<div class="der"><div class="dr q-s">調の音だけでできる：${namesW(st)}（${I.sym}）</div></div>`;
+  const how=changed.map(n=>`${qC(key,n)}は${q(dia(key,n))}を半音${chg(key,n)>0?'上げた':'下げた'}音`).join('<br>');
   if(I.k!=='V7'&&lowChanged(key,I)){
-    // 導音そのものが 調に ない 音：「調の 音だけ」の 形は 根音から ちがう 和音なので 出さない
+    // 導音そのものが調にない音：「調の音だけ」の形は根音からちがう和音なので出さない
     const lt=st[0];
-    return `<div class="der"><div class="dr q-s">${I.src}の 導音${qC(key,lt)}（${I.tl} の 根音${q(I.T[0])}の 半音下）から ひとつとばしで 4つ：<br><b>${res}</b></div><div class="dn2">${how}</div></div>`;
+    return `<div class="der"><div class="dr q-s">${I.src}の導音${qC(key,lt)}（${I.tl}の根音${q(I.T[0])}の半音下）からひとつとばしで4つ：<br><b>${res}</b></div><div class="dn2">${how}</div></div>`;
   }
-  const hw=changed.map(n=>`${q(dia(key,n))}を 半音${chg(key,n)>0?'上げる':'下げる'}`).join('・');
-  return `<div class="der"><div class="dr q-d">調の 音だけ：${namesW(d)}（${symOf(d)}）＝ ${diaLabel(key,I.X)}</div>`+
+  const hw=changed.map(n=>`${q(dia(key,n))}を半音${chg(key,n)>0?'上げる':'下げる'}`).join('・');
+  return `<div class="der"><div class="dr q-d">調の音だけ：${namesW(d)}（${symOf(d)}）＝${diaLabel(key,I.X)}</div>`+
     `<div class="da"><span aria-hidden="true">⬇</span> ${hw}</div><div class="dr q-s"><b>${res}</b></div></div>`;
 }
 
-/* ===== ながれ（前後の 和音を 調の 音で つくり、声の すすみを さがす） ===== */
-// 調の 三和音・Ⅴ7（長調＝長音階、短調＝自然的短音階。Ⅴ・Ⅴ7 は 短調でも 導音を 上げる）
+/* ===== ながれ（前後の和音を調の音でつくり、声のすすみをさがす） ===== */
+// 調の三和音・Ⅴ7（長調＝長音階、短調＝自然的短音階。Ⅴ・Ⅴ7は短調でも導音を上げる）
 function degChord(key,d,seventh){
   const sc=key.minor&&d!==5?key.nat:key.scale, at=k=>sc[PA.mod(d-1+k,7)];
   const lab=d===1?'Ⅰ':d===5?(seventh?'Ⅴ7':'Ⅴ'):H.targets(key).includes(d)?H.label(key,'target',d):ROMAN[d-1];
@@ -189,8 +189,8 @@ function degChord(key,d,seventh){
 }
 const keyLtPc=key=>PA.mod(key.tpc+11,12);
 const inR=(m,lo,hi)=>{const r=[];for(let x=lo;x<=hi;x++) if(PA.mod(x,12)===m) r.push(x);return r;};
-// 4声の ならべかた：ベース＝根音、上の 3声＝［根音・第3音・第5音］など（重ねる 音で ペナルティ）
-// o.bass＝'3' で 第1転回形（Ⅰ6：根音か 第5音を 重ねる）、o.complete＝七の和音の 4つの 音を ぜんぶ（減七・半減七）
+// 4声のならべかた：ベース＝根音、上の3声＝［根音・第3音・第5音］など（重ねる音でペナルティ）
+// o.bass＝'3' で第1転回形（Ⅰ6：根音か第5音を重ねる）、o.complete＝七の和音の4つの音をぜんぶ（減七・半減七）
 function voicings(key,ch,o={}){
   const by={}; ch.ms.forEach(m=>by[m.mem]=m);
   const bm=o.bass||'R';
@@ -201,7 +201,7 @@ function voicings(key,ch,o={}){
   const out=[], seen=new Set(), lt=keyLtPc(key);
   for(const b of inR(pcN(by[bm]),40,55)) for(const [a,c,e,pen] of sets){
     const mems=[a,c,e], dbl=[bm,...mems].filter((x,i,arr)=>arr.indexOf(x)!==i);
-    if(dbl.some(x=>by[x].tag||pcN(by[x])===lt)) continue; // 導音・第7音は 重ねない
+    if(dbl.some(x=>by[x].tag||pcN(by[x])===lt)) continue; // 導音・第7音は重ねない
     for(const x of inR(pcN(by[a]),55,79)) for(const y of inR(pcN(by[c]),55,79)) for(const z of inR(pcN(by[e]),55,79)){
       const u=[[a,x],[c,y],[e,z]].sort((p,r)=>p[1]-r[1]);
       if(!(u[0][1]<u[1][1]&&u[1][1]<u[2][1])||u[0][1]<=b) continue;
@@ -213,7 +213,7 @@ function voicings(key,ch,o={}){
   }
   return out;
 }
-// PA.henka の 和音は そのまま（音域に おさまる ときだけ、ベース・上の声を オクターブ うごかした 形も 候補に）
+// PA.henka の和音はそのまま（音域におさまるときだけ、ベース・上の声をオクターブうごかした形も候補に）
 function fixedCands(ns,pen=6){
   const out=[];
   for(const sb of [0,-12,12]) for(const su of [0,-12,12]){
@@ -224,8 +224,8 @@ function fixedCands(ns,pen=6){
   }
   return out;
 }
-// 2つの 和音の あいだの 声の すすみ（だめなら Infinity）
-// o.secToV7：副属和音 → 調の Ⅴ7（Ⅴ7/Ⅴ → Ⅴ7）。導音は おなじ 声で 半音下がって Ⅴ7 の 第7音に なっても よい（対斜を さける）
+// 2つの和音のあいだの声のすすみ（だめなら Infinity）
+// o.secToV7：副属和音 → 調のⅤ7（Ⅴ7/Ⅴ → Ⅴ7）。導音はおなじ声で半音下がってⅤ7の第7音になってもよい（対斜をさける）
 function trans(key,P,N,pIsV,strict,o={}){
   const A=P.ns, B=N.ns, lt=keyLtPc(key);
   let pen=0;
@@ -238,18 +238,18 @@ function trans(key,P,N,pIsV,strict,o={}){
     if(as===4&&ad===6) pen+=4;
     const ltv=A[i].tag==='lt'||(pIsV&&pcN(A[i])===lt);
     const toV7=o.secToV7&&A[i].tag==='lt'&&B[i].tag==='seventh'&&B[i].letter===A[i].letter&&B[i].acc===A[i].acc-1&&d===-1;
-    if(ltv&&!toV7&&!(d===0&&st===0)&&!(d===1&&st===1)) return Infinity; // 導音は 半音上へ（つぎも おなじ 音なら そのまま）
-    if(['seventh','b9','ninth'].includes(A[i].tag)&&!(st===-1&&(d===-1||d===-2))) return Infinity; // 第7音・第9音は 下へ
+    if(ltv&&!toV7&&!(d===0&&st===0)&&!(d===1&&st===1)) return Infinity; // 導音は半音上へ（つぎもおなじ音ならそのまま）
+    if(['seventh','b9','ninth'].includes(A[i].tag)&&!(st===-1&&(d===-1||d===-2))) return Infinity; // 第7音・第9音は下へ
     if(i>0&&i<3&&(B[i].midi>A[i+1].midi||B[i].midi<A[i-1].midi)) pen+=3;
   }
   for(let i=0;i<4;i++) for(let j=i+1;j<4;j++){
     const a=PA.mod(A[j].midi-A[i].midi,12), b=PA.mod(B[j].midi-B[i].midi,12);
     if(a===b&&(a===0||a===7)&&A[i].midi!==B[i].midi&&A[j].midi!==B[j].midi) return Infinity; // 連続5度・8度
   }
-  for(let j=1;j<4;j++) if(PA.mod(A[j].midi-A[0].midi,12)===6&&PA.mod(B[j].midi-B[0].midi,12)===7) return Infinity; // バスを ふくむ 減5度→完全5度
+  for(let j=1;j<4;j++) if(PA.mod(A[j].midi-A[0].midi,12)===6&&PA.mod(B[j].midi-B[0].midi,12)===7) return Infinity; // バスをふくむ減5度→完全5度
   const ds=B[3].midi-A[3].midi, db=B[0].midi-A[0].midi;
-  if(ds*db>0&&[0,7].includes(PA.mod(B[3].midi-B[0].midi,12))&&Math.abs(ds)>2) pen+=4; // 外声の 隠伏
-  // 対斜：おなじ 文字で 変化記号が かわる ときは、おなじ 声で
+  if(ds*db>0&&[0,7].includes(PA.mod(B[3].midi-B[0].midi,12))&&Math.abs(ds)>2) pen+=4; // 外声の隠伏
+  // 対斜：おなじ文字で変化記号がかわるときは、おなじ声で
   for(const p of A) for(const n of B){
     if(p.letter!==n.letter||p.acc===n.acc) continue;
     if(!A.some((x,i)=>x.letter===p.letter&&x.acc===p.acc&&B[i].letter===n.letter&&B[i].acc===n.acc)){if(strict) return Infinity;pen+=10;}
@@ -276,23 +276,23 @@ function voiceItems(key,items,strict){
   for(let k=items.length-1;k>=0;k--){pick[k]=items[k].cands[bi];bi=dp[k][bi].prev;}
   return items.map((it,k)=>({lab:it.lab+(pick[k].inv?'6':''),col:it.col,ns:pick[k].ns,sec:!!it.sec,tgt:!!it.tgt,strict}));
 }
-// i6：はじめの Ⅰ は 第1転回形（Ⅰ6）も 候補に（いちばん下が 導音の 減七の 前など、対斜や 増音程を さけるため）
+// i6：はじめのⅠは第1転回形（Ⅰ6）も候補に（いちばん下が導音の減七の前など、対斜や増音程をさけるため）
 const genItem=(key,d,seventh,i6)=>{
   const ch=degChord(key,d,seventh), c=voicings(key,ch);
   if(i6) voicings(key,ch,{bass:'3'}).forEach(v=>c.push({...v,pen:v.pen+6,inv:1}));
   return {lab:ch.lab,col:d===1?I_COL:d===5?V_COL:OTHER,cands:c,isV:d===5,v7:d===5&&!!seventh};
 };
-// 副属和音・目標は PA.henka の 形（おなじ 高さ）を いちばんに。だめなときだけ、おなじ 音で ならべかえた 形（ペナルティ つき）
-const MEM=['R','5','7','3']; // PA.henka の ならび [根音|5,7,3]（Ⅶ7 は [導音|第5音,第7音,第9音] を Ⅶ7 から 見た 根音・5・7・3）
+// 副属和音・目標は PA.henka の形（おなじ高さ）をいちばんに。だめなときだけ、おなじ音でならべかえた形（ペナルティつき）
+const MEM=['R','5','7','3']; // PA.henka のならび [根音|5,7,3]（Ⅶ7は [導音|第5音,第7音,第9音] をⅦ7から見た根音・5・7・3）
 const reVoice=(key,ns,o)=>voicings(key,{ms:ns.map((n,i)=>({...n,mem:o.mem[i]}))},o).map(v=>({...v,pen:v.pen+12}));
 const secItem=(key,t,k)=>{const X=H.secondary(key,t,k);return {lab:H.label(key,'secondary',t,k),col:SEC,cands:[...fixedCands(X),...reVoice(key,X,{mem:MEM,complete:k!=='V7'})],sec:true};};
 const resItem=(key,t,k)=>{
   const T=H.targetTriad(key,t);
   return {lab:H.label(key,'target',t),col:TGT,cands:[...fixedCands(H.resolveSecondary(key,t,k)),...reVoice(key,[T[0],T[3],T[2]],{mem:['R','5','3']})],tgt:true,isV:t===5};
 };
-// 目標の あと：Ⅴ7 → Ⅰ へ（Ⅲ・Ⅵ・Ⅶ の あとは 下属の 和音を はさむ）
+// 目標のあと：Ⅴ7 → Ⅰへ（Ⅲ・Ⅵ・Ⅶのあとは下属の和音をはさむ）
 const AFTER={false:{2:[],3:[4],4:[],5:[],6:[4]},true:{3:[4],4:[],5:[],6:[4],7:[3,4]}};
-const CHAIN={false:[6,5],true:[4,5]}; // 2つ つなげる：長調 Ⅴ7/Ⅵ → Ⅵ → Ⅴ7/Ⅴ → Ⅴ7、短調 Ⅴ7/Ⅳ → Ⅳ → Ⅴ7/Ⅴ → Ⅴ7
+const CHAIN={false:[6,5],true:[4,5]}; // 2つつなげる：長調Ⅴ7/Ⅵ → Ⅵ → Ⅴ7/Ⅴ → Ⅴ7、短調Ⅴ7/Ⅳ → Ⅳ → Ⅴ7/Ⅴ → Ⅴ7
 const progCache=new Map();
 function progOf(key,mode,t,k){
   const id=[key.minor,key.idx,mode,t,k].join(':');
@@ -303,7 +303,7 @@ function progOf(key,mode,t,k){
     body=[secItem(key,a,'V7'),resItem(key,a,'V7'),secItem(key,b,'V7'),genItem(key,5,true),genItem(key,1)];
   }else if(mode==='ab') body=[secItem(key,t,k),resItem(key,t,k)];
   else body=[secItem(key,t,k),resItem(key,t,k),...AFTER[key.minor][t].map(d=>genItem(key,d)),genItem(key,5,true),genItem(key,1)];
-  // Ⅰ から すぐに つなげない ときは、あいだに Ⅳ（または Ⅵ）を はさむ
+  // Ⅰからすぐにつなげないときは、あいだにⅣ（またはⅥ）をはさむ
   let r=null;
   for(const pre of [[],[4],[6]]){
     r=voiceItems(key,[genItem(key,1,false,true),...pre.map(d=>genItem(key,d)),...body],true);
@@ -314,9 +314,9 @@ function progOf(key,mode,t,k){
   return r;
 }
 const curProg=key=>progOf(key,state.mode,state.target,effKind(key));
-// 聴きくらべ：A/B の どちらかが 副属和音、もう ひとつは 半音 かえる まえの 調の 音だけの 和音
-// B の ながれも 声の すすみを たしかめる：ほかの 和音は A と おなじ 高さの まま、調の 音だけの 和音を ならべなおす。
-//   だめなら（おなじ 和音の ならびで）ぜんぶ さがしなおし、それでも だめなら 音を おきかえた だけの 形
+// 聴きくらべ：A/B のどちらかが副属和音、もうひとつは半音かえるまえの調の音だけの和音
+// B のながれも声のすすみをたしかめる：ほかの和音は A とおなじ高さのまま、調の音だけの和音をならべなおす。
+//   だめなら（おなじ和音のならびで）ぜんぶさがしなおし、それでもだめなら音をおきかえただけの形
 const abCache=new Map();
 function abSeqs(key){
   const k=effKind(key), id=[key.minor,key.idx,state.target,k].join(':');
@@ -348,7 +348,7 @@ function kbRange(ms,minWhite=12){
   for(let s=0;wc()<minWhite&&s<14;s++){if(s%2){lo--;while(!isWhite(lo))lo--;}else{hi++;while(!isWhite(hi))hi++;}}
   return [lo,hi];
 }
-// ベースは 左手（うすい色）。赤＝導音・半音上げた 音、青＝半音下げた 音
+// ベースは左手（うすい色）。赤＝導音・半音上げた音、青＝半音下げた音
 function marksOf(key,ns,col,o={}){
   const mk=new Map();
   ns.forEach((n,i)=>{
@@ -362,9 +362,9 @@ function marksOf(key,ns,col,o={}){
   return mk;
 }
 
-/* ===== がくふ（大譜表。いちばん下の音と ド4より 下の音は ヘ音記号）＋ 矢印 ===== */
+/* ===== がくふ（大譜表。いちばん下の音とド4より下の音はヘ音記号）＋矢印 ===== */
 const prep=(key,n,plain)=>({letter:n.letter,acc:n.acc,midi:n.midi,raised:(!plain&&(n.tag==='lt'||chg(key,n)>0))||undefined});
-// cols:[{notes,color,label,op}]、arrows:[{c1,n1,c2,n2,color,text,dash}]（n1・n2 は cols の 音そのもの）
+// cols:[{notes,color,label,op}]、arrows:[{c1,n1,c2,n2,color,text,dash}]（n1・n2は cols の音そのもの）
 function staff(key,cols,arrows=[],o={}){
   const cw=o.cw||110;
   const sc=cols.map(c=>{
@@ -394,11 +394,11 @@ function staff(key,cols,arrows=[],o={}){
   });
   if(cs.size) add+=`<defs>${[...cs].map(c=>`<marker id="sd${c.slice(1)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${c}"/></marker>`).join('')}</defs>`;
   svg=svg.replace(/<\/svg>$/,add+'</svg>');
-  // 小さく なりすぎないように（文字が 読めるように）横スクロールに する
+  // 小さくなりすぎないように（文字が読めるように）横スクロールにする
   const m=svg.match(/viewBox="0 0 ([\d.]+) /), W=m?+m[1]:400;
   return `<div class="scroll" data-sk="${o.sk||'staff'}"><div style="min-width:${Math.round(W*0.66)}px">${svg}</div></div>`;
 }
-// 副属和音 → 目標 の 矢印（導音は 半音上へ、第7音・第9音は 下へ）
+// 副属和音 → 目標の矢印（導音は半音上へ、第7音・第9音は下へ）
 function resArrows(X,R){
   const a=[];
   X.forEach((n,i)=>{
@@ -412,29 +412,29 @@ function resArrows(X,R){
 function heroMsg(key,I){
   const st=stackOrder(I.X), lt=I.X.find(n=>n.tag==='lt'), others=st.filter(n=>n!==lt&&chg(key,n));
   const what=I.k==='V7'?'Ⅴ7':`Ⅶ7（${KNAME[I.k]}）`;
-  let m=`<b>${I.lab}</b> は「${shortLab(I.tl)} の ${I.k==='V7'?'Ⅴ7':'Ⅶ7'}」と 読むよ。<br>`;
-  m+=`<b>その和音を いっときの Ⅰ と 考えて、その調${I.vb?'と おなじ主音の 短調':''}の ${what} を 前に おく。</b><br>`;
-  m+=`${I.tl}「${namesW(I.T.slice(1))}」を Ⅰ と 考えると <b class="tg">${I.tkName}</b>。`;
-  if(I.vb) m+=`${I.tkName}の Ⅶ7 は 半減七なので、おなじ主音の 短調（<b>${I.pm}</b>）の ${what} を つかう。それが <b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝ ${I.lab}。`;
-  else m+=`${srcWhat(I)} が <b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝ ${I.lab}。`;
+  let m=`<b>${I.lab}</b>は「${shortLab(I.tl)}の${I.k==='V7'?'Ⅴ7':'Ⅶ7'}」と読むよ。<br>`;
+  m+=`<b>その和音をいっときのⅠと考えて、その調${I.vb?'と同じ主音の短調':''}の${what}を前におく。</b><br>`;
+  m+=`${I.tl}「${namesW(I.T.slice(1))}」をⅠと考えると<b class="tg">${I.tkName}</b>。`;
+  if(I.vb) m+=`${I.tkName}のⅦ7は半減七なので、同じ主音の短調（<b>${I.pm}</b>）の${what}を使う。それが<b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝${I.lab}。`;
+  else m+=`${srcWhat(I)}が<b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝${I.lab}。`;
   if(I.k!=='V7'){
-    m+=`<br>${KNAME[I.k]}の Ⅶ7 は、${I.src}の Ⅴ9 から 根音を はぶいた 形（Ⅴの家族）だよ。`;
+    m+=`<br>${KNAME[I.k]}のⅦ7は、${I.src}のⅤ9から根音をはぶいた形（Ⅴの家族）だよ。`;
     const n9=I.X.find(n=>n.tag==='b9');
-    if(n9&&I.vb&&!I.jun) m+=`<br>第9音${qC(key,n9)}は ${I.pm}から かりた 音だけど、${PA.keyName(key)}の 音でも あるので、${H.JUN} は つかないよ。`;
+    if(n9&&I.vb&&!I.jun) m+=`<br>第9音${qC(key,n9)}は${I.pm}からかりた音だけど、${PA.keyName(key)}の音でもあるので、${H.JUN}はつかないよ。`;
   }
-  m+=`<br>${qC(key,lt)}は ${I.tkName}の <b class="up">導音</b>。${I.tl} の 根音${q(I.R[0])}へ 半音上がって、${I.tl} を つよく よぶよ。`;
-  others.forEach(n=>{m+=`<br>${qC(key,n)}は 調の${q(dia(key,n))}を 半音${chg(key,n)>0?'上げた':'下げた'} 音。`;});
+  m+=`<br>${qC(key,lt)}は${I.tkName}の<b class="up">導音</b>。${I.tl}の根音${q(I.R[0])}へ半音上がって、${I.tl}をつよくよぶよ。`;
+  others.forEach(n=>{m+=`<br>${qC(key,n)}は調の${q(dia(key,n))}を半音${chg(key,n)>0?'上げた':'下げた'}音。`;});
   if(I.jun){
     const n9=I.X.find(n=>n.tag==='b9'), pm=PA.keyName({...I.tk,minor:true});
-    m+=`<br>${H.JUN} は「${I.tkName}と おなじ主音の 短調（${pm}）から かりた」しるし。${n9?`第9音${qC(key,n9)}が かりた 音だよ。`:''}`;
+    m+=`<br>${H.JUN}は「${I.tkName}と同じ主音の短調（${pm}）からかりた」しるし。${n9?`第9音${qC(key,n9)}がかりた音だよ。`:''}`;
   }
   return m;
 }
 function rolesHTML(key,I){
   const ns=stackOrder(I.X);
-  const cap=I.k==='V7'?'':`<p class="note rcap">名前は Ⅴ9 から 見た よびかた（Ⅴ9 の 根音を はぶいたので、いちばん下の 導音が 第3音）</p>`;
-  // 名前の いみ（やさしい ことばで ひとこと）
-  const memo=`<p class="note rcap">${I.k==='V7'?'根音＝和音の もとの 音。そこから ひとつとばしに 第3音・第5音・第7音。':'根音＝和音の もとの 音（この 形では はぶく）。そこから ひとつとばしに 第3音・第5音・第7音・第9音。'}<span class="up">導音</span>＝${I.tl} の 根音へ のぼりたがる 音。</p>`;
+  const cap=I.k==='V7'?'':`<p class="note rcap">名前はⅤ9から見たよびかた（Ⅴ9の根音をはぶいたので、いちばん下の導音が第3音）</p>`;
+  // 名前のいみ（やさしいことばでひとこと）
+  const memo=`<p class="note rcap">${I.k==='V7'?'根音＝和音のもとの音。そこから、ひとつとばしに第3音・第5音・第7音。':'根音＝和音のもとの音（この形でははぶく）。そこから、ひとつとばしに第3音・第5音・第7音・第9音。'}<span class="up">導音</span>＝${I.tl}の根音へのぼりたがる音。</p>`;
   return cap+`<div class="roles">`+ns.map(n=>{
     const c=chg(key,n), lt=n.tag==='lt';
     const tagH=lt?`<span class="rt">導音</span>`:c>0?`<span class="rt soft">半音上げた</span>`:c<0?`<span class="rt low">半音下げた</span>`:'';
@@ -443,85 +443,85 @@ function rolesHTML(key,I){
 }
 function kindNote(key,I){
   if(H.secondary(key,I.t,'vii7h')) return '';
-  return `<p class="note" style="margin:0">${I.tl} には 半減七は つかわないよ（${I.tmin?'目標が 短三和音':'半減七の 第9音が この 調に ない 音'}だから）。</p>`;
+  return `<p class="note" style="margin:0">${I.tl}には半減七は使わないよ（${I.tmin?'目標が短三和音':'半減七の第9音がこの調にない音'}だから）。</p>`;
 }
 function staticMsgDone(key,I){
   const lt=I.X.find(n=>n.tag==='lt'), i=I.X.indexOf(lt);
-  return `🎉 <b>できあがり！</b> ${I.lab}（${I.sym}）＝ <b class="big">${namesC(key,stackOrder(I.X),'・')}</b><br>導音${qC(key,lt)}が ${I.tl} の 根音${q(I.R[i])}へ 半音上がって、${I.tl} に すいこまれるね。「➡️ ${shortLab(I.tls)}へ」で もういちど 聴いてみよう！`;
+  return `🎉 <b>できあがり！</b> ${I.lab}（${I.sym}）＝<b class="big">${namesC(key,stackOrder(I.X),'・')}</b><br>導音${qC(key,lt)}が${I.tl}の根音${q(I.R[i])}へ半音上がって、${I.tl}にすいこまれるね。「➡️ ${shortLab(I.tls)}へ」でもういちど聴いてみよう！`;
 }
 function heroCard(key,I){
   const A=state.anim, cur=A&&A.hn?A.hn:stackOrder(I.X);
   return `<section class="card hero" style="--c:${SEC}">
     <div class="hero-top"><span class="badge" style="--c:${SEC}">${PA.H(shortLab(I.lab))}</span>
-      <div style="min-width:0"><div class="hk">${PA.keyName(key)}の ${I.lab}</div>
-      <div class="hs">コードネーム <b>${I.sym}</b>　/　${srcWhat(I)} → ${I.tl}（${I.tsym}）</div></div></div>
-    <div class="hn">${cur.length?namesC(key,cur,'&nbsp;・ '):'…'}</div>
+      <div style="min-width:0"><div class="hk">${PA.keyName(key)}の${I.lab}</div>
+      <div class="hs">コードネーム<b>${I.sym}</b>　/　${srcWhat(I)} → ${I.tl}（${I.tsym}）</div></div></div>
+    <div class="hn">${cur.length?namesC(key,cur):'…'}</div>
     ${A?'':rolesHTML(key,I)}
-    <div class="tmp">🎯 目標 <b>${I.tl}</b>（${namesW(I.T.slice(1))}）を いっときの Ⅰ に すると → <b class="k">${I.tkName}</b>（${I.tkEn}）</div>
+    <div class="tmp">🎯 目標<b>${I.tl}</b>（${namesW(I.T.slice(1))}）をいっときのⅠにすると → <b class="k">${I.tkName}</b>（${I.tkEn}）</div>
     ${A?'':shapeChain(key,I)}
-    <div class="msg">${A?A.msg:state.autoWait?'👆 どこかを タッチすると <b>つくりかた</b>が はじまるよ':(state.msg||heroMsg(key,I))}</div>
+    <div class="msg">${A?A.msg:state.autoWait?'👆 どこかをタッチすると<b>つくりかた</b>が始まるよ':(state.msg||heroMsg(key,I))}</div>
   </section>`;
 }
 function kbCaption(key,I,prog){
   if(state.anim) return state.anim.kbCap||'';
-  if(state.prog&&prog){const s=prog[state.prog.i];return `ながれ ${state.prog.i+1}/${prog.length}：<b style="color:${s.col}">${PA.H(s.lab)}</b>　${namesW(s.ns.slice(1))}（左手 ${PA.nmH(s.ns[0])}）`;}
-  if(state.res===1) return `<b style="color:${TGT}">${I.tl}</b>：${namesW(I.R.slice(1))}（左手 ${PA.nmH(I.R[0])}）`;
-  return `<b style="color:${SEC}">${I.lab}</b>：<span class="up">赤＝導音・半音上げた 音</span>${I.X.some(n=>chg(key,n)<0)?'、<span class="lo">青＝半音下げた 音</span>':''}。さわると 音が出るよ`;
+  if(state.prog&&prog){const s=prog[state.prog.i];return `ながれ${state.prog.i+1}/${prog.length}：<b style="color:${s.col}">${PA.H(s.lab)}</b>　${namesW(s.ns.slice(1))}（左手${PA.nmH(s.ns[0])}）`;}
+  if(state.res===1) return `<b style="color:${TGT}">${I.tl}</b>：${namesW(I.R.slice(1))}（左手${PA.nmH(I.R[0])}）`;
+  return `<b style="color:${SEC}">${I.lab}</b>：<span class="up">赤＝導音・半音上げた音</span>${I.X.some(n=>chg(key,n)<0)?'、<span class="lo">青＝半音下げた音</span>':''}。さわると音が出るよ`;
 }
 function staffCard(key,I){
   const A=state.anim;
   if(A) return `<section class="card"><h2>🎼 がくふ<small>${A.staffCap||''}</small></h2>${staff(key,A.cols,A.arrows,{sk:'staff',cw:120})}</section>`;
   const cols=[{notes:I.X,color:SEC,label:shortLab(I.lab),op:state.res===1?0.45:1},{notes:I.R,color:TGT,label:shortLab(I.tl)}];
   const lt=I.X.find(n=>n.tag==='lt'), li=I.X.indexOf(lt), sv=I.X.findIndex(n=>n.tag==='seventh'), n9=I.X.findIndex(n=>n.tag==='b9'||n.tag==='ninth');
-  let h=`<section class="card"><h2>🎼 がくふ<small>左：${I.lab}　右：${I.tl}（「➡️ ${shortLab(I.tls)}へ」で 聴けるよ）</small></h2>${staff(key,cols,resArrows(I.X,I.R),{sk:'staff',cw:120})}`;
-  h+=`<p class="note"><b class="up">導音${qC(key,lt)}は 半音上の${q(I.R[li])}へ</b>、<b style="color:${SEC}">第7音${qC(key,I.X[sv])}は 下の${q(I.R[sv])}へ</b>${n9>=0?`、第9音${qC(key,I.X[n9])}も 下の${q(I.R[n9])}へ`:''} すすむよ。${I.k==='V7'?`ベースは 根音${q(I.X[0])}から ${I.tl} の 根音${q(I.R[0])}へ。`:`いちばん下が 導音なので、ベースは 半音上がって ${I.tl} の 根音へ。`}</p></section>`;
+  let h=`<section class="card"><h2>🎼 がくふ<small>左：${I.lab}　右：${I.tl}（「➡️ ${shortLab(I.tls)}へ」で聴けるよ）</small></h2>${staff(key,cols,resArrows(I.X,I.R),{sk:'staff',cw:120})}`;
+  h+=`<p class="note"><b class="up">導音${qC(key,lt)}は半音上の${q(I.R[li])}へ</b>、<b style="color:${SEC}">第7音${qC(key,I.X[sv])}は下の${q(I.R[sv])}へ</b>${n9>=0?`、第9音${qC(key,I.X[n9])}も下の${q(I.R[n9])}へ`:''}すすむよ。${I.k==='V7'?`ベースは根音${q(I.X[0])}から${I.tl}の根音${q(I.R[0])}へ。`:`いちばん下が導音なので、ベースは半音上がって${I.tl}の根音へ。`}</p></section>`;
   return h;
 }
 function doppelCard(key,I){
   if(I.t!==5) return '';
-  const what=I.k==='V7'?`${I.lab} は <b>ドッペルドミナント</b> と おなじ 和音！`:`${I.lab} は ドッペルドミナントの 家族（Ⅴ9/Ⅴ の 根音を はぶいた ${I.k==='vii7'?'減七の ':''}形）だよ。${I.k==='vii7'&&!key.minor?`第9音は おなじ主音の 短調から かりた 音なので、${H.JUN} が つくよ。`:''}`;
-  return `<a class="dpl" href="doppel.html" data-go="doppel"><span aria-hidden="true">🔺</span><span>${what}<br><small>「Ⅴ の ための Ⅴ7」。Ⅱ7 と くらべて 見てみよう ›</small></span></a>`;
+  const what=I.k==='V7'?`${I.lab}は<b>ドッペルドミナント</b>と同じ和音！`:`${I.lab}はドッペルドミナントの家族（Ⅴ9/Ⅴの根音をはぶいた${I.k==='vii7'?'減七の':''}形）だよ。${I.k==='vii7'&&!key.minor?`第9音は同じ主音の短調からかりた音なので、${H.JUN}がつくよ。`:''}`;
+  return `<a class="dpl" href="doppel.html" data-go="doppel"><span aria-hidden="true">🔺</span><span>${what}<br><small>「ⅤのためのⅤ7」。Ⅱ7とくらべて見てみよう ›</small></span></a>`;
 }
 function progCard(key,I,prog){
   const chainT=CHAIN[key.minor];
-  let h=`<section class="card"><h2>🎵 ながれで 聴く<small>「▶️ ながれを 鳴らす」で、副属和音が 目標を よぶ ようすを 聴こう</small></h2>
-    ${PA.seg('mode',[['target','えらんだ 和音で'],['chain','2つ つなげる']],state.mode,'full')}`;
-  if(!prog) return h+`<p class="note">この 調では ながれを つくれなかったよ。</p></section>`;
+  let h=`<section class="card"><h2>🎵 ながれで聴く<small>「▶️ ながれを鳴らす」で、副属和音が目標をよぶようすを聴こう</small></h2>
+    ${PA.seg('mode',[['target','選んだ和音で'],['chain','2つつなげる']],state.mode,'full')}`;
+  if(!prog) return h+`<p class="note">この調では、ながれが見つからなかったよ。</p></section>`;
   const cur=state.prog?state.prog.i:-1;
   h+=`<div class="seqrow">${prog.map((s,i)=>`${i?'<span class="ar" aria-hidden="true">→</span>':''}<span class="sc ${cur===i?'on':''}" style="--c:${s.col}">${PA.H(s.lab)}</span>`).join('')}</div>`;
   const cols=prog.map((s,i)=>({notes:s.ns,color:s.col,label:shortLab(s.lab),op:cur<0||cur===i?1:.35,plain:!s.sec&&!s.tgt}));
   h+=staff(key,cols,[],{sk:'progstaff',cw:96});
   const sop=prog.map(s=>s.ns[3]);
-  h+=`<div class="row" style="margin-top:8px"><button class="btn small night" data-act="prog">▶️ ながれを 鳴らす</button></div>`;
+  h+=`<div class="row" style="margin-top:8px"><button class="btn small night" data-act="prog">▶️ ながれを鳴らす</button></div>`;
   let dn='';
-  if(state.mode==='chain'){ // Ⅴ7/Ⅴ → Ⅴ7：導音が 半音下がって Ⅴ7 の 第7音に
+  if(state.mode==='chain'){ // Ⅴ7/Ⅴ → Ⅴ7：導音が半音下がってⅤ7の第7音に
     const j=prog.findIndex((s,i)=>s.sec&&i>0&&prog.slice(0,i).some(x=>x.sec)), li=j>=0?prog[j].ns.findIndex(n=>n.tag==='lt'):-1;
     const a=li>=0?prog[j].ns[li]:null, b=a&&prog[j+1]?prog[j+1].ns[li]:null;
-    if(a&&b&&b.letter===a.letter&&b.acc===a.acc-1) dn=`<br>${PA.H(prog[j].lab)} の 導音${qC(key,a)}は、つぎが Ⅴ7 なので おなじ 声で 半音下がって Ⅴ7 の 第7音${q(b)}に なるよ（べつの 声で${q(b)}を 出すと、${q(a)}と${q(b)}が ちがう 声で ぶつかって にごるから）。`;
+    if(a&&b&&b.letter===a.letter&&b.acc===a.acc-1) dn=`<br>${PA.H(prog[j].lab)}の導音${qC(key,a)}は、次がⅤ7なので、同じ声で半音下がってⅤ7の第7音${q(b)}になるよ（べつの声で${q(b)}を出すと、${q(a)}と${q(b)}がちがう声でぶつかって、にごるから）。`;
   }
-  h+=`<p class="note">${state.mode==='chain'?`${H.label(key,'secondary',chainT[0],'V7')} は ${H.label(key,'target',chainT[0])} を、${H.label(key,'secondary',chainT[1],'V7')}（ドッペルドミナント）は Ⅴ7 を よぶ。目標が つぎつぎに かわるよ。`:`${I.lab} → ${I.tl} の あと、Ⅴ7 → Ⅰ で おわるよ。`} ソプラノ（いちばん上）は ${namesC(key,sop,' → ')}。${dn}</p></section>`;
+  h+=`<p class="note">${state.mode==='chain'?`${H.label(key,'secondary',chainT[0],'V7')}は${H.label(key,'target',chainT[0])}を、${H.label(key,'secondary',chainT[1],'V7')}（ドッペルドミナント）はⅤ7をよぶ。目標が次々にかわるよ。`:`${I.lab} → ${I.tl}のあと、Ⅴ7 → Ⅰでおわるよ。`}ソプラノ（いちばん上）は${namesC(key,sop,' → ')}。${dn}</p></section>`;
   return h;
 }
 function abCard(key,I){
   const s=abSeqs(key), ab=state.ab;
-  let h=`<section class="card"><h2>👂 どっちが 副属和音？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>${s?s.labs.map(l=>PA.H(l)).join(' → '):''} の ながれで 聴きくらべ</small></h2>`;
+  let h=`<section class="card"><h2>👂 どっちが副属和音？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>${s?s.labs.map(l=>PA.H(l)).join(' → '):''}のながれで聴きくらべ</small></h2>`;
   if(!s) return h+`</section>`;
-  if(s.same) return h+`<p class="note" style="margin-top:0">${I.lab}（${namesW(stackOrder(I.X))}）は <b>調の 音だけ</b>で できる 和音。${diaLabel(key,I.X)} と おなじ 音だよ。だから 聴きくらべる 音が ないよ。ほかの 目標や 形で ためしてみよう。</p></section>`;
+  if(s.same) return h+`<p class="note" style="margin-top:0">${I.lab}（${namesW(stackOrder(I.X))}）は<b>調の音だけ</b>でできる和音。${diaLabel(key,I.X)}と同じ音だよ。だから、聴きくらべる音がないよ。ほかの目標や形でためしてみよう。</p></section>`;
   const D=stackOrder(s.dia[s.xi]), dl=diaLabel(key,I.X);
-  const other=lowChanged(key,I)?`半音 かえる まえの 和音（調の 音だけで できる 和音）の ${dl}`:I.k==='V7'?`おなじ 根音で 調の 音だけの 和音 ${dl}`:`いちばん下が おなじ 音で 調の 音だけの 和音 ${dl}`;
-  h+=`<p class="note" style="margin-top:0">ひとつは ${I.lab}、もうひとつは ${other}。${I.tl} に「ぐっと ひっぱられる」のは どっち？</p>`;
-  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 もんだいを 出す</button></div></section>`;
-  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ A を きく</button><button class="btn" data-act="abplay" data-v="B">▶️ B を きく</button></div>`;
-  if(ab.answer==null) return h+`<p class="askline">副属和音（${I.lab}）は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">A が ${PA.H(shortLab(I.lab))}</button><button class="btn night" data-act="qchoose" data-v="B">B が ${PA.H(shortLab(I.lab))}</button></div></section>`;
+  const other=lowChanged(key,I)?`半音かえる前の和音（調の音だけでできる和音）の${dl}`:I.k==='V7'?`同じ根音で、調の音だけの和音${dl}`:`いちばん下が同じ音で、調の音だけの和音${dl}`;
+  h+=`<p class="note" style="margin-top:0">ひとつは${I.lab}、もうひとつは${other}。${I.tl}に「ぐっとひっぱられる」のはどっち？</p>`;
+  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 問題を出す</button></div></section>`;
+  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ A をきく</button><button class="btn" data-act="abplay" data-v="B">▶️ B をきく</button></div>`;
+  if(ab.answer==null) return h+`<p class="askline">副属和音（${I.lab}）は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">A が${PA.H(shortLab(I.lab))}</button><button class="btn night" data-act="qchoose" data-v="B">B が${PA.H(shortLab(I.lab))}</button></div></section>`;
   const ok=ab.answer===ab.sec, ob=ab.sec==='A'?'B':'A', lt=I.X.find(n=>n.tag==='lt');
-  return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！ もういちど 聴きくらべてみよう。'}
-      <b>${ab.sec}</b> が ${I.lab}：${namesC(key,stackOrder(I.X))}、<b>${ob}</b> が ${dl}：${namesW(D)}。
-      <br>${lt&&chg(key,lt)>0?`導音${qC(key,lt)}が 半音上の ${I.tl} の 根音へ のぼるので、${I.tl} が つよく 聞こえるんだ。`:`半音 かえた 音が ${I.tl} へ なめらかに すすむので、${I.tl} が つよく 聞こえるんだ。`}</div>
-    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 つぎの もんだい</button></div></section>`;
+  return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！もういちど聴きくらべてみよう。'}
+      <b>${ab.sec}</b>が${I.lab}：${namesC(key,stackOrder(I.X))}、<b>${ob}</b>が${dl}：${namesW(D)}。
+      <br>${lt&&chg(key,lt)>0?`導音${qC(key,lt)}が半音上の${I.tl}の根音へのぼるので、${I.tl}がつよく聞こえるんだ。`:`半音かえた音が${I.tl}へなめらかに動くので、${I.tl}がつよく聞こえるんだ。`}</div>
+    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 次の問題</button></div></section>`;
 }
 function overview(key){
   const ts=H.targets(key), ek=effKind(key);
-  let h=`<details class="more" data-d="ov"><summary>📋 ${PA.keyName(key)}の 副属和音 ぜんぶ</summary>
+  let h=`<details class="more" data-d="ov"><summary>📋 ${PA.keyName(key)}の副属和音ぜんぶ</summary>
     <table class="tbl ovt"><thead><tr><th scope="col">目標</th>${KINDS.map(k=>`<th scope="col">${KNAME[k]}</th>`).join('')}</tr></thead><tbody>`;
   ts.forEach(t=>{
     h+=`<tr><td>${PA.H(H.label(key,'target',t))}</td>`+KINDS.map(k=>{
@@ -531,44 +531,44 @@ function overview(key){
       return `<td><button class="cellbtn ${on?'on':''}" data-act="pick" data-v="${t}:${k}" aria-pressed="${on}">${H.symbol(key,'secondary',t,k)}<small>${PA.H(H.label(key,'secondary',t,k).split('/')[0])}</small></button></td>`;
     }).join('')+`</tr>`;
   });
-  return h+`</tbody></table><p class="note">ボタンを おすと その 副属和音に かわるよ。— は つかわない 形。</p></details>`;
+  return h+`</tbody></table><p class="note">ボタンをおすと、その副属和音にかわるよ。「—」は使わない形。</p></details>`;
 }
 function tipsHTML(key){
   return `<details class="more" data-d="tips"><summary>💡 おぼえておこう</summary><ul>
-    <li><b>副属和音</b>は、Ⅰ 以外の 和音を <b>いっときの Ⅰ</b> と 考えて、その調の Ⅴ7（または Ⅶ7）を 前に おいた 和音。</li>
-    <li>和音記号は「Ⅴ7/Ⅱ」（Ⅱ の Ⅴ7）のように、<b>／の 右に 目標</b>を 書くよ。</li>
-    <li>目標に なれるのは <b>長三和音か 短三和音</b>だけ。減三和音（${key.minor?'短調の Ⅱ':'長調の Ⅶ'}）は いっときの Ⅰ に ならないよ。</li>
-    <li>いちばん だいじな 音は 目標の <b>導音</b>（目標の 根音の 半音下）。目標へは 半音上へ すすむよ（Ⅴ7/Ⅴ → Ⅴ7 のときだけは、おなじ 声で 半音下がって Ⅴ7 の 第7音に なる）。</li>
-    ${key.minor?'<li>短調の Ⅲ・Ⅶ は、導音を 上げない 調号の 音だけで つくった 長三和音。「Ⅲ（自然）」「Ⅶ（自然）」と 書いて、導音を 上げた ときの Ⅲ・Ⅶ と 区別するよ。</li>':''}
-    <li>${H.JUN} の しるしは「おなじ主音の 短調から 音を かりた」いみ。いっときの 調が <b>長調</b>で、Ⅶ7（減七）に するために 第9音を その 短調から かりて、しかも その 音が もとの ${PA.keyName(key)}にも ない ときだけ つくよ。</li>
-    <li>ダブルシャープは 楽譜と おなじ「<span class="ds">x</span>」、ダブルフラットは「${PA.H('𝄫')}」で あらわしているよ。</li>
-    <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべるよ。</li>
+    <li><b>副属和音</b>は、Ⅰ以外の和音を<b>いっときのⅠ</b>と考えて、その調のⅤ7（またはⅦ7）を前においた和音。</li>
+    <li>和音記号は「Ⅴ7/Ⅱ」（ⅡのⅤ7）のように、<b>／の右に目標</b>を書くよ。</li>
+    <li>目標になれるのは<b>長三和音か短三和音</b>だけ。減三和音（${key.minor?'短調のⅡ':'長調のⅦ'}）はいっときのⅠにならないよ。</li>
+    <li>いちばんだいじな音は目標の<b>導音</b>（目標の根音の半音下）。目標へは半音上へすすむよ（Ⅴ7/Ⅴ → Ⅴ7のときだけは、同じ声で半音下がってⅤ7の第7音になる）。</li>
+    ${key.minor?'<li>短調のⅢ・Ⅶは、導音を上げない調号の音だけでつくった長三和音。「Ⅲ（自然）」「Ⅶ（自然）」と書いて、導音を上げたときのⅢ・Ⅶと区別するよ。</li>':''}
+    <li>${H.JUN}のしるしは「同じ主音の短調から音をかりた」いみ。いっときの調が<b>長調</b>で、Ⅶ7（減七）にするために第9音をその短調からかりて、しかもその音がもとの${PA.keyName(key)}にもないときだけ、つくよ。</li>
+    <li>ダブルシャープは楽譜と同じ「<span class="ds">x</span>」、ダブルフラットは「${PA.H('𝄫')}」であらわしているよ。</li>
+    <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と基準の音（ラ＝440〜443Hz）を選べるよ。</li>
   </ul></details>`;
 }
-// 📖 ことばメモ：本や 楽譜で 見かける 名前を、やさしい ことばで。例は いまの 調・えらんだ 副属和音で
+// 📖 ことばメモ：本や楽譜で見かける名前を、やさしいことばで。例はいまの調・えらんだ副属和音で
 function termsHTML(key,I){
   const lt=I.X.find(n=>n.tag==='lt');
-  const F=PA.nmH({letter:3,acc:0}), Fs=PA.nmH({letter:3,acc:1}); // 対斜の 例（ファ と ファ♯）
-  return `<details class="more" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary>
-    <p class="note" style="margin:0 0 4px">例は ${PA.keyName(key)}の ${I.lab}（${I.sym}）だよ。</p><ul>
-    <li><b>副属和音</b>（セカンダリー・ドミナント） … Ⅰ 以外の 和音を「いっときの Ⅰ」と 考えて、その 前に おく Ⅴ7（または Ⅶ7）。いまは ${I.lab} ＝ ${srcWhat(I)}。</li>
-    <li><b>導音</b> … すぐ上の 音へ 半音で のぼりたがる 音。${qC(key,lt)}は ${I.tkName}の 導音で、${I.tl} の 根音へ のぼるよ。</li>
-    <li><b>減七</b>・<b>半減七</b> … どちらも 導音から ひとつとばしで 4つ かさねた Ⅶ7。Ⅴ9 から 根音を はぶいた 形。第9音が 半音 ひくい ほう（短調の 形）なら 減七、たかい ほう（長調の 形）なら 半減七。</li>
-    <li><b>○</b>（準固有） … おなじ主音の 短調から 音を かりた しるし。${I.jun?`いまの ${I.lab} は、第9音を ${I.pm}から かりているよ。`:`いっときの 調が 長調で、第9音を おなじ主音の 短調から かりて、その 音が もとの 調にも ない ときだけ つくよ。${I.k==='vii7'&&I.tmin?`いまは いっときの 調が 短調なので、第9音は もともと ${I.tkName}の 音。`:I.vb?`いまの 第9音は ${PA.keyName(key)}の 音でも あるので つかないよ。`:''}`}</li>
-    ${key.minor?'<li><b>Ⅲ（自然）</b>・<b>Ⅶ（自然）</b> … 導音を 上げない、調号の 音だけの 音階（<b>自然的短音階</b>）で つくった 長三和音。導音を 半音上げた 音階（<b>和声的短音階</b>）だと、Ⅲ も Ⅶ も ちがう ひびきの 和音に なるよ。</li>':''}
-    <li><b>Ⅰ6</b> … Ⅰ の 第3音を いちばん下に した 形（第1転回形）。Ⅰ¹ と 書く 本も あるよ。</li>
-    <li><b>対斜</b> … おなじ 文字の 音（たとえば「${F}」と「${Fs}」）が、ちがう 声で つづけて 出て ぶつかる こと。にごって 聞こえるので さける。おなじ 声で 半音 うごかせば だいじょうぶ。</li>
+  const F=PA.nmH({letter:3,acc:0}), Fs=PA.nmH({letter:3,acc:1}); // 対斜の例（ファとファ♯）
+  return `<details class="more" data-d="terms"><summary>📖 ことばメモ（本や楽譜で見かける名前）</summary>
+    <p class="note" style="margin:0 0 4px">例は${PA.keyName(key)}の${I.lab}（${I.sym}）だよ。</p><ul>
+    <li><b>副属和音</b>（セカンダリー・ドミナント） … Ⅰ以外の和音を「いっときのⅠ」と考えて、その前におくⅤ7（またはⅦ7）。いまは${I.lab}＝${srcWhat(I)}。</li>
+    <li><b>導音</b> … すぐ上の音へ半音でのぼりたがる音。${qC(key,lt)}は${I.tkName}の導音で、${I.tl}の根音へのぼるよ。</li>
+    <li><b>減七</b>・<b>半減七</b> … どちらも導音からひとつとばしで4つかさねたⅦ7。Ⅴ9から根音をはぶいた形。第9音が半音低いほう（短調の形）なら減七、高いほう（長調の形）なら半減七。</li>
+    <li><b>○</b>（準固有） … 同じ主音の短調から音をかりたしるし。${I.jun?`いまの${I.lab}は、第9音を${I.pm}からかりているよ。`:`いっときの調が長調で、第9音を同じ主音の短調からかりて、その音がもとの調にもないときだけ、つくよ。${I.k==='vii7'&&I.tmin?`いまはいっときの調が短調なので、第9音はもともと${I.tkName}の音。`:I.vb?`いまの第9音は${PA.keyName(key)}の音でもあるので、つかないよ。`:''}`}</li>
+    ${key.minor?'<li><b>Ⅲ（自然）</b>・<b>Ⅶ（自然）</b> … 導音を上げない、調号の音だけの音階（<b>自然的短音階</b>）でつくった長三和音。導音を半音上げた音階（<b>和声的短音階</b>）だと、ⅢもⅦもちがうひびきの和音になるよ。</li>':''}
+    <li><b>Ⅰ6</b> … Ⅰの第3音をいちばん下にした形（第1転回形）。Ⅰ¹と書く本もあるよ。</li>
+    <li><b>対斜</b> … 同じ文字の音（たとえば「${F}」と「${Fs}」）が、ちがう声でつづけて出てぶつかること。にごって聞こえるので、さける。同じ声で半音動かせば、だいじょうぶ。</li>
   </ul></details>`;
 }
-// 変化和音クイズへ：副属和音だけの レベルは ないので、いちばん近い 🎹 レベル5（ぜんぶ：副属和音も 出る）。
-// chord で Ⅴ7/Ⅴ（ドッペル）と 副属和音（Ⅴ7/Ⅱ・Ⅴ7/Ⅲ・Ⅴ7/Ⅳ・Ⅴ7/Ⅵ）に しぼる。短調では クイズの ほうで Ⅴ7/Ⅱ が、長調では Ⅴ7/Ⅲ が 出ない
+// 変化和音クイズへ：副属和音だけのレベルはないので、いちばん近い 🎹 レベル5（ぜんぶ：副属和音も出る）。
+// chord でⅤ7/Ⅴ（ドッペル）と副属和音（Ⅴ7/Ⅱ・Ⅴ7/Ⅲ・Ⅴ7/Ⅳ・Ⅴ7/Ⅵ）にしぼる。短調ではクイズのほうでⅤ7/Ⅱが、長調ではⅤ7/Ⅲが出ない
 function tryCard(key){
   return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',level:5,chord:'dd,s2,s3,s4,s6',key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
-    sub:`${PA.keyName(key)}で、副属和音（${key.minor?'Ⅴ7/Ⅲ・Ⅴ7/Ⅳ':'Ⅴ7/Ⅱ・Ⅴ7/Ⅳ'} など）を けんばんで おさえてみよう（5もん）。`,btn:'🎯 けんばんで 5もん'});
+    sub:`${PA.keyName(key)}で、副属和音（${key.minor?'Ⅴ7/Ⅲ・Ⅴ7/Ⅳ':'Ⅴ7/Ⅱ・Ⅴ7/Ⅳ'}など）をけんばんで5問おさえてみよう。`,btn:'🎯 けんばんで5問'});
 }
 function linksCard(){
-  return `<section class="card"><h2>🔗 つながる アプリ</h2><div class="links">
-    <a class="btn" href="doppel.html" data-go="doppel">🔺 <span>Ⅱ7と ドッペルドミナント ›<small>Ⅴ7/Ⅴ ＝ ドッペルドミナント</small></span></a></div></section>`;
+  return `<section class="card"><h2>🔗 つながるアプリ</h2><div class="links">
+    <a class="btn" href="doppel.html" data-go="doppel">🔺 <span>Ⅱ7とドッペルドミナント ›<small>Ⅴ7/Ⅴ＝ドッペルドミナント</small></span></a></div></section>`;
 }
 
 /* ===== 画面 ===== */
@@ -583,10 +583,10 @@ function render(){
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
     <section class="card selcard">
-      <p class="sellab">🎯 目標の 和音（どの 和音を よぶ？）</p>
+      <p class="sellab">🎯 目標の和音（どの和音をよぶ？）</p>
       ${PA.seg('target',H.targets(key).map(t=>[t,`${ROMAN[t-1]}<small>${H.symbol(key,'target',t)}</small>`]),state.target,'full tseg')}
-      <p class="sellab" style="margin-top:4px">🧩 前に おく 和音の 形</p>
-      <div class="seg full kseg" role="group">${KINDS.map(k=>{const ok=!!H.secondary(key,I.t,k);return `<button class="${I.k===k?'on':''}" data-act="kind" data-v="${k}" aria-pressed="${I.k===k}" ${ok?'':'disabled'}>${KNAME[k]}<small>${k==='V7'?'Ⅴ の 七の和音':k==='vii7'?'Ⅶ7・くらい ひびき':'Ⅶ7・やわらかい ひびき'}</small></button>`;}).join('')}</div>
+      <p class="sellab" style="margin-top:4px">🧩 前におく和音の形</p>
+      <div class="seg full kseg" role="group">${KINDS.map(k=>{const ok=!!H.secondary(key,I.t,k);return `<button class="${I.k===k?'on':''}" data-act="kind" data-v="${k}" aria-pressed="${I.k===k}" ${ok?'':'disabled'}>${KNAME[k]}<small>${k==='V7'?'Ⅴの七の和音':k==='vii7'?'Ⅶ7・くらいひびき':'Ⅶ7・やわらかいひびき'}</small></button>`;}).join('')}</div>
       ${kindNote(key,I)}
     </section>
     ${heroCard(key,I)}`;
@@ -605,9 +605,9 @@ function render(){
   h+=tipsHTML(key);
   h+=termsHTML(key,I);
   h+=linksCard();
-  h+=`<p class="note">※ 音の 高さは ふつうの ピアノと おなじです。</p></div>`;
+  h+=`<p class="note">※ 音の高さはふつうのピアノと同じです。</p></div>`;
   PA.paint(document.getElementById('view'),h,['secondary',state.minor,state.keyIdx,state.target,I.k,state.mode].join(':'));
-  if(state.anim||state.prog) PA.follow(document.getElementById('view')); // 鳴っている 和音の 鍵が 見えるように
+  if(state.anim||state.prog) PA.follow(document.getElementById('view')); // 鳴っている和音の鍵が見えるように
   renderActions(I);
 }
 function renderActions(I){
@@ -629,7 +629,7 @@ async function playResolve(){
   state.res=1; render();
   PA.chord(midisOf(I.R),{dur:2.2});
   await PA.sleep(2300); if(my!==token) return;
-  state.res=0; render(); // けんばんを 副属和音（赤い 導音）に もどす
+  state.res=0; render(); // けんばんを副属和音（赤い導音）にもどす
 }
 async function playProg(){
   stop(); const my=token, prog=curProg(curKey()); if(!prog) return;
@@ -643,7 +643,7 @@ async function playProg(){
   await PA.sleep(300); if(my!==token) return;
   state.prog=null; render();
 }
-// 聴きくらべ：答えが わからないように、けんばんには 出さない
+// 聴きくらべ：答えがわからないように、けんばんには出さない
 function playAB(v){
   if(!state.ab) return;
   const s=abSeqs(curKey()); if(!s) return;
@@ -659,32 +659,32 @@ async function runBuild(){
   const A={cols:[],arrows:[],marks:new Map(),msg:'',kbCap:'',staffCap:'',hn:[]};
   state.anim=A; state.res=0; state.msg=null;
   const upd=m=>{if(m!==undefined)A.msg=m;render();};
-  // ① 目標の 和音を いっときの Ⅰ に
+  // ① 目標の和音をいっときのⅠに
   A.cols=[{notes:I.T,color:TGT,label:shortLab(I.tl)}]; A.marks=marksOf(key,I.T,TGT); A.hn=I.T.slice(1);
-  A.staffCap=`目標：${I.tl}`; A.kbCap=`<b style="color:${TGT}">${I.tl}</b>（${I.tkName}の Ⅰ）`;
-  upd(`<b>①</b> 目標は ${I.tl}「${namesW(I.T.slice(1))}」。この 和音を <b>いっときの Ⅰ（主和音）</b>と 考えると… <b class="tg">${I.tkName}</b>の Ⅰ だね。`);
+  A.staffCap=`目標：${I.tl}`; A.kbCap=`<b style="color:${TGT}">${I.tl}</b>（${I.tkName}のⅠ）`;
+  upd(`<b>①</b>目標は${I.tl}「${namesW(I.T.slice(1))}」。この和音を<b>いっときのⅠ（主和音）</b>と考えると…<b class="tg">${I.tkName}</b>のⅠだね。`);
   PA.chord(midisOf(I.T),{dur:1.8}); if(!await wait(2100)) return;
-  // ② その調の Ⅴ7（Ⅶ7）を ひとつずつ
-  const head=I.k==='V7'?`<b>②</b> ${I.tkName}の <b>Ⅴ7</b> を つくるよ。根音は ${I.tl} の 根音${q(I.T[0])}から 5度上の${q(I.X[0])}。`
-    :`<b>②</b> ${I.vb?`${I.tkName}と おなじ主音の 短調（${I.pm}）`:I.src}の <b>Ⅶ7（${KNAME[I.k]}）</b> を つくるよ。導音${qC(key,lt)}（${I.tl} の 根音${q(I.T[0])}の 半音下）から ひとつとばしで 4つ。<br><small>名前は Ⅴ9 から 見た よびかた：根音を はぶいたので、いちばん下の 導音が 第3音</small>`;
+  // ② その調のⅤ7（Ⅶ7）をひとつずつ
+  const head=I.k==='V7'?`<b>②</b>${I.tkName}の<b>Ⅴ7</b>をつくるよ。根音は${I.tl}の根音${q(I.T[0])}から5度上の${q(I.X[0])}。`
+    :`<b>②</b>${I.vb?`${I.tkName}と同じ主音の短調（${I.pm}）`:I.src}の<b>Ⅶ7（${KNAME[I.k]}）</b>をつくるよ。導音${qC(key,lt)}（${I.tl}の根音${q(I.T[0])}の半音下）からひとつとばしで4つ。<br><small>名前はⅤ9から見たよびかた：根音をはぶいたので、いちばん下の導音が第3音</small>`;
   A.staffCap=srcWhat(I);
   for(let i=0;i<4;i++){
     const shown=new Set(st.slice(0,i+1)), part=I.X.filter(n=>shown.has(n)), n=st[i], c=chg(key,n);
     A.cols=[{notes:part,color:SEC}]; A.marks=marksOf(key,part,SEC); A.hn=st.slice(0,i+1);
     A.kbCap=`${roleName(n.role)}${qC(key,n)}`;
-    let line=`${i?'ひとつ とばして ':''}${roleName(n.role)}${qC(key,n)}`;
-    if(n.tag==='lt') line+=` ＝ ${I.tkName}の <b class="up">導音</b>`;
-    if(c) line+=`（調の${q(dia(key,n))}を 半音${c>0?'上げた':'下げた'} 音）`;
+    let line=`${i?'ひとつとばして':''}${roleName(n.role)}${qC(key,n)}`;
+    if(n.tag==='lt') line+=`＝${I.tkName}の<b class="up">導音</b>`;
+    if(c) line+=`（調の${q(dia(key,n))}を半音${c>0?'上げた':'下げた'}音）`;
     upd(head+`<br>${i+1}. ${line}`); PA.playNote(n.midi,0,1.1,0.22);
     if(!await wait(1500)) return;
   }
   A.cols=[{notes:I.X,color:SEC,label:shortLab(I.lab)}]; A.kbCap=`<b style="color:${SEC}">${I.lab}</b>`;
-  upd(`${head}<br>できた！ これが <b>${I.lab}</b>（${I.sym}）。`); PA.chord(midisOf(I.X),{dur:1.8});
+  upd(`${head}<br>できた！これが<b>${I.lab}</b>（${I.sym}）。`); PA.chord(midisOf(I.X),{dur:1.8});
   if(!await wait(2000)) return;
-  // ③ 目標へ すすむ
+  // ③ 目標へすすむ
   A.cols=[{notes:I.X,color:SEC,label:shortLab(I.lab)},{notes:I.R,color:TGT,label:shortLab(I.tl)}];
   A.arrows=resArrows(I.X,I.R); A.staffCap=`${I.lab} → ${I.tl}`;
-  upd(`<b>③</b> ${I.tl} へ すすむと… 導音${qC(key,lt)}は 半音上の${q(I.R[I.X.indexOf(lt)])}へ。`);
+  upd(`<b>③</b>${I.tl}へすすむと…導音${qC(key,lt)}は半音上の${q(I.R[I.X.indexOf(lt)])}へ。`);
   PA.chord(midisOf(I.X),{dur:1.3}); if(!await wait(1200)) return;
   A.marks=marksOf(key,I.R,TGT); A.hn=stackOrder(I.X); A.kbCap=`<b style="color:${TGT}">${I.tl}</b>`; render();
   PA.chord(midisOf(I.R),{dur:2.2}); if(!await wait(2400)) return;
@@ -694,13 +694,13 @@ async function runBuild(){
 /* ===== 操作 ===== */
 PA.mountBar({title:'副属和音',app:'secondary'});
 PA.onSettings=render;
-PA.onPageShow=()=>{stop();render();}; // 「もどる」で もどってきたとき、とちゅうの 画面を のこさない
+PA.onPageShow=()=>{stop();render();}; // 「もどる」でもどってきたとき、とちゅうの画面をのこさない
 PA.onStopDown=stop;
-PA.onStopCancel=render; // ⏹ を おしたのに click が 来なかったとき 画面を もどす
+PA.onStopCancel=render; // ⏹ をおしたのに click が来なかったとき画面をもどす
 PA.onKeySheet=()=>PA.openKeySheet({minor:state.minor,idx:state.keyIdx,both:true,onPick:(minor,idx)=>{
   stop(); state.minor=minor; state.keyIdx=idx;
   const ts=H.targets(curKey()); if(!ts.includes(state.target)) state.target=5;
-  state.kind=effKind(curKey()); // 表示している 形と 保存する 形を そろえる
+  state.kind=effKind(curKey()); // 表示している形と保存する形をそろえる
   state.res=0; state.msg=null; state.ab=null; save(); render();
   PA.chord(midisOf(info(curKey()).X),{dur:2});
 }});
@@ -710,7 +710,7 @@ function pick(t,k){
 }
 document.addEventListener('click',e=>{
   const g=e.target.closest('[data-go]');
-  if(g){ // おなじ調を ひらく（リンクは そのまま 進む）
+  if(g){ // おなじ調をひらく（リンクはそのまま進む）
     if(g.dataset.go==='doppel'){
       stop();
       const p=PA.store.get('doppel',{});
@@ -724,7 +724,7 @@ document.addEventListener('click',e=>{
   else if(a==='kind'){if(!KINDS.includes(v)||!H.secondary(key,state.target,v))return;pick(state.target,v);}
   else if(a==='pick'){const [t,k]=String(v).split(':');if(!H.targets(key).includes(+t)||!KINDS.includes(k)||!H.secondary(key,+t,k))return;pick(+t,k);PA.scrollTop();}
   else if(a==='play'){
-    if(state.anim){PA.chord(midisOf(state.anim.cols[state.anim.cols.length-1].notes),{dur:2});return;} // アニメ中は とめずに 鳴らす
+    if(state.anim){PA.chord(midisOf(state.anim.cols[state.anim.cols.length-1].notes),{dur:2});return;} // アニメ中はとめずに鳴らす
     playChord();
   }
   else if(a==='resolve') playResolve();
@@ -737,18 +737,18 @@ document.addEventListener('click',e=>{
   else if(a==='qchoose'){if(state.ab&&state.ab.answer==null&&(v==='A'||v==='B')){stop();state.ab.answer=v;state.abN++;if(v===state.ab.sec)state.abOk++;render();}}
 });
 render();
-// ほかのアプリから「つくりかたを 見る」で 来たとき：えらばれた調・和音で アニメを はじめる
-// iPhone などでは この ページを タッチするまで 音が 出ないので、音が 出せるように なってから はじめる
-// （音が とまっている あいだに 音を よやくすると、あとで いっぺんに 鳴ってしまう）
+// ほかのアプリから「つくりかたを見る」で来たとき：えらばれた調・和音でアニメをはじめる
+// iPhone などではこのページをタッチするまで音が出ないので、音が出せるようになってからはじめる
+// （音がとまっているあいだに音をよやくすると、あとでいっぺんに鳴ってしまう）
 if(PA.store.get('secondary-auto',false)) (async()=>{
   PA.store.set('secondary-auto',false);
-  const t0=token; // まっている あいだに ほかの 操作を したら やめる
-  if(PA.settings.sound){ // パソコンなどで すぐ 音が 出せるなら そのまま はじめる
+  const t0=token; // まっているあいだにほかの操作をしたらやめる
+  if(PA.settings.sound){ // パソコンなどですぐ音が出せるならそのままはじめる
     PA.audio();
     for(let i=0;i<5&&!PA.audioRunning();i++) await PA.sleep(30);
   }
   if(token!==t0) return;
-  if(!PA.settings.sound||!PA.audio()||PA.audioRunning()){runBuild();return;} // 音が 出せない ブラウザでは 待たずに はじめる
+  if(!PA.settings.sound||!PA.audio()||PA.audioRunning()){runBuild();return;} // 音が出せないブラウザでは待たずにはじめる
   state.autoWait=true; render();
   const EV=['pointerup','touchend','keydown'];
   let busy=false;
@@ -762,7 +762,7 @@ if(PA.store.get('secondary-auto',false)) (async()=>{
     for(let i=0;i<15&&PA.settings.sound&&!PA.audioRunning();i++) await PA.sleep(30);
     busy=false;
     if(!state.autoWait){off();return;}
-    if(PA.settings.sound&&PA.audio()&&!PA.audioRunning()) return; // まだ 音が 出せない：つぎの タッチを まつ
+    if(PA.settings.sound&&PA.audio()&&!PA.audioRunning()) return; // まだ音が出せない：つぎのタッチをまつ
     off(); runBuild();
   }
   EV.forEach(t=>document.addEventListener(t,go,true));

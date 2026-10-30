@@ -1,7 +1,7 @@
-// 変化和音の 学ぶ ページ（doppel・secondary・aug6・neapolitan）の かんたんな テスト：node --test test/
-// ・iOS 12 で うごかない 書きかた（?. ??）が ない、スクリプトが 読める
-// ・変化和音クイズへは PA.tryHTML（いまの 調・n=5・その 和音が 出る レベル）。むかしの ふつうの リンク・PA.go は のこっていない
-// ・「🔊 いっしょに」に data-hot="listen"（スペースで 鳴らす）、「🎲 もんだいを 出す」に data-hot="next"（doppel・secondary・neapolitan）
+// 変化和音の学ぶページ（doppel・secondary・aug6・neapolitan）のかんたんなテスト：node --test test/
+// ・iOS 12でうごかない書きかた（?. ??）がない、スクリプトが読める
+// ・変化和音クイズへは PA.tryHTML（いまの調・n=5・その和音が出るレベル）。むかしのふつうのリンク・PA.go はのこっていない
+// ・「🔊 いっしょに」に data-hot="listen"（スペースで鳴らす）、「🎲 問題を出す」に data-hot="next"（doppel・secondary・neapolitan）
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -12,7 +12,7 @@ const dir=path.dirname(fileURLToPath(import.meta.url));
 const read=f=>fs.readFileSync(path.join(dir,'..',f),'utf8');
 const scriptOf=html=>[...html.matchAll(/<script>([^]*?)<\/script>/g)].map(m=>m[1]).join('\n');
 
-// ページ → クイズの 🎹 レベル と、その レベルの 名前に 入っている はずの ことば
+// ページ → クイズの 🎹 レベルと、そのレベルの名前に入っているはずのことば
 const PAGES={
   'doppel.html':{level:1,word:'ドッペル',ear:1},
   'secondary.html':{level:5,word:'副属和音',ear:null},
@@ -25,38 +25,38 @@ const ear=lv=>{const m=/const EAR_LV=\{([^\n]*)\};/.exec(quiz);return m?(new Reg
 
 for(const [file,want] of Object.entries(PAGES)){
   const html=read(file), js=scriptOf(html);
-  test(`${file}：古い 端末でも 読める`,()=>{
-    assert.ok(js.length>1000,'スクリプトが ある');
-    assert.ok(!/\?\.|\?\?/.test(js),'?. ?? が ない');
+  test(`${file}：古い端末でも読める`,()=>{
+    assert.ok(js.length>1000,'スクリプトがある');
+    assert.ok(!/\?\.|\?\?/.test(js),'?. ?? がない');
     assert.doesNotThrow(()=>new Function(js),'文法');
   });
   test(`${file}：変化和音クイズへは PA.tryHTML（調・n=5・レベル${want.level}）`,()=>{
-    assert.ok(!/href="chroma-quiz\.html"/.test(html),'ふつうの リンクは のこっていない');
-    assert.ok(!/PA\.go\('chroma-quiz/.test(html),'PA.go は のこっていない');
+    assert.ok(!/href="chroma-quiz\.html"/.test(html),'ふつうのリンクはのこっていない');
+    assert.ok(!/PA\.go\('chroma-quiz/.test(html),'PA.go はのこっていない');
     const m=/PA\.tryHTML\(\{to:'chroma-quiz',params:\{([^}]*)\}/.exec(js);
-    assert.ok(m,'PA.tryHTML で クイズへ');
+    assert.ok(m,'PA.tryHTML でクイズへ');
     const p=m[1];
     assert.match(p,/mode:'keys'/);
     assert.match(p,new RegExp(`level:${want.level}\\b`));
     assert.match(p,/key:PA\.keyDeck\.id\(state\.minor,state\.keyIdx\)/);
     assert.match(p,/n:5\b/);
-    assert.ok(klv(want.level).includes(want.word),`クイズの レベル${want.level} に「${want.word}」が 入っている`);
+    assert.ok(klv(want.level).includes(want.word),`クイズのレベル${want.level}に「${want.word}」が入っている`);
     if(want.ear){
-      assert.match(js,new RegExp(`mode:'ear',level:${want.ear},key:PA\\.keyDeck\\.id\\(state\\.minor,state\\.keyIdx\\),n:5\\}`),'👂 聴きわけの レベル・調・n=5');
-      assert.ok(ear(want.ear).length>0,`クイズに 👂 レベル${want.ear} が ある`);
+      assert.match(js,new RegExp(`mode:'ear',level:${want.ear},key:PA\\.keyDeck\\.id\\(state\\.minor,state\\.keyIdx\\),n:5\\}`),'👂 聴きわけのレベル・調・n=5');
+      assert.ok(ear(want.ear).length>0,`クイズに 👂 レベル${want.ear}がある`);
     }
   });
   test(`${file}：「🔊 いっしょに」に data-hot="listen"`,()=>{
     assert.match(html,/data-act="play" data-hot="listen"/);
-    if(file!=='aug6.html') assert.match(html,/data-act="qnext" data-hot="next">🎲 もんだいを 出す/);
+    if(file!=='aug6.html') assert.match(html,/data-act="qnext" data-hot="next">🎲 問題を出す/);
   });
 }
 
-test('secondary.html：Ⅴ7/Ⅴ と 副属和音だけに しぼる chord（クイズの 和音の id）',()=>{
+test('secondary.html：Ⅴ7/Ⅴと副属和音だけにしぼる chord（クイズの和音の id）',()=>{
   const m=/chord:'([^']*)'/.exec(scriptOf(read('secondary.html')));
   assert.ok(m);
   assert.deepEqual(m[1].split(','),['dd','s2','s3','s4','s6']);
   const g=/const GROUPS=([^\n]*);/.exec(quiz);
   assert.ok(g,'クイズの GROUPS');
-  for(const id of m[1].split(',')) assert.ok(g[1].includes(`'${id}'`),`クイズに ${id} が ある`);
+  for(const id of m[1].split(',')) assert.ok(g[1].includes(`'${id}'`),`クイズに${id}がある`);
 });
