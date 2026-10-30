@@ -41,7 +41,7 @@ const AUDIO=[
   'assets/piano/Fs6.mp3',
   'assets/piano/Fs7.mp3',
 ];
-const VERSION='d9d8085cf0';
+const VERSION='851557d7ae';
 const PRECACHE=[
   './',
   'accompaniment.html',

@@ -37,3 +37,17 @@ test('index.html：目次は core の PA.UNITS・PA.APPS をつかう',()=>{
   assert.ok(!/\?\.|\?\?/.test(h.replace(/<style>[\s\S]*?<\/style>/,'')),'iOS 12でうごかない ?. ?? をつかわない');
   assert.ok(!/waon-kikiwake/.test(h),'外のランキングのカードはもうない');
 });
+
+test('index.html：あそぶ（クイズ・耳のタイル）とまなぶ。「コース」と番号の単元はない',()=>{
+  const h=fs.readFileSync(path.join(root,'index.html'),'utf8');
+  const js=h.replace(/<style>[\s\S]*?<\/style>/,'');
+  assert.ok(!/コース/.test(js),'「コース」という言葉をつかわない');
+  assert.match(js,/a\.type==='quiz'\|\|a\.type==='ear'/,'あそぶは quiz・ear のアプリぜんぶ');
+  assert.match(js,/にがてをやっつけよう/); assert.match(js,/'home-units'/); assert.match(js,/PA\.native\?/);
+  assert.match(js,/support\.html/); assert.match(js,/privacy\.html/);
+  // あそぶのタイルの色：白い字で4.5:1いじょう
+  const lum=x=>{const c=[1,3,5].map(i=>parseInt(x.slice(i,i+2),16)/255).map(v=>v<=.03928?v/12.92:((v+.055)/1.055)**2.4);return .2126*c[0]+.7152*c[1]+.0722*c[2];};
+  const cols=[...js.matchAll(/\{c:'(#[0-9a-f]{6})'/g)].map(m=>m[1]);
+  assert.ok(cols.length>=6);
+  cols.forEach(c=>assert.ok(1.05/(lum(c)+.05)>=4.5,c+' は白い字で4.5:1いじょう'));
+});
