@@ -73,6 +73,7 @@ details.stage::before{content:"";position:absolute;top:0;bottom:0;left:28px;bord
 details.stage.r::before{left:auto;right:28px}
 details.stage>summary{position:relative;z-index:1;display:flex;align-items:center;gap:10px;min-height:84px;padding:10px 0;cursor:pointer;list-style:none;border-radius:16px}
 details.stage>summary::-webkit-details-marker{display:none}
+details.stage>summary:focus-visible,.foot>summary:focus-visible{outline:3px solid var(--c5);outline-offset:2px}
 details.stage.r>summary{flex-direction:row-reverse}
 details.stage.here>summary{padding-top:22px}
 .isle{flex:none;position:relative;width:60px;height:60px;border-radius:50%;background:var(--l);border:4px solid var(--c);display:grid;place-items:center;font-size:28px;line-height:1;box-shadow:0 4px 0 rgba(58,50,69,.16)}
@@ -91,7 +92,7 @@ details.stage[open] .sign::after{transform:rotate(180deg)}
 .sign .tag{display:inline-block;margin-left:6px;font-size:11.5px;font-weight:800;padding:0 8px;border-radius:999px;vertical-align:2px;line-height:1.6;white-space:nowrap}
 .sign .tag.now{background:var(--ink);color:#fff}
 .sign .tag.clear{background:var(--ok);color:#fff}
-.stars{display:block;margin-top:2px;font-size:15px;line-height:1.2;letter-spacing:1px;color:#ddd0bd}
+.stars{display:block;margin-top:2px;font-size:15px;line-height:1.2;letter-spacing:1px;color:#a08c70} /* ☆ も白の上で3:1いじょう */
 .stars .on{color:#c97a00}
 .stage.here .sign{border-color:var(--c);box-shadow:0 3px 0 var(--c)}
 @media (hover:hover){details.stage>summary:hover .sign{background:var(--soft2)}}
@@ -227,7 +228,7 @@ function topHTML(vis){
     return `<section class="card hero" aria-labelledby="hero-h"><div class="big" aria-hidden="true">🐸🗺️</div>
       <h2 id="hero-h">和音のぼうけんに出発！</h2>
       <p class="lead">さいしょの島は「${ESC(s0?s0.name:'はじめの和音')}」。ド・ミ・ソを見て・聴いて・つくってみよう</p>
-      ${first?`<a class="btn" href="${first.id}.html">${PA.icon('play')}さいしょの島からスタート</a>`:''}
+      ${first?`<a class="btn" href="${first.id}.html">${PA.icon('play')}さいしょの島へ出発</a>`:''}
       <p class="site">Ⅰ・Ⅳ・Ⅴから7つの和音、短調、おわりかた、変化和音、伴奏づけ、耳のれんしゅうまで。島をじゅんにまわって、「見て・聴いて・さわって」おぼえよう。クイズだけあそんでもOK！</p></section>`;
   }
   // つづき：さいごにひらいたページ（クイズ・しくみの新しいほう）

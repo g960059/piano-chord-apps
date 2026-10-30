@@ -74,6 +74,8 @@ test('index.html：つづきから・つぎの島・星・とじた島・にが�
   assert.match(h,/<details class="stage l done" data-d="stage-u1"/);
   assert.match(h,/<details class="stage r here" data-d="stage-u2"[^>]* open>/);
   assert.match(h,/4ページのうち4ページひらいた/);
+  // もどってきた人にも、どのアプリへも行ける（とじた島の中にもリンクはある）
+  for(const a of PA.APPS) assert.ok(h.includes(`href="${a.href||a.id+'.html'}"`),a.id);
   // じぶんでとじた島（'home-units'）はとじたまま
   PA.store.set('home-units',{u2:false});
   h=renderHome(mem).__html;
