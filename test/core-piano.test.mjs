@@ -94,4 +94,5 @@ test('せっていでピアノをえらんだ「ためしの音」：読みこ�
   assert.deepEqual(await run(()=>{}),[60],'ひらいたままなら鳴る');
   assert.deepEqual(await run(()=>el.close()),[],'とじたら鳴らない');
   assert.deepEqual(await run(()=>P.stopSound()),[],'音をとめたら鳴らない');
+  assert.deepEqual(await run(()=>{el.close();P.openSettings();}),[],'とじてから、またひらいても鳴らない');
 });

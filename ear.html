@@ -894,7 +894,6 @@ function topCardHTML(){
   }else if(state.mode==='ch'){
     const play=ch.phase==='play'&&ch.run;
     if(play){const lv=ch.run.state.level;h+=`<div class="lvhead">🏆 レベル${lv}<small>${LEVELS[lv].name}</small></div>`+chipsHTML(lv)+knobsHTML(lv,'ch');}
-    if(chGated()) h+=`<div class="msg" role="status" style="margin-top:10px">⏳ ピアノの音を用意しているよ。少しまってね</div>`;
     h+=`<p class="note big-note">ライフ3つで、レベル1から8までどこまで行けるかな？おわったら、ランキングにのせられるよ。</p>`;
     h+=`<div class="rec">📒 チャレンジでクリア：<b>${ch.best?`レベル${ch.best}まで`:'まだないよ'}</b>${ch.best>=MAXLV?'<span class="master">🏅 マスター</span>':''}</div>`;
     const tools=(play?`<button class="btn small" data-act="chend" data-confirm="もういちどおすと、おわるよ">🏁 ここでおわる</button>`:'')
@@ -1008,6 +1007,8 @@ function heroHTML(){
     const st=ch.run.state, e=ch.event, streak=state.answer&&(e==='up'||e==='master')?CLEAR:st.streak;
     score=`<div class="score"><b>🏆 レベル${lv}</b> ${heartsHTML(st.lives,!!state.answer&&state.answer!==q.type)}`
       +`<span role="img" aria-label="${CLEAR}もん中${streak}もんれんぞく正解">${dots(CLEAR,streak,'pdots')}</span></div>`;
+    // ひらきなおしたピアノのチャレンジで、録音を読んでいるあいだ（ボタンはうけつけない）
+    if(chGated()) score+=`<div class="msg" role="status" style="margin-top:8px">⏳ ピアノの音を用意しているよ。少しまってね</div>`;
   }
   else score=`<div class="score"><b>⭐ ${state.right} / ${state.total}</b>${state.hint?`<span class="sub" aria-label="ヒントでできた${state.hint}もん">💡 ${state.hint}</span>`:''}<span class="sub">れんぞく${state.streak}</span>${state.streak?`<span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(state.streak,10))}</span>`:''}</div>`;
   const R=replaysOf(lv,state.mode);

@@ -209,6 +209,7 @@ const PIANO=PA.PIANO={
   keep:6,     // 鳴りはじめから何秒まで使うか（伴奏づけのおそいテンポの長い音＝約5.2秒まで。それより長い音は自然に小さくなる）
   cents:3.6,  // 録音のピアノ全体の高さのずれ（ド3〜ド6の、A4＝440Hz の平均律からのずれの中央値。聴き比べページではかった）
   gain:0.86,  // ド4の最初の1秒の大きさを、合成の音にそろえる
+  wait:15,    // 読みこみをまつ時間（秒）。こえたら合成の音のまま
   notes:[]
 };
 {const N={9:'A',0:'C',3:'Ds',6:'Fs'};for(let m=21;m<=108;m+=3) PIANO.notes.push({midi:m,file:N[m%12]+(Math.floor(m/12)-1)+'.mp3'});}
@@ -235,11 +236,15 @@ PA.loadPiano=()=>{
   if(pianoLoading) return pianoLoading;
   if(Date.now()-pianoFailAt<30000||typeof fetch!=='function'||typeof OfflineAudioContext!=='function') return Promise.resolve(false);
   const oc=new OfflineAudioContext(1,1,44100);
-  pianoLoading=Promise.all(PIANO.notes.map(n=>fetch(PIANO.base+n.file)
+  const all=Promise.all(PIANO.notes.map(n=>fetch(PIANO.base+n.file)
     .then(r=>{if(!r.ok) throw new Error(n.file+' '+r.status);return r.arrayBuffer();})
     .then(ab=>oc.decodeAudioData(ab)).then(b=>({midi:n.midi,buf:pianoTrim(oc,b)}))))
-    .then(list=>{pianoBufs=list;pianoLoading=null;return true;})
-    .catch(()=>{pianoLoading=null;pianoFailAt=Date.now();return false;});
+    .then(list=>{pianoBufs=list;return true;});
+  // 1つでもとまったままのときは、PIANO.wait 秒で「読めなかった」にする（あとから読めたら、そのときから使う）
+  const late=new Promise(r=>setTimeout(()=>r(false),PIANO.wait*1000));
+  pianoLoading=Promise.race([all,late])
+    .then(ok=>{pianoLoading=null;if(!ok) pianoFailAt=Date.now();return ok;},()=>{pianoLoading=null;pianoFailAt=Date.now();return false;});
+  all.catch(()=>{});
   return pianoLoading;
 };
 // いま鳴らす音色：'piano'｜'synth'。lockVoice＝チャレンジの画面で、はじめた時の音色にとめる（null で とく）
@@ -535,7 +540,9 @@ PA.seg=(act,opts,cur,cls='')=>`<div class="seg ${cls}" role="group">`+opts.map((
 PA.keyChip=key=>`<button class="keychip" data-pa="keysheet" aria-haspopup="dialog">${PA.keyName(key)}<small>${PA.sigLabel(key)}</small></button>`;
 let sheetEl=null, sheetPrev=null;
 const isOpen=el=>!!el&&(el.open===true||(!!el.hasAttribute&&el.hasAttribute('open')));
+let sheetSeq=0;
 function sheet(html){
+  sheetSeq++;
   if(!sheetEl){
     sheetEl=document.createElement('dialog');sheetEl.className='sheet';
     // <dialog>がない古いブラウザ（iOS 15.3までなど）：open の印だけで出し入れする（.pa-fb＝画面いっぱいのうすい幕）
@@ -623,9 +630,9 @@ PA.openSettings=()=>{
     if(t.id==='pa-voice'){
       S.voice=t.value;PA.stopSound();
       // ためしの音。録音を読むあいだに、とじた・音をとめた・音色をかえたときは鳴らさない
-      const g=soundGen;
+      const g=soundGen, sq=sheetSeq;
       const preview=()=>{const keep=voiceLock;voiceLock=null;PA.playNote(60,0,1.6,0.25);voiceLock=keep;}; // チャレンジでとめた音色ではなく、えらんだ音色で
-      if(S.voice==='piano') PA.loadPiano().then(()=>{if(g===soundGen&&isOpen(el)&&S.voice==='piano') preview();});
+      if(S.voice==='piano') PA.loadPiano().then(()=>{if(g===soundGen&&sq===sheetSeq&&isOpen(el)&&S.voice==='piano') preview();});
       else preview();
     }
     PA.saveSettings(); updateSoundBar(); if(PA.onSettings) PA.onSettings();
