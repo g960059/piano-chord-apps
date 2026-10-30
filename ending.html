@@ -146,12 +146,12 @@ const notesSpan=c=>`<span class="lh">${PA.nmH(c.lh[0])}</span>`+c.rh.map(n=>`<sp
 function stepMsg(key,data,i){
   const c=data[i], t=state.type, M=T(t), nm=PA.nmH, ms=[];
   if(i===0) ms.push(`まずはⅠ。${PA.keyName(key)}の「おうち」の和音からスタート！`);
-  else if(i===1) ms.push(`${c.label}。ここからおわりにむかうよ。`);
+  else if(i===1) ms.push(`${c.label}。ここから、おわりにむかうよ。`);
   else if(i===2){
     if(t==='imperfect'&&state.variant==='B') ms.push(`Ⅴ7（てんかい）。いちばん下が根音「${nm(PA.at(key.scale,4))}」ではなく「${nm(c.lh[0])}」。`);
-    else if(c.ch==='V7') ms.push(`Ⅴ7。「もうすぐおわるよ」の合図。つぎはⅠに行きたくなるね。`);
-    else if(t==='half') ms.push(`もういちどⅠ。さいごはどこでとまるかな？`);
-    else if(t==='plagal') ms.push(`Ⅳ。ここからⅠへやわらかくもどるよ。`);
+    else if(c.ch==='V7') ms.push(`Ⅴ7。「もうすぐおわるよ」の合図。次はⅠに行きたくなるね。`);
+    else if(t==='half') ms.push(`もういちどⅠ。さいごは、どこでとまるかな？`);
+    else if(t==='plagal') ms.push(`Ⅳ。ここからⅠへ、やわらかくもどるよ。`);
     else if(t==='phrygian') ms.push(`Ⅳ（てんかい）。いちばん下は6ばんめの音「${nm(c.lh[0])}」。`);
   }else ms.push(`${E.why(key,t,state.variant)}。だから<b>${M.name}</b>「${M.nick}」`);
   const r=c.rh.find(n=>n.raised)||(c.lh[0].raised?c.lh[0]:null);
@@ -165,14 +165,14 @@ function staffMinW(key){
 /* くらべて聴く：2つのおわりかたをつづけて鳴らす */
 const PAIRS=[
   {a:['perfect','A'],b:['imperfect','A'],d:'さいごのⅠのいちばん上が主音かどうか'},
-  {a:['perfect','A'],b:['deceptive','A'],d:'Ⅴ7のあと、Ⅰへ行くかⅥへ行くか'},
+  {a:['perfect','A'],b:['deceptive','A'],d:'Ⅴ7の後、Ⅰへ行くかⅥへ行くか'},
   {a:['half','A'],b:['perfect','A'],d:'Ⅴでとまるか、Ⅰまで行くか'},
   {a:['half','A'],b:['phrygian','A'],d:'どちらもⅤでとまる。フリギアはいちばん下が半音下がる',minor:true}
 ];
 function cmpHTML(key){
   const ps=PAIRS.map((p,i)=>({...p,i})).filter(p=>!p.minor||key.minor);
   const nameH=(x,cls)=>`<span class="${cls}">${T(x[0]).emoji} ${T(x[0]).name}</span>`;
-  return `<section class="card"><h2>🎧 くらべて聴く<small>${PA.keyName(key)}で、2つのおわりかたをつづけて鳴らすよ</small></h2><div class="cmpgrid">`+ps.map(p=>{
+  return `<section class="card"><h2>🎧 くらべて聴く<small>${PA.keyName(key)}で、2つのおわりかたを、つづけて鳴らすよ</small></h2><div class="cmpgrid">`+ps.map(p=>{
     const on=state.cmp&&state.cmp.i===p.i, A=T(p.a[0]), B=T(p.b[0]);
     const now=on?`<span class="cmpnow" role="status"><span class="${state.cmp.part===0?'now':''}">1つめ：${A.name}「${A.nick}」</span><span class="${state.cmp.part===1?'now':''}">2つめ：${B.name}「${B.nick}」</span></span>`:'';
     return `<button class="cmpbtn ${on?'on':''}" style="--c:${A.color};--c2:${B.color}" data-act="cmp" data-v="${p.i}"><b>${nameH(p.a,'a')}と${nameH(p.b,'b')}</b><small>${p.d}</small>${now}</button>`;
@@ -183,7 +183,7 @@ function tipsHTML(key){
   return `<details class="more" data-d="tips" ${state.more?'open':''}><summary>💡 おわりかたのポイント</summary><ul>
     <li>おわりかたの名前は、<b>さいごの2つの和音</b>できまるよ。</li>
     <li>がくふで見るときは、まず<b>さいごの和音</b>：<b>Ⅰ</b>なら全終止か変格終止、<b>Ⅴ</b>なら半終止かフリギア終止、<b>Ⅵ</b>なら偽終止。</li>
-    <li>つぎにその<b>1つ前</b>：Ⅴ（Ⅴ7）→ Ⅰなら全終止、Ⅳ → Ⅰなら変格終止。</li>
+    <li>次に、その<b>1つ前</b>：Ⅴ（Ⅴ7）→ Ⅰなら全終止、Ⅳ → Ⅰなら変格終止。</li>
     <li>全終止はさらに2つにわかれる。さいごの<b>いちばん上の音が主音</b>「${d(0)}」で、Ⅴ7もⅠも<b>いちばん下が根音</b>なら完全終止。どれかがちがえば不完全終止。</li>
     <li>左手（いちばん下の音）もヒント。${PA.keyName(key)}ではⅤ → Ⅰはふつう「${d(4)} → ${d(0)}」（不完全終止のれい B は「${d(1)} → ${d(0)}」）、Ⅳ → Ⅰは「${d(3)} → ${d(0)}」、Ⅴ7 → Ⅵは「${d(4)} → ${d(5)}」。</li>
     <li>${key.minor?`<b>フリギア終止</b>は短調だけ。Ⅳのいちばん下が6ばんめの音「${d(5)}」で、そこから半音下の「${d(4)}」へ下がってⅤでとまる。`:'<b>フリギア終止</b>は短調だけ。Ⅳのいちばん下が6ばんめの音で、そこから半音下がってⅤでとまる。'}</li>
@@ -202,19 +202,19 @@ function termsHTML(key){
   const d=k=>PA.nmH(PA.at(key.scale,k));
   return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や楽譜で見かける名前）</summary><dl>
     <dt>${yomi('主音','しゅおん')}・${yomi('根音','こんおん')}</dt>
-    <dd><b>主音</b>は音階の1ばんめの音。調の名前にもなる音で、いまの調では「${d(0)}」。<b>根音</b>は和音をひとつとばしでつんだときのいちばん下の音（Ⅰなら主音の「${d(0)}」、Ⅳなら4ばんめの「${d(3)}」、Ⅴ・Ⅴ7なら5ばんめの「${d(4)}」、Ⅵなら6ばんめの「${d(5)}」）。根音の上につむ音は、下から<b>第3音</b>・<b>第5音</b>（Ⅴ7はさらに<b>第7音</b>）というよ。</dd>
+    <dd><b>主音</b>は音階の1ばんめの音。調の名前にもなる音で、いまの調では「${d(0)}」。<b>根音</b>は、和音を「ひとつとばし」でつんだとき、いちばん下になる音（Ⅰなら主音の「${d(0)}」、Ⅳなら4ばんめの「${d(3)}」、Ⅴ・Ⅴ7なら5ばんめの「${d(4)}」、Ⅵなら6ばんめの「${d(5)}」）。根音の上につむ音は、下から<b>第3音</b>・<b>第5音</b>（Ⅴ7はさらに<b>第7音</b>）というよ。</dd>
     <dt>${yomi('終止','しゅうし')}・${yomi('終止形','しゅうしけい')}</dt>
-    <dd>曲や、メロディーのひとまとまりのおわりかた。和音のならびでいくつかの形があって、それぞれに名前がついているよ。</dd>
+    <dd>曲や、メロディーの「ひとまとまり」のおわりかた。和音のならびかたで、いくつかの形にわかれていて、それぞれに名前がついているよ。</dd>
     <dt>${yomi('全終止','ぜんしゅうし')}（${yomi('完全終止','かんぜんしゅうし')}＋${yomi('不完全終止','ふかんぜんしゅうし')}）</dt>
-    <dd>Ⅴ（Ⅴ7）→ Ⅰのおわりかたをまとめて<b>全終止</b>という。その中で、Ⅴ7もⅠもいちばん下が根音で、さいごのいちばん上が主音なら<b>完全終止</b>、そうでなければ<b>不完全終止</b>。本によっては分けずに「全終止」とだけ書いてあることもあるよ。</dd>
+    <dd>Ⅴ（Ⅴ7）→ Ⅰのおわりかたを、まとめて<b>全終止</b>という。その中で、Ⅴ7もⅠもいちばん下が根音で、さいごのいちばん上が主音なら<b>完全終止</b>、そうでなければ<b>不完全終止</b>。本によっては、分けずに「全終止」とだけ書くこともあるよ。</dd>
     <dt>${yomi('半終止','はんしゅうし')}</dt>
     <dd>Ⅴでおわる形。Ⅴの前はⅠ・Ⅳなどいろいろ。</dd>
     <dt>${yomi('変格終止','へんかくしゅうし')}</dt>
     <dd>Ⅳ → Ⅰ。<b>${yomi('変終止','へんしゅうし')}</b>・<b>アーメン終止</b>ともいう。賛美歌のさいごの「アーメン」でよく聴くひびき。</dd>
     <dt>${yomi('偽終止','ぎしゅうし')}</dt>
-    <dd>Ⅴ7 → Ⅵ。<b>${yomi('阻害終止','そがいしゅうし')}</b>ともいう。「おわる」と思わせて、曲をつづけるときにつかう。</dd>
+    <dd>Ⅴ7 → Ⅵ。<b>${yomi('阻害終止','そがいしゅうし')}</b>ともいう。「おわる」と思わせて、曲をつづけるときに使う。</dd>
     <dt>フリギア終止</dt>
-    <dd>短調の、Ⅳ（いちばん下が6ばんめの音）→ Ⅴ。昔の音階「フリギア」のひびきににているのでこの名前。半終止のなかま。</dd>
+    <dd>短調の、Ⅳ（いちばん下が6ばんめの音）→ Ⅴ。昔の音階「フリギア」のひびきに、にているので、この名前。半終止のなかま。</dd>
     <dt>${yomi('基本形','きほんけい')}・${yomi('転回形','てんかいけい')}</dt>
     <dd>和音のいちばん下が根音なら<b>基本形</b>、ちがう音なら<b>転回形</b>。このページの「てんかい」は転回形のこと。Ⅳ（てんかい）はいちばん下が第3音の<b>第1転回形</b>、Ⅴ7（てんかい）はいちばん下が第5音の<b>第2転回形</b>。</dd>
   </dl></details>`;
@@ -230,10 +230,10 @@ function render(){
   }).join('');
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
-    <div class="tpick" role="group" aria-label="おわりかたをえらぶ">${pick}</div>
-    ${key.minor?'':`<p class="note" style="margin:-4px 2px 0">🌙 フリギア終止は短調だけ。調を短調にするとえらべるよ。</p>`}
+    <div class="tpick" role="group" aria-label="おわりかたを選ぶ">${pick}</div>
+    ${key.minor?'':`<p class="note" style="margin:-4px 2px 0">🌙 フリギア終止は短調だけ。調を短調にすると選べるよ。</p>`}
     ${state.type==='imperfect'?PA.seg('variant',[['A','れい A<small>上の音が主音じゃない</small>'],['B','れい B<small>Ⅴ7の下が根音じゃない</small>']],state.variant,'full varseg'):''}
-    <p class="seqlabel">${data.map(c=>E.labelText(c)).join(' → ')}　タップするとその和音が鳴るよ</p>
+    <p class="seqlabel">${data.map(c=>E.labelText(c)).join(' → ')}　タップすると、その和音が鳴るよ</p>
     <div class="seq">`+data.map((c,i)=>`<button class="scard ${i===step?'on':''}" style="--c:${PA.COL[c.ch]};--l:${PA.LCOL[c.ch]}" data-act="step" data-v="${i}" aria-pressed="${i===step}" aria-label="${i+1}つめ${E.labelText(c)}"><span class="num">${c.label}</span>${c.inv?'<span class="inv">てんかい</span>':''}<span class="nm">${notesSpan(c)}</span></button>`).join('')+`</div>
     <div class="lasttwo" aria-hidden="true"><span>⬆ ここで名前がきまる</span></div>
     <section class="card hero" style="--c:${M.color}">
@@ -258,7 +258,7 @@ function render(){
     ${kb(rlo,rhi,rmarks,'kbr','✋ 右手')}
     ${kb(llo,lhi,lmarks,'kbl','🤚 左手')}</section>`;
   const cols=data.map((c,i)=>({notes:c.rh,lh:c.lh,color:PA.COL[c.ch],accColor:'#d1495b',op:i===step?1:0.28,label:c.label,sub:c.inv?'てんかい':'',labelColor:PA.COL[c.ch]}));
-  h+=`<section class="card"><h2>🎼 がくふ<small>いまひいている和音がこい色。上が右手、下が左手</small></h2>
+  h+=`<section class="card"><h2>🎼 がくふ<small>いま、ひいている和音がこい色。上が右手、下が左手</small></h2>
     <div class="scroll" data-sk="staff"><div class="staffw" style="min-width:${staffMinW(key)}px">${PA.staffSVG(key,cols,{grand:true,colW:66})}</div></div></section>`;
   h+=cmpHTML(key)+tryCard(key)+tipsHTML(key)+termsHTML(key)+`</div>`;
   const view=document.getElementById('view'), sig=state.minor+':'+state.keyIdx+':'+state.type+':'+state.variant;
@@ -268,7 +268,7 @@ function render(){
   lastStep=step; lastSig=sig;
   PA.paint(document.getElementById('actions'),
     (state.playing?`<button class="btn" data-act="stop" data-hot="listen">⏹ とめる</button>`:`<button class="btn primary" data-act="cplay" data-hot="listen" aria-label="ながして聴く">▶️ <span class="lbl-w">ながして聴く</span><span class="lbl-n">ながす</span></button>`)+
-    `<button class="btn" data-act="again">🔊 もういちど</button><button class="btn nx" data-act="next" data-hot="next" aria-label="つぎの和音">つぎ ➡</button>`,'bar');
+    `<button class="btn" data-act="again">🔊 もういちど</button><button class="btn nx" data-act="next" data-hot="next" aria-label="次の和音">次 ➡</button>`,'bar');
 }
 
 /* ===== 音 ===== */

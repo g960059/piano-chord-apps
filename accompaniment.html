@@ -239,7 +239,7 @@ const SONGS=[
    slots:[['1 2 3 4','I','!IV','!V7'],KA_2,['3 4 5 6','I','IV','!V','!V7'],['5 4 3:2','I','!IV','!V','!V7'],KA_5,KA_5,
      ['1:.5 1:.5 2:.5 2:.5 3:.5 3:.5 4:.5 4:.5','I','V7','!IV'],KA_2]},
   {id:'chocho',title:'ちょうちょう',level:2,slotBeats:2,
-   tip:k=>`ⅠとⅤ7でできるよ。2拍ごとにえらぼう。「${PA.nmH(noteAt(k,1))}」が多いところはどっちかな？`,
+   tip:k=>`ⅠとⅤ7でできるよ。2拍ごとに選ぼう。「${PA.nmH(noteAt(k,1))}」が多いところは、どっちかな？`,
    slots:[...CH_1,['1 2','I','!IV','!V','!V7'],['3 4','I','!IV','!V7'],['5 5','I'],['5:2','I','V','V7'],
      ['5 3','I','!V','!V7'],['3 3','I'],['4 2','V7','V','!IV'],['2 2','V7','V'],['1 3','I','!IV'],['5 5','I','!V','!V7'],['3 3','I'],['3:2','I'],
      ['2 2','V7','V'],['2 2','V7','V'],['2 3','V7','V','!I'],['4:2','V7','V','!IV'],['3 3','I'],['3 3','I'],['3 4','I','!IV','!V7'],['5:2','I','V'],
@@ -396,7 +396,7 @@ function grade(slot,ch){
 function whyBad(key,song,si,ch){
   const slot=song.slots[si];
   if(slot.cadence) return 'さいごはⅠでおわると「おしまい」の感じが出るよ';
-  if(slot.start) return '曲のはじめはⅠではじめると、何調かよくわかるよ';
+  if(slot.start) return '曲のはじめはⅠで始めると、何調かよくわかるよ';
   if(slot.ng.includes(ch)) return `${CHORDS[ch].label}の音も入っているけれど、ここでは曲の流れに合わないよ`;
   const f=fitInfo(slot,ch), ns=sounding(slot.notes), names=namesH(chordTones(key,ch));
   if(!ns.length) return 'このマスは休みだけだよ';
@@ -500,8 +500,8 @@ function playChordNow(key,ch){
 // マスの読み上げ：「3小節目、Ⅳをえらんだ（○ これでも合う）」（ただの文字。HTML に入れるときは PA.esc）
 function slotAria(song,si,ch,g,model){
   const sl=song.slots[si];
-  let t=whereLabel(song,si)+'、'+(ch?(model?`おてほんは${CHORDS[ch].label}`:`${CHORDS[ch].label}をえらんだ`):'まだえらんでいない');
-  if(g==='best') t+='（◎ おてほんとおなじ）';
+  let t=whereLabel(song,si)+'、'+(ch?(model?`おてほんは${CHORDS[ch].label}`:`${CHORDS[ch].label}を選んだ`):'まだ選んでいない');
+  if(g==='best') t+='（◎ おてほんと同じ）';
   else if(g==='good') t+='（○ これでも合う）';
   else if(g==='bad') t+=`（× 合わない${state.reveal?`。おてほんは${CHORDS[sl.ans].label}`:''}）`;
   return t;
@@ -726,7 +726,7 @@ function feedbackHTML(song,key,chs){
   let h=`<div class="fb ${allOk?'good':'bad'}" role="status">`;
   h+=allOk?`🎉 ぜんぶ合っているよ！（◎ ${best}・○ ${good}）「▶️ はじめから」で自分の伴奏をきいてみよう。`
           :`◎ ${best}　○ ${good}　× ${bad}${empty?`　まだ${empty}マス`:''}　<span style="font-size:14px">（×のマスをなおすと、その場で ◎○ にかわるよ）</span>`;
-  h+=`<div class="legend">◎＝おてほんとおなじ　○＝これでも合う　×＝合わない</div>`;
+  h+=`<div class="legend">◎＝おてほんと同じ　○＝これでも合う　×＝合わない</div>`;
   if(items.length){
     h+=`<ul>${items.slice(0,8).map(x=>`<li>${x}</li>`).join('')}`;
     if(items.length>8) h+=`<li>ほかに${items.length-8}こ（がくふの ◎○× を見てね）</li>`;
@@ -740,18 +740,18 @@ function view(){
   const filled=chs.filter(Boolean).length, N=song.slots.length, si=state.sel, sl=song.slots[si], cur=chs[si];
   let h=`<div class="stack">
     <p class="lead">メロディーにⅠ・Ⅳ・Ⅴ・Ⅴ7をつけて、伴奏を作ってみよう</p>
-    <div><p class="lbl">① 曲をえらぶ<span class="cnt">ぜんぶで${SONGS.length}曲<span class="swipe">・よこにうごかせるよ</span></span></p>${songsHTML()}</div>
-    <div><p class="lbl">② 調をえらぶ</p><div class="toprow"><div class="keyrow">${PA.keyChip(key)}<button class="btn dice" data-act="randkey" aria-label="ランダムにほかの調にする">🎲 ランダム</button></div>
-      ${state.randKey===state.keyIdx?`<p class="note keymsg">🎲 <b>${PA.keyName(key)}</b>にしたよ。えらんだ和音はそのまま。音の高さだけがかわるよ</p>`:`<p class="note">調をかえても、えらんだ和音はそのまま。音の高さだけがかわるよ</p>`}</div>
+    <div><p class="lbl">① 曲を選ぶ<span class="cnt">ぜんぶで${SONGS.length}曲<span class="swipe">・よこに動かせるよ</span></span></p>${songsHTML()}</div>
+    <div><p class="lbl">② 調を選ぶ</p><div class="toprow"><div class="keyrow">${PA.keyChip(key)}<button class="btn dice" data-act="randkey" aria-label="ランダムにほかの調にする">🎲 ランダム</button></div>
+      ${state.randKey===state.keyIdx?`<p class="note keymsg">🎲 <b>${PA.keyName(key)}</b>にしたよ。選んだ和音はそのまま。音の高さだけがかわるよ</p>`:`<p class="note">調をかえても、選んだ和音はそのまま。音の高さだけがかわるよ</p>`}</div>
       ${state.diceUsed||state.randSeen.length||state.randTier!=='all'?`<details class="more randset" id="randset"><summary>🎲 ランダムで出す調：${randTierOf(state.randTier).emoji} ${randTierOf(state.randTier).name}</summary>${PA.keyDeck.tierSeg('randtier',state.randTier)}
-        <p class="note">長調の中から出すよ。ぜんぶの調が1回ずつ出るまで、おなじ調は出ないよ。嬰ヘ長調と変ト長調はおなじ音で書きかたがちがうだけなので、1つとかぞえるよ。</p></details>`:''}
+        <p class="note">長調の中から出すよ。ぜんぶの調が1回ずつ出るまで、同じ調は出ないよ。嬰ヘ長調と変ト長調は同じ音で、書きかたがちがうだけ。だから1つとかぞえるよ。</p></details>`:''}
       <div class="sharerow">${PA.shareHTML('accompaniment',shareParams(),'👩‍🏫 この曲をおくる')}</div></div>
     <section class="card scorecard">
-      <div class="scorehead"><h2>③ 和音をえらぶ<small>${song.tip(key)}</small></h2>
-        <div class="progress"><b>${filled}</b> / ${N}マスえらんだ</div></div>
-      ${P&&P.model?`<div class="banner">🎧 おてほんをながしているよ。${state.reveal?'マスにはおてほんの和音を出しています。':'よくきいて、自分の和音とくらべてみよう。'}</div>`:''}
+      <div class="scorehead"><h2>③ 和音を選ぶ<small>${song.tip(key)}</small></h2>
+        <div class="progress"><b>${filled}</b> / ${N}マス選んだ</div></div>
+      ${P&&P.model?`<div class="banner">🎧 おてほんが鳴っているよ。${state.reveal?'マスにはおてほんの和音を出しています。':'よくきいて、自分の和音とくらべてみよう。'}</div>`:''}
       <div class="scroll" data-sk="score">${scoreRows()}</div>
-      <p class="note" style="margin-top:2px">マスをタップして、下のⅠ・Ⅳ・Ⅴ・Ⅴ7からえらんでね。${state.autoNext?'えらぶとつぎのマスへすすむよ。':'いろいろためしたら「➡ つぎのマスへ」ですすもう。'}</p>
+      <p class="note" style="margin-top:2px">マスをタップして、下のⅠ・Ⅳ・Ⅴ・Ⅴ7から選んでね。${state.autoNext?'選ぶと次のマスへすすむよ。':'いろいろためしたら「➡ 次のマスへ」ですすもう。'}</p>
       <div class="btns">
         <button class="btn ok ${state.checked&&!state.reveal?'':'wide'}" data-act="check" data-hot="check">✅ こたえあわせ</button>
         ${state.checked&&!state.reveal?`<button class="btn reveal" data-act="reveal">👀 こたえを見る</button>`:''}
@@ -767,35 +767,35 @@ function view(){
     h+=`<p class="note">ヒントはオフになっています。「ヒント」にチェックを入れると表が出るよ。</p>`;
   }
   h+=`</section>`;
-  h+=`<section class="card"><h2>🎹 けんばん<small>${P?'いま鳴っている音':'えらんでいるマスの音'}　黄色＝メロディー、色つき＝左手の伴奏</small></h2><div class="scroll kbbox" data-sk="kb">${kbHTML()}</div></section>`;
+  h+=`<section class="card"><h2>🎹 けんばん<small>${P?'いま鳴っている音':'選んでいるマスの音'}　黄色＝メロディー、色つき＝左手の伴奏</small></h2><div class="scroll kbbox" data-sk="kb">${kbHTML()}</div></section>`;
   h+=`<section class="card"><h2>🎛 きき方</h2><div class="ctrl">
       <div><p class="lbl" style="margin-bottom:4px">伴奏の形</p>${PA.seg('style',[['block','🧱 のばす'],['oompah',song.meter===3?'🥁 ズン・チャッ・チャッ':'🥁 ズン・チャ'],['alberti','🌊 '+albertiName(key,song.meter)]],state.style,'full')}</div>
       <label class="tempo" for="tempo"><span style="white-space:nowrap">はやさ ♩＝<b id="tempoVal">${state.tempo}</b></span><input id="tempo" type="range" min="50" max="140" step="2" value="${state.tempo}"></label>
       <label><input type="checkbox" id="melOn" ${state.melOn?'checked':''}>メロディー</label>
       <label><input type="checkbox" id="accOn" ${state.accOn?'checked':''}>伴奏</label>
       <label><input type="checkbox" id="hint" ${state.hint?'checked':''}>ヒント（合う音を色で見せる・なかま表）</label>
-      <label><input type="checkbox" id="autoPlay" ${state.autoPlay?'checked':''}>えらんだらそのマスを鳴らす</label>
-      <label><input type="checkbox" id="autoNext" ${state.autoNext?'checked':''}>えらんだらつぎのマスへすすむ</label>
+      <label><input type="checkbox" id="autoPlay" ${state.autoPlay?'checked':''}>選んだらそのマスを鳴らす</label>
+      <label><input type="checkbox" id="autoNext" ${state.autoNext?'checked':''}>選んだら次のマスへすすむ</label>
     </div></section>`;
   // パレット：いつも画面の下にくっつく（このページのただ一つの下のバー）
-  h+=`<div class="palbar" role="group" aria-label="和音をえらぶ">
+  h+=`<div class="palbar" role="group" aria-label="和音を選ぶ">
       <div class="selrow">
-        <p class="selinfo"><span class="pre">いまえらんでいるマス：</span><b>${whereLabel(song,si)}</b>　<span class="mw">メロディー</span><span class="mi" aria-hidden="true">♪</span> <b>${namesH(sounding(sl.notes).map(n=>noteAt(key,n.k)),' ')||'（休み）'}</b></p>
+        <p class="selinfo"><span class="pre">いま選んでいるマス：</span><b>${whereLabel(song,si)}</b>　<span class="mw">メロディー：</span><span class="mi" aria-hidden="true">♪</span><b>${namesH(sounding(sl.notes).map(n=>noteAt(key,n.k)))||'（休み）'}</b></p>
         <button class="pbtn" data-act="undo" aria-label="ひとつもどす" title="ひとつもどす" ${canUndo()?'':'aria-disabled="true"'}>↩<span class="t"><span class="long">ひとつ</span>もどす</span></button>
         <button class="pbtn" data-act="playsel" aria-label="このマスだけきく" title="このマスだけきく">🔁<span class="t">このマス</span></button>
         ${playBtnHTML(!!P)}
       </div>
       <div class="palette ${state.autoNext?'':'wnext'}">`+CH_KEYS.map((c,i)=>`<button class="cbtn ${cur===c?'on':''}" style="--c:${COL[c]};--l:${LCOL[c]}" data-act="pick" data-v="${c}" aria-pressed="${cur===c}" aria-label="${CHORDS[c].label}（キー${[1,4,5,7][i]}）"><span class="num">${CHORDS[c].label}</span><span class="nm">${namesH(chordTones(key,c))}</span><span class="sym">${PA.H(chordSym(key,c))}</span></button>`).join('')+
       `<button class="cbtn clear" data-act="pick" data-v="" aria-label="けす"><span class="num">？</span><span class="nm">けす</span></button>`+
-      (state.autoNext?'':`<button class="cbtn go" data-act="next" aria-label="つぎのマスへ" ${si<N-1?'':'aria-disabled="true"'}><span class="num">➡</span><span class="nm"><span class="gs">つぎへ</span><span class="gl">つぎの<br>マスへ</span></span></button>`)+`</div>
+      (state.autoNext?'':`<button class="cbtn go" data-act="next" aria-label="次のマスへ" ${si<N-1?'':'aria-disabled="true"'}><span class="num">➡</span><span class="nm"><span class="gs">次へ</span><span class="gl">次の<br>マスへ</span></span></button>`)+`</div>
     </div>`;
   const mi=PA.nmH(noteAt(key,2)), la=PA.nmH(noteAt(key,5)), re_si=namesH([noteAt(key,1),noteAt(key,6)]), shared=namesH([noteAt(key,0),noteAt(key,3),noteAt(key,4)]);
   h+=`<details class="more tips" ${state.tipsOpen?'open':''}><summary>💡 伴奏づけのコツ</summary><p class="note" style="margin:0 0 6px">${PA.keyName(key)}の音名で書いているよ</p><ol>
     <li>マスの<b>はじめの音</b>と<b>長い音</b>を見る。</li>
-    <li>その音が入っている和音（Ⅰ・Ⅳ・Ⅴ7）をえらぶ。なかま表の「あう拍」が多いほど合いやすい。</li>
+    <li>その音が入っている和音（Ⅰ・Ⅳ・Ⅴ7）を選ぶ。なかま表の「あう拍」が多いほど合いやすい。</li>
     <li><b>${mi}</b>が長く鳴ればⅠ、<b>${la}</b>ならⅣ、<b>${re_si}</b>ならⅤ7。<b>${shared}</b>は2つの和音に入っているので、ほかの音できめよう。</li>
     <li>曲の<b>はじめ</b>と<b>さいご</b>はⅠ。さいごの前はⅤ7が多いよ。</li>
-    <li>えらんだらきいてみよう。にごってきこえたら、べつの和音をためそう。</li></ol>
+    <li>選んだら、きいてみよう。にごってきこえたら、べつの和音をためそう。</li></ol>
     <p class="note">※ キーボードでも操作できます：1＝Ⅰ、4＝Ⅳ、5＝Ⅴ、7＝Ⅴ7、←→＝マスの移動、Delete＝けす、Ctrl（⌘）＋Z＝ひとつもどす、スペース＝再生／停止、Enter＝こたえあわせ。<br>※ 曲はどれも古くから歌われている曲や、作曲者が亡くなって長い年月がたった曲のメロディーです。</p></details>`;
   return h+`</div>`;
 }
@@ -907,7 +907,7 @@ function undo(){
   stopPlay();
   const song=curSong(), chs=choices();
   if(e.all){e.all.forEach((c,i)=>{chs[i]=c;});state.sel=e.sel;announce('けした和音をもとにもどしたよ');}
-  else{chs[e.si]=e.prev;state.sel=e.si;announce(`${whereLabel(song,e.si)}を${e.prev?CHORDS[e.prev].label:'まだえらんでいない'}にもどしたよ`);}
+  else{chs[e.si]=e.prev;state.sel=e.si;announce(`${whereLabel(song,e.si)}を${e.prev?CHORDS[e.prev].label:'まだ選んでいない'}にもどしたよ`);}
   save(); render(); scrollSelIntoView();
   if(state.autoPlay&&chs[state.sel]) playChordNow(curKey(),chs[state.sel]);
 }

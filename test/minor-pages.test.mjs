@@ -47,7 +47,7 @@ test('短調クイズ：リンクのパラメータは1回だけ（アドレス�
   assert.doesNotMatch(src,/\bsessDone\b/,'「けっかを見る」は sessDoneId（そのもんだい）できめる');
 });
 
-test('Ⅴの家族の「3もんためしてみる」：見ている和音ともう1つをまぜる（3もんともおなじにしない）',()=>{
+test('Ⅴの家族の「3問ためしてみる」：見ている和音ともう1つをまぜる（3もんともおなじにしない）',()=>{
   const src=read('minor-family.html');
   const m=/const TRY_PAIR=(\{[^;]*\});/.exec(src); assert.ok(m);
   const pair=Function('return '+m[1])();

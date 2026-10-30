@@ -299,7 +299,7 @@ function shapeChain(key,id){
   const st=[['白鍵だけ',white,'',whiteSym(white,id==='ii_dim'?wb:null)],['調号をつける',md,'q-s',symOf(key,id,false)],['臨時記号でかりる',mb,'q-b',symOf(key,id,true)]];
   // 調号をつけても白鍵だけとおなじなら1つに（ハ長調は調号がない）
   if(md.every((n,j)=>n.acc===white[j].acc)){
-    st[1][0]=PA.sigInfo(key).letters.length?'白鍵だけ（調号をつけてもおなじ）':`${PA.keyName(key)}の音（白鍵だけ）`;
+    st[1][0]=PA.sigInfo(key).letters.length?'白鍵だけ（調号をつけても同じ）':`${PA.keyName(key)}の音（白鍵だけ）`;
     st.shift();
   }
   const out=[];
@@ -407,16 +407,16 @@ function cadStaff(key,seq){
 /* ===== 画面 ===== */
 const ID_LINE={
   iv:(key,c)=>`Ⅳの第3音が下がって<b>短三和音（Ⅳm）</b>に。やわらかく、すこしさみしいひびき。${q(c[0].b)}は半音下の${q(H.nextOf(key,'iv')[3])}へすすみたがるよ（Ⅰの第5音）。`,
-  ii_dim:key=>`Ⅱの第5音が下がって<b>減三和音</b>に。減三和音なので、いちばん下に第3音${q(H.borrowed(key,'ii_dim')[0])}をおいた<b>第1転回形（Ⅱ6）</b>でつかうよ。`,
-  ii_hdim7:()=>`Ⅱ7の第5音が下がって<b>半減七の和音</b>に。短調のⅡ7とおなじ形で、Ⅴ7の前でくもった色になるよ。`,
-  bVI:()=>`Ⅵの根音と第5音をかりると、短三和音だったⅥが<b>長三和音（♭Ⅵ）</b>に。Ⅴの前でつかうと、ドラマチックなひびき。第3音（調の主音）を2つにするよ。`,
-  V9_b9:()=>`Ⅴ9の第9音をかりると、<b>短調のⅤ9</b>とおなじ形。こくて、ドキッとするひびき（第5音ははぶいて4つの音に）。`,
-  vii_dim7:()=>`Ⅴ9の第9音をかりると、<b>減七の和音</b>＝短調のⅦ7とおなじ形になるよ。`
+  ii_dim:key=>`Ⅱの第5音が下がって<b>減三和音</b>に。減三和音なので、いちばん下に第3音${q(H.borrowed(key,'ii_dim')[0])}をおいた<b>第1転回形（Ⅱ6）</b>で使うよ。`,
+  ii_hdim7:()=>`Ⅱ7の第5音が下がって<b>半減七の和音</b>に。短調のⅡ7と同じ形で、Ⅴ7の前でくもった色になるよ。`,
+  bVI:()=>`Ⅵの根音と第5音をかりると、短三和音だったⅥが<b>長三和音（♭Ⅵ）</b>に。Ⅴの前で使うと、ドラマチックなひびき。第3音（調の主音）を2つにするよ。`,
+  V9_b9:()=>`Ⅴ9の第9音をかりると、<b>短調のⅤ9</b>と同じ形。こくて、ドキッとするひびき（第5音ははぶいて4つの音に）。`,
+  vii_dim7:()=>`Ⅴ9の第9音をかりると、<b>減七の和音</b>＝短調のⅦ7と同じ形になるよ。`
 };
 function heroMsg(key,id){
   const c=changes(key,id), pm=parMinor(key), dl=labelOf(key,id,false), bl=labelOf(key,id,true);
-  if(!state.on) return `${dl}は${PA.keyName(key)}の音階の音だけでできる和音。<br>🌙 スイッチをおして、${c.map(x=>q(x.d)).join('と')}を半音下げてみよう！<b>${PA.keyName(pm)}</b>（おなじ主音の短調）から音をかりるよ。`;
-  let m=`${c.map(x=>`${q(x.d)} → <b class="bo">${q(x.b)}</b>`).join('、')}。${c.map(x=>q(x.b)).join('と')}は<b>${PA.keyName(pm)}</b>（おなじ主音の短調）の音。調号は${PA.keyName(key)}のまま、<b>臨時記号</b>をつけてかりるよ。和音記号は${bl}（○＝かりた和音）。`;
+  if(!state.on) return `${dl}は${PA.keyName(key)}の音階の音だけでできる和音。<br>🌙 スイッチをおして、${c.map(x=>q(x.d)).join('と')}を半音下げてみよう！<b>${PA.keyName(pm)}</b>（同じ主音の短調）から音をかりるよ。`;
+  let m=`${c.map(x=>`${q(x.d)} → <b class="bo">${q(x.b)}</b>`).join('、')}。${c.map(x=>q(x.b)).join('と')}は<b>${PA.keyName(pm)}</b>（同じ主音の短調）の音。調号は${PA.keyName(key)}のまま、<b>臨時記号</b>をつけてかりるよ。和音記号は${bl}（○＝かりた和音）。`;
   return m+`<br>${ID_LINE[id](key,c)}`;
 }
 function rolesHTML(key,id){
@@ -431,17 +431,17 @@ function rolesHTML(key,id){
 }
 function heroCard(key,id){
   const on=state.on, A=state.anim, nx=A&&A.lab, col=nx?A.col:colOf(on), ns=A?A.ns:chordOf(key,id,on), hl=A?A.hl:on;
-  const top=nx?`<div class="hk">${PA.keyName(key)}の${nx}（${labelOf(key,id,true)}のつぎ）</div>
+  const top=nx?`<div class="hk">${PA.keyName(key)}の${nx}（${labelOf(key,id,true)}の次）</div>
       <div class="hs">${labelOf(key,id,true)} → ${nx}へすすんだところ</div>`:`<div class="hk">${PA.keyName(key)}の${on?INFO[id].bn:INFO[id].dn}</div>
-      <div class="hs">コードネーム<b>${symOf(key,id,on)}</b>　/　${on?'🌙 おなじ主音の短調から音をかりた和音（準固有和音）':'☀️ 調の音だけでできる和音'}</div>`;
+      <div class="hs">コードネーム<b>${symOf(key,id,on)}</b>　/　${on?'🌙 同じ主音の短調から音をかりた和音（準固有和音）':'☀️ 調の音だけでできる和音'}</div>`;
   return `<section class="card hero" style="--c:${col}">
     <div class="hero-top"><span class="badge" style="--c:${col}">${nx||labelOf(key,id,on)}</span>
       <div style="min-width:0">${top}</div></div>
-    <div class="hn">${members(ns).map(x=>nmB(x.n,hl)).join('&nbsp;・ ')}</div>
+    <div class="hn">${members(ns).map(x=>nmB(x.n,hl)).join('・')}</div>
     ${A?'':rolesHTML(key,id)}
     <button class="btn sw ${on?'on':''}" data-act="borrow" role="switch" aria-checked="${on}"><span class="knob"></span>🌙 短調から音をかりる</button>
     <div class="chips">${shapeChain(key,id)}</div>
-    <div class="msg">${A?A.msg:state.autoWait?'👆 どこかをタッチすると、<b>音をかりるところ</b>がはじまるよ':heroMsg(key,id)}</div>
+    <div class="msg">${A?A.msg:state.autoWait?'👆 どこかをタッチすると、<b>音をかりるところ</b>が始まるよ':heroMsg(key,id)}</div>
   </section>`;
 }
 function scaleCard(key,id){
@@ -451,14 +451,14 @@ function scaleCard(key,id){
     return `<span class="${cls} ${minor&&used.has(n.letter)&&df?'use':''}">${PA.nmH(n)}</span>`;
   };
   const dg=[1,2,3,4,5,6,7].map(d=>`<span class="dg">${d}</span>`).join('');
-  return `<section class="card"><h2>🌙 短調から音をかりるって？<small>${PA.keyName(key)}と${PA.keyName(pm)}は主音がおなじ</small></h2>
+  return `<section class="card"><h2>🌙 短調から音をかりるって？<small>${PA.keyName(key)}と${PA.keyName(pm)}は主音が同じ</small></h2>
     <p class="slab">☀️ ${PA.keyName(key)}の音階</p>
     <div class="scl">${dg}${maj.map((n,i)=>cell(n,i,false)).join('')}</div>
     <p class="slab">🌙 ${PA.keyName(pm)}の音階（調号のとおり）</p>
     <div class="scl">${nat.map((n,i)=>cell(n,i,true)).join('')}</div>
-    ${pm.enh?`<p class="note">${PA.keyName(pm)}は、ふつうは<b>${PA.keyName(PA.minorKey(pm.idx))}</b>と書く調（おなじけんばん）。準固有和音では主音の文字をかえずにかりるので、${PA.keyName(pm)}として見るよ。</p>`:''}
+    ${pm.enh?`<p class="note">${PA.keyName(pm)}は、ふつうは<b>${PA.keyName(PA.minorKey(pm.idx))}</b>と書く調（同じけんばん）。準固有和音では主音の文字をかえずにかりるので、${PA.keyName(pm)}として見るよ。</p>`:''}
     <p class="note" style="color:var(--ink)">ちがうのは<b>3・6・7ばんめ</b>。準固有和音（短調からかりた和音）でかりるのはおもに<b class="bo">6ばんめ${q(nat[5])}</b>（♭Ⅵでは3ばんめ${q(nat[2])}も）。${c.length?`いまの和音でかりているのは${c.map(x=>q(x.b)).join('と')}（下線）。`:''}</p>
-    <div class="rule" style="margin-top:10px">調号は${PA.keyName(key)}のまま。かりた音には<b>臨時記号</b>をつける。<br><span style="font-weight:400">長調の明るさの中に、短調のかげがすっとさすよ。</span></div>
+    <div class="rule" style="margin-top:10px">調号は${PA.keyName(key)}のまま。かりた音には<b>臨時記号</b>をつける。<br><span style="font-weight:400">長調の明るさの中に、短調のかげが、すっとさすよ。</span></div>
   </section>`;
 }
 function kbCaption(key,id,seq){
@@ -472,33 +472,33 @@ function kbCaption(key,id,seq){
 const AB_NM={A:'①',B:'②'};
 function abCard(key,id){
   const ab=state.ab, D=H.diatonic(key,id), B=H.borrowed(key,id), bl=labelOf(key,id,true), dl=labelOf(key,id,false);
-  let h=`<section class="card"><h2>👂 どっちがかりた和音？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>① と ②、どちらもそのあと${nextLab(id)}を鳴らすよ</small></h2>
+  let h=`<section class="card"><h2>👂 どっちがかりた和音？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>①と②の後には、どちらも${nextLab(id)}が鳴るよ</small></h2>
     <p class="note" style="margin-top:0">ひとつは${dl}、もうひとつは${bl}（短調のかげがあるほう）。どっちかな？</p>`;
-  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext">🎲 もんだいを出す</button></div></section>`;
-  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ ① をきく</button><button class="btn" data-act="abplay" data-v="B">▶️ ② をきく</button></div>`;
-  if(ab.answer==null) return h+`<p class="askline">🌙 かりた和音（${bl}）は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">① が${bl}</button><button class="btn night" data-act="qchoose" data-v="B">② が${bl}</button></div></section>`;
+  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext">🎲 問題を出す</button></div></section>`;
+  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ ①をきく</button><button class="btn" data-act="abplay" data-v="B">▶️ ②をきく</button></div>`;
+  if(ab.answer==null) return h+`<p class="askline">🌙 かりた和音（${bl}）は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">①が${bl}</button><button class="btn night" data-act="qchoose" data-v="B">②が${bl}</button></div></section>`;
   const ok=ab.answer===ab.b, other=ab.b==='A'?'B':'A', c=changes(key,id);
   return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！もういちど聴きくらべてみよう。'}
       <b>${AB_NM[ab.b]}</b>が${bl}（${members(B).map(x=>nmB(x.n)).join('・')}）、<b>${AB_NM[other]}</b>が${dl}（${members(D).map(x=>nmW(x.n)).join('・')}）。
       <br>${c.map(x=>q(x.b)).join('と')}が入ると、ひびきに短調のかげがさすよ。</div>
-    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 つぎのもんだい</button></div></section>`;
+    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 次の問題</button></div></section>`;
 }
 function linksCard(key){
   const n6=H.neapolitan(key), b2=n6[n6.length-1];
   return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>ナポリの六・増六・減七と半減七など</small></h2></summary><div class="links">
     <a class="btn" href="neapolitan.html" data-go="neapolitan">🌋 <span>ナポリの六 ›<small>♭Ⅱ（${PA.nmH(b2)}）の第1転回形。長調では6ばんめもかりる</small></span></a>
-    <a class="btn" href="aug6.html" data-go="aug6">↔️ <span>増六の和音 ›<small>長調では下げた6ばんめをかりてつくる</small></span></a>
+    <a class="btn" href="aug6.html" data-go="aug6">↔️ <span>増六の和音 ›<small>長調では、6ばんめを下げた音をかりてつくる</small></span></a>
     <a class="btn" href="dim-halfdim.html" data-go="dim-halfdim">⚖️ <span>減七と半減七 ›<small>○Ⅶ7をⅦ7として見た名前（根音・第3音・第5音・第7音）でくらべる</small></span></a>
-    <a class="btn" href="minor-why.html" data-go="minor-why">🌙 <span>なぜ7ばんめを上げるの？ ›<small>短調のⅤが長調とおなじ導音をつかうわけ</small></span></a>
+    <a class="btn" href="minor-why.html" data-go="minor-why">🌙 <span>なぜ7ばんめを上げるの？ ›<small>短調のⅤが長調と同じ導音を使うわけ</small></span></a>
   </div></details>`;
 }
 // 「ためしてみる」：変化和音クイズのレベル4（増六・ナポリ・Ⅳm・♭Ⅵ）をいまの調で5もん
 function tryCard(){
   const key=PA.keyDeck.id(false,state.keyIdx);
   return PA.tryHTML({to:'chroma-quiz',params:{key,mode:'keys',level:4,n:5},
-    sub:'レベル4で、Ⅳm・♭Ⅵ（短調からかりる和音）をけんばんでおさえてみよう（ナポリの六・増六も出るよ）。いまの調で5もん。',
-    btn:'🎯 5もんためしてみる',
-    links:[{to:'chroma-quiz',params:{key,mode:'keys',chord:'ivm,bvi',n:5},label:'Ⅳm と♭Ⅵだけで5もん'}]});
+    sub:'けんばんで、Ⅳm・♭Ⅵ（短調からかりる和音）をおさえてみよう。レベル4なので、ナポリの六・増六も出るよ。いまの調で5問。',
+    btn:'🎯 5問ためしてみる',
+    links:[{to:'chroma-quiz',params:{key,mode:'keys',chord:'ivm,bvi',n:5},label:'Ⅳmと♭Ⅵだけで5問'}]});
 }
 // この調でかりた音にダブルフラットがつく音（なければ null）
 const dblOf=key=>{for(const id of IDS){const n=H.borrowed(key,id).find(n=>n.acc===-2);if(n) return n;}return null;};
@@ -506,13 +506,13 @@ function tipsHTML(key){
   const dbl=dblOf(key), six=key.scale[5], six2=parMinor(key).nat[5];
   const eq=dbl&&{letter:PA.mod(dbl.letter-1,7),acc:PA.spell(PA.mod(dbl.letter-1,7),dbl.midi),midi:dbl.midi};
   return `<details class="more"><summary>💡 もっとくわしく</summary><ul>
-    <li><b>準固有和音</b>（じゅんこゆうわおん）は、和音記号の左上に<b>○</b>をつけて（○Ⅳ・○Ⅵなど）書くよ。本によっては「借用和音」ともよぶよ（ただし「借用和音」は、<a href="secondary.html">副属和音</a>のような、ほかの調からかりる和音のことをさすこともある）。</li>
-    <li>かりた音（とくに6ばんめを下げた音）は<b>下へすすみたがる</b>。だから ○Ⅳ・○Ⅱ・○Ⅵ・○Ⅴ9・○Ⅶ7のあとは、その音が半音下へすすむ和音（ⅠやⅤ）がくるよ。</li>
-    <li>6ばんめを半音下げるとき（${q(six,false)} → ${q(six2)}）は、<b>おなじ声</b>で下げる（Ⅳ → ○Ⅳ）。ちがう声にわけると、ちぐはぐに聞こえるよ。かりた音をもとにもどす（○Ⅳ → Ⅳ）のも、ふつうはしない。</li>
-    <li>7ばんめはかりないよ。短調でもⅤ・Ⅴ9・Ⅶ7では7ばんめを半音上げて<b>導音</b>（主音にすすみたがる音。${q(key.scale[6],false)}）にするので、長調とおなじ音だから。<a href="minor-why.html" data-go="minor-why">なぜ7ばんめを上げるの？</a></li>
-    <li>Ⅴ7・Ⅴ9の第3音（導音）は、長調でも短調でもおなじ音。かりるのは第9音だけ。</li>
+    <li><b>準固有和音</b>（じゅんこゆうわおん）は、和音記号の左上に<b>○</b>をつけて（○Ⅳ・○Ⅵなど）書くよ。本によっては「借用和音」ともよぶよ（ただし「借用和音」は、<a href="secondary.html">副属和音</a>のような、ほかの調からかりる和音をさすこともある）。</li>
+    <li>かりた音（とくに6ばんめを下げた音）は<b>下へすすみたがる</b>。だから、○Ⅳ・○Ⅱ・○Ⅵ・○Ⅴ9・○Ⅶ7の後は、その音が半音下へすすむ和音（ⅠやⅤ）がくるよ。</li>
+    <li>6ばんめを半音下げるとき（${q(six,false)} → ${q(six2)}）は、<b>同じ声</b>で下げる（Ⅳ → ○Ⅳ）。ちがう声にわけると、ちぐはぐに聞こえるよ。かりた音をもとにもどす（○Ⅳ → Ⅳ）のも、ふつうはしない。</li>
+    <li>7ばんめはかりないよ。短調でもⅤ・Ⅴ9・Ⅶ7では7ばんめを半音上げて<b>導音</b>（主音にすすみたがる音。${q(key.scale[6],false)}）にするので、長調と同じ音だから。<a href="minor-why.html" data-go="minor-why">なぜ7ばんめを上げるの？</a></li>
+    <li>Ⅴ7・Ⅴ9の第3音（導音）は、長調でも短調でも同じ音。かりるのは第9音だけ。</li>
     ${dbl?`<li>${PA.keyName(key)}では、かりた音に<b>ダブルフラット</b>（${PA.H('𝄫')}）がつくことがあるよ。${q(dbl)}は${q({letter:dbl.letter,acc:0},false)}に♭を2つつけた音。けんばんでは${q(eq,false)}の鍵をひくよ。</li>`:''}
-    <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と基準の音（ラ＝440〜443Hz）をえらべるよ。</li>
+    <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と基準の音（ラ＝440〜443Hz）を選べるよ。</li>
   </ul></details>`;
 }
 // 📖 ことばメモ：本や楽譜で見かける名前を、やさしいことばで（いまの調の音をれいに）。よみかたは小さく
@@ -520,17 +520,17 @@ function termsHTML(key){
   const pm=parMinor(key), six=key.scale[5], six2=pm.nat[5];
   // おなじ主音の短調が変イ・変ニ・変ト短調のときは、おなじけんばんの短調の名前をそえる
   const pmDbl=Object.values(pm.sig).some(a=>Math.abs(a)>1), pmEq=pm.enh?PA.minorKey(pm.idx):null;
-  const pmNote=!pm.enh?'':pmDbl?`${PA.keyName(pm)}は調号に${PA.H('𝄫')}がいるので、ふつうはおなじけんばんの${PA.keyName(pmEq)}で書くよ。`
-    :`${PA.keyName(pm)}は${PA.sigLabel(pm)}。おなじけんばんの${PA.keyName(pmEq)}（${PA.sigLabel(pmEq)}）で書くことも多いよ。`;
+  const pmNote=!pm.enh?'':pmDbl?`${PA.keyName(pm)}は調号に${PA.H('𝄫')}がいるので、ふつうは同じけんばんの${PA.keyName(pmEq)}で書くよ。`
+    :`${PA.keyName(pm)}は${PA.sigLabel(pm)}。同じけんばんの${PA.keyName(pmEq)}（${PA.sigLabel(pmEq)}）で書くことも多いよ。`;
   return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や楽譜で見かける名前）</summary><dl>
     <dt>準固有和音<span class="yomi">（じゅんこゆうわおん）</span></dt>
-      <dd>長調の中で、おなじ主音の短調から音をかりた和音。記号の左上に ○ をつけるよ（${IDS.map(i=>PA.H(H.BORROWED[i].label)).join('・')}）。</dd>
+      <dd>長調の中で、同じ主音の短調から音をかりた和音。記号の左上に○をつけるよ（${IDS.map(i=>PA.H(H.BORROWED[i].label)).join('・')}）。</dd>
     <dt>同主調・同主短調<span class="yomi">（どうしゅちょう・どうしゅたんちょう）</span></dt>
-      <dd>主音がおなじ長調と短調のペア。${PA.keyName(key)}の同主短調は${PA.keyName(pm)}。${pmNote}調号がおなじペア（${PA.keyName(PA.minorKey(state.keyIdx))}）は「平行調」といって、べつのもの。</dd>
+      <dd>主音が同じ長調と短調のペア。${PA.keyName(key)}の同主短調は${PA.keyName(pm)}。${pmNote}調号が同じペア（${PA.keyName(PA.minorKey(state.keyIdx))}）は「平行調」といって、べつのもの。</dd>
     <dt>借用和音<span class="yomi">（しゃくようわおん）</span></dt>
       <dd>ほかの調からかりてきた和音。本によって、このページの和音（準固有和音）のことも、<a href="secondary.html">副属和音</a>のこともある。</dd>
     <dt>♭6<span class="yomi">（フラットろく）</span></dt>
-      <dd>音階の6ばんめを半音下げた音（${q(six,false)} → ${q(six2)}）。かりる音の中心で、半音下の5ばんめへすすみたがる。${PA.keyName(key)}では楽譜に<b class="bo">${accOf(six2)}</b>をつけて書くよ。</dd>
+      <dd>音階の6ばんめを半音下げた音（${q(six,false)} → ${q(six2)}）。かりる音の中心で、半音下の5ばんめの音へすすみたがる。${PA.keyName(key)}では楽譜に<b class="bo">${accOf(six2)}</b>をつけて書くよ。</dd>
     <dt>自然的短音階<span class="yomi">（しぜんてきたんおんかい）</span></dt>
       <dd>調号のとおりにならべた短音階。上の「🌙 ${PA.keyName(pm)}の音階」がこれ。</dd>
   </dl></details>`;
@@ -565,7 +565,7 @@ function render(){
   h+=linksCard(key);
   h+=tipsHTML(key);
   h+=termsHTML(key);
-  h+=`<p class="note">※ 音の高さはふつうのピアノとおなじです。${dblOf(key)?`${PA.H('𝄫')}はダブルフラットの書き方です。`:''}</p></div>`;
+  h+=`<p class="note">※ 音の高さはふつうのピアノと同じです。${dblOf(key)?`${PA.H('𝄫')}はダブルフラットの書き方です。`:''}</p></div>`;
   PA.paint(document.getElementById('view'),h,'borrowed:'+state.keyIdx+':'+id);
   if(state.anim||state.cad||state.res===1) PA.follow(document.getElementById('view')); // 音の高さがかわっても光る鍵が見えるように
   renderActions();
@@ -615,7 +615,7 @@ async function runBorrow(){
   // ② かりる音を1つずつ半音下げる
   state.on=true;
   A.ns=B; A.hl=true; A.marks=ghostMarks(voiceMarks(B,NIGHT,true),c.map(x=>x.d));
-  A.msg=`<b>②</b> ${PA.keyName(pm)}（おなじ主音の短調）から${c.map(x=>`${q(x.d,false)} → <b class="bo">${q(x.b)}</b>`).join('、')}をかりる。調号はそのまま、<b>臨時記号</b>をつけるよ。`;
+  A.msg=`<b>②</b> ${PA.keyName(pm)}（同じ主音の短調）から${c.map(x=>`${q(x.d,false)} → <b class="bo">${q(x.b)}</b>`).join('、')}をかりる。調号はそのまま、<b>臨時記号</b>をつけるよ。`;
   A.kbCap='赤＝かりた音、白いわく＝もとの音';
   render();
   c.forEach((x,i)=>PA.playNote(x.b.midi,i*0.45,1.1,0.24));

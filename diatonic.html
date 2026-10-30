@@ -204,26 +204,26 @@ const namesW=(ns,sep)=>ns.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join(se
 
 /* ===== ことば ===== */
 function chordMsg(key,d){
-  const t=DIA.tones(key,d), ms=[`${PA.keyName(key)}の<b>${ROM[d]}</b>は、音階の<b>${d+1}ばんめ${q(t[0])}</b>からひとつとばしで3つ → <b class="big">${PA.namesH(t)}</b>`];
+  const t=DIA.tones(key,d), ms=[`${PA.keyName(key)}の<b>${ROM[d]}</b>は、音階の<b>${d+1}ばんめ${q(t[0])}</b>から、ひとつとばしで3つ → <b class="big">${PA.namesH(t)}</b>`];
   const r=t.find(n=>n.raised);
   if(r) ms.push(`🌙 短調のⅤ・Ⅶは、7ばんめ${q(key.natLT)}を半音上げて<b>${q(r)}</b>にするよ。<a href="minor-why.html">なぜ？</a>`);
-  else if(key.minor&&d===2) ms.push(`🌙 Ⅲでは7ばんめ${q(key.natLT)}を上げないで、調号のままつかうよ。`);
+  else if(key.minor&&d===2) ms.push(`🌙 Ⅲでは7ばんめ${q(key.natLT)}を上げないで、調号のまま使うよ。`);
   return ms.join('<br>');
 }
 function famNote(key,f){
   const F=DIA.FAMS[f];
-  return F.ds.filter(d=>d!==F.head).map(d=>`${ROM[d]}は${ROM[F.head]}と<b class="nw">${PA.namesH(DIA.common(key,d,F.head))}</b>がおなじ`).join('、')+'。'+(f===0?FAM0:'');
+  return F.ds.filter(d=>d!==F.head).map(d=>`${ROM[d]}は${ROM[F.head]}と<b class="nw">${PA.namesH(DIA.common(key,d,F.head))}</b>が同じ`).join('、')+'。'+(f===0?FAM0:'');
 }
 // Ⅵ・Ⅲはほかの和音とも2つおなじ。でもふつうはⅠのなかま
-const FAM0='（ⅥはⅣとも、ⅢはⅤとも2つおなじだけど、ふつうはⅠのなかまに入れるよ）';
+const FAM0='（ⅥはⅣとも、ⅢはⅤとも2つ同じだけど、ふつうはⅠのなかまに入れるよ）';
 function tipsHTML(key){
   const pat=minor=>{const k=PA.keyOf(minor,0,60);return [0,1,2,3,4,5,6].map(d=>`${ROM[d]}${feelOf(k,d).em}`).join(' ');};
   const li=[
-    `<b>ローマ数字＝音階のなんばんめ</b>。1ばんめから7ばんめまで、どの音からもひとつとばしで3つつめるので、和音は<b>7つ</b>。`,
+    `<b>ローマ数字＝音階のなんばんめ</b>。1ばんめから7ばんめまで、どの音からでも、ひとつとばしで3つつめるので、和音は<b>7つ</b>。`,
     `がくふではどれも<b>線・線・線</b>か<b>間・間・間</b>。7つならべると、かいだんみたいに1つずつ上がるよ。`,
-    `<b>ひびきのならびはどの長調でもおなじ</b>：${pat(false)}。ハ長調（白いけんばんだけ）でおぼえるとかんたん。`,
-    `このアプリの<b>短調</b>はどの調でも：${pat(true)}。`,
-    `<b>なかま</b>は「おなじ音が2つある」和音。だからにたはたらきをするよ。${famNote(key,0)}`,
+    `<b>ひびきのならびは、どの長調でも同じ</b>：${pat(false)}。ハ長調（白いけんばんだけ）でおぼえると、かんたん。`,
+    `このアプリの<b>短調</b>は、どの調でも：${pat(true)}。`,
+    `<b>なかま</b>は「同じ音が2つある」和音。だから、はたらきがにている。${famNote(key,0)}`,
     `${key.minor?`🌙 <b>短調のⅤ・Ⅶ</b>は7ばんめ${q(key.natLT)}を半音上げて${q(key.lt)}。Ⅴが明るくなって、Ⅰにもどりたい気もちが強くなるよ。`:`🌙 <b>短調</b>ではⅤ・Ⅶだけ7ばんめを半音上げるよ。調を短調にして見てみよう。`}`
   ];
   return `<details class="more tips" data-d="tips"><summary>💡 おぼえかたのコツ</summary><ol>${li.map(x=>`<li>${x}</li>`).join('')}</ol></details>`;
@@ -248,9 +248,9 @@ function termsHTML(key){
     <dt>${yomi('主和音','しゅわおん')}・${yomi('下属和音','かぞくわおん')}・${yomi('属和音','ぞくわおん')}</dt>
     <dd>Ⅰ・Ⅳ・Ⅴのべつのよびかた。いまの調ではⅠ＝${t(0)}、Ⅳ＝${t(3)}、Ⅴ＝${t(4)}。</dd>
     <dt>${yomi('根音','こんおん')}</dt>
-    <dd>ひとつとばしでつんだときのいちばん下の音。Ⅵなら6ばんめ、Ⅱなら2ばんめの音が根音。</dd>${key.minor?`
+    <dd>和音を「ひとつとばし」でつんだとき、いちばん下にくる音。Ⅵなら6ばんめ、Ⅱなら2ばんめの音が根音。</dd>${key.minor?`
     <dt>${yomi('和声的短音階','わせいてきたんおんかい')}</dt>
-    <dd>7ばんめを半音上げた短調の音階。このアプリの短調のⅤ・Ⅶはこの音階からつくるよ。Ⅲもこの音階でつくると${yomi('増三和音','ぞうさんわおん')}（下も上も広い3度の、ふしぎなひびき）になるので、ふつうは調号どおりの${t(2)}をつかう。</dd>`:''}
+    <dd>7ばんめを半音上げた短調の音階。このアプリの短調のⅤ・Ⅶは、この音階からつくるよ。Ⅲもこの音階でつくると${yomi('増三和音','ぞうさんわおん')}（下も上も広い3度の、ふしぎなひびき）になるので、ふつうは調号どおりの${t(2)}を使う。</dd>`:''}
   </dl></details>`;
 }
 
@@ -261,15 +261,15 @@ function staffBox(svg,name,scale){
 }
 function famCard(key){
   const d0=state.deg, fl=DIA.flow(key,state.prog), f0=DIA.famOf(d0);
-  let h=`<section class="card"><h2>👪 3つのなかま<small>おなじ音が2つある和音は、にたはたらきをするよ</small></h2>`;
+  let h=`<section class="card"><h2>👪 3つのなかま<small>同じ音が2つある和音は、はたらきがにている</small></h2>`;
   h+=DIA.FAMS.map((F,f)=>`<div class="frow ${f===f0?'on':''}" style="--fc:${FAMC[f]};--fl:${FAML[f]}"><h3>${FAMN[f]}<small>${FAMW[f]}</small></h3>
-    <div class="fmem" role="group" aria-label="${FAMN[f]}">${F.ds.map(d=>`<button class="${d===d0?'on':''}" style="--c:${colOf(d)};--t:${tcolOf(d)}" data-act="fdeg" data-v="${d}" aria-pressed="${d===d0}" aria-label="${ROM[d]} ${PA.namesT(DIA.tones(key,d))}">${ROM[d]}</button>`).join('')}</div>
+    <div class="fmem" role="group" aria-label="${FAMN[f]}">${F.ds.map(d=>`<button class="${d===d0?'on':''}" style="--c:${colOf(d)};--t:${tcolOf(d)}" data-act="fdeg" data-v="${d}" aria-pressed="${d===d0}" aria-label="${ROM[d]}（${PA.namesT(DIA.tones(key,d))}）">${ROM[d]}</button>`).join('')}</div>
     <p class="note">${famNote(key,f)}</p></div>`).join('');
-  h+=`<h2 style="margin-top:16px">🎧 ながれで聴く<small>上の色の線＝なかま。タップするとその和音が鳴るよ</small></h2>`;
-  h+=PA.seg('prog',[['basic','Ⅰ・Ⅳ・Ⅴだけ'],['fam','なかまもつかう']],state.prog,'full');
+  h+=`<h2 style="margin-top:16px">🎧 ながれで聴く<small>上の色の線＝なかま。タップすると、その和音が鳴るよ</small></h2>`;
+  h+=PA.seg('prog',[['basic','Ⅰ・Ⅳ・Ⅴだけ'],['fam','なかまも使う']],state.prog,'full');
   h+=`<div class="seq" style="--n:${fl.length}">`+fl.map((c,i)=>`<button class="scard ${i===state.step?'on':''}" style="--c:${colOf(c.d)};--t:${tcolOf(c.d)};--l:${lcolOf(c.d)};--fc:${FAMC[DIA.famOf(c.d)]}" data-act="pstep" data-v="${i}" aria-pressed="${i===state.step}" aria-label="${i+1}つめ${ROM[c.d]}"><span class="num">${ROM[c.d]}</span><span class="nm"><span class="lh">${PA.nmH(c.lh[0])}</span>${stackNames(c.rh)}</span></button>`).join('')+`</div>`;
   h+=`<p class="flow">${state.prog==='fam'
-    ?'おちつく（Ⅰ・Ⅵ）→ ひろがる（Ⅳ・Ⅱ）→ もどりたくなる（Ⅴ）→ おちつく（Ⅰ）。<b>Ⅵ・Ⅱ</b>をはさむと、おなじながれでも色がふえるよ。'
+    ?'おちつく（Ⅰ・Ⅵ）→ ひろがる（Ⅳ・Ⅱ）→ もどりたくなる（Ⅴ）→ おちつく（Ⅰ）。<b>Ⅵ・Ⅱ</b>をはさむと、同じながれでも色がふえるよ。'
     :'おちつく（Ⅰ）→ ひろがる（Ⅳ）→ もどりたくなる（Ⅴ）→ おちつく（Ⅰ）。いつものながれ。'}</p>`;
   const cols=fl.map((c,i)=>({notes:c.rh,lh:c.lh,color:colOf(c.d),accColor:LT,op:state.step<0||i===state.step?1:0.3,label:ROM[c.d],labelColor:colOf(c.d)}));
   h+=`<div style="margin-top:8px">${staffBox(PA.staffSVG(key,cols,{grand:true,colW:58}),'pstaff',0.62)}</div>`;
@@ -277,8 +277,8 @@ function famCard(key){
   return h;
 }
 function linksCard(key){
-  return `<section class="card"><h2>🔗 このあとつかうよ<small>Ⅱ・Ⅲ・Ⅵも、あとのページでたくさん出てくる</small></h2><div class="links">
-    <a class="btn" href="ending.html"><span>🏁 おわりかた<small>偽終止：Ⅴ7のあと、ⅠのかわりになかまのⅥへ</small></span></a>
+  return `<section class="card"><h2>🔗 このあと使うよ<small>Ⅱ・Ⅲ・Ⅵも、あとのページでたくさん出てくる</small></h2><div class="links">
+    <a class="btn" href="ending.html"><span>🏁 おわりかた<small>偽終止：Ⅴ7のあと、Ⅰのかわりに、なかまのⅥへ</small></span></a>
     <a class="btn" href="doppel.html"><span>🔺 Ⅱ7とドッペルドミナント<small>Ⅱにもうひとつ音をのせたⅡ7</small></span></a>
     <a class="btn" href="secondary.html"><span>🎯 副属和音<small>Ⅱ・Ⅲ・Ⅵなどの前につけるⅤ7</small></span></a>
   </div></section>`;
@@ -294,9 +294,9 @@ function quizCard(key){
     if(done){
       const ok=x.pick===ans;
       if(x.type==='notes') fb=`${ROM[x.d]}は${x.d+1}ばんめ${q(t[0])}からひとつとばし → <b>${PA.namesH(t)}</b>`;
-      else if(x.type==='fam'){const F=DIA.FAMS[ans];fb=`${ROM[x.d]}は${ROM[F.head]}と<b>${PA.namesH(DIA.common(key,x.d,F.head))}</b>がおなじ → <b>${FAMN[ans]}</b>（${FAMW[ans]}）`;}
+      else if(x.type==='fam'){const F=DIA.FAMS[ans];fb=`${ROM[x.d]}は${ROM[F.head]}と<b>${PA.namesH(DIA.common(key,x.d,F.head))}</b>が同じ → <b>${FAMN[ans]}</b>（${FAMW[ans]}）`;}
       else fb=`${ROM[x.d]}（${PA.namesH(t)}）は<b>${FEEL[ans].em} ${FEEL[ans].w}</b>（${FEEL[ans].n}）`;
-      fb=`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'⭕ せいかい！':'❌ ざんねん。'} ${fb}</div>`;
+      fb=`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'⭕ 正解！':'❌ ざんねん。'}${fb}</div>`;
     }
     const ch=x.choices.map(c=>{
       const cls=done?(c===ans?'right':c===x.pick?'wrong':''):'';
@@ -305,8 +305,8 @@ function quizCard(key){
     return `<div class="qbox"><p class="qtext"><span>Q${i+1}. ${qt}</span>${x.type==='feel'?`<button class="btn small" data-act="qplay" data-v="${x.d}" aria-label="${ROM[x.d]}を聴く">🔊 聴く</button>`:''}</p>
       <div class="choices ${c3?'c3':''}">${ch}</div>${fb}</div>`;
   }).join('');
-  return `<section class="card"><h2>✅ たしかめよう<small>えらぶとすぐこたえが出るよ</small></h2>${rows}
-    <div class="row" style="margin-top:12px"><button class="btn small" data-act="qnew">🔄 ほかのもんだい</button></div></section>`;
+  return `<section class="card"><h2>✅ たしかめよう<small>選ぶと、すぐこたえが出るよ</small></h2>${rows}
+    <div class="row" style="margin-top:12px"><button class="btn small" data-act="qnew">🔄 ほかの問題</button></div></section>`;
 }
 let lastDeg=-1;
 function render(){
@@ -315,12 +315,12 @@ function render(){
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
     <div class="chords" role="group" aria-label="7つの和音">`+[0,1,2,3,4,5,6].map(k=>{
       const tk=DIA.tones(key,k), fe=feelOf(key,k);
-      return `<button class="cbtn ${k===d?'on':''}" style="--c:${colOf(k)};--t:${tcolOf(k)};--l:${lcolOf(k)}" data-act="deg" data-v="${k}" aria-pressed="${k===d}" aria-label="${ROM[k]} ${PA.namesT(tk)} ${fe.w}"><span class="num">${ROM[k]}</span><span class="fe" aria-hidden="true">${fe.em}</span><span class="nm">${stackNames(tk)}</span></button>`;
+      return `<button class="cbtn ${k===d?'on':''}" style="--c:${colOf(k)};--t:${tcolOf(k)};--l:${lcolOf(k)}" data-act="deg" data-v="${k}" aria-pressed="${k===d}" aria-label="${ROM[k]}（${PA.namesT(tk)}）${fe.w}"><span class="num">${ROM[k]}</span><span class="fe" aria-hidden="true">${fe.em}</span><span class="nm">${stackNames(tk)}</span></button>`;
     }).join('')+`</div>
     <p class="note legend">☀️ 明るい　🌧️ さびしい　😖 きゅうくつ${key.minor?`　🌙 Ⅴ・Ⅶは7ばんめを半音上げる（<a href="minor-why.html">なぜ？</a>）`:''}</p>
     <section class="card hero" style="--c:${col}">
       <div class="hero-top"><span class="badge" style="--c:${col}">${ROM[d]}</span>
-        <div style="min-width:0"><div class="hk">${PA.keyName(key)}の${ROM[d]}</div><div class="hn">${namesW(t,'&nbsp;・ ')}</div><div class="hs">コードネーム${PA.H(DIA.sym(t))}</div></div></div>
+        <div style="min-width:0"><div class="hk">${PA.keyName(key)}の${ROM[d]}</div><div class="hn">${namesW(t,'・')}</div><div class="hs">コードネーム${PA.H(DIA.sym(t))}</div></div></div>
       <div class="tags"><span class="tag">${F.em} ${F.w}（${F.n}）</span><span class="tag fam" style="--fc:${FAMC[f]};--fl:${FAML[f]}">${FAMN[f]}・${FAMW[f]}</span></div>
       <div class="msg" style="margin-top:10px">${chordMsg(key,d)}</div>
     </section>`;
@@ -329,15 +329,15 @@ function render(){
   h+=`<section class="card"><h2>🎹 けんばん<small>さわると音が出るよ。オレンジの印＝白鍵どうしがとなり</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(60,88,marks)}</div></section>`;
   const st=PA.stepOf(t[0]);
   const cols=[0,1,2,3,4,5,6].map(k=>({notes:DIA.tones(key,k),color:colOf(k),ltColor:LT,accColor:LT,op:k===d?1:0.28,label:ROM[k],labelColor:colOf(k)}));
-  h+=`<section class="card"><h2>🎼 がくふ<small>7つならべるとかいだん。いまの和音がこい色</small></h2>${staffBox(PA.staffSVG(key,cols,{colW:52}),'staff',0.6)}
-    <p class="note">${ROM[d]}はひとつとばしだから<b>${(st-30)%2===0?'線・線・線':'間・間・間'}</b>。</p></section>`;
+  h+=`<section class="card"><h2>🎼 がくふ<small>7つならべると、かいだんになる。いまの和音がこい色</small></h2>${staffBox(PA.staffSVG(key,cols,{colW:52}),'staff',0.6)}
+    <p class="note">${ROM[d]}の音はひとつとばし。だから<b>${(st-30)%2===0?'線・線・線':'間・間・間'}</b>。</p></section>`;
   h+=famCard(key)+linksCard(key)+quizCard(key)+tipsHTML(key)+termsHTML(key)+`</div>`;
   const view=document.getElementById('view');
   PA.paint(view,h,state.minor+':'+state.keyIdx);
   if(d!==lastDeg) PA.follow(view); // 和音がかわったら鍵盤をその和音へ（見えていれば動かさない）
   lastDeg=d;
   PA.paint(document.getElementById('actions'),
-    `<button class="btn primary" data-act="play" data-hot="listen">🔊 いっしょに</button><button class="btn" data-act="arp">🎶 ひとつずつ</button><button class="btn" data-act="next" data-hot="next" aria-label="つぎの和音">つぎ ➡</button>`,'bar');
+    `<button class="btn primary" data-act="play" data-hot="listen">🔊 いっしょに</button><button class="btn" data-act="arp">🎶 ひとつずつ</button><button class="btn" data-act="next" data-hot="next" aria-label="次の和音">次 ➡</button>`,'bar');
 }
 
 /* ===== 音 ===== */

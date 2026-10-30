@@ -115,8 +115,8 @@ function famInfo(key,f){
   const lines={
     V:`Ⅴは音階の5ばんめ「${PA.nmH(root)}」（根音）からひとつとばしで3つ。7ばんめを上げるので、短調でも<b>明るい長三和音</b>になるよ。`,
     V7:`Ⅴ7はⅤに、もうひとつとばして「${PA.nmH(sev)}」（第7音）をのせた4つの音。`,
-    V9:`Ⅴ9はⅤ7に、さらに「${PA.nmH(ninth)}」（第9音）をのせた5つの音。第9音は音階の6ばんめ。<br><b>${PA.keyName(key.par)}</b>（おなじ主音の長調）のⅤ9ではここが「${PA.nmH(parNinth)}」になる。短調のⅤ9のほうが暗く、ドキッとするひびき。`,
-    DIM:`Ⅴ9から根音「${PA.nmH(root)}」をはぶくと<b>${PA.namesH(t)}</b>。これが<b>減七の和音</b>。<br>となりどうしがぜんぶおなじ間かく。だから減七は音のくみあわせでいうと<b>3つのなかま</b>しかないよ（下の「かたちでおぼえる」）。<br>いちばん下といちばん上のはばが、ふつうの7度よりせまい（けんばんでは6度とおなじはば）ので「減七」とよぶよ。`
+    V9:`Ⅴ9はⅤ7に、さらに「${PA.nmH(ninth)}」（第9音）をのせた5つの音。第9音は音階の6ばんめ。<br><b>${PA.keyName(key.par)}</b>（同じ主音の長調）のⅤ9ではここが「${PA.nmH(parNinth)}」になる。短調のⅤ9のほうが暗く、ドキッとするひびき。`,
+    DIM:`Ⅴ9から根音「${PA.nmH(root)}」をはぶくと<b>${PA.namesH(t)}</b>。これが<b>減七の和音</b>。<br>となりどうしが、ぜんぶ同じ間かく。だから減七は、音のくみあわせで見ると<b>3つのなかま</b>しかないよ（下の「かたちでおぼえる」）。<br>いちばん下といちばん上のはばが、ふつうの7度よりせまい（けんばんでは6度と同じはば）ので「減七」とよぶよ。`
   };
   return {t,line:lines[f]};
 }
@@ -174,7 +174,7 @@ function shapeCard(key,f){
   const rootL=PA.at(key.harm,4).letter;
   let h=`<h2>🧩 かたちでおぼえる<small>計算しないで、パッとわかるように</small></h2>`;
   if(f!=='DIM'){
-    h+=`<p class="note" style="margin-top:0;color:var(--ink)">白鍵だけの和音は7つ。これをまるごとおぼえて、あとは臨時記号でかえる。<br><b style="color:#8f5a00">ミファ・シドをまたぐとせまい3度（短3度）</b>、またがなければひろい3度（長3度）。</p>`;
+    h+=`<p class="note" style="margin-top:0;color:var(--ink)">白鍵だけの和音は7つ。まずこの7つをおぼえて、あとは臨時記号でかえる。<br><b style="color:#8f5a00">ミファ・シドをまたぐと、せまい3度（短3度）</b>。またがなければ、ひろい3度（長3度）。</p>`;
     h+=['長','短','減'].map(q=>{
       const mine=WHITE_TRIADS.some(w=>w[1]===q&&w[0]===rootL);
       return `<div class="srow ${mine?'on':''}"><b>${q}</b><div class="chips" style="margin:0">${WHITE_TRIADS.filter(w=>w[1]===q).map(([L])=>{
@@ -185,12 +185,12 @@ function shapeCard(key,f){
     h+=`<p class="note">わくのついた和音が、この調のⅤのもとのかたち。上のチップで、調号と導音でどうかわるか見てみよう。</p>`;
   }else{
     const fam=PA.mod(key.lt.midi,3);
-    h+=`<p class="note" style="margin-top:0;color:var(--ink)">減七の和音は、音のくみあわせでいうと<b>3つのなかま</b>（①・②・③）だけ。3つおぼえれば、どの調の減七もすぐわかるよ。</p>`;
+    h+=`<p class="note" style="margin-top:0;color:var(--ink)">減七の和音は、音のくみあわせで見ると<b>3つのなかま</b>（①・②・③）だけ。3つおぼえれば、どの調の減七もすぐわかるよ。</p>`;
     h+=DIM_FAMS.map((ns,i)=>{
       const keys=KEYS.filter(k=>PA.mod(k.lt.midi,3)===i).map(PA.keyName).join('・');
       return `<div class="srow dfam ${i===fam?'on':''}"><b>${FAM_NO[i]}の<br>なかま</b><div style="min-width:0"><b class="n">${PA.namesH(ns.map(([l,a])=>({letter:l,acc:a})))}</b><p class="note">${keys}</p></div></div>`;
     }).join('');
-    h+=`<p class="note">${PA.keyName(key)}の減七「${PA.namesH(famTones(key,'DIM'))}」は<b>${FAM_NO[fam]}のなかま</b>。書き方（♯・♭・<span class="ds">x</span>）は調でかわるけれど、けんばんはおなじ。</p>`;
+    h+=`<p class="note">${PA.keyName(key)}の減七「${PA.namesH(famTones(key,'DIM'))}」は<b>${FAM_NO[fam]}のなかま</b>。書き方（♯・♭・<span class="ds">x</span>）は調でかわるけれど、けんばんは同じ。</p>`;
   }
   return h;
 }
@@ -207,14 +207,14 @@ function termsHTML(key){
   const r=PA.at(key.harm,4), n9=PA.at(key.harm,12), pn9=PA.at(key.par.scale,12), fam=PA.mod(key.lt.midi,3), q=n=>`「${PA.nmH(n)}」`;
   // おなじ主音の長調の調号に x がいるとき（嬰ト・嬰ニ長調）は、おなじけんばんの長調の名前をそえる
   const par=key.par, ei=PA.MAJOR_KEYS.findIndex(([l,a])=>PA.mod(PA.NAT[l]+a,12)===par.tpc);
-  const parNote=par.scale.some(n=>Math.abs(n.acc)>1)&&ei>=0?`${PA.keyName(par)}は調号に${PA.H('𝄪')}がいるので、ふつうはおなじけんばんの${PA.keyName(PA.majorKey(ei))}で書く。`:'';
+  const parNote=par.scale.some(n=>Math.abs(n.acc)>1)&&ei>=0?`${PA.keyName(par)}は調号に${PA.H('𝄪')}がいるので、ふつうは同じけんばんの${PA.keyName(PA.majorKey(ei))}で書く。`:'';
   return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や楽譜で見かける名前）</summary><dl>
     <dt>${yomi('属七の和音','ぞくしちのわおん')}</dt>
       <dd>Ⅴ7のこと。音階の5ばんめ${q(r)}からひとつとばしで4つつんだ和音。${PA.keyName(key)}では${PA.namesH(famTones(key,'V7'))}。</dd>
     <dt>${yomi('属九の和音','ぞくきゅうのわおん')}</dt>
       <dd>Ⅴ9のこと。Ⅴ7の上に、もうひとつとばして第9音をのせた5つの音の和音。</dd>
     <dt>${yomi('短9度','たん9ど')}</dt>
-      <dd>短調のⅤ9の第9音${q(n9)}のこと。${PA.keyName(key.par)}（おなじ主音の長調）のⅤ9の第9音${q(pn9)}より半音ひくい。${parNote}コードネームでは7(♭9) の「♭9」。</dd>
+      <dd>短調のⅤ9の第9音${q(n9)}のこと。${PA.keyName(key.par)}（同じ主音の長調）のⅤ9の第9音${q(pn9)}より半音低い。${parNote}コードネームでは7(♭9)の「♭9」。</dd>
     <dt>${yomi('解決','かいけつ')}</dt>
       <dd>ドキドキする和音が、おちつく和音（Ⅰなど）へすすむこと。このページの「Ⅰへすすむ」のこと。</dd>
     <dt>${yomi('根音省略形','こんおんしょうりゃくけい')}</dt>
@@ -222,7 +222,7 @@ function termsHTML(key){
     <dt>${yomi('和声的短音階','わせいてきたんおんかい')}</dt>
       <dd>7ばんめを半音上げた短音階。このページの和音は、ぜんぶこの音階からつくるよ。</dd>
     <dt>減七の3つのなかま</dt>
-      <dd>減七は4つの音がぜんぶおなじ間かく。もう1つ上につむと、いちばん下の音の1オクターブ上にもどってしまう。だからけんばんで見ると3種類（①・②・③のなかま）だけ。${PA.keyName(key)}は<b>${FAM_NO[fam]}のなかま</b>。</dd>
+      <dd>減七は、4つの音の間かくがぜんぶ同じ。もう1つ上につむと、いちばん下の音の1オクターブ上にもどってしまう。だからけんばんで見ると3種類（①・②・③のなかま）だけ。${PA.keyName(key)}は<b>${FAM_NO[fam]}のなかま</b>。</dd>
   </dl></details>`;
 }
 let lastActions='';
@@ -234,13 +234,13 @@ function render(){
     <div class="fams">`+FAM_KEYS.map(k=>`<button class="fbtn ${k===f?'on':''}" data-act="fam" data-v="${k}" aria-pressed="${k===f}"><span class="num">${FAM[k].label}</span><span class="nm">${PA.namesH(famTones(key,k))}</span></button>`).join('')+`</div>
     <section class="card hero">
       <div class="hero-top"><span class="badge" style="--c:${NIGHT}">${FAM[f].label}</span>
-        <div style="min-width:0"><div class="hk">${PA.keyName(key)}の${FAM[f].title}</div><div class="hn">${info.t.map(n=>`<span style="white-space:nowrap">${ltH(n)}</span>`).join('&nbsp;・ ')}</div>
+        <div style="min-width:0"><div class="hk">${PA.keyName(key)}の${FAM[f].title}</div><div class="hn">${info.t.map(n=>`<span style="white-space:nowrap">${ltH(n)}</span>`).join('・')}</div>
         <div class="hs">コードネーム<b>${famSym(key,f)}</b>　/　<span style="color:${LT}">赤い音＝導音</span>（7ばんめを上げた音）</div></div></div>
       <div class="chips">${shapeChain(key)}</div>
-      <div class="msg" style="margin-top:10px">${A?A.msg:state.autoWait?'👆 どこかをタッチすると<b>つくりかた</b>がはじまるよ':info.line}</div>
+      <div class="msg" style="margin-top:10px">${A?A.msg:state.autoWait?'👆 どこかをタッチすると、<b>つくりかた</b>が始まるよ':info.line}</div>
       <div class="row" style="margin-top:10px"><button class="btn small" data-act="arp">🎶 ひとつずつ</button></div>
     </section>`;
-  h+=`<section class="card"><h2>🪜 音階のかいだん<small>${PA.keyName(key)}の7ばんめを上げた短音階。ひとつとばしでつみかさねるよ。オレンジの印＝となりどうし（半音）</small></h2><div class="scroll" data-sk="ladder">${ladderSVG(key,{tones:shownKs,omit:(f==='DIM'&&(!A||A.omitShown))?4:null})}</div></section>`;
+  h+=`<section class="card"><h2>🪜 音階のかいだん<small>${PA.keyName(key)}の7ばんめを上げた短音階。ひとつとばしで、つみかさねるよ。オレンジの印＝となりどうし（半音）</small></h2><div class="scroll" data-sk="ladder">${ladderSVG(key,{tones:shownKs,omit:(f==='DIM'&&(!A||A.omitShown))?4:null})}</div></section>`;
 
   // けんばん
   const marks=new Map(), R=state.res&&!A;
@@ -273,9 +273,9 @@ function render(){
   // 1つの和音だけだと3もんともおなじもんだいになるので、2つをかわりばんこに）
   const pair=TRY_PAIR[f]||['V','V7'];
   h+=PA.tryHTML({to:'minor-quiz',params:{mode:'chord',key:PA.keyDeck.id(true,state.keyIdx),chord:pair.join(','),n:3},
-    sub:`${PA.keyName(key)}の${pair.map(x=>FAM[x].label).join('と ')}を、けんばんでじぶんでおさえてみよう（3もん）`,btn:'🎯 3もんためしてみる'});
+    sub:`けんばんで${PA.keyName(key)}の${pair.map(x=>FAM[x].label).join('と')}をおさえてみよう（3問）`,btn:'🎯 3問ためしてみる'});
   h+=termsHTML(key);
-  h+=`<p class="note">※ 和音は、7ばんめの音を半音上げた短音階で作っています。<span class="ds">x</span>はダブルシャープの楽譜での書き方です。</p></div>`;
+  h+=`<p class="note">※ 和音は、7ばんめの音を半音上げた短音階でつくっています。<span class="ds">x</span>はダブルシャープの楽譜での書き方です。</p></div>`;
   PA.paint(document.getElementById('view'),h,state.keyIdx+':'+f);
   if(state.anim) PA.follow(document.getElementById('view')); // アニメで光る鍵が見えるように
   const acts=(A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
@@ -295,15 +295,15 @@ async function runBuild(){
   const names={4:'根音（第5音）',6:'第3音＝導音',8:'第5音',10:'第7音',12:'第9音'};
   for(let i=0;i<full.length;i++){
     const k=full[i], n=PA.at(key.harm,k+famShift(key));
-    let m=`<b>${i+1}.</b> ${i?'ひとつとばして ':''}「${PA.nmH(n)}」（${names[k]}）`;
-    if(k===4) m=`<b>1.</b> ${PA.keyName(key)}の音階の<b>5ばんめ「${PA.nmH(n)}」</b>からはじめるよ（根音）。`;
+    let m=`<b>${i+1}.</b> ${i?'ひとつとばして':''}「${PA.nmH(n)}」（${names[k]}）`;
+    if(k===4) m=`<b>1.</b> ${PA.keyName(key)}の音階の<b>5ばんめ「${PA.nmH(n)}」</b>から始めるよ（根音）。`;
     if(k===6) m+=`<br>⚠️ 7ばんめ「${PA.nmH(key.natLT)}」は半音上げて<b style="color:${LT}">「${PA.nmH(key.lt)}」</b>（${PA.H(MARK[key.ltType])}をつける）！`;
     A.ks.push(k); upd(m); PA.playNote(n.midi,0,1.1,0.22);
     await PA.sleep(1500); if(!alive()) return;
   }
   if(f==='DIM'){
     A.ks=A.ks.filter(k=>k!==4); A.omitShown=true;
-    upd(`<b>${full.length+1}.</b>いちばん下の根音「${PA.nmH(root)}」を<b>はぶく</b>と…<br>🎉 <b class="big">${PA.namesH(famTones(key,f))}</b>＝減七の和音！`);
+    upd(`<b>${full.length+1}.</b> いちばん下の根音「${PA.nmH(root)}」を<b>はぶく</b>と…<br>🎉 <b class="big">${PA.namesH(famTones(key,f))}</b>＝減七の和音！`);
   }else upd(`🎉 できあがり！<b class="big">${PA.namesH(famTones(key,f))}</b>`);
   PA.chord(famTones(key,f).map(n=>n.midi));
   await PA.sleep(1800); if(!alive()) return;

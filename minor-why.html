@@ -166,11 +166,11 @@ function termsHTML(key){
     <dt>自然的短音階<span class="yomi">（しぜんてきたんおんかい）</span></dt>
       <dd>調号のとおりにならべた短音階（${namesH(key.nat)}）。7ばんめと主音の間が1つあいている。</dd>
     <dt>和声的短音階<span class="yomi">（わせいてきたんおんかい）</span></dt>
-      <dd>7ばんめを半音上げた短音階（${namesH(key.harm)}）。ⅤやⅤ7をつくるときはこの音階をつかうよ。</dd>
+      <dd>7ばんめを半音上げた短音階（${namesH(key.harm)}）。ⅤやⅤ7をつくるときは、この音階を使うよ。</dd>
     <dt>旋律的短音階<span class="yomi">（せんりつてきたんおんかい）</span></dt>
-      <dd>メロディーで上がっていくときに、6ばんめと7ばんめを上げる短音階。このアプリではつかわないよ。</dd>
+      <dd>メロディーで上がっていくときに、6ばんめと7ばんめを上げる短音階。このアプリでは使わないよ。</dd>
     <dt>導音<span class="yomi">（どうおん）</span></dt>
-      <dd>主音のすぐ下（となり）の音。${PA.keyName(key)}では${nmH(key.lt)}。主音へすいこまれるようにすすむよ。長調ではもともと音階の中にあって、短調では7ばんめを上げてつくる。</dd>
+      <dd>主音のすぐ下（となり）の音。${PA.keyName(key)}では${nmH(key.lt)}。主音に、すいこまれるように動くよ。長調ではもともと音階の中にあって、短調では7ばんめを上げてつくる。</dd>
     <dt>増2度<span class="yomi">（ぞう2ど）</span></dt>
       <dd>7ばんめを上げたときにできる、6ばんめ→7ばんめ（${nmH(key.harm[5])} → ${nmH(key.lt)}）のひろい間かくの名前。となりの文字どうしなのに、少し遠く聞こえる。</dd>
   </dl></details>`;
@@ -183,7 +183,7 @@ function render(){
   const vNat=[4,6,8].map(k=>at(key.nat,k)), vHarm=[4,6,8].map(k=>at(key.harm,k));
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
-    <h2 class="ptitle">長調と短調の「7ばんめ → 主音」をくらべよう<small>${PA.keyName(rel)}と${PA.keyName(key)}は調号がおなじ（${PA.sigLabel(key)}）</small></h2>
+    <h2 class="ptitle">長調と短調の「7ばんめ → 主音」をくらべよう<small>${PA.keyName(rel)}と${PA.keyName(key)}は調号が同じ（${PA.sigLabel(key)}）</small></h2>
     <div class="duo">
     <section class="card panel" style="--pc:${MAJ_C}">
       <h2>☀️ ${PA.keyName(rel)}（長調）</h2>
@@ -208,7 +208,7 @@ function render(){
       <div class="msg">${raise
         ?`<b>${nmH(key.natLT)}</b>を半音上げて<b class="lt">${nmH(key.lt)}</b>にすると、主音「${nmH(mnT)}」の<b>すぐ下（となり）</b>になったね。<br>
           Ⅴのまんなかの音も${nmH(key.lt)}にかわって<b>${namesH(vHarm)}</b>（明るいひびき）。「${nmH(mnT)}にもどりたい！」という力が強くなるよ。この${nmH(key.lt)}を<b>導音</b>というよ。<br>
-          <span class="note">そのかわり6ばんめ→7ばんめ（${nmH(key.harm[5])}→${nmH(key.lt)}）の間が少しひろくなるよ。これが「7ばんめを上げた短音階」のとくちょうのひびき。</span>`
+          <span class="note">そのかわり6ばんめ→7ばんめ（${nmH(key.harm[5])}→${nmH(key.lt)}）の間が少しひろくなるよ。これが「7ばんめを上げた短音階」らしいひびき。</span>`
         :`調号のままだと、7ばんめ「${nmH(key.natLT)}」から主音「${nmH(mnT)}」まで<b>全音</b>（けんばん1つあいている）。<br>
           Ⅴは<b>${namesH(vNat)}</b>（暗いひびき）。まんなかの「${nmH(key.natLT)}」が7ばんめなんだ。主音にもどる力が弱いよ。<br>🌙 下の「7ばんめを上げる」スイッチをおしてみよう！`}</div>
     </section>
@@ -221,7 +221,7 @@ function render(){
   const ab=state.ab;
   h+=`<section class="card"><h2>👂 聴きくらべクイズ<small>どっちが「おわった！」感じ？</small></h2>
     <p class="note" style="margin-top:0">A と B のどちらかは7ばんめを上げたⅤ、もう一方は上げないⅤ。どちらもそのあとに${PA.keyName(key)}のⅠを鳴らすよ。</p>`;
-  if(!ab) h+=`<div class="ab" style="grid-template-columns:1fr"><button class="btn night" data-act="abnew">🎲 もんだいを出す</button></div>`;
+  if(!ab) h+=`<div class="ab" style="grid-template-columns:1fr"><button class="btn night" data-act="abnew">🎲 問題を出す</button></div>`;
   else{
     h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ A をきく</button><button class="btn" data-act="abplay" data-v="B">▶️ B をきく</button></div>`;
     if(ab.answer==null) h+=`<p class="askline">「おわった！」と感じたのは？</p><div class="ab"><button class="btn night" data-act="abans" data-v="A">A</button><button class="btn night" data-act="abans" data-v="B">B</button></div>`;
@@ -229,17 +229,17 @@ function render(){
       const ok=ab.answer===ab.raised;
       h+=`<div class="fb ${ok?'good':'bad'}">${ok?'🎉 そのとおり！':'🤔 こんどはもう一方をよくきいてみよう。'}
         <b>${ab.raised}</b>が7ばんめを上げたⅤ（${namesH(vHarm)}）、<b>${ab.raised==='A'?'B':'A'}</b>が上げないⅤ（${namesH(vNat)}）だよ。
-        <br>${nmH(key.lt)}は${nmH(mnT)}の半音下なので、${nmH(mnT)}にすいこまれるように聞こえるんだ。</div>
-        <div class="ab" style="grid-template-columns:1fr"><button class="btn night" data-act="abnew">🎲 つぎのもんだい</button></div>`;
+        <br>${nmH(key.lt)}は${nmH(mnT)}の半音下なので、${nmH(mnT)}に、すいこまれるように聞こえるんだ。</div>
+        <div class="ab" style="grid-template-columns:1fr"><button class="btn night" data-act="abnew">🎲 次の問題</button></div>`;
     }
   }
   h+=`</section>
     ${PA.tryHTML({to:'minor-quiz',params:{mode:'mark',key:PA.keyDeck.id(true,state.keyIdx),n:3},
-      sub:`${PA.keyName(key)}からはじめて、7ばんめにつける記号（♯・♮・<span class="ds">x</span>）をえらんでみよう（3もん）`,btn:'🎯 記号をえらぶクイズ（この調から3もん）'})}
+      sub:`${PA.keyName(key)}から始めて、7ばんめにつける記号（♯・♮・<span class="ds">x</span>）を選んでみよう（3問）`,btn:'🎯 記号を選ぶクイズ（この調から3問）'})}
     <details class="more"><summary>💡 このページの音について</summary><ul>
-      <li>和音は、7ばんめの音を半音上げた短音階で作っているよ。</li>
+      <li>和音は、7ばんめの音を半音上げた短音階でつくっているよ。</li>
       <li>ダブルシャープは、楽譜では「<span class="ds">x</span>」のような形で書くよ。この画面でも<span class="ds">x</span>であらわしているよ。</li>
-      <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と基準の音（ラ＝440〜443Hz）をえらべるよ。</li>
+      <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と基準の音（ラ＝440〜443Hz）を選べるよ。</li>
     </ul></details>
     ${termsHTML(key)}
   </div>`;

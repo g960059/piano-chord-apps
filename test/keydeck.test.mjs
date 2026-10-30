@@ -294,7 +294,7 @@ test('ヒント：こたえるまえに見てできたは ×にしない（right
   // recent はさいごの8つまで
   for(let i=0;i<10;i++) deck.record('M3',i%2===0);
   assert.equal(deck.stats().M3.recent,'oxoxoxox');
-  assert.equal(PA.HINT_NOTE,'こたえるまえに見ても ×にはならないよ。「ヒントでできた」になるよ');
+  assert.equal(PA.HINT_NOTE,'こたえる前に見ても、×にはならないよ。「ヒントでできた」になるよ');
 });
 
 test('mastery（recent）：さいごの3回できめる',()=>{
@@ -361,7 +361,7 @@ test('checkTableHTML：pickable でますがボタン（data-act="kd-pick"）',(
   assert.equal(bs.length,24);
   assert.ok(bs.find(b=>b[1]==='M1')[2].startsWith('ト長調を3もんれんしゅう'));
   assert.ok(bs.find(b=>b[1]==='M6')[2].startsWith('嬰ヘ長調・変ト長調を3もんれんしゅう'));
-  assert.ok(h.includes('ますをおすと'));
+  assert.ok(h.includes('マスをおすと'));
   assert.ok(!/(?:^|[^-])width:\s*(?:[1-9]\d{2,})px/.test(h));
 });
 

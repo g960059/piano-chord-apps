@@ -93,7 +93,7 @@ const curKey=()=>PA.keyOf(state.minor,state.keyIdx);
 /* ===== 音のよびかた ===== */
 const nH=n=>{const c=n.tag==='low'?'lo':n.tag==='lt'?'up':'';return `<span class="nw ${c}">${PA.nmH(n)}</span>`;};
 const q=n=>`「${nH(n)}」`;
-const namesC=(ns,sep='&nbsp;・ ')=>ns.map(nH).join(sep);
+const namesC=(ns,sep='・')=>ns.map(nH).join(sep);
 const I64H='Ⅰ<span class="fig"><span>6</span><span>4</span></span>';
 const I64S='Ⅰ<tspan font-size="11" dy="-7">6</tspan><tspan font-size="11" dx="-6.5" dy="11">4</tspan>';
 const sym=ns=>PA.H(PA.LET_EN[ns.letter]+PA.ACC[ns.acc]);
@@ -201,7 +201,7 @@ function marksOf(notes,o={}){
 function staticMsg(key,t){
   const a=aug(key,t), T=TYPES[t], low=a[0], up=a[a.length-1], V=C.aug6ToV(key,t)[0];
   let m=`${PA.keyName(key)}の<b>${T.name}</b>は、${T.from}${T.root?'（根音ものこす）':'の根音をはぶき'}、第5音を半音下げて<b>いちばん下</b>においた和音 → <b class="big">${namesC(a)}</b>`;
-  m+=`<br>いちばん下${q(low)}といちばん上${q(up)}が<b>増6度</b>（ふつうの6度よりひろいはば）。だから「増六の和音」。この2つは<b>外へひらいて</b>Ⅴの根音${q(V)}のオクターブへすすむよ。`;
+  m+=`<br>いちばん下${q(low)}といちばん上${q(up)}が<b>増6度</b>（ふつうの6度よりひろいはば）。だから「増六の和音」。この2つは<b>外へひらいて</b>、Ⅴの根音${q(V)}のオクターブへすすむよ。`;
   return m;
 }
 function heroCard(key,t){
@@ -213,15 +213,15 @@ function heroCard(key,t){
       <div style="min-width:0"><div class="hk">${PA.keyName(key)}の${T.name}</div>
       <div class="hs">もとの和音：${T.from}（${src}）　<span class="lo nw">青＝下げた第5音</span>・<span class="up nw">赤＝Ⅴへの導音</span></div></div></div>
     <div class="hn">${cur.length?namesC(cur):'…'}</div>
-    ${A?'':`<div class="chips roles">${a.map(n=>`<span class="chip"><b class="${n.tag==='low'?'lo':n.tag==='lt'?'up':''}">${PA.nmH(n)}</b> ${n.role}</span>`).join('')}</div>
-    <p class="note rcap">根音＝${T.from}のもとの音${T.root?'':'（この和音でははぶく）'}。そこからひとつとばしに第3音・第5音・第7音${t==='ger'?'・第9音':''}。<span class="up">導音</span>＝Ⅴの根音へのぼりたがる音。</p>
+    ${A?'':`<div class="chips roles">${a.map(n=>`<span class="chip"><b class="${n.tag==='low'?'lo':n.tag==='lt'?'up':''}">${PA.nmH(n)}</b>：${n.role}</span>`).join('')}</div>
+    <p class="note rcap">根音＝${T.from}のもとの音${T.root?'':'（この和音でははぶく）'}。そこから、ひとつとばしに第3音・第5音・第7音${t==='ger'?'・第9音':''}。<span class="up">導音</span>＝Ⅴの根音へのぼりたがる音。</p>
     <div class="pair">↕️ ${q(low)}と${q(up)}＝<b>増6度</b>。${q(low)}は半音下へ、${q(up)}は半音上へ。</div>`}
-    <div class="msg" style="margin-top:10px">${A?A.msg:state.autoWait?'👆 どこかをタッチすると<b>つくりかた</b>がはじまるよ':(state.msg||staticMsg(key,t))}</div>
+    <div class="msg" style="margin-top:10px">${A?A.msg:state.autoWait?'👆 どこかをタッチすると<b>つくりかた</b>が始まるよ':(state.msg||staticMsg(key,t))}</div>
   </section>`;
   return h;
 }
 function compareCard(key){
-  let h=`<section class="card"><h2>👂 3つを聴きくらべ<small>${PA.keyName(key)}で。どれもいちばん下といちばん上はおなじ増6度</small></h2>`;
+  let h=`<section class="card"><h2>👂 3つを聴きくらべ<small>${PA.keyName(key)}で。どれも、いちばん下といちばん上は同じ増6度</small></h2>`;
   TKEYS.forEach(t=>{
     const T=TYPES[t], a=aug(key,t);
     h+=`<div class="cmprow ${(state.cmp?state.cmp===t:t===state.type)?'on':''}" style="--c:${AUG}"><button class="btn" data-act="cmp" data-v="${t}" aria-pressed="${state.cmp===t}">🔊 ${T.short}</button>
@@ -243,7 +243,7 @@ function staffCard(key,t){
   h+=`<p class="note"><b class="lo">${PA.nmH(low)}</b>は半音下へ、<b class="up">${PA.nmH(up)}</b>は半音上へ。<b>外へひらいて</b>、Ⅴの根音${q(V[0])}がオクターブでならぶよ。</p>`;
   if(t==='ger'){
     const g=a;
-    h+=`<p class="note">ドイツの6からⅤへちょくせつすすむと、${q(g[0])}と${q(g[2])}の5度が、そのまま${q(V[0])}と${q(V[2])}の5度へならんでうごく（<b>平行5度</b>）。ひびきがうすくなるのでさけるきまり。あいだに<b>${I64H}</b>（Ⅰの第5音をいちばん下にした形）をはさむのがふつう。${state.gerPath==='direct'?`<span style="color:${PAR}">オレンジの線</span>が平行5度。「➡️ Ⅴへ」で聴いてみよう。`:''}</p>`;
+    h+=`<p class="note">ドイツの6からすぐⅤへすすむと、${q(g[0])}と${q(g[2])}の5度が、そのまま${q(V[0])}と${q(V[2])}の5度へならんで動く（<b>平行5度</b>）。ひびきがうすくなるので、さけるきまり。あいだに<b>${I64H}</b>（Ⅰの第5音をいちばん下にした形）をはさむのがふつう。${state.gerPath==='direct'?`<span style="color:${PAR}">オレンジの線</span>が平行5度。「➡️ Ⅴへ」で聴いてみよう。`:''}</p>`;
   }
   return h+`</section>`;
 }
@@ -256,8 +256,8 @@ function bIIDetails(key){
     g.forEach((n,i)=>{if(n.letter!==d[i].letter||n.acc!==d[i].acc){const m=mk.get(n.midi);m.sub=PA.nm(d[i]);m.subColor=LT;}});
   }
   const [lo,hi]=kbRange([g,b.res,i64,gv]);
-  let h=`<details class="more" data-d="bii"><summary>🎹 けんばんでは${b.domName}とおなじ音</summary>
-    <p>ドイツの6${b.plain?`の音をぜんぶけんばんのふつうの名前（${namesC(d,'・')}）で書きかえると`:`${q(g[3])}を${q(d[3])}と書きかえると`}、<b>${b.domName}</b>（♭Ⅱ＝${b.bII}のためのⅤ7）と<b>まったくおなじけんばん</b>。絶対音感で聴くとおなじ和音に聴こえるね。でも書き方とすすみ方がちがうよ。</p>
+  let h=`<details class="more" data-d="bii"><summary>🎹 けんばんでは${b.domName}と同じ音</summary>
+    <p>ドイツの6${b.plain?`の音をぜんぶ、けんばんのふつうの名前（${namesC(d,'・')}）で書きかえると`:`${q(g[3])}を${q(d[3])}と書きかえると`}、<b>${b.domName}</b>（♭Ⅱ＝${b.bII}のためのⅤ7）と<b>まったく同じけんばん</b>。絶対音感で聴くと、同じ和音に聴こえるね。でも書き方とすすみ方がちがうよ。</p>
     <div class="vs">
       <div><h3 style="color:${AUG}">ドイツの6</h3>${namesC(g,'・')}<br><span class="note">${q(g[3])}は半音上へ → Ⅴへ</span></div>
       <div><h3 style="color:${VCOL}">${b.domName}</h3>${d.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}<br><span class="note">${q(d[3])}は半音下へ → ${b.bII}（♭Ⅱ）へ</span></div>
@@ -275,10 +275,10 @@ function borrowDetails(key,t){
   const a=aug(key,t), pm=parMinor(key);
   const borrowed=a.filter(n=>n.acc!==sigAcc(key,n.letter)&&n.tag!=='lt');
   let h=`<details class="more" data-d="borrow"><summary>🌙 長調では短調から音をかりる</summary>
-    <p>${borrowed.map(q).join('と')}は${PA.keyName(key)}の音階にはない音。<b>${pm}</b>（おなじ主音の短調）からかりてきた音だよ。${t==='ger'?'ドイツの6では、第5音を下げた音と第9音の2つをかりる。':''}</p>`;
+    <p>${borrowed.map(q).join('と')}は${PA.keyName(key)}の音階にはない音。<b>${pm}</b>（同じ主音の短調）からかりてきた音だよ。${t==='ger'?'ドイツの6では、第5音を下げた音と第9音の2つをかりる。':''}</p>`;
   if(t==='ger'){
     const alt=C.gerMajorAlt(key), g=aug(key,'ger'), i64=C.gerToI64(key);
-    h+=`<p>ドイツの6が${I64H}へすすむときは、${q(g[2])}を${q(alt[2])}と書くこともあるよ。${q(alt[2])}→${q(i64[2])}と<b>上へすすむ</b>形が見えるから。けんばんはおなじ。</p>
+    h+=`<p>ドイツの6が${I64H}へすすむときは、${q(g[2])}を${q(alt[2])}と書くこともあるよ。${q(alt[2])}→${q(i64[2])}と<b>上へすすむ</b>形が見えるから。けんばんは同じ。</p>
       ${staff(key,[{notes:alt,color:AUG,label:'ドイツ'},{notes:i64,color:ICOL,label:I64S},{notes:C.aug6ToV(key,'ger'),color:VCOL,label:'Ⅴ'}],[{c1:0,n1:alt[2],c2:1,n2:i64[2],color:AUG,text:'半音↑'}],{sk:'alt',cw:100})}
       <div class="row"><button class="btn small" data-act="altplay">🔊 ${PA.nmH(alt[2])}の形で${I64H} → Ⅴ</button></div>`;
   }
@@ -289,8 +289,8 @@ function tipsHTML(key){
     <li><b>増六の和音</b>＝ドッペルドミナントの<b>第5音を半音下げ</b>、その音を<b>いちばん下</b>においた和音。</li>
     <li><b>イタリアの6</b>＝Ⅴ7/Ⅴの根音をはぶく（3つ）。<b>フランスの6</b>＝Ⅴ7/Ⅴ（根音あり・4つ）。<b>ドイツの6</b>＝Ⅴ9/Ⅴの根音をはぶく（4つ）。</li>
     <li>いちばん下（下げた第5音）といちばん上（Ⅴへの導音）が<b>増6度</b>。<b>外へひらいて</b>Ⅴの根音のオクターブへ。</li>
-    <li>ドイツの6は、平行5度にならないようにふつう${I64H}をとおってⅤへ。</li>
-    <li>${key.minor?'短調では、下げた第5音も第9音も調号の音（音階の音）なので、増六の和音の中で臨時記号がいるのはⅤへの導音だけ。':'長調では、下げた音はおなじ主音の短調からかりた音なので、臨時記号がつくよ。'}</li>
+    <li>ドイツの6は、平行5度にならないように、ふつう${I64H}をとおってⅤへ。</li>
+    <li>${key.minor?'短調では、下げた第5音も第9音も調号の音（音階の音）なので、増六の和音の中で臨時記号がいるのはⅤへの導音だけ。':'長調では、下げた音は同じ主音の短調からかりた音なので、臨時記号がつくよ。'}</li>
   </ul></details>`;
 }
 // 📖 ことばメモ：本や楽譜で見かける名前を、やさしいことばで。例はいまの調・えらんだ和音の音で
@@ -306,18 +306,18 @@ function termsHTML(key,t){
     <p class="note" style="margin:0 0 4px">例は${PA.keyName(key)}の${TYPES[t].name}だよ。</p><ul>
     <li><b>増六の和音</b> … いちばん下といちばん上のはばが増6度になる和音。ドッペルドミナントの第5音を半音下げて、いちばん下においた形。いまは${namesC(a,'・')}。</li>
     <li><b>イタリアの6</b>・<b>フランスの6</b>・<b>ドイツの6</b> … 増六の和音の3つの形。英語の本では It+6・Fr+6・Ger+6と書くよ。国の名前は、むかしからのよび名で、とくにいみはないよ。</li>
-    <li><b>増6度</b> … ${q(low)}から${q(up)}は文字で数えて6つ（${span}）なので6度。でもふつうの6度よりひろいので「増」6度。けんばんでは${w7}とおなじはばだよ。</li>
-    <li><b>平行5度</b>（連続5度） … 2つの声が5度（${q({letter:0,acc:0})}と${q({letter:4,acc:0})}のようなはば）のままいっしょにうごくこと。ひびきがうすくなるのでさける。ドイツの6からすぐⅤへすすむと${q(g[0])}${q(g[2])} →${q(gv[0])}${q(gv[2])}が平行5度になるよ。</li>
-    <li><b>${I64H}</b>（四六の和音・終止四六） … Ⅰの第5音をいちばん下にした形。Ⅴの前におくと、Ⅴのなかまとしてはたらくよ。Ⅰ² と書く本もあるよ。</li>
-    ${key.minor?'':`<li><b>準固有</b> … おなじ主音の短調（${parMinor(key)}）から音をかりること。下げた第5音${t==='ger'?'と第9音':''}は、${parMinor(key)}の音だよ。</li>`}
-    <li><b>異名同音</b> … 名前（書きかた）はちがうけど、けんばんではおなじ音。ドイツの6は${b.domName}（${b.bII}のためのⅤ7）とおなじけんばんなので、この読みかえでちがう調へうつることもあるよ。</li>
+    <li><b>増6度</b> … ${q(low)}から${q(up)}は文字で数えて6つ（${span}）なので6度。でもふつうの6度よりひろいので「増」6度。けんばんでは${w7}と同じはばだよ。</li>
+    <li><b>平行5度</b>（連続5度） … 2つの声が5度（${q({letter:0,acc:0})}と${q({letter:4,acc:0})}のようなはば）のまま、いっしょに動くこと。ひびきがうすくなるので、さける。ドイツの6からすぐⅤへすすむと、${q(g[0])}${q(g[2])} → ${q(gv[0])}${q(gv[2])}が平行5度になるよ。</li>
+    <li><b>${I64H}</b>（四六の和音・終止四六） … Ⅰの第5音をいちばん下にした形。Ⅴの前におくと、Ⅴのなかまになるよ。Ⅰ²と書く本もあるよ。</li>
+    ${key.minor?'':`<li><b>準固有</b> … 同じ主音の短調（${parMinor(key)}）から音をかりること。下げた第5音${t==='ger'?'と第9音':''}は、${parMinor(key)}の音だよ。</li>`}
+    <li><b>異名同音</b> … 名前（書きかた）はちがうけど、けんばんでは同じ音。ドイツの6は${b.domName}（${b.bII}のためのⅤ7）と同じけんばんなので、この読みかえで、ちがう調へうつる曲もあるよ。</li>
     <li><b>ナポリの和音</b>（♭Ⅱ） … Ⅱの根音を半音下げた長三和音。${PA.keyName(key)}では${b.bII}。</li>
   </ul></details>`;
 }
 // 変化和音クイズへ：いまの調で、🎹 おさえるレベル3（増六3しゅるい）を5もん。👂 聴きわけはレベル2（増六）
 function tryCard(key){
   return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',level:3,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
-    sub:`${PA.keyName(key)}で、イタリア・フランス・ドイツの6をけんばんでおさえてみよう（5もん）。`,btn:'🎯 けんばんで5もん',
+    sub:`${PA.keyName(key)}で、イタリア・フランス・ドイツの6をけんばんで5問おさえてみよう。`,btn:'🎯 けんばんで5問',
     links:[{to:'chroma-quiz',params:{mode:'ear',level:2,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:'👂 耳で聴きわける'}]});
 }
 function linksCard(){
@@ -357,7 +357,7 @@ function render(){
   h+=tipsHTML(key);
   h+=termsHTML(key,t);
   h+=linksCard();
-  h+=`<p class="note">※ 音の高さはふつうのピアノとおなじです。<span class="ds">x</span>はダブルシャープの楽譜での書き方です。</p></div>`;
+  h+=`<p class="note">※ 音の高さはふつうのピアノと同じです。<span class="ds">x</span>はダブルシャープの楽譜での書き方です。</p></div>`;
   PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx+':'+t);
   if(state.anim) PA.follow(document.getElementById('view')); // つくりかたで音の高さがかわっても鍵が見えるように
   const acts=(A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
@@ -392,7 +392,7 @@ async function runBuild(){
   for(let i=0;i<stack.length;i++){
     A.cols=[{notes:stack.slice(0,i+1)}]; A.arrows=[];
     A.marks=marksOf(stack.slice(0,i+1),{ltSub:true});
-    upd(head+`<br>${i+1}. ${i?'ひとつとばして ':''}${lines[i]}`); PA.playNote(stack[i].midi,0,1.1,0.22);
+    upd(head+`<br>${i+1}. ${i?'ひとつとばして':''}${lines[i]}`); PA.playNote(stack[i].midi,0,1.1,0.22);
     if(!await wait(1500)) return;
   }
   PA.chord(stack.map(n=>n.midi)); if(!await wait(1400)) return;
@@ -404,7 +404,7 @@ async function runBuild(){
   A.marks.set(t5.midi,{fill:'#fff',ring:LOW,tc:LOW,label:PA.nm(t5),sub:'もとの音',subColor:GHOST});
   A.staffCap='第5音を半音下げる'; A.kbCap='青＝下げた第5音';
   upd(`<b>②</b>第5音${q(t5)}を<b class="lo">半音下げて</b>${q(low)}にするよ。<br>`+
-    (key.minor?`短調では、ドッペルドミナントで上げてあった第5音が、もとの調号の音にもどる形だね。`:`${q(low)}は<b>${parMinor(key)}</b>（おなじ主音の短調）からかりてきた音。`));
+    (key.minor?`短調では、ドッペルドミナントで上げてあった第5音が、もとの調号の音にもどる形だね。`:`${q(low)}は<b>${parMinor(key)}</b>（同じ主音の短調）からかりてきた音。`));
   PA.playNote(low.midi,0,1.1,0.24); if(!await wait(1100)) return;
   PA.chord(s2.map(n=>n.midi)); if(!await wait(2200)) return;
   // ③ 根音をはぶく（イタリア・ドイツ）／のこす（フランス）
@@ -439,7 +439,7 @@ async function runBuild(){
   const toPlay=(lowDown?[lowF]:[]).concat(others.map(m=>m.f));
   toPlay.forEach((n,i)=>PA.playNote(n.midi,i*0.32,1.1,0.24)); if(!await wait(1000+Math.max(0,toPlay.length-1)*320)) return;
   PA.chord(fin.map(n=>n.midi));
-  const done=`🎉 <b>できあがり！</b> ${PA.keyName(key)}の${T.name}は<b class="big">${namesC(fin)}</b><br>`+
+  const done=`🎉 <b>できあがり！</b>${PA.keyName(key)}の${T.name}は<b class="big">${namesC(fin)}</b><br>`+
     `いちばん下${q(lowF)}といちばん上${q(up)}のはばが<b>増6度</b>。この2つは<b>外へひらいて</b>（${q(lowF)}は半音下へ、${q(up)}は半音上へ）Ⅴの根音${q(V)}のオクターブになるよ。「➡️ Ⅴへ」で聴いてみよう！`;
   upd(done); if(!await wait(2200)) return;
   state.msg=done; state.anim=null; render();

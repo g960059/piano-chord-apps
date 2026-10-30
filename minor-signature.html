@@ -122,17 +122,17 @@ function termsHTML(key){
   const ei=PA.MAJOR_KEYS.findIndex(([l,a])=>PA.mod(PA.NAT[l]+a,12)===par.tpc), eq=ei>=0?PA.majorKey(ei):null;
   const parDbl=par.scale.some(n=>Math.abs(n.acc)>1), parN=par.scale.filter(n=>n.acc>0).length;
   const parTxt=pi>=0?`${PA.keyName(par)}（${PA.sigLabel(PA.majorKey(pi))}）`
-    :parDbl?`${PA.keyName(par)}（調号に${PA.H('𝄪')}がいるので、ふつうはおなじけんばんの${PA.keyName(eq)}で書く）`
-    :`${PA.keyName(par)}（♯${parN}つ。おなじけんばんの${PA.keyName(eq)}（${PA.sigLabel(eq)}）で書くことも多い）`;
+    :parDbl?`${PA.keyName(par)}（調号に${PA.H('𝄪')}がいるので、ふつうは同じけんばんの${PA.keyName(eq)}で書く）`
+    :`${PA.keyName(par)}（♯${parN}つ。同じけんばんの${PA.keyName(eq)}（${PA.sigLabel(eq)}）で書くことも多い）`;
   const si=PA.sigInfo(key), mine=new Set(si.letters);
   const ord=(acc,ls)=>ls.map(L=>{const t=PA.nmH({letter:L,acc});return si.type===acc&&mine.has(L)?`<b style="color:var(--night)">${t}</b>`:t;}).join('・');
   return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や楽譜で見かける名前）</summary><dl>
     <dt>平行調<span class="yomi">（へいこうちょう）</span></dt>
-      <dd>調号がおなじ長調と短調のペア（${PA.keyName(key)}と${PA.keyName(rel)}）。短調の主音は、長調の音階の6ばんめ。</dd>
+      <dd>調号が同じ長調と短調のペア（${PA.keyName(key)}と${PA.keyName(rel)}）。短調の主音は、長調の音階の6ばんめ。</dd>
     <dt>同主調<span class="yomi">（どうしゅちょう）</span></dt>
-      <dd>主音がおなじ長調と短調のペア。${PA.keyName(key)}（${PA.sigLabel(key)}）と主音がおなじ長調は${parTxt}。短調の調号は、主音がおなじ長調から♯を3つへらした形（♯がたりないぶんは♭をふやす。ニ長調♯2つ → ニ短調♭1つ）。</dd>
+      <dd>主音が同じ長調と短調のペア。${PA.keyName(key)}（${PA.sigLabel(key)}）と主音が同じ長調は${parTxt}。短調の調号は、主音が同じ長調から♯を3つへらした形（♯がたりないぶんは♭をふやす。ニ長調♯2つ → ニ短調♭1つ）。</dd>
     <dt>臨時記号<span class="yomi">（りんじきごう）</span></dt>
-      <dd>楽譜のとちゅうで、音符のすぐ前につける♯・♭・♮・${PA.H('𝄪')}・${PA.H('𝄫')}。その小節の中だけ、おなじ線・間の音にきく（つぎの小節では調号のとおりにもどる）。調号は曲ぜんぶにきく。</dd>
+      <dd>楽譜のとちゅうで、音符のすぐ前につける♯・♭・♮・${PA.H('𝄪')}・${PA.H('𝄫')}。その小節の中だけ、同じ線・間の音にきく（次の小節では調号のとおりにもどる）。調号は曲ぜんぶにきく。</dd>
     <dt>調号の順番<span class="yomi">（ちょうごうのじゅんばん）</span></dt>
       <dd>♯は${ord(1,PA.SHARP_ORDER)}、♭はそのぎゃくの${ord(-1,[...PA.SHARP_ORDER].reverse())}のじゅんに、左からふえていく。${si.letters.length?`${PA.keyName(key)}（${PA.sigLabel(key)}）は太字の音。`:`${PA.keyName(key)}は調号なし。`}</dd>
   </dl></details>`;
@@ -142,7 +142,7 @@ function render(){
   const demoSc=state.sigDemo?relWrongOf(key):rel.scale, demo8=demoSc.concat([PA.at(demoSc,7)]);
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}・平行調は${PA.keyName(rel)}</span></div>
-    <section class="card"><h2>${PA.keyName(key)}と${PA.keyName(rel)}は調号がおなじ<small>こういう2つの調を「平行調」というよ</small></h2>
+    <section class="card"><h2>${PA.keyName(key)}と${PA.keyName(rel)}は調号が同じ<small>こういう2つの調を「平行調」というよ</small></h2>
       <p class="cap"><b>${PA.keyName(key)}の音階</b>（7ばんめを上げたもの）</p>
       <div class="scroll staffbox" data-sk="harm">${PA.staffSVG(key,harm8.map(n=>({notes:[n],color:n.raised?'#d1495b':'#3b4fa8',accColor:'#d1495b',accRing:true})),{colW:40,minW:380})}</div>
       <p class="note">赤い${PA.H(MARK[key.ltType])}が臨時記号。調号には書かずに、使う音のすぐ前に書くよ。</p>
@@ -165,7 +165,7 @@ function render(){
     <div class="legend3"><span class="t-sharp">♯シャープ：調号に何もない音を上げる</span><span class="t-natural">♮ナチュラル：♭をとって上げる</span><span class="t-dsharp"><span class="ds">x</span>ダブルシャープ：♯がついた音をもっと上げる</span></div>
     ${PA.seg('hide',[['0','👀 ぜんぶ見せる'],['1','🙈 かくしてれんしゅう']],state.hide?'1':'0','full')}
     ${state.hide?`<div class="hidebar"><p class="note">「？」をタップするとこたえが出るよ（${nRev}/${NKEYS}）</p><button class="btn small" data-act="rehide" ${nRev?'':'disabled'}>🔁 もういちどかくす</button></div>`
-      :`<p class="note">短調の名前をタップすると、上のがくふ・けんばんがその調にかわるよ。右のこたえをタップすると音が出るよ。</p>`}
+      :`<p class="note">短調の名前をタップすると、上の楽譜とけんばんが、その調にかわるよ。右のこたえをタップすると音が出るよ。</p>`}
     <div class="klist" role="list">
       <div class="khead" aria-hidden="true"><span>短調</span><span>7ばんめ<br>（調号のまま）</span><span>上げると・つける記号</span></div>`;
   KEYS.forEach((k,i)=>{
@@ -181,12 +181,12 @@ function render(){
   });
   h+=`</div>
     ${state.hide&&nRev===NKEYS?`<div class="fb good" id="done" style="margin-top:10px">🎉 ぜんぶひらいたよ！いくつわかったかな？</div>`:''}
-    <div class="rule" style="margin-top:12px">記号の形はちがっても、やっていることはぜんぶおなじ。<br>「7ばんめを<b>主音のすぐ下（となり）</b>にする」</div>
+    <div class="rule" style="margin-top:12px">記号の形はちがっても、やっていることは、ぜんぶ同じ。<br>「7ばんめを<b>主音のすぐ下（となり）</b>にする」</div>
     <details class="more" style="margin-top:12px"><summary>💡 ${PA.nmH({letter:2,acc:1})}や${PA.nmH({letter:3,acc:2})}はどこをひくの？</summary>
       <p class="note" style="margin-top:0">${PA.nmH({letter:2,acc:1})}は${PA.nmH({letter:3,acc:0})}のけんばん、${PA.nmH({letter:3,acc:2})}は${PA.nmH({letter:4,acc:0})}のけんばんでひくよ。でも7ばんめは主音のすぐ下の線・間のままなので、名前はかえずに記号をつけて書く（音階では${PA.nmH({letter:0,acc:0})}〜${PA.nmH({letter:6,acc:0})}を1回ずつ使う）。</p></details>
   </section>
   ${PA.tryHTML({to:'minor-quiz',params:{mode:'mark',key:PA.keyDeck.id(true,state.keyIdx),n:3},
-    sub:`${PA.keyName(key)}からはじめて、7ばんめにつける記号をえらんでみよう（3もん）`,btn:'🎯 記号をえらぶクイズ（この調から3もん）',
+    sub:`${PA.keyName(key)}から始めて、7ばんめにつける記号を選んでみよう（3問）`,btn:'🎯 記号を選ぶクイズ（この調から3問）',
     links:[{to:'minor-why',label:'❓ なぜ7ばんめを上げるの？'}]})}
   ${termsHTML(key)}</div>`;
   PA.paint(document.getElementById('view'),h,String(state.keyIdx));

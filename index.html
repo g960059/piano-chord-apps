@@ -126,7 +126,7 @@ function when(t){
   if(!(t>0)) return '';
   const d0=new Date(); d0.setHours(0,0,0,0);
   const days=Math.ceil((d0.getTime()-t)/864e5);
-  return days<=0?'きょう':days===1?'きのう':days<7?days+'日まえ':days<30?Math.floor(days/7)+'週間まえ':'しばらくまえ';
+  return days<=0?'きょう':days===1?'きのう':days<7?days+'日前':days<30?Math.floor(days/7)+'週間前':'しばらく前';
 }
 // そのアプリでさいごにやったこと（わかれば）。ただの文字
 function lastDone(app){
@@ -157,7 +157,7 @@ function topHTML(vis){
     return `<section class="card hero" aria-labelledby="hero-h"><div class="big" aria-hidden="true">🐸</div>
       <h2 id="hero-h">はじめての和音</h2>
       <p class="lead">ド・ミ・ソを見て・聴いて・つくってみよう</p>
-      <a class="btn primary" href="chord-build.html">ここからはじめる ›</a>
+      <a class="btn primary" href="chord-build.html">ここから始める ›</a>
       <p class="site">Ⅰ・Ⅳ・Ⅴから7つの和音、短調、おわりかた、変化和音、伴奏づけ、耳のれんしゅうまで。「見て・聴いて・さわって」おぼえよう。</p></section>`;
   }
   const main=lp||ll||old||fallbackRec(vis);
@@ -215,7 +215,7 @@ function courseHTML(vis){
     const apps=u.apps.map(PA.app), n=apps.filter(a=>vis.has(a.id)).length, done=n===apps.length;
     const isNext=u.id===nx, open=typeof sv[u.id]==='boolean'?sv[u.id]:isNext;
     return `<details class="unit${isNext?' next':''}${done?' done':''}" data-d="unit-${u.id}" data-u="${u.id}"${open?' open':''}>`
-      +`<summary><span class="no" aria-hidden="true">${done?'✓':i+1}</span><span class="ut"><b>${ESC(plainTitle(u.title))}${isNext?'<span class="nexttag">つぎ</span>':''}</b>${u.sub?`<small>${ESC(u.sub)}</small>`:''}</span>`
+      +`<summary><span class="no" aria-hidden="true">${done?'✓':i+1}</span><span class="ut"><b>${ESC(plainTitle(u.title))}${isNext?'<span class="nexttag">次</span>':''}</b>${u.sub?`<small>${ESC(u.sub)}</small>`:''}</span>`
       +`<span class="prog">${done?'<span class="pa-sr">おわった、</span>':''}${n}/${apps.length}<span class="pa-sr">ひらいた</span></span></summary>`
       +`<ul class="alist">${apps.map(a=>appRow(a,vis)).join('')}</ul></details>`;
   }).join('');
@@ -224,11 +224,11 @@ function courseHTML(vis){
 
 /* ----- さいごのおしらせ ----- */
 function footHTML(){
-  return `<details class="note foot" data-d="foot"><summary>ℹ️ つかいかたのメモ（⚙️ 設定・ホーム画面・きろくのひかえ）</summary>
-    <p>⚙️（右上）：音の名前（ドレミ／CDE／ハニホ）と基準の音（ラ＝440〜443Hz）。どのアプリもおなじ設定です。</p>
-    <p>📱 ホーム画面に追加すると、アプリのようにひらけて、ネットがなくてもつかえます。</p>
+  return `<details class="note foot" data-d="foot"><summary>ℹ️ 使いかたのメモ（⚙️ 設定・ホーム画面・きろくのひかえ）</summary>
+    <p>⚙️（右上）：音の名前（ドレミ／CDE／ハニホ）と基準の音（ラ＝440〜443Hz）。どのアプリも同じ設定です。</p>
+    <p>📱 ホーム画面に追加すると、アプリのようにひらけて、ネットがなくても使えます。</p>
     <p>💾 きろくはこの端末の中だけ。ときどき ⚙️ → 💾 でファイルにひかえておこう。</p>
-    <p>🏆 ランキングは「和音の聴きわけ」の 🏆 チャレンジでのせられるよ（なまえはニックネームで）。</p></details>`;
+    <p>🏆 ランキングには、「和音の聴きわけ」の 🏆 チャレンジでのせられるよ（名前はニックネームで）。</p></details>`;
 }
 
 function render(){

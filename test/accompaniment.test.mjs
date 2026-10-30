@@ -78,12 +78,12 @@ test('リンク：ちがう値はつかわない（短調・ない曲・はん�
 test('マスの読み上げ：小節・えらんだ和音・◎○×',()=>{
   const w=world();
   w.run("state.songId='mary'");
-  assert.equal(w.run("slotAria(curSong(),2,'IV','good',false)"),'3小節目、Ⅳをえらんだ（○ これでも合う）');
-  assert.equal(w.run("slotAria(curSong(),0,'I','best',false)"),'1小節目、Ⅰをえらんだ（◎ おてほんとおなじ）');
-  assert.equal(w.run("slotAria(curSong(),1,null,null,false)"),'2小節目、まだえらんでいない');
-  assert.equal(w.run("state.reveal=true; slotAria(curSong(),2,'IV','bad',false)"),'3小節目、Ⅳをえらんだ（× 合わない。おてほんはⅤ7）');
+  assert.equal(w.run("slotAria(curSong(),2,'IV','good',false)"),'3小節目、Ⅳを選んだ（○ これでも合う）');
+  assert.equal(w.run("slotAria(curSong(),0,'I','best',false)"),'1小節目、Ⅰを選んだ（◎ おてほんと同じ）');
+  assert.equal(w.run("slotAria(curSong(),1,null,null,false)"),'2小節目、まだ選んでいない');
+  assert.equal(w.run("state.reveal=true; slotAria(curSong(),2,'IV','bad',false)"),'3小節目、Ⅳを選んだ（× 合わない。おてほんはⅤ7）');
   // 2拍ずつの曲は前半・後半
-  assert.equal(w.run("state.songId='twinkle'; slotAria(curSong(),1,'I',null,false)"),'1小節目の後半、Ⅰをえらんだ');
+  assert.equal(w.run("state.songId='twinkle'; slotAria(curSong(),1,'I',null,false)"),'1小節目の後半、Ⅰを選んだ');
 });
 
 test('えらんでもすすまない（はじめはオフ）・オンならすすむ・ほぞんした設定をつかう',()=>{

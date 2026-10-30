@@ -1,7 +1,7 @@
 // 変化和音の学ぶページ（doppel・secondary・aug6・neapolitan）のかんたんなテスト：node --test test/
 // ・iOS 12でうごかない書きかた（?. ??）がない、スクリプトが読める
 // ・変化和音クイズへは PA.tryHTML（いまの調・n=5・その和音が出るレベル）。むかしのふつうのリンク・PA.go はのこっていない
-// ・「🔊 いっしょに」に data-hot="listen"（スペースで鳴らす）、「🎲 もんだいを出す」に data-hot="next"（doppel・secondary・neapolitan）
+// ・「🔊 いっしょに」に data-hot="listen"（スペースで鳴らす）、「🎲 問題を出す」に data-hot="next"（doppel・secondary・neapolitan）
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -48,7 +48,7 @@ for(const [file,want] of Object.entries(PAGES)){
   });
   test(`${file}：「🔊 いっしょに」に data-hot="listen"`,()=>{
     assert.match(html,/data-act="play" data-hot="listen"/);
-    if(file!=='aug6.html') assert.match(html,/data-act="qnext" data-hot="next">🎲 もんだいを出す/);
+    if(file!=='aug6.html') assert.match(html,/data-act="qnext" data-hot="next">🎲 問題を出す/);
   });
 }
 

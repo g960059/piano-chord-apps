@@ -236,10 +236,10 @@ function cadStaff(key,seq){
 function heroMsg(key){
   const ii=byRole(C.ii7(key)), dd=byRole(C.dd(key)), V=C.toV(key), vr=V[1];
   const deg2=key.scale[1];
-  if(!state.raised) return `Ⅱ7（にどしち）は音階の<b>2ばんめ「${PA.nmH(deg2)}」</b>からひとつとばしで4つ。<b>調の音だけ</b>でできる和音で、<b>Ⅳのなかま</b>。Ⅴの前において「つぎはⅤだよ」とつなぐよ。<br>🔴 スイッチをおして、第3音「${PA.nmH(ii[1])}」${state.minor?`と第5音「${PA.nmH(ii[2])}」`:''}を半音上げてみよう！`;
+  if(!state.raised) return `Ⅱ7（にどしち）は音階の<b>2ばんめ「${PA.nmH(deg2)}」</b>からひとつとばしで4つ。<b>調の音だけ</b>でできる和音で、<b>Ⅳのなかま</b>。Ⅴの前において「次はⅤだよ」とつなぐよ。<br>🔴 スイッチをおして、第3音「${PA.nmH(ii[1])}」${state.minor?`と第5音「${PA.nmH(ii[2])}」`:''}を半音上げてみよう！`;
   let m=`第3音「${PA.nmH(ii[1])}」を半音上げて<b class="up">「${PA.nmH(dd[1])}」</b>。${PA.nmH(dd[1])}はⅤの根音「${PA.nmH(vr)}」のすぐ下 → 「${PA.nmH(vr)}」へすいこまれる<b class="up">Ⅴへの導音</b>になるよ。`;
-  if(state.minor) m+=`<br>🌙 短調では第5音「${PA.nmH(ii[2])}」も半音上げて「${PA.nmH(dd[2])}」にする（Ⅴ7とおなじ形にするため）。`;
-  m+=`<br><b>${namesC(dd)}</b>は、「${PA.nmH(vr)}」を主音にした調のⅤ7とおなじ形。だから<b>「ⅤのためのⅤ7」</b>＝ドッペルドミナント。Ⅴがもっとつよく聞こえるよ。`;
+  if(state.minor) m+=`<br>🌙 短調では第5音「${PA.nmH(ii[2])}」も半音上げて「${PA.nmH(dd[2])}」にする（Ⅴ7と同じ形にするため）。`;
+  m+=`<br><b>${namesC(dd)}</b>は、「${PA.nmH(vr)}」を主音にした調のⅤ7と同じ形。だから<b>「ⅤのためのⅤ7」</b>＝ドッペルドミナント。Ⅴがもっとつよく聞こえるよ。`;
   return m;
 }
 function rolesHTML(key){
@@ -249,7 +249,7 @@ function rolesHTML(key){
     const up=r&&isUp(n);
     const tagH=!up?'':n.tag==='lt'?`<span class="rt">Ⅴへの導音</span>`:`<span class="rt soft">半音上げた</span>`;
     return `<div class="role ${up?'on':''}"><div class="rh"><span class="rn">${NAME[i]}</span>${tagH}</div><div class="rb">${up?`<span class="rf nw">${PA.nmH(base[i])} →</span>`:''}<b class="rv nw ${up?'up':''}">${PA.nmH(n)}</b></div></div>`;
-  }).join('')+`</div><p class="note rcap">根音＝和音のもとの音。そこからひとつとばしに第3音・第5音・第7音。${r?'<span class="up">導音</span>＝すぐ上の音へのぼりたがる音。':''}</p>`;
+  }).join('')+`</div><p class="note rcap">根音＝和音のもとの音。そこから、ひとつとばしに第3音・第5音・第7音。${r?'<span class="up">導音</span>＝すぐ上の音へのぼりたがる音。':''}</p>`;
 }
 function kbCaption(key,seq){
   if(state.cad){const s=seq[state.cad.i];return `カデンツ${state.cad.i+1}/${seq.length}：<b style="color:${s.col}">${PA.H(s.lab)}</b>　${state.cad.i===1?namesC(s.ns.slice(1)):namesW(s.ns.slice(1))}（左手${PA.nmH(s.ns[0])}）`;}
@@ -258,16 +258,16 @@ function kbCaption(key,seq){
 }
 function abCard(key){
   const ab=state.ab, ii=byRole(C.ii7(key)), dd=byRole(C.dd(key));
-  let h=`<section class="card"><h2>👂 どっちがドッペル？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>A と B、どちらもそのあとⅤを鳴らすよ</small></h2>
+  let h=`<section class="card"><h2>👂 どっちがドッペル？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>AとB、どちらもそのあとⅤを鳴らすよ</small></h2>
     <p class="note" style="margin-top:0">ひとつはⅡ7、もうひとつはドッペルドミナント。Ⅴに「ぐっとひっぱられる」のはどっち？</p>`;
-  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 もんだいを出す</button></div></section>`;
+  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 問題を出す</button></div></section>`;
   h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ A をきく</button><button class="btn" data-act="abplay" data-v="B">▶️ B をきく</button></div>`;
   if(ab.answer==null) return h+`<p class="askline">ドッペルドミナントは？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">A がドッペル</button><button class="btn night" data-act="qchoose" data-v="B">B がドッペル</button></div></section>`;
   const ok=ab.answer===ab.dd, other=ab.dd==='A'?'B':'A';
   return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！もういちど聴きくらべてみよう。'}
       <b>${ab.dd}</b>がドッペル（${namesC(dd)}）、<b>${other}</b>がⅡ7（${namesW(ii)}）。
       <br>「${PA.nmH(dd[1])}」がⅤの「${PA.nmH(C.toV(key)[1])}」へ半音でのぼるので、Ⅴがつよく聞こえるんだ。</div>
-    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 つぎのもんだい</button></div></section>`;
+    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 次の問題</button></div></section>`;
 }
 function famCard(key){
   const f=state.fam, ns=C.ddStack(key,f), root=C.ddStack(key,'dd')[0], lt=ns.find(n=>n.tag==='lt'), n9=C.ddStack(key,'dd9')[4];
@@ -275,21 +275,21 @@ function famCard(key){
   let line;
   if(f==='dd') line=`ドッペルドミナントそのもの。根音「${PA.nmH(root)}」からひとつとばしで4つ。<span class="up">赤＝Ⅴへの導音</span>。`;
   else if(f==='dd9'){
-    line=`Ⅴ7/Ⅴに、もうひとつとばして第9音<b class="b9">「${PA.nmH(n9)}」</b>をのせた5つの音。Ⅴの家族のⅤ9とおなじしくみだよ。`;
-    if(!key.minor){const M=C.ddStack(key,'dd9',true)[4];line+=`<br>長調では「${PA.nmH(n9)}」はおなじ主音の短調からかりてきた音。第9音を「${PA.nmH(M)}」にしたⅤ9/Ⅴもあるよ。`;}
+    line=`Ⅴ7/Ⅴに、もうひとつとばして第9音<b class="b9">「${PA.nmH(n9)}」</b>をのせた5つの音。Ⅴの家族のⅤ9と同じしくみだよ。`;
+    if(!key.minor){const M=C.ddStack(key,'dd9',true)[4];line+=`<br>長調では「${PA.nmH(n9)}」は同じ主音の短調からかりてきた音。第9音を「${PA.nmH(M)}」にしたⅤ9/Ⅴもあるよ。`;}
   }else line=`Ⅴ9/Ⅴから根音「${PA.nmH(root)}」をはぶくと（けんばんのうすい鍵）<b>${ns.map(nmF).join('・')}</b>＝<b>減七の和音</b>。いちばん下がⅤへの導音「${PA.nmH(lt)}」だよ。`;
   const all=C.ddStack(key,'dd9').map(n=>n.midi), [lo,hi]=kbRange(all,10);
   const marks=new Map();
   ns.forEach(n=>marks.set(n.midi,{fill:n.tag==='lt'?RED:n.tag==='b9'?B9:DD_COL,label:PA.nm(n),focus:true}));
   if(f==='ddim') marks.set(root.midi,{fill:'#f4efe8',ring:'#b3a99c',tc:'#857c8f',label:PA.nm(root)});
-  return `<section class="card fam"><h2>🏠 ドッペルの家族<small>Ⅴの家族（Ⅴ7・Ⅴ9・減七）とおなじつくりかたで、Ⅴへむかう和音</small></h2>
+  return `<section class="card fam"><h2>🏠 ドッペルの家族<small>Ⅴの家族（Ⅴ7・Ⅴ9・減七）と同じつくりかたで、Ⅴへむかう和音</small></h2>
     ${PA.seg('fam',FAMS,f,'full')}
-    <div class="names">${ns.map(nmF).join('&nbsp;・ ')}</div>
+    <div class="names">${ns.map(nmF).join('・')}</div>
     <div class="hs">コードネーム<b>${C.symbol(key,f)}</b></div>
     <p class="note" style="color:var(--ink)">${line}</p>
     <div class="scroll" data-sk="famkb" style="margin-top:8px">${PA.kbSVG(lo,hi,marks)}</div>
     <div class="row" style="margin-top:8px"><button class="btn small" data-act="famplay">🔊 鳴らす</button><button class="btn small" data-act="famarp">🎶 ひとつずつ</button></div>
-    <p class="note"><a href="minor-family.html" data-go="family">🏠 Ⅴの家族</a>で、おなじしくみの「Ⅰへむかう和音」を見てみよう（短調）。</p></section>`;
+    <p class="note"><a href="minor-family.html" data-go="family">🏠 Ⅴの家族</a>で、同じしくみの「Ⅰへむかう和音」を見てみよう（短調）。</p></section>`;
 }
 // 📖 ことばメモ：本や楽譜で見かける名前を、やさしいことばで。例はいまの調の音で
 function termsHTML(key){
@@ -297,20 +297,20 @@ function termsHTML(key){
   const dl=(key.l+4)%7, dk={l:dl,a:PA.spell(dl,key.tpc+7),minor:key.minor}; // Ⅴを主音にした調（長調・短調はいまの調とおなじ）
   return `<details class="more" data-d="terms"><summary>📖 ことばメモ（本や楽譜で見かける名前）</summary>
     <p class="note" style="margin:0 0 4px">例は${PA.keyName(key)}の音だよ。</p><ul>
-    <li><b>ドッペルドミナント</b>（Ⅴ7/Ⅴ） … 「ⅤのためのⅤ7」。${PA.keyName(key)}では<b>${namesC(dd)}</b>（${C.symbol(key,'dd')}）。「${PA.nmH(vr)}」を主音にした${PA.keyName(dk)}のⅤ7とおなじ音だよ。</li>
+    <li><b>ドッペルドミナント</b>（Ⅴ7/Ⅴ） … 「ⅤのためのⅤ7」。${PA.keyName(key)}では<b>${namesC(dd)}</b>（${C.symbol(key,'dd')}）。「${PA.nmH(vr)}」を主音にした${PA.keyName(dk)}のⅤ7と同じ音だよ。</li>
     <li><b>副属和音</b> … Ⅰ以外の和音の前において、その和音をよぶⅤ7など。ドッペルドミナントはⅤをよぶ副属和音だよ。</li>
     <li><b>変化和音</b> … 調の音を臨時記号で半音上げたり下げたりした和音。ドッペルドミナントはⅡ7の${key.minor?'第3音と第5音':'第3音'}を半音上げた変化和音だよ。</li>
     <li><b>導音</b> … すぐ上の音へ半音でのぼりたがる音。${nmC(dd[1])}は${nmW(vr)}の導音。</li>
     <li><b>カデンツ</b>（終止形） … 曲やフレーズのおわりかたの和音のならび。この画面ではⅠ → Ⅱ7（ドッペル）→ Ⅴ → Ⅰのようにすすむよ。</li>
-    <li><b>Ⅰ6/4</b>（四六の和音・終止四六） … Ⅰの第5音「${PA.nmH(V[0])}」をいちばん下にした形。Ⅴの前におくと、Ⅴのなかまとしてはたらくよ。Ⅰ² と書く本もあるよ。</li>
-    <li><b>Ⅴ9/Ⅴ・減七/Ⅴ</b> … ドッペルの家族。Ⅴ7/Ⅴに第9音をのせた5つの音の和音と、そこから根音をはぶいた減七の和音。${key.minor?'':'長調では第9音をおなじ主音の短調からかりるので、かりたしるしの ○ をつける本もあるよ。'}</li>
+    <li><b>Ⅰ6/4</b>（四六の和音・終止四六） … Ⅰの第5音「${PA.nmH(V[0])}」をいちばん下にした形。Ⅴの前におくと、Ⅴのなかまになるよ。Ⅰ²と書く本もあるよ。</li>
+    <li><b>Ⅴ9/Ⅴ・減七/Ⅴ</b> … ドッペルの家族。Ⅴ7/Ⅴに第9音をのせた5つの音の和音と、そこから根音をはぶいた減七の和音。${key.minor?'':'長調では第9音を同じ主音の短調からかりるので、かりたしるし「○」をつける本もあるよ。'}</li>
   </ul></details>`;
 }
 let lastActions='';
 // 変化和音クイズへ：いまの調で、🎹 おさえるレベル1（Ⅱ7・ドッペル）を5もん。👂 聴きわけもレベル1
 function tryCard(key){
   return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',level:1,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
-    sub:`${PA.keyName(key)}で、Ⅱ7とドッペルドミナントをけんばんでおさえてみよう（5もん）。`,btn:'🎯 けんばんで5もん',
+    sub:`${PA.keyName(key)}で、Ⅱ7とドッペルドミナントをけんばんで5問おさえてみよう。`,btn:'🎯 けんばんで5問',
     links:[{to:'chroma-quiz',params:{mode:'ear',level:1,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:'👂 耳で聴きわける'}]});
 }
 function render(){
@@ -322,7 +322,7 @@ function render(){
       <div class="hero-top"><span class="badge" style="--c:${col}">${label(r)}</span>
         <div style="min-width:0"><div class="hk">${PA.keyName(key)}の${r?'ドッペルドミナント':'Ⅱ7（にどしち）'}</div>
         <div class="hs">コードネーム<b>${C.symbol(key,r?'dd':'ii7')}</b>　/　${r?'Ⅴ7/Ⅴ（ⅤのためのⅤ7）':'Ⅱの七の和音・Ⅳのなかま'}</div></div></div>
-      <div class="hn">${namesC(byRole(X),'&nbsp;・ ')}</div>
+      <div class="hn">${namesC(byRole(X))}</div>
       ${rolesHTML(key)}
       <button class="btn sw ${r?'on':''}" data-act="raise" role="switch" aria-checked="${r}"><span class="knob"></span>${key.minor?'第3音と第5音を半音上げる':'第3音を半音上げる'}</button>
       <div class="chips">${shapeChain(key)}</div>
@@ -349,20 +349,20 @@ function render(){
     <p class="note">ソプラノ（いちばん上）は<b>${namesC(seq.map(x=>x.ns[3]),' → ')}</b>。${cad64?`ドッペルの第7音「${PA.nmH(dd[3])}」の音はⅠ6/4でものこって、Ⅴ7で「${PA.nmH(seq[3].ns[seq[2].ns.findIndex(n=>n.midi===dd[3].midi)])}」へおりるよ。ベースは「${PA.nmH(V[0])}」のまま。`:`Ⅴの上の「${PA.nmH(vr)}」が「${PA.nmH(seq[3].ns[3])}」におりてⅤ7になるよ。`}</p>
     <details class="more inner"><summary>🎓 Ⅰ6/4をはさむと？</summary>
       <p class="note" style="color:var(--ink);margin-top:0">ドッペルのあと、すぐⅤに行かずに<b>Ⅰ6/4</b>（Ⅰの第5音「${PA.nmH(V[0])}」をいちばん下においた形）をはさむことも多いよ。ベースは「${PA.nmH(V[0])}」のままⅠ6/4 → Ⅴ7とすすむので、Ⅴの前の「ため」がうまれる。</p>
-      <p class="note" style="color:var(--ink)">Ⅰ6/4はⅠの音だけど、ベースがⅤの根音なので<b style="color:${V_COL}">Ⅴのなかま</b>としてはたらくよ（だから青い色）。</p>
-      <p class="note" style="color:var(--ink)">${r?'上の「Ⅰ6/4をはさむ」をえらんで「🎵 カデンツ」をおしてみよう。':'スイッチでドッペルドミナントにすると、「Ⅰ6/4をはさむ」がえらべるよ。'}</p></details>
+      <p class="note" style="color:var(--ink)">Ⅰ6/4はⅠの音だけど、ベースがⅤの根音なので、<b style="color:${V_COL}">Ⅴのなかま</b>になるよ（だから青い色）。</p>
+      <p class="note" style="color:var(--ink)">${r?'上の「Ⅰ6/4をはさむ」を選んで「🎵 カデンツ」をおしてみよう。':'スイッチでドッペルドミナントにすると、「Ⅰ6/4をはさむ」が選べるよ。'}</p></details>
   </section>`;
   h+=abCard(key);
   h+=famCard(key);
   h+=tryCard(key);
   h+=`<div class="links">
-    <a class="btn" href="aug6.html" data-go="aug6">↔️ <span>つぎは増六の和音 ›<small>ドッペルの第5音を下げると…</small></span></a></div>
+    <a class="btn" href="aug6.html" data-go="aug6">↔️ <span>次は増六の和音 ›<small>ドッペルの第5音を下げると…</small></span></a></div>
   <details class="more"><summary>💡 もっとくわしく</summary><ul>
-    <li>ドッペルドミナントは、Ⅱ7とおなじところ（Ⅴの前）でつかう。だから「Ⅱのなかま」と考えるよ。</li>
-    <li><b>おなじ主音の長調と短調では、ドッペルドミナントはおなじ音</b>（${namesC(dd)}）になるよ。${pk?`${PA.keyName(pk)}にかえてたしかめてみよう。`:''}</li>
+    <li>ドッペルドミナントは、Ⅱ7と同じところ（Ⅴの前）で使う。だから「Ⅱのなかま」と考えるよ。</li>
+    <li><b>同じ主音の長調と短調では、ドッペルドミナントは同じ音</b>（${namesC(dd)}）になるよ。${pk?`${PA.keyName(pk)}にかえて、たしかめてみよう。`:''}</li>
     <li>和音の名前は「Ⅴ7/Ⅴ」（ⅤのⅤ7）と書くよ。Ⅱのなかまなので、「Ⅱ」に印をつけてあらわす本もあるよ。</li>
     <li>ダブルシャープは、楽譜では「<span class="ds">x</span>」のような形で書くよ。この画面でも<span class="ds">x</span>であらわしているよ。</li>
-    <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と基準の音（ラ＝440〜443Hz）をえらべるよ。</li>
+    <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と基準の音（ラ＝440〜443Hz）を選べるよ。</li>
   </ul></details>${termsHTML(key)}</div>`;
   PA.paint(document.getElementById('view'),h,'doppel:'+state.minor+':'+state.keyIdx);
   renderActions();

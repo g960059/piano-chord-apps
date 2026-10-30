@@ -290,12 +290,12 @@
     const len = Array.from(name).length;
     if (len < 1) return { ok: false, error: '名前を入れてね' };
     if (len > NAME_MAX) return { ok: false, error: '名前が長すぎるよ（12文字まで）' };
-    if (!NAME_CHAR_RE.test(name)) return { ok: false, error: 'ひらがな・カタカナ・漢字・英数字・「ー」「・」だけつかえるよ' };
+    if (!NAME_CHAR_RE.test(name)) return { ok: false, error: 'ひらがな・カタカナ・漢字・英数字・「ー」「・」だけ使えるよ' };
     if (/^[ ー・]+$/.test(name)) return { ok: false, error: '名前を入れてね' };
     const lower = kataToHira(name).toLowerCase();
     if (NG_URLISH.test(lower)) return { ok: false, error: 'URL やメールアドレスは入れられないよ' };
     if (tooManyDigits(lower)) return { ok: false, error: '長い数字は入れられないよ' };
-    if (ngWordIn(lower)) return { ok: false, error: 'その名前はつかえないよ。ちがう名前にしてね' };
+    if (ngWordIn(lower)) return { ok: false, error: 'その名前は使えないよ。ちがう名前にしてね' };
     return { ok: true, name: name };
   }
 

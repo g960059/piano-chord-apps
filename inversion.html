@@ -47,7 +47,7 @@
 .shps{display:grid;gap:6px}
 .shp{border-radius:14px;padding:6px 2px 6px;background:var(--l);color:var(--t,var(--c));border:3px solid var(--c);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:44px;min-width:0}
 .shp .lab{font-size:22px;font-weight:800;line-height:1.2}
-.shp .sn{font-size:11.5px;font-weight:800;line-height:1.2;white-space:nowrap}
+.shp .sn{font-size:11.5px;font-weight:800;line-height:1.2;text-align:center;overflow-wrap:anywhere} /* せまいときは2行に */
 .shp .nm{font-size:13px;font-weight:700;line-height:1.35;display:flex;flex-direction:column-reverse;align-items:center;margin-top:4px}
 .shp .nm>span{display:block;white-space:nowrap;padding:0 5px;border-radius:7px}
 .shp .nm>span.lo{background:#ffe6a8;color:#7a4b00}
@@ -88,7 +88,7 @@
   .actionbar{gap:6px}
   .actionbar .btn{font-size:14px;gap:2px;padding-left:3px;padding-right:3px;letter-spacing:-.03em}
   .shp .lab{font-size:19px}
-  .shp .sn{font-size:10.5px;letter-spacing:-.04em;white-space:normal;word-break:keep-all;text-align:center}
+  .shp .sn{font-size:10.5px;letter-spacing:-.04em}
 }
 @media (min-width:600px){
   .shp .lab{font-size:26px}
@@ -199,8 +199,8 @@ function staffBox(svg,sk){ // 小さくなりすぎないように横スクロ�
 
 /* ===== ことば ===== */
 function staticMsg(key,ch,i,s){
-  if(i===0) return `根音${q(s[0])}（和音のもとになる音）が<b>いちばん下</b>。ひとつとばしできれいにつんだかたちだよ。`;
-  return `基本のかたちから、いちばん下の音を<b>1オクターブ上へ</b> ${i}回うつしたかたち。いちばん下が${INV.ROLE[i]}${q(s[0])}になったよ。音はおなじ${PA.namesH(INV.tones(key,ch))}。`;
+  if(i===0) return `根音${q(s[0])}（和音のもとになる音）が<b>いちばん下</b>。ひとつとばしで、きれいにつんだ基本のかたちだよ。`;
+  return `基本のかたちから、いちばん下の音を<b>1オクターブ上へ</b>${i}回うつしたかたち。いちばん下が${INV.ROLE[i]}${q(s[0])}になったよ。音はどれも同じ${PA.namesH(INV.tones(key,ch))}。`;
 }
 // 🔢 数字のしるし：いまのかたちで数えてみせる
 function figCard(key,ch,i,s,col){
@@ -211,9 +211,9 @@ function figCard(key,ch,i,s,col){
   }).join('');
   const all=f.all.slice().reverse(), drop=f.all.filter(x=>f.fig.indexOf(x)<0).reverse();
   let end;
-  if(!f.fig.length) end=`${all.join(' と ')}はいつもの数なので<b>書かない</b>。だからただの<b>${labelH(ch,i)}</b>`;
-  else if(!drop.length) end=`${f.fig.join(' と ')}を書いて<b>${labelH(ch,i)}</b>`;
-  else end=`${drop.join(' と ')}ははぶいて、${f.fig.join(' と ')}だけ書く → <b>${labelH(ch,i)}</b>`;
+  if(!f.fig.length) end=`${all.join('と')}は、いつもの数なので<b>書かない</b>。だから、ただの<b>${labelH(ch,i)}</b>`;
+  else if(!drop.length) end=`${f.fig.join('と')}を書いて<b>${labelH(ch,i)}</b>`;
+  else end=`${drop.join('と')}ははぶいて、${f.fig.join('と')}だけ書く → <b>${labelH(ch,i)}</b>`;
   if(f.alt) end+=`（${INV.CHORDS[ch].base}${f.alt}とも書く）`;
   const tbl=INV.shapes(key,ch).map((sh,j)=>`<tr class="${j===i?'on':''}"><td>${INV.NAME[j]}</td><td>${INV.ROLE[j]}</td><td>${INV.nums(sh).slice().reverse().join('・')}</td><td style="font-size:17px;font-weight:800">${labelH(ch,j)}</td></tr>`).join('');
   return `<section class="card" style="--c:${col};--l:${PA.LCOL[ch]};--t:${TCOL[ch]}"><h2>🔢 和音の数字（Ⅰ6・Ⅰ6/4など）<small>小さな数字は「いちばん下の音から数えたへだたりの数」</small></h2>
@@ -221,7 +221,7 @@ function figCard(key,ch,i,s,col){
     <ul class="cnt">${rows}</ul>
     <div class="rule" style="margin-top:8px">${end}</div>
     <table class="tbl figtbl" style="margin-top:10px"><thead><tr><th>かたち</th><th>いちばん下</th><th>へだたり</th><th>しるし</th></tr></thead><tbody>${tbl}</tbody></table>
-    <p class="note">ほかのページで見るしるしもおなじ。<b>Ⅱ6</b>・<b>N6</b>（ナポリの六）は第1転回形、<b>Ⅰ6/4</b>は第2転回形、<b>Ⅴ6/5</b>はⅤ7の第1転回形だよ。</p></section>`;
+    <p class="note">ほかのページで見るしるしも同じ。<b>Ⅱ6</b>・<b>N6</b>（ナポリの六）は第1転回形、<b>Ⅰ6/4</b>は第2転回形、<b>Ⅴ6/5</b>はⅤ7の第1転回形だよ。</p></section>`;
 }
 // 🤲 なぜかたちをかえるの？
 function handCard(key){
@@ -235,14 +235,14 @@ function handCard(key){
   const cols=seq.map((c,i)=>staffCol(!playing||i===state.cmpStep,c.ch,{notes:c.rh,label:INV.labelText(c.ch,c.bass)}));
   const th=s=>s.thumb.map(n=>PA.nmH(n)).join(' → ');
   const w=(a,b)=>a>b?' class="win"':'';
-  return `<section class="card"><h2>🤲 なぜかたちをかえるの？<small>ピアノでひくⅠ → Ⅳ → Ⅴ7 → Ⅰ（右手）</small></h2>
+  return `<section class="card"><h2>🤲 なぜ、かたちをかえるの？<small>ピアノでひくⅠ → Ⅳ → Ⅴ7 → Ⅰ（右手）</small></h2>
     ${PA.seg('form',[['inv','🤲 かたちをかえる<small>なめらか</small>'],['root','🧱 基本だけ<small>とびとび</small>']],form,'full formseg')}
     <div class="seq">${cards}</div>
     <div style="margin-top:10px">${staffBox(PA.staffSVG(key,cols,{colW:66}),'cstaff')}</div>
     <table class="tbl cmptbl" style="margin-top:8px"><thead><tr><th></th><th>🤲 かえる</th><th>🧱 基本だけ</th></tr></thead><tbody>
       <tr><td>そのままのこる音</td><td${w(inv.kept,root.kept)}>${inv.kept}つ</td><td${w(root.kept,inv.kept)}>${root.kept}つ</td></tr>
       <tr><td>親指の音</td><td class="win">${th(inv)}</td><td>${th(root)}</td></tr></tbody></table>
-    <p class="note">${form==='inv'?`<span style="color:#8f5a00">オレンジのわく</span>＝前の和音とおなじけんばん（そのまま）。ほかの音もとなりへうごくだけ。だから手がほとんど動かないよ。Ⅴ6/5は${q(PA.at(key.scale,1))}をはぶいているよ。`:'ぜんぶ基本のかたちだと、和音がかわるたびに手ごと大きくとぶ。ひびきもブツブツ切れやすいね。'}</p>
+    <p class="note">${form==='inv'?`<span style="color:#8f5a00">オレンジのわく</span>＝前の和音と同じけんばん（そのまま）。ほかの音も、となりへ動くだけ。だから手がほとんど動かないよ。Ⅴ6/5は${q(PA.at(key.scale,1))}をはぶいているよ。`:'ぜんぶ基本のかたちだと、和音がかわるたびに、手ごと大きくとぶ。ひびきもブツブツ切れやすいね。'}</p>
     <div class="row" style="margin-top:8px">${playing?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="cplay">▶️ ながして聴く</button>`}<a class="btn small" href="cadence.html">🎹 カデンツ（左手つき）</a></div></section>`;
 }
 // 🎯 たしかめよう（答えは保存しない）
@@ -255,51 +255,51 @@ function newQ(prev){
 function quizCard(key){
   const Z=state.quiz;
   if(Z.done) return `<section class="card"><h2>🎯 たしかめよう</h2>
-    <div class="fb ${Z.right===QN?'good':''}" style="${Z.right===QN?'':'background:var(--soft2)'}" role="status">${Z.right===QN?'🎉':'👍'} ${QN}もん中<b>${Z.right}もん</b>せいかい！${Z.right===QN?'かんぺき！':'上のかたちをもう一度見てから、もういちどやってみよう。'}</div>
+    <div class="fb ${Z.right===QN?'good':''}" style="${Z.right===QN?'':'background:var(--soft2)'}" role="status">${Z.right===QN?'🎉':'👍'} ${QN}問中<b>${Z.right}問</b>正解！${Z.right===QN?'かんぺき！':'上のかたちをもう一度見てから、またやってみよう。'}</div>
     <div class="row" style="margin-top:10px"><button class="btn primary" data-act="qreset">🔁 もういちど</button></div></section>`;
   const Q=Z.q, c=INV.CHORDS[Q.ch], col=PA.COL[Q.ch], s=INV.shape(key,Q.ch,Q.shape), answered=Q.picked!=null;
   const marks=new Map(); s.forEach(n=>marks.set(n.midi,{fill:col,label:PA.nm(n),focus:true}));
   const [lo,hi]=chordRange(key,Q.ch);
   const choices=Array.from({length:c.n},(_,j)=>{
     const cls=answered?(j===Q.shape?'right':(j===Q.picked?'wrong':'')):'';
-    return `<button class="choice ${cls}" data-act="qchoose" data-v="${j}" ${answered?'disabled':''}>${INV.NAME[j].split(' ').map(w=>`<span class="nw">${w}</span>`).join(' ')}<small>${labelH(Q.ch,j)}</small></button>`;
+    return `<button class="choice ${cls}" data-act="qchoose" data-v="${j}" ${answered?'disabled':''}>${INV.NAME[j].replace('の','の<wbr>')}<small>${labelH(Q.ch,j)}</small></button>`;
   }).join('');
   let fb='';
   if(answered){
     const ok=Q.picked===Q.shape, t=INV.tones(key,Q.ch);
-    fb=`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'⭕ せいかい！':'🤔 おしい！'}いちばん下は${q(s[0])}＝<b>${INV.ROLE[Q.shape]}</b>。だから<b>${INV.NAME[Q.shape]}</b>（${labelH(Q.ch,Q.shape)}）。${ok?'':`<br>ひとつとばしにならべなおすと${PA.namesH(t)}。根音は${q(t[0])}だね。`}</div>
-      <div class="row"><button class="btn primary" data-act="qnext">${Z.n<QN?'つぎのもんだい ➡':'けっかを見る ➡'}</button></div>`;
+    fb=`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'⭕ 正解！':'🤔 おしい！'}いちばん下は${q(s[0])}＝<b>${INV.ROLE[Q.shape]}</b>。だから<b>${INV.NAME[Q.shape]}</b>（${labelH(Q.ch,Q.shape)}）。${ok?'':`<br>「ひとつとばし」にならべなおすと、${PA.namesH(t)}。根音は${q(t[0])}だね。`}</div>
+      <div class="row"><button class="btn primary" data-act="qnext">${Z.n<QN?'次の問題 ➡':'けっかを見る ➡'}</button></div>`;
   }
-  return `<section class="card"><h2>🎯 たしかめよう<small>${Z.n} / ${QN}もんめ　いちばん下の音を見てこたえよう</small></h2>
+  return `<section class="card"><h2>🎯 たしかめよう<small>${Z.n} / ${QN}問　いちばん下の音を見て、こたえよう</small></h2>
     <div class="qbox">
     <p class="qq">${PA.keyName(key)}の<b style="color:${col}">${c.label}</b>。このかたちはどれ？</p>
     ${staffBox(PA.staffSVG(key,[{notes:s,color:col,ltColor:'#d1495b',accColor:'#d1495b'}],{minW:180,maxScale:1.15}),'qstaff')}
     ${kbBox(lo,hi,marks,'qkb')}
     <div class="row"><button class="btn small" data-act="qplay">🔊 きく</button></div>
-    <div class="choices qch" style="grid-template-columns:repeat(${c.n===3?3:2},minmax(0,1fr))" role="group" aria-label="こたえをえらぶ">${choices}</div>
+    <div class="choices qch" style="grid-template-columns:repeat(${c.n===3?3:2},minmax(0,1fr))" role="group" aria-label="こたえを選ぶ">${choices}</div>
     ${fb}</div></section>`;
 }
 function tipsHTML(key){
   return `<details class="more tips" data-d="tips"><summary>💡 おぼえかたのコツ</summary><ul>
-    <li><b>音はおなじ、いちばん下だけちがう</b>。いちばん下が根音 → 基本のかたち、第3音 → 第1転回形、第5音 → 第2転回形（Ⅴ7は第7音 → 第3転回形）。</li>
-    <li>見わけかた：音を<b>ひとつとばし</b>にならべなおす（だんご 🍡）。いちばん下にきた音が根音。</li>
+    <li><b>音は同じ、いちばん下だけちがう</b>。いちばん下が根音 → 基本のかたち、第3音 → 第1転回形、第5音 → 第2転回形（Ⅴ7は第7音 → 第3転回形）。</li>
+    <li>見わけかた：音を<b>「ひとつとばし」</b>にならべなおす（だんご 🍡）。いちばん下にきた音が根音。</li>
     <li>がくふで：基本のかたちは<b>線・線・線</b>か<b>間・間・間</b>。三和音の転回形には<b>1か所だけ広いすきま</b>があって、そのすきまの<b>すぐ上の音が根音</b>。</li>
-    <li>Ⅴ7の転回形は、<b>となりどうしでくっついた2つの音</b>がある。その<b>上のほう</b>が根音。</li>
+    <li>Ⅴ7の転回形には、<b>となりあう2つの音</b>がある（がくふでくっついて見える）。その<b>上のほう</b>が根音。</li>
     <li>数字に<b>6</b>があったら転回形（Ⅴ7は6/5・4/3・2）。</li>
-    <li>ピアノの伴奏では、手が動かないようにかたちをかえてつなぐよ（🤲 のカード）。</li>
+    <li>ピアノの伴奏では、手が動かないように、かたちをかえて和音をつなぐよ（🤲 のカード）。</li>
   </ul></details>`;
 }
 function termsHTML(key,ch,i){
   const t=INV.tones(key,ch), roles=t.map((n,j)=>`${INV.ROLE[j]}${q(n)}`).join('・');
   return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や楽譜で見かける名前）</summary><dl>
     <dt>${yomi('根音','こんおん')}・第3音・第5音・第7音</dt>
-    <dd>和音をひとつとばしでつんだときの音の名前。いちばん下が<b>根音</b>（和音のもとになる音）。かたちをかえても名前はかわらない。いまの${INV.CHORDS[ch].label}は${roles}。</dd>
+    <dd>和音を「ひとつとばし」でつんだときの、それぞれの音の名前。いちばん下が<b>根音</b>（和音のもとになる音）。かたちをかえても名前はかわらない。いまの${INV.CHORDS[ch].label}は${roles}。</dd>
     <dt>${yomi('基本形','きほんけい')}</dt>
     <dd>このページの「基本のかたち」。根音がいちばん下のかたち。</dd>
     <dt>${yomi('転回形','てんかいけい')}（第1・第2・第3転回形）</dt>
     <dd>いちばん下の音を上へうつして（${yomi('転回','てんかい')}＝ころがす）、根音いがいの音がいちばん下になったかたち。いちばん下が第3音なら<b>第1転回形</b>、第5音なら<b>第2転回形</b>、第7音なら<b>第3転回形</b>。</dd>
     <dt>${yomi('六の和音','ろくのわおん')}・${yomi('四六の和音','しろくのわおん')}</dt>
-    <dd>第1転回形（Ⅰ6）と第2転回形（Ⅰ6/4）のべつのよびかた。数字のしるしから来ているよ。Ⅰ¹・Ⅰ² のように書く本もある。</dd>
+    <dd>第1転回形（Ⅰ6）と第2転回形（Ⅰ6/4）のべつのよびかた。数字のしるしから来ているよ。Ⅰ¹・Ⅰ²のように書く本もある。</dd>
     <dt>${yomi('五六の和音','ごろくのわおん')}・${yomi('三四の和音','さんしのわおん')}・${yomi('二の和音','にのわおん')}</dt>
     <dd>Ⅴ7の第1転回形（Ⅴ6/5）・第2転回形（Ⅴ4/3）・第3転回形（Ⅴ2。Ⅴ4/2とも）のよびかた。</dd>
     <dt>${yomi('度','ど')}（へだたりの数）</dt>
@@ -309,7 +309,7 @@ function termsHTML(key,ch,i){
     <dt>コードネームの「/」</dt>
     <dd>${PA.H(INV.symbol(key,ch,1))}のように、/ の右にいちばん下の音を書く。いまのかたちは<b>${PA.H(INV.symbol(key,ch,i))}</b>。</dd>
     <dt>${yomi('共通音','きょうつうおん')}</dt>
-    <dd>となりあう2つの和音のどちらにもある音（🤲 のカードのオレンジのわく）。うごかさずにのこすとなめらかにつながる。</dd>
+    <dd>となりあう2つの和音のどちらにもある音（🤲 のカードのオレンジのわく）。動かさずにのこすと、なめらかにつながる。</dd>
   </dl></details>`;
 }
 
@@ -321,16 +321,16 @@ function render(){
   const A=state.anim, i=state.shape, s=all[i], mv=A&&A.move;
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
-    <div class="chords" role="group" aria-label="和音をえらぶ">`+CH_KEYS.map(k=>`<button class="cbtn ${k===ch?'on':''}" style="--c:${PA.COL[k]};--l:${PA.LCOL[k]};--t:${TCOL[k]}" data-act="chord" data-v="${k}" aria-pressed="${k===ch}"><span class="num">${INV.CHORDS[k].label}</span><span class="nm">${INV.tones(key,k).map(x=>`<span class="nw">${PA.nmH(x)}</span>`).join('<wbr>')}</span></button>`).join('')+`</div>
+    <div class="chords" role="group" aria-label="和音を選ぶ">`+CH_KEYS.map(k=>`<button class="cbtn ${k===ch?'on':''}" style="--c:${PA.COL[k]};--l:${PA.LCOL[k]};--t:${TCOL[k]}" data-act="chord" data-v="${k}" aria-pressed="${k===ch}"><span class="num">${INV.CHORDS[k].label}</span><span class="nm">${INV.tones(key,k).map(x=>`<span class="nw">${PA.nmH(x)}</span>`).join('<wbr>')}</span></button>`).join('')+`</div>
     <section class="card hero" style="--c:${col}">
       <div class="hero-top"><span class="badge" style="--c:${col}" aria-hidden="true">${labelH(ch,i)}</span>
         <div style="min-width:0"><div class="hk">${PA.keyName(key)}の${c.label}</div><div class="hn">${INV.NAME[i]}</div>
         <div class="hs"><b>${INV.ROLE[i]}</b>がいちばん下　/　<span class="nw">コードネーム${PA.H(INV.symbol(key,ch,i))}</span></div></div></div>
-      <div class="lowline">下から：${s.map((x,j)=>`<span class="nw ${j===0?'lo':''}">${PA.nmH(x)}</span>`).join(' ・ ')}</div>
+      <div class="lowline">下から：${s.map((x,j)=>`<span class="nw ${j===0?'lo':''}">${PA.nmH(x)}</span>`).join('・')}</div>
       <div class="msg" style="margin-top:10px" aria-live="polite">${A?A.msg:(state.msg||staticMsg(key,ch,i,s))}</div>
       <div class="row" style="margin-top:10px"><button class="btn small" data-act="arp">🎶 下からひとつずつ</button></div>
     </section>
-    <p class="shplabel">${n}つのかたち（下がひくい音。<span style="background:#ffe6a8;color:#7a4b00;border-radius:6px;padding:0 4px">黄色</span>＝いちばん下）</p>
+    <p class="shplabel">${n}つのかたち（下が低い音。<span style="background:#ffe6a8;color:#7a4b00;border-radius:6px;padding:0 4px">黄色</span>＝いちばん下）</p>
     <div class="shps" style="grid-template-columns:repeat(${n},minmax(0,1fr))">`+all.map((sh,j)=>`<button class="shp ${j===i?'on':''}" style="--c:${col};--l:${PA.LCOL[ch]};--t:${TCOL[ch]}" data-act="shape" data-v="${j}" aria-pressed="${j===i}" aria-label="${INV.NAME[j]}（下から${PA.namesT(sh)}）"><span class="lab">${labelH(ch,j)}</span><span class="sn">${INV.SHORT[j]}</span><span class="nm">${sh.map((x,k)=>`<span class="${k===0?'lo':''}">${PA.nmH(x)}</span>`).join('')}</span></button>`).join('')+`</div>`;
   // けんばん：いちばん下の音はオレンジのわく。下の小さな字は音のやくわり
   const marks=new Map();
@@ -354,8 +354,8 @@ function render(){
   if(i!==lastShape||sig!==lastSig||mv) PA.follow(view); // 色のついた鍵が見えるように
   lastShape=i; lastSig=sig;
   PA.paint(document.getElementById('actions'),
-    (A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build" aria-label="うごかしてみる">🔄 <span class="lbl-w">うごかしてみる</span><span class="lbl-n">うごかす</span></button>`)+
-    `<button class="btn primary" data-act="play" data-hot="listen">🔊 きく</button><button class="btn nx" data-act="next" data-hot="next" aria-label="つぎのかたち">つぎ ➡</button>`,'bar');
+    (A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build" aria-label="動かしてみる">🔄 <span class="lbl-w">動かしてみる</span><span class="lbl-n">動かす</span></button>`)+
+    `<button class="btn primary" data-act="play" data-hot="listen">🔊 きく</button><button class="btn nx" data-act="next" data-hot="next" aria-label="次のかたち">次 ➡</button>`,'bar');
 }
 
 /* ===== 音・アニメ ===== */
@@ -372,7 +372,7 @@ async function build(){
     const s=all[i], ms=s.map(x=>x.midi);
     state.shape=i; A.move=null;
     A.msg=i===0?`<b>${NUM[0]}</b>まずは<b>基本のかたち</b>。根音${q(s[0])}がいちばん下。`
-      :`<b>${NUM[i]}</b> <b>${INV.NAME[i]}</b>！いちばん下は${INV.ROLE[i]}${q(s[0])}。`;
+      :`<b>${NUM[i]}</b><b>${INV.NAME[i]}</b>！いちばん下は${INV.ROLE[i]}${q(s[0])}。`;
     render();
     PA.chord(ms,{arp:true,gap:0.22,dur:1.2}); PA.chord(ms,{when:ms.length*0.22+0.2,dur:1.4});
     await PA.sleep(2300); if(!alive()) return;
@@ -384,7 +384,7 @@ async function build(){
       await PA.sleep(1500); if(!alive()) return;
     }
   }
-  A.move=null; A.msg=`🎉 どれもおなじ${PA.namesH(INV.tones(key,ch))}。<b>いちばん下の音</b>で名前がかわるよ。`;
+  A.move=null; A.msg=`🎉 どれも同じ${PA.namesH(INV.tones(key,ch))}。<b>いちばん下の音</b>で名前がかわるよ。`;
   render(); await PA.sleep(1600); if(!alive()) return;
   state.msg=A.msg; state.anim=null; save(); render();
 }

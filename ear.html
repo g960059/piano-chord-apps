@@ -140,7 +140,7 @@ body{display:flex;flex-direction:column;min-height:calc(100vh - env(safe-area-in
 .qhead{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:space-between;gap:4px 10px}
 .qhead h2{font-size:19px;margin:0;flex:none;white-space:nowrap}
 .score{flex:1 1 0;text-align:right;font-size:17px;font-weight:800;line-height:1.35}
-.score .sub{font-size:15px;font-weight:400;color:var(--sub);white-space:nowrap}
+.score .sub{margin-left:.45em;font-size:15px;font-weight:400;color:var(--sub);white-space:nowrap}
 .score b{white-space:nowrap}
 .stars{display:block;font-size:13px;letter-spacing:1px}
 .pdots,.rdots{display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
@@ -236,14 +236,14 @@ const mod=PA.mod;
 // ints：[根音からの文字のかず, 根音からの高さ]
 const T={
   maj:{label:'長三和音',word:'明るい',emoji:'☀️',color:'#e8553d',sym:'',desc:'元気でまっすぐなひびき',ints:[[0,0],[2,4],[4,7]]},
-  min:{label:'短三和音',word:'さびしい',emoji:'🌧️',color:'#3b4fa8',sym:'m',desc:'しずかでさびしいひびき',ints:[[0,0],[2,3],[4,7]]},
+  min:{label:'短三和音',word:'さびしい',emoji:'🌧️',color:'#3b4fa8',sym:'m',desc:'しずかで、さびしいひびき',ints:[[0,0],[2,3],[4,7]]},
   dim:{label:'減三和音',word:'きゅうくつ',emoji:'😖',color:'#8a5a2b',sym:'dim',desc:'せまくてきゅうくつ。ちょっとこわい',ints:[[0,0],[2,3],[4,6]]},
-  aug:{label:'増三和音',word:'ふしぎ',emoji:'🌀',color:'#0d7f86',sym:'aug',desc:'ゆめの中みたいにゆらゆら。どこへ行くかわからないふしぎ',ints:[[0,0],[2,4],[4,8]]},
+  aug:{label:'増三和音',word:'ふしぎ',emoji:'🌀',color:'#0d7f86',sym:'aug',desc:'ゆめの中みたいにゆらゆら。どこへ行くかわからない、ふしぎなひびき',ints:[[0,0],[2,4],[4,8]]},
   sus4:{label:'sus4',word:'ふわっと',emoji:'🎈',color:'#1e8a5a',sym:'sus4',desc:'「サスフォー」とよむよ。第3音のかわりに、文字で1つ上の音をのせた和音。ういていて、まだおわらない感じ',ints:[[0,0],[3,5],[4,7]]},
-  dom7:{label:'Ⅴ7',word:'つぎへ行きたい',emoji:'➡️',color:PA.COL.V7,sym:'7',desc:'「つぎの和音へ行きたい！」とひっぱる',ints:[[0,0],[2,4],[4,7],[6,10]],fam:'V7'},
-  maj7:{label:'長七',word:'おしゃれ',emoji:'✨',color:'#a86a00',sym:'M7',desc:'キラキラおしゃれ。明るくてすこしせつない',ints:[[0,0],[2,4],[4,7],[6,11]]},
-  min7:{label:'短七',word:'やさしいおとな',emoji:'🌙',color:'#2b6cb0',sym:'m7',desc:'やわらかくておとなっぽい',ints:[[0,0],[2,3],[4,7],[6,10]]},
-  hdim7:{label:'半減七',word:'くもり・なぞ',emoji:'🌫️',color:'#5f6577',sym:'m7(♭5)',desc:'くもり空みたいななぞめいたひびき',ints:[[0,0],[2,3],[4,6],[6,10]]},
+  dom7:{label:'Ⅴ7',word:'次へ行きたい',emoji:'➡️',color:PA.COL.V7,sym:'7',desc:'「次の和音へ行きたい！」とひっぱる',ints:[[0,0],[2,4],[4,7],[6,10]],fam:'V7'},
+  maj7:{label:'長七',word:'おしゃれ',emoji:'✨',color:'#a86a00',sym:'M7',desc:'キラキラおしゃれ。明るくて、すこしせつない',ints:[[0,0],[2,4],[4,7],[6,11]]},
+  min7:{label:'短七',word:'やさしいおとな',emoji:'🌙',color:'#2b6cb0',sym:'m7',desc:'やわらかくて、おとなっぽい',ints:[[0,0],[2,3],[4,7],[6,10]]},
+  hdim7:{label:'半減七',word:'くもり・なぞ',emoji:'🌫️',color:'#5f6577',sym:'m7(♭5)',desc:'くもり空みたいな、なぞめいたひびき',ints:[[0,0],[2,3],[4,6],[6,10]]},
   dim7:{label:'減七',word:'ドキドキ',emoji:'😱',color:'#b0307a',sym:'dim7',desc:'あやしくてドキドキ。もりあがる場面やこわい場面で',ints:[[0,0],[2,3],[4,6],[6,9]],fam:'DIM'}
 };
 const ORDER=['maj','min','dim','aug','sus4','dom7','maj7','min7','hdim7','dim7'];
@@ -253,10 +253,10 @@ const ORDER=['maj','min','dim','aug','sus4','dom7','maj7','min7','hdim7','dim7']
 const LEVELS=[null,
   {name:'はじめて',desc:'明るい・ドキドキ',types:['maj','dim7']},
   {name:'3しゅるい',desc:'明るい・さびしい・ドキドキ',types:['maj','min','dim7']},
-  {name:'4しゅるい',desc:'明るい・さびしい・つぎへ・ドキドキ',types:['maj','min','dom7','dim7']},
+  {name:'4しゅるい',desc:'明るい・さびしい・次へ・ドキドキ',types:['maj','min','dom7','dim7']},
   {name:'三和音4つ',desc:'明るい・さびしい・きゅうくつ・ふしぎ',types:['maj','min','dim','aug']},
-  {name:'5しゅるい',desc:'明るい・さびしい・ふわっと・つぎへ・ドキドキ',types:['maj','min','sus4','dom7','dim7'],replays:3},
-  {name:'七の和音',desc:'つぎへ・おしゃれ・おとな・ドキドキ',types:['dom7','maj7','min7','dim7'],replays:3,wide:true},
+  {name:'5しゅるい',desc:'明るい・さびしい・ふわっと・次へ・ドキドキ',types:['maj','min','sus4','dom7','dim7'],replays:3},
+  {name:'七の和音',desc:'次へ・おしゃれ・おとな・ドキドキ',types:['dom7','maj7','min7','dim7'],replays:3,wide:true},
   {name:'8しゅるい',desc:'三和音4つ・七の和音4つ',types:['maj','min','dim','aug','dom7','maj7','min7','hdim7'],replays:2,wide:true},
   {name:'ぜんぶ',desc:'10しゅるいぜんぶ',types:ORDER.slice(),replays:2,wide:true,arp:true}];
 const MAXLV=8, CLEAR=5;
@@ -544,7 +544,7 @@ function playRes(){
 /* ===== ランキングのサーバー（/api/*。ないところ＝file://・ふつうの静的サーバーでは「オフライン」） ===== */
 const NET_MSG='インターネットにつながらなかったよ';
 const OFF_MSG='いまはランキングにのせられないよ（オフライン）';
-const BUSY_MSG='いまはランキングがこみあっているよ。すこしまってからもういちどためしてね';
+const BUSY_MSG='いまはランキングがこみあっているよ。すこしまってから、もういちどためしてね';
 // サーバーはあって、ことわられた（回数が多すぎるなど）。404・501・JSON でない答え・つながらないときは「オフライン」
 const isBusy=e=>!!(e&&e.detail&&e.status>=400&&e.status!==404&&e.status!==501);
 const canNet=()=>/^https?:$/.test(location.protocol)&&typeof fetch==='function';
@@ -564,7 +564,7 @@ function api(path,opt){
       if(!res.ok){
         // ランキングのサーバーのエラー（日本語のメッセージ）か、サーバーがない（404・501など）か
         const m=isObj(data)&&typeof data.error==='string'&&data.error.trim()?data.error.trim().slice(0,200):'';
-        finish(reject,errOf(res.status,m||(res.status>=500&&res.status!==501?'サーバーがいそがしいみたい。すこしまってからもういちどためしてね':OFF_MSG),m));
+        finish(reject,errOf(res.status,m||(res.status>=500&&res.status!==501?'サーバーがいそがしいみたい。すこしまってから、もういちどためしてね':OFF_MSG),m));
       }else if(!isObj(data)) finish(reject,errOf(res.status,OFF_MSG));
       else finish(resolve,data);
     })).catch(()=>finish(reject,errOf(0,NET_MSG)));
@@ -675,7 +675,7 @@ function chSubmit(){
   const nm=currentName();
   if(!nm.ok){ch.sendError=nm.error;render();showError();return;}
   if(Date.now()-ch.startedAt>CH.runTtlMs){
-    ch.closed={kind:'gone',msg:'はじめてから2時間たったので、ランキングにはのせられないよ。またチャレンジしてね'};
+    ch.closed={kind:'gone',msg:'始めてから2時間たったので、ランキングにはのせられないよ。またチャレンジしてね'};
     save(); render(); scrollTop(); return;
   }
   ch.sending=true; ch.sendError=null; render();
@@ -779,8 +779,8 @@ function choiceHTML(t){
 }
 function knobsHTML(lv,mode){
   const L=LEVELS[lv], R=replaysOf(lv,mode);
-  const rule=mode!=='ch'?'れんしゅうはなんどでもきける':R==null?'このレベルはなんどでもきける':`もういちどきけるのは${R}回まで`;
-  return `<div class="knobs"><span>🔁 ${rule}</span>${L.wide?'<span>🎹 ひろい高さ・ひらいた形も</span>':''}${L.arp?'<span>🎶 さいしょはばらばらに鳴る</span>':''}</div>`;
+  const rule=mode!=='ch'?'れんしゅうは、なんどでもきける':R==null?'このレベルは、なんどでもきける':`もういちどきけるのは${R}回まで`;
+  return `<div class="knobs"><span>🔁 ${rule}</span>${L.wide?'<span>🎹 ひろい高さ・ひらいた形も</span>':''}${L.arp?'<span>🎶 さいしょは、ばらばらに鳴る</span>':''}</div>`;
 }
 const chipsHTML=lv=>`<div class="chips lvchips">${LEVELS[lv].types.map(t=>`<span class="chip" style="--c:${T[t].color}">${T[t].emoji} ${T[t].word}</span>`).join('')}</div>`;
 // レベルのボタン：小さな説明と、✓（れんしゅうで CLEAR もんれんぞく）・🏆（チャレンジでクリア）
@@ -800,15 +800,15 @@ function heartsHTML(lives,lostNow){
 const lvText=r=>r.mastered?'<span class="master">🏅 マスター</span>':`レベル${r.level}`;
 function offMsgHTML(){
   if(ch.offWhy==='busy') return '⏳ ランキングがこみあっていたので、こんかいはランキングにはのせられないよ。';
-  return ch.offWhy==='time'?'⏰ はじめてから2時間たったので、ランキングにはのせられないよ。':`📴 ${OFF_MSG}。`;
+  return ch.offWhy==='time'?'⏰ 始めてから2時間たったので、ランキングにはのせられないよ。':`📴 ${OFF_MSG}。`;
 }
 function chMsgHTML(){
   const e=ch.event, q=state.q, lv=q.lv, st=ch.run.state, still=state.fresh?'':' still';
   if(e==='ok') return `<div class="chmsg">${dots(CLEAR,st.streak,'pdots')}あと<b>${CLEAR-st.streak}もん</b>でレベル${lv}クリア！</div>`;
-  if(e==='up') return `<div class="celebrate${still}" role="status"><span class="fx" aria-hidden="true">🎉🎊🎉</span>レベル${lv}クリア！<br>つぎは<b>レベル${st.level}</b>（${LEVELS[st.level].name}）だよ</div>`;
+  if(e==='up') return `<div class="celebrate${still}" role="status"><span class="fx" aria-hidden="true">🎉🎊🎉</span>レベル${lv}クリア！<br>次は<b>レベル${st.level}</b>（${LEVELS[st.level].name}）だよ</div>`;
   if(e==='master'){
     const first=st.history.filter(x=>x.event==='master').length===1;
-    return `<div class="celebrate${still}" role="status"><span class="fx" aria-hidden="true">🏆✨🏆</span>${first?'レベル8クリア！':'またレベル8クリア！'}<br>和音の聴きわけ<span class="master">🏅 マスター</span><br><span style="font-size:16px">このままつづけて、せいかいをふやそう！</span></div>`;
+    return `<div class="celebrate${still}" role="status"><span class="fx" aria-hidden="true">🏆✨🏆</span>${first?'レベル8クリア！':'またレベル8クリア！'}<br>和音の聴きわけ<span class="master">🏅 マスター</span><br><span style="font-size:16px">このままつづけて、正解をふやそう！</span></div>`;
   }
   if(e==='down') return `<div class="chmsg">${lv>1
     ?`だいじょうぶ！ライフはあと<b>${st.lives}</b>。<b>レベル${st.level}</b>で耳をならしてから、またのぼろう 💪`
@@ -818,24 +818,24 @@ function chMsgHTML(){
 }
 function feedbackHTML(){
   const q=state.q, ok=state.answer===q.type, E=T[q.type], K=q.keyIdx!=null?KEYS[q.keyIdx]:null;
-  const head=!ok?'🤔 おしい！':state.hinted?'💡 せいかい！「ヒントでできた」だよ。':'🎉 せいかい！';
+  const head=!ok?'🤔 おしい！':state.hinted?'💡 正解！「ヒントでできた」だよ。':'🎉 正解！';
   let h=`<div class="fb ${ok?'good':'bad'}${state.fresh?'':' still'}" role="status">${head}これは<b>${E.label}</b>（${E.word}）。音は<b>${PA.namesH(q.notes)}</b>`;
   h+=`<br><span class="sm">根音（和音の土台の音）は<b>${PA.nmH(q.root)}</b>・コードネーム<b>${symOf(q.root,q.type)}</b>${q.open?'・ひらいた形':''}</span>`;
   if(K) h+=`<br><span class="sm">${PA.keyName(K)}の${q.type==='dom7'?'Ⅴ7':'減七'}だよ。${q.type==='dim7'?`<b>${FAM_NO[mod(K.lt.midi,3)]}のなかま</b>。`:''}</span>`;
   h+=`</div>`;
   if(state.mode==='ch'){
     h+=chMsgHTML();
-    if(ch.capped) h+=`<div class="chmsg">${CH.maxAnswers}もんこたえたよ。すごい！ここでおわりにしよう 🏁</div>`;
+    if(ch.capped) h+=`<div class="chmsg">${CH.maxAnswers}もんこたえたよ。すごい！ここで、おわりにしよう 🏁</div>`;
   }
   // まちがえたとき：えらんだ和音とせいかいを、おなじ高さ・おなじつみかたでくらべる
   if(!ok){
     const A=T[state.answer];
-    h+=`<div class="ab"><p>🎧 おなじ高さで、しゅるいだけかえてくらべよう</p><div class="abrow">
-      <button class="btn" style="--c:${A.color}" data-act="eab" data-v="pick" aria-label="えらんだ和音：${A.word}（${A.label}）をきく"><span>🔁 えらんだ和音</span><small>${A.emoji} ${A.word}<wbr>（${A.label}）</small></button>
-      <button class="btn" style="--c:${E.color}" data-act="eab" data-v="right" aria-label="せいかい：${E.word}（${E.label}）をきく"><span>🔁 せいかい</span><small>${E.emoji} ${E.word}<wbr>（${E.label}）</small></button></div></div>`;
+    h+=`<div class="ab"><p>🎧 同じ高さで、しゅるいだけかえて、くらべよう</p><div class="abrow">
+      <button class="btn" style="--c:${A.color}" data-act="eab" data-v="pick" aria-label="選んだ和音：${A.word}（${A.label}）をきく"><span>🔁 選んだ和音</span><small>${A.emoji} ${A.word}<wbr>（${A.label}）</small></button>
+      <button class="btn" style="--c:${E.color}" data-act="eab" data-v="right" aria-label="正解：${E.word}（${E.label}）をきく"><span>🔁 正解</span><small>${E.emoji} ${E.word}<wbr>（${E.label}）</small></button></div></div>`;
   }
   const res=K&&state.resShown?resInfo():null;
-  if(K) h+=`<div class="resrow"><button class="btn" data-act="eres">🔔 Ⅰへすすむひびきもきく</button></div>`;
+  if(K) h+=`<div class="resrow"><button class="btn" data-act="eres">🔔 Ⅰへすすむ音もきく</button></div>`;
   if(res) h+=`<div class="msg" style="margin-top:10px">${PA.keyName(K)}のⅠへ：<b>${PA.namesH(q.notes)}</b> → <b style="color:#e8553d">${PA.namesH(res.filter((n,i)=>res.findIndex(x=>x.midi===n.midi)===i))}</b></div>`;
   const marks=new Map();
   if(res) res.forEach(n=>marks.set(n.midi,{fill:'#fff',ring:'#e8553d',tc:'#e8553d',label:PA.nm(n),focus:true,sr:'すすんだ先'}));
@@ -856,7 +856,7 @@ function topSumText(){
 }
 function recsHTML(){
   const b=loadBest(), w=weekBest(b);
-  const one=(label,r)=>`<div class="recbox"><small>${label}</small>${r?`<b>${lvText(r)}</b><span class="sub">せいかい${r.correct}もん</span>`:'<b>—</b><span class="sub">まだないよ</span>'}</div>`;
+  const one=(label,r)=>`<div class="recbox"><small>${label}</small>${r?`<b>${lvText(r)}</b><span class="sub">正解${r.correct}もん</span>`:'<b>—</b><span class="sub">まだないよ</span>'}</div>`;
   return `<div class="recs">${one('今週',w)}${one('ぜんぶ',b.all)}</div>`;
 }
 function topCardHTML(){
@@ -872,34 +872,34 @@ function topCardHTML(){
     h+=`<p class="note lvnote"><span class="nw">✓ れんしゅうで${CLEAR}もんれんぞく</span>　<span class="nw">🏆 チャレンジでクリア</span></p>`;
     h+=chipsHTML(lv)+knobsHTML(lv,'free');
     h+=`<div class="rec">📒 レベル${lv}のきろく：<b>${b?`さいこう${b}もんれんぞく`:'まだないよ'}</b>${b>=CLEAR?'✓':`<small>（${CLEAR}もんれんぞくで ✓）</small>`}</div>`;
-    h+=`<p class="note big-note">音名を考えずに、<b>ひびきの感じ</b>で答えよう。毎回根音（和音の土台の音）と転回形（音のつみかた）がかわるよ。</p>`;
+    h+=`<p class="note big-note">音名を考えずに、<b>ひびきの感じ</b>で答えよう。毎回、根音（和音の土台の音）と転回形（音のつみかた）がかわるよ。</p>`;
   }else if(state.mode==='ch'){
     const play=ch.phase==='play'&&ch.run;
     if(play){const lv=ch.run.state.level;h+=`<div class="lvhead">🏆 レベル${lv}<small>${LEVELS[lv].name}</small></div>`+chipsHTML(lv)+knobsHTML(lv,'ch');}
-    h+=`<p class="note big-note">ライフ3つで、レベル1から8までどこまで行けるかな？おわったらランキングにのせられるよ。</p>`;
+    h+=`<p class="note big-note">ライフ3つで、レベル1から8までどこまで行けるかな？おわったら、ランキングにのせられるよ。</p>`;
     h+=`<div class="rec">📒 チャレンジでクリア：<b>${ch.best?`レベル${ch.best}まで`:'まだないよ'}</b>${ch.best>=MAXLV?'<span class="master">🏅 マスター</span>':''}</div>`;
-    const tools=(play?`<button class="btn small" data-act="chend" data-confirm="もういちどおすとおわるよ">🏁 ここでおわる</button>`:'')
-      +(ch.best||loadBest().all?`<button class="btn small" data-act="chreset" data-confirm="もういちどおすとけすよ">🗑️ じぶんのきろくをけす</button>`:'');
+    const tools=(play?`<button class="btn small" data-act="chend" data-confirm="もういちどおすと、おわるよ">🏁 ここでおわる</button>`:'')
+      +(ch.best||loadBest().all?`<button class="btn small" data-act="chreset" data-confirm="もういちどおすと、けすよ">🗑️ じぶんのきろくをけす</button>`:'');
     if(tools) h+=`<div class="chtools">${tools}</div>`;
-    if(play) h+=`<p class="note">🏁 でおわると、そこまでのけっかでランキングにのせられるよ（つづきはできなくなるよ）。</p>`;
-    else if(ch.best||loadBest().all) h+=`<p class="note">🗑️ でけすのはこの端末のきろくだけ。ランキングはそのままだよ。</p>`;
+    if(play) h+=`<p class="note">🏁 でおわると、そこまでのけっかでランキングにのせられるよ（つづきは、できなくなるよ）。</p>`;
+    else if(ch.best||loadBest().all) h+=`<p class="note">🗑️ でけすのは、この端末のきろくだけ。ランキングはそのままだよ。</p>`;
   }else{
     h+=`<p class="note big-note">🏆 チャレンジのけっかのランキング。<b>ニックネーム</b>だけが出るよ。</p>`;
   }
-  const share=state.mode==='free'?PA.shareHTML('ear',Object.assign(linkParams(),{n:5}),'👩‍🏫 このれんしゅうをおくる'):PA.shareHTML('ear',{mode:'challenge'},'👩‍🏫 チャレンジをおくる');
+  const share=state.mode==='free'?PA.shareHTML('ear',Object.assign(linkParams(),{n:5}),'👩‍🏫 れんしゅうをおくる'):PA.shareHTML('ear',{mode:'challenge'},'👩‍🏫 チャレンジをおくる');
   return h+`<div class="topclose">${share}<button class="btn small" data-act="etop" data-v="close" aria-expanded="true">▲ たたむ</button></div></section>`;
 }
 // 🏆 チャレンジ：はじめる前（ルール・じぶんのきろく・つながらなかったとき）
 function chIntroHTML(){
   let h=`<section class="card hero"><div class="qhead"><h2>🏆 チャレンジ</h2></div><ul class="rules">
     <li><span aria-hidden="true">❤️</span><span>ライフは<b>${CH.lives}つ</b></span></li>
-    <li><span aria-hidden="true">⭐</span><span><b>${CLEAR}もん</b>つづけて正解するとつぎのレベルへ（レベル1〜8）</span></li>
-    <li><span aria-hidden="true">💪</span><span>まちがえるとライフが1つへって、1つ前のレベルからつづけるよ</span></li>
+    <li><span aria-hidden="true">⭐</span><span><b>${CLEAR}もん</b>つづけて正解すると、次のレベルへ（レベル1〜8）</span></li>
+    <li><span aria-hidden="true">💪</span><span>まちがえると、ライフが1つへって、1つ前のレベルからつづけるよ</span></li>
     <li><span aria-hidden="true">🔁</span><span>レベル5からは、もういちどきける回数がきまるよ</span></li>
     <li><span aria-hidden="true">🏅</span><span>レベル8をクリアすると<b>マスター</b>！</span></li>
-    <li><span aria-hidden="true">📊</span><span>おわったら<b>ニックネーム</b>でランキングにのせられるよ</span></li></ul>`;
+    <li><span aria-hidden="true">📊</span><span>おわったら、<b>ニックネーム</b>でランキングにのせられるよ</span></li></ul>`;
   if(ch.phase==='offline'){
-    h+=`<div class="msg" role="status" style="margin-top:10px">${ch.connectBusy?`⏳ <b>${BUSY_MSG}</b>`:`📴 <b>${OFF_MSG}</b>`}<br>ランキングにはのらないけど、<b>チャレンジはできるよ</b>。じぶんのきろくにはのこるよ。`
+    h+=`<div class="msg" role="status" style="margin-top:10px">${ch.connectBusy?`⏳ <b>${BUSY_MSG}</b>`:`📴 <b>${OFF_MSG}</b>`}<br>ランキングにはのらないけど、<b>チャレンジはできるよ</b>。じぶんのきろくには、のこるよ。`
       +`${ch.connectError?`<br><span class="note">（${esc(ch.connectError)}）</span>`:''}</div>`;
   }else if(ch.phase==='connecting') h+=`<div class="msg" role="status" style="margin-top:10px">⏳ ランキングのじゅんび中…</div>`;
   h+=soundHintHTML()+`<h3 class="rech">📒 じぶんのきろく</h3>${recsHTML()}</section>`;
@@ -908,14 +908,14 @@ function chIntroHTML(){
 function nameCardHTML(){
   const n=ch.name, m=n.sel==='custom'?nameMsg(n.custom):{text:'',soft:false}, first=PA.store.get('ear-rank-intro',false)!==true;
   let h=`<section class="card namecard"><h2>📮 ランキングにのせるなまえ</h2>`;
-  if(first) h+=`<div class="msg" style="margin-bottom:8px">はじめての人へ：ここでえらんだ<b>なまえ</b>は、ランキングで<b>ほかの人にも見える</b>よ。<br><span class="note">いっしょにおくるのは、けっかとこの端末のランダムな番号だけだよ。</span></div>`;
+  if(first) h+=`<div class="msg" style="margin-bottom:8px">はじめての人へ：ここで選んだ<b>なまえ</b>は、ランキングで<b>ほかの人にも見える</b>よ。<br><span class="note">いっしょにおくるのは、けっかとこの端末のランダムな番号だけだよ。</span></div>`;
   h+=`<p class="warnnote">⚠️ 本名は入れないでね（学校・すんでいるところも）。ニックネームでのせよう</p>
     <div class="namegrid" role="group" aria-label="なまえのこうほ">${n.cands.map((c,i)=>`<button class="namechip ${n.sel===i?'on':''}" data-act="npick" data-v="${i}" aria-pressed="${n.sel===i}">${esc(c)}</button>`).join('')}</div>
     <div class="nametools"><button class="btn small" data-act="nroll">🎲 ほかのなまえ</button></div>
     <div class="custom"><label for="nameInput">じぶんで入れる（${EG.NAME_MAX}文字まで）</label>
       <input id="nameInput" class="${n.sel==='custom'?'on':''}" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" maxlength="40" value="${esc(n.custom)}" placeholder="れい：ピアノすき">
       <p class="nerr${m.soft?' soft':''}" id="nameErr" role="alert">${esc(m.text)}</p>
-      <p class="note" style="margin-top:0">ひらがな・カタカナ・漢字・英数字・「ー」「・」がつかえるよ。</p></div>`;
+      <p class="note" style="margin-top:0">ひらがな・カタカナ・漢字・英数字・「ー」「・」が使えるよ。</p></div>`;
   if(ch.sendError) h+=`<div class="errbox" role="alert">😢 ${esc(ch.sendError)}</div>`;
   h+=`<div style="text-align:center;margin-top:8px"><button class="linkbtn" data-act="nskip">のせないでおわる</button></div></section>`;
   return h;
@@ -924,25 +924,25 @@ function chResultHTML(){
   const r=ch.run.result();
   let h=`<section class="card hero"><div class="qhead"><h2>🏁 けっか</h2></div>
     <div class="bigres"><div class="resbox"><small>とどいたレベル</small>${r.mastered?'<b>8</b><span class="master">🏅 マスター</span>':`<b>${r.level}</b>`}</div>
-      <div class="resbox"><small>せいかい</small><b>${r.correct}</b><small>${r.total}もん中</small></div></div>`;
+      <div class="resbox"><small>正解</small><b>${r.correct}</b><small>${r.total}もん中</small></div></div>`;
   if(ch.newBest) h+='<p class="newbest">🎉 じこベストこうしん！</p>';
-  if(ch.offline) h+=`<div class="msg" style="margin-top:10px">${offMsgHTML()}<br>じぶんのきろくにはのこしたよ。</div>`;
+  if(ch.offline) h+=`<div class="msg" style="margin-top:10px">${offMsgHTML()}<br>じぶんのきろくには、のこしたよ。</div>`;
   h+='</section>';
   const rkBtn='<button class="btn night fullbtn" data-act="emode" data-v="rank">📊 ランキングを見る</button>';
   if(ch.submitted&&ch.submitted.ranked===false){
     // とどいて採点はされたが、ランキングにはのせなかった（1日におくれる回数をこえたなど）
-    h+=`<section class="card"><div class="msg">📮 けっかはちゃんととどいたよ。でもいまはランキングにはのせられなかったよ。<br>じぶんのきろくにはのこしたよ。またこんどチャレンジしてね！</div></section>`;
+    h+=`<section class="card"><div class="msg">📮 けっかは、ちゃんととどいたよ。でも、いまはランキングにはのせられなかったよ。<br>じぶんのきろくには、のこしたよ。またこんどチャレンジしてね！</div></section>`;
   }else if(ch.submitted){
     const d=ch.submitted, rank=v=>isInt(v,1,1e9)?`${v}位`:'—';
     h+=`<section class="card"><div class="celebrate still">📊 ランキングにのったよ！</div>
       <div class="ranks"><div><small>今週</small><b>${rank(d.rankWeek)}</b></div><div><small>ぜんぶ</small><b>${rank(d.rankAll)}</b></div></div>
-      <p class="note">じぶんのいちばんいいきろくでならぶよ。</p>${rkBtn}</section>`;
+      <p class="note">じぶんのきろくは、いちばんいい回のものがのるよ。</p>${rkBtn}</section>`;
   }else if(ch.closed&&ch.closed.kind==='already'){
     h+=`<section class="card"><div class="celebrate still">📊 もうランキングにのっているよ！</div>
-      <p class="note">まえにおくったときに、ちゃんととどいていたよ。じぶんのいちばんいいきろくでならぶよ。</p>${rkBtn}</section>`;
+      <p class="note">前におくったときに、もうとどいていたよ。じぶんのきろくは、いちばんいい回のものがのるよ。</p>${rkBtn}</section>`;
   }else if(ch.closed){
     h+=`<section class="card"><div class="errbox" role="alert" style="margin-top:0">😢 ${esc(ch.closed.msg)}</div>
-      <p class="note">じぶんのきろくにはのこしたよ。またチャレンジしてね！</p></section>`;
+      <p class="note">じぶんのきろくには、のこしたよ。またチャレンジしてね！</p></section>`;
   }else if(!ch.offline) h+=nameCardHTML();
   return h;
 }
@@ -952,23 +952,23 @@ function rowHTML(r,me){
   const mine=isMine(r,me), medal=['🥇','🥈','🥉'][r.rank-1];
   return `<li class="rkrow${mine?' me':''}"${mine?' aria-current="true"':''}><span class="rk${medal?' medal':''}" aria-label="${r.rank}位">${medal||r.rank}</span>
     <span class="nm"><span class="nmt">${esc(r.name)}</span>${mine?'<span class="you">じぶん</span>':''}</span>
-    <span class="sc">${r.mastered?'<span class="master">🏅 マスター</span>':`<b>レベル${r.level}</b>`}<small>せいかい${r.correct}</small></span></li>`;
+    <span class="sc">${r.mastered?'<span class="master">🏅 マスター</span>':`<b>レベル${r.level}</b>`}<small>正解${r.correct}</small></span></li>`;
 }
 function rankHTML(){
   const d=rk.data[rk.period];
   let h=`<section class="card hero"><div class="qhead"><h2>📊 ランキング</h2></div>
     ${PA.seg('rper',[['week','📅 今週'],['all','🌏 ぜんぶ']],rk.period,'full')}
-    <div class="rkhead"><span>${rk.period==='week'?'月曜日から日曜日までのきろく':'これまでのぜんぶのきろく'}</span><span>${rk.loading?'よみこみ中…':'上位50人'}</span></div>`;
+    <div class="rkhead"><span>${rk.period==='week'?'月曜日から日曜日までのきろく':'これまでの、ぜんぶのきろく'}</span><span>${rk.loading?'よみこみ中…':'上位50人'}</span></div>`;
   if(rk.error&&!d){
     h+=`<div class="empty" role="alert"><span class="big" aria-hidden="true">📡</span>ランキングをよみこめなかったよ。<br><span class="note">${esc(rk.error)}</span></div>`;
   }else if(!d){
     h+=`<div class="empty loading"><span class="big" aria-hidden="true">⏳</span>よみこみ中…</div>`;
   }else{
-    if(rk.error) h+=`<div class="errbox" role="alert">😢 ${esc(rk.error)}（まえによみこんだランキングを見せているよ）</div>`;
+    if(rk.error) h+=`<div class="errbox" role="alert">😢 ${esc(rk.error)}（前によみこんだランキングを見せているよ）</div>`;
     if(!d.top.length) h+=`<div class="empty"><span class="big" aria-hidden="true">🌱</span>まだだれもいないよ。<br>チャレンジして、さいしょの1人になろう！</div>`;
     else h+=`<ol class="rklist${rk.loading?' loading':''}">${d.top.map(r=>rowHTML(r,d.me)).join('')}</ol>`;
     if(d.me&&!d.top.some(r=>isMine(r,d.me))) h+=`<div class="mebox"><h3>じぶんのじゅんい</h3><ol class="rklist">${rowHTML(d.me,d.me)}</ol></div>`;
-    else if(!d.me) h+=`<div class="mebox"><p class="note" style="margin:0">じぶんのきろくはまだないよ。🏆 チャレンジしてのせてみよう！</p></div>`;
+    else if(!d.me) h+=`<div class="mebox"><p class="note" style="margin:0">じぶんのきろくは、まだないよ。🏆 チャレンジしてのせてみよう！</p></div>`;
   }
   return h+`<p class="note">なまえはニックネームだけ。へんななまえを見つけたら、先生におしえてね。</p></section>`;
 }
@@ -990,16 +990,16 @@ function heroHTML(){
     score=`<div class="score"><b>🏆 レベル${lv}</b> ${heartsHTML(st.lives,!!state.answer&&state.answer!==q.type)}`
       +`<span role="img" aria-label="${CLEAR}もん中${streak}もんれんぞく正解">${dots(CLEAR,streak,'pdots')}</span></div>`;
   }
-  else score=`<div class="score"><b>⭐ ${state.right} / ${state.total}</b>${state.hint?` <span class="sub" aria-label="ヒントでできた${state.hint}もん">💡 ${state.hint}</span>`:''} <span class="sub">れんぞく${state.streak}</span>${state.streak?`<span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(state.streak,10))}</span>`:''}</div>`;
+  else score=`<div class="score"><b>⭐ ${state.right} / ${state.total}</b>${state.hint?`<span class="sub" aria-label="ヒントでできた${state.hint}もん">💡 ${state.hint}</span>`:''}<span class="sub">れんぞく${state.streak}</span>${state.streak?`<span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(state.streak,10))}</span>`:''}</div>`;
   const R=replaysOf(lv,state.mode);
   let h=`<section class="card hero"><div class="qhead"><h2>👂 この和音はどれ？</h2>${score}</div>`;
-  if(inCh&&ch.offline) h+=`<span class="offtag">${ch.offWhy==='time'?'⏰ 2時間をすぎたのでランキングなし':ch.offWhy==='busy'?'⏳ こみあっているのでランキングなしであそんでいるよ':'📴 オフライン：ランキングなしであそんでいるよ'}</span>`;
+  if(inCh&&ch.offline) h+=`<span class="offtag">${ch.offWhy==='time'?'⏰ 2時間をすぎたのでランキングなし':ch.offWhy==='busy'?'⏳ こみあっているので、ランキングなしであそんでいるよ':'📴 オフライン：ランキングなしであそんでいるよ'}</span>`;
   if(!inCh) h+=`<div class="sessline">${sess.n()?sess.progressHTML():'<button type="button" class="btn small" data-act="esess">📝 きょうの5もん</button>'}</div>`;
-  if(!q) h+=`<div class="msg" style="margin-top:10px">下の<b>▶️ はじめる</b>をおすと和音が鳴るよ。</div>`;
-  else if(waitHear()) h+=`<div class="msg" style="margin-top:10px">下の<b>▶️ きく</b>をおすと和音が鳴るよ。</div>`;
+  if(!q) h+=`<div class="msg" style="margin-top:10px">下の<b>▶️ 始める</b>をおすと、和音が鳴るよ。</div>`;
+  else if(waitHear()) h+=`<div class="msg" style="margin-top:10px">下の<b>▶️ きく</b>をおすと、和音が鳴るよ。</div>`;
   else if(!state.answer){
-    if(R!=null) h+=`<div class="rinfo" role="status" aria-label="もういちどきけるのはあと${state.left}回">もういちどきける${dots(R,state.left,'rdots')}${state.left?'':' <span>あとはこたえよう！</span>'}</div>`;
-    else h+=`<div class="rinfo">🔁 ${inCh?'このレベルは':'れんしゅうは'}なんどでもきけるよ</div>`;
+    if(R!=null) h+=`<div class="rinfo" role="status" aria-label="もういちどきけるのは、あと${state.left}回">もういちどきける${dots(R,state.left,'rdots')}${state.left?'':' <span>あとはこたえよう！</span>'}</div>`;
+    else h+=`<div class="rinfo">🔁 ${inCh?'このレベルは':'れんしゅうは'}、なんどでもきけるよ</div>`;
   }
   h+=soundHintHTML();
   h+=`<div class="echoices n${types.length}${types.length>5?' many':''}">${types.map(choiceHTML).join('')}</div>`;
@@ -1020,9 +1020,9 @@ function actionsHTML(){
     }
     if(q&&!ch.heard) return `<button class="btn night" data-act="chhear" data-hot="listen next">▶️ きく</button>`;
   }
-  if(!q) return `<button class="btn night" data-act="enew" data-hot="listen next">▶️ はじめる</button>`;
+  if(!q) return `<button class="btn night" data-act="enew" data-hot="listen next">▶️ 始める</button>`;
   if(state.answer){
-    let next='➡️ つぎ';
+    let next='➡️ 次';
     if(state.mode==='ch'){
       if(ch.run.state.over||ch.capped) next='🏁 けっかを見る';
       else if(ch.event==='up') next=`⬆️ レベル${ch.run.state.level}へ`;
@@ -1037,8 +1037,8 @@ function render(){
   // チャレンジでこたえる前は「くらべてきく」をつかえない。れんしゅうではつかえるが「ヒントでできた」になる
   const open=!!state.q&&!state.answer&&!sumView(), lock=open&&state.mode==='ch';
   const cmp=state.mode==='rank'?'':`<section class="card">
-      <h2>🎧 くらべてきく<small>おなじ「${PA.nmH({letter:0,acc:0})}」からつくった10しゅるい</small></h2>
-      ${lock?'<p class="note" style="margin:0 0 8px">🏆 チャレンジでは、こたえたあとできけるよ</p>':open?`<p class="note" style="margin:0 0 8px">💡 ${PA.HINT_NOTE}</p>`:''}
+      <h2>🎧 くらべてきく<small>同じ「${PA.nmH({letter:0,acc:0})}」からつくった10しゅるい</small></h2>
+      ${lock?'<p class="note" style="margin:0 0 8px">🏆 チャレンジでは、こたえた後できけるよ</p>':open?`<p class="note" style="margin:0 0 8px">💡 ${PA.HINT_NOTE}</p>`:''}
       <div class="cmp">${ORDER.map(t=>`<button class="btn" style="--c:${T[t].color}" data-act="ecmp" data-v="${t}" aria-label="${T[t].label}（${T[t].word}）をきく"${lock?' disabled':''}><span>${T[t].emoji} ${T[t].label}</span><small>${T[t].word}</small></button>`).join('')}</div>
       <details class="more" style="margin-top:10px"><summary>💡 ひびきのことばヒント</summary>
         <ul class="hints">${ORDER.map(t=>`<li>${T[t].emoji} <b style="color:${T[t].color}">${T[t].label}</b>：${T[t].desc}</li>`).join('')}</ul></details>
@@ -1160,7 +1160,7 @@ document.addEventListener('click',e=>{
       else if(!state.hinted){state.right++;state.streak++;state.lvRun++;if(state.lvRun>state.lvBest[q.lv]) state.lvBest[q.lv]=state.lvRun;}
       else state.hint++;
       // ヒントでできた：⭐ はふえないが、れんぞくもそのまま（💡 の数にかぞえる）
-      if(sess.active()) sess.record({ok,hint:ok&&state.hinted,label:`レベル${q.lv}　${T[q.type].word}（${T[q.type].label}）${PA.namesT(q.notes)}${ok?'':`　えらんだ：${T[v].word}`}`});
+      if(sess.active()) sess.record({ok,hint:ok&&state.hinted,label:`レベル${q.lv}　${T[q.type].word}（${T[q.type].label}）${PA.namesT(q.notes)}${ok?'':`　選んだ：${T[v].word}`}`});
     }
     save(); state.fresh=true; render(); playEar();
     const fb=document.querySelector('#view .fb'); reveal(fb,fb,true);

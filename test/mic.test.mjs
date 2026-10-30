@@ -180,7 +180,7 @@ test('supported／errorText（ブラウザがないときは false、ことば�
   }
   assert.ok(/許可/.test(MIC.errorText({name:'NotAllowedError'})));
   let msg=null;
-  return MIC.start({onError:m=>{msg=m;}}).then(ok=>{assert.equal(ok,false); assert.ok(/つかえない/.test(msg)); assert.equal(MIC.active(),false);});
+  return MIC.start({onError:m=>{msg=m;}}).then(ok=>{assert.equal(ok,false); assert.ok(/使えない/.test(msg)); assert.equal(MIC.active(),false);});
 });
 
 /* ===== 名前つきの和音 ===== */

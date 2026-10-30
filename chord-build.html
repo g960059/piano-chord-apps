@@ -99,7 +99,7 @@ function chordSym(t){
 }
 function sigSentence(key){
   const s=PA.sigInfo(key);
-  if(!s.letters.length) return key.minor?`調号なし → 白いけんばんでできるよ。でも7ばんめ「${PA.nmH(key.natLT)}」を半音上げた<b>「${PA.nmH(key.lt)}」</b>だけは黒いけんばん。`:'調号なし → <b>白いけんばんだけ</b>でできるよ。';
+  if(!s.letters.length) return key.minor?`調号なし → 白いけんばんを使うよ。でも7ばんめ「${PA.nmH(key.natLT)}」を半音上げた<b>「${PA.nmH(key.lt)}」</b>だけは黒いけんばん。`:'調号なし → <b>白いけんばんだけ</b>を使うよ。';
   return `調号は${s.type>0?'♯':'♭'}${s.letters.length}つ → <b>${s.letters.map(L=>PA.nmH({letter:L,acc:0})).join('・')}</b>にはいつも${s.type>0?'♯':'♭'}がつくよ。`;
 }
 
@@ -151,9 +151,9 @@ function tipsHTML(key){
   const li=[
     `<b>ローマ数字＝音階のなんばんめ</b>。Ⅰは1ばんめ、Ⅳは4ばんめ、Ⅴは5ばんめの音からはじまる。`,
     `<b>ひとつとばし</b>で3つかさねる（だんご3きょうだい 🍡）。がくふでは<b>線・線・線</b>か<b>間・間・間</b>になる。`,
-    `<b>Ⅴ7</b>は、Ⅴにもうひとつとばしてのせた<b>4つの音</b>。`,
-    s.letters.length?`<b>♯・♭は調号の音だけ</b>。この調では<b>${s.letters.map(L=>PA.nmH({letter:L,acc:0})).join('・')}</b>がいつも${s.type>0?'♯':'♭'}。まず白いけんばんで作って、調号の音だけとなりのけんばんにずらそう。`
-      :`<b>${PA.keyName(key)}は調号なし</b>。${key.minor?'Ⅰ・Ⅳは白いけんばんだけでできるよ。Ⅴ・Ⅴ7はいちばん下の 🌙 を見てね。':'白いけんばんだけでできるよ。'}`,
+    `<b>Ⅴ7</b>は、Ⅴの上にもう1つ、ひとつとばしで音をのせた<b>4つの音</b>。`,
+    s.letters.length?`<b>♯・♭は調号の音だけ</b>。この調では<b>${s.letters.map(L=>PA.nmH({letter:L,acc:0})).join('・')}</b>がいつも${s.type>0?'♯':'♭'}。まず白いけんばんで作って、調号の音だけ、となりのけんばんへ動かそう。`
+      :`<b>${PA.keyName(key)}は調号なし</b>。${key.minor?'Ⅰ・Ⅳは白いけんばんだけを使うよ。Ⅴ・Ⅴ7はいちばん下の 🌙 を見てね。':'白いけんばんだけを使うよ。'}`,
     `けんばんの<b style="color:#9a5b00">オレンジの印</b>は${mifaH()}（白鍵どうしがとなり）。`
   ];
   if(key.minor) li.push(`🌙 <b>短調のⅤ・Ⅴ7</b>は、7ばんめの音「${PA.nmH(key.natLT)}」を<b>半音上げて</b>「${PA.nmH(key.lt)}」にする。だからⅤはいつも明るいひびき。`);
@@ -174,9 +174,9 @@ function termsHTML(key,ch,tones){
     <dt>${yomi('主和音','しゅわおん')}・${yomi('下属和音','かぞくわおん')}・${yomi('属和音','ぞくわおん')}</dt>
     <dd>Ⅰ・Ⅳ・Ⅴのべつのよびかた。いまの調ではⅠは${dg(0)}、Ⅳは${dg(3)}、Ⅴは${dg(4)}からつくる和音。</dd>
     <dt>${yomi('属七の和音','ぞくしちのわおん')}</dt>
-    <dd>Ⅴ7のべつのよびかた。Ⅴにもうひとつとばして音をのせた、4つの音の和音。</dd>
+    <dd>Ⅴ7のべつのよびかた。Ⅴの上にもう1つ、ひとつとばしで音をのせた4つの音の和音。</dd>
     <dt>${yomi('根音','こんおん')}・第3音・第5音・第7音</dt>
-    <dd>ひとつとばしでつんだ和音の音の名前。いちばん下が<b>根音</b>、2つめが<b>第3音</b>、3つめが<b>第5音</b>、Ⅴ7の4つめが<b>第7音</b>。いまの${c.label}は${roles}。</dd>
+    <dd>「ひとつとばし」でつんだ和音の、それぞれの音の名前。いちばん下が<b>根音</b>、2つめが<b>第3音</b>、3つめが<b>第5音</b>、Ⅴ7の4つめが<b>第7音</b>。いまの${c.label}は${roles}。</dd>
     <dt>${yomi('導音','どうおん')}</dt>
     <dd>${lt}</dd>${key.minor?`
     <dt>${yomi('和声的短音階','わせいてきたんおんかい')}</dt>
@@ -188,11 +188,11 @@ function render(){
   const kid=PA.keyDeck.id(state.minor,state.keyIdx);
   // 広い画面：左に説明（和音・かいだん）、右にけんばん・がくふ（下へすすんでもついてくる）。スマホではこれまでどおりたてにならぶ
   let h=`<div class="duo-grid"><div class="stack">
-    <div class="toprow">${PA.keyChip(key)}<span class="note ken" style="margin:0">英語でかくと<b>${PA.keyEn(key)}</b></span></div>
+    <div class="toprow">${PA.keyChip(key)}<span class="note ken" style="margin:0">英語で書くと<b>${PA.keyEn(key)}</b></span></div>
     <div class="chords">`+Object.keys(CHORDS).map(k=>`<button class="cbtn ${k===ch?'on':''}" style="--c:${PA.COL[k]};--l:${PA.LCOL[k]};--d:${DK[k]}" data-act="chord" data-v="${k}" aria-pressed="${k===ch}"><span class="num">${CHORDS[k].label}</span><span class="nm">${namesW(chordTones(key,k),'<wbr>')}</span></button>`).join('')+`</div>
     <section class="card hero" style="--c:${col}">
       <div class="hero-top"><span class="badge" style="--c:${col}">${c.label}</span>
-        <div style="min-width:0"><div class="hk">${PA.keyName(key)}の${c.label}</div><div class="hn">${namesW(tones,'&nbsp;・ ')}</div><div class="hs">コードネーム${chordSym(tones)}</div></div></div>
+        <div style="min-width:0"><div class="hk">${PA.keyName(key)}の${c.label}</div><div class="hn">${namesW(tones,'・')}</div><div class="hs">コードネーム${chordSym(tones)}</div></div></div>
       <div class="msg" style="margin-top:10px">${A?A.msg:state.autoWait?'👆 どこかをタッチすると<b>つくりかた</b>がはじまるよ':(state.msg||staticMsg(key,ch,tones))}</div>
       <div class="row" style="margin-top:10px">${PA.seg('speed',[['normal','🐇 ふつう'],['slow','🐢 ゆっくり']],state.speed)}</div>
     </section>`;
@@ -215,8 +215,8 @@ function render(){
   h+=`<div class="duo-grid"><div class="stack"><details class="more tips"><summary>💡 おぼえかたのコツ</summary>${tipsHTML(key)}</details>${termsHTML(key,ch,tones)}</div>`
     // おなじ調のⅠ・Ⅳ・Ⅴ（いま見ている和音も入れる）。和音がかわるので3もんともおなじもんだいにならない
     +PA.tryHTML({to:'chord-quiz',params:{key:kid,chord:tryChords(ch).join(','),mode:'keys',n:3},
-      title:`<span class="nw">${PA.keyName(key)}の</span> <span class="nw">${tryChords(ch).map(x=>CHORDS[x].label).join('・')}を</span> <span class="nw">じぶんで</span> <span class="nw">つくって</span>みよう`,
-      sub:'「和音クイズ」でけんばんをおさえて3もん。',btn:'🎯 けんばんで3もん',
+      title:`<span class="nw">${PA.keyName(key)}の</span><span class="nw">${tryChords(ch).map(x=>CHORDS[x].label).join('・')}を、</span><span class="nw">じぶんで</span><span class="nw">つくろう</span>`,
+      sub:'「和音クイズ」で、けんばんをおさえて3もん。',btn:'🎯 けんばんで3もん',
       links:[{to:'cadence',params:{key:kid},label:'🎵 カデンツできく'},{to:'chord-table',params:{key:kid,chord:ch},label:'📋 いちらん表で見る'}]})+`</div>`;
   PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx);
   if(state.anim) PA.follow(document.getElementById('view')); // アニメで光る鍵が見えるように
@@ -262,7 +262,7 @@ async function build(){
     await PA.sleep(1300*D); if(!alive())return;
   }
   A.frog=null;
-  upd(`🎉 <b>できあがり！</b> ${PA.keyName(key)}の${c.label}は<b class="big">${PA.namesH(tones)}</b>`);
+  upd(`🎉 <b>できあがり！</b>${PA.keyName(key)}の${c.label}は<b class="big">${PA.namesH(tones)}</b>`);
   PA.chord(tones.map(t=>t.midi));
   await PA.sleep(1500*D); if(!alive())return;
   state.msg=A.msg; state.anim=null; render();

@@ -21,7 +21,7 @@ test('⭐：ヒントでできた数はべつにかぞえる（×に見えない
   CQ.scoreAnswer(s,false,true);
   assert.deepEqual(s,{right:1,total:3,hinted:1,streak:0},'ヒントを見てもまちがいは ×');
   assert.equal(CQ.scoreText(s),'⭐ じぶんで1・💡 ヒントで1／3もん');
-  assert.equal(CQ.scoreText({right:2,total:3,hinted:0}),'⭐ 2 / 3もんせいかい');
+  assert.equal(CQ.scoreText({right:2,total:3,hinted:0}),'⭐ 2 / 3もん正解');
 });
 
 test('リンクのせっていは RUN にだけ入れ、ほぞんは BASE。アドレスからリンクをけす',()=>{

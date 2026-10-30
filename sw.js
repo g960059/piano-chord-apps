@@ -6,7 +6,7 @@
    ・画像などは保存してあるものをすぐ出して、うらで新しくしておく
    ・インストールでとれなかったファイルは前の保存ぶんからうつす（オフラインでこわれないように）
    ・VERSION と PRECACHE は tools/build-meta.mjs が書きかえる（手でなおさない） */
-const VERSION='664a33730b';
+const VERSION='fa1544433e';
 const PRECACHE=[
   './',
   'accompaniment.html',

@@ -249,16 +249,16 @@ M.supported=()=>{
 M.errorText=err=>{
   const n=err&&err.name||'';
   if(n==='NotAllowedError'||n==='PermissionDeniedError'||n==='SecurityError')
-    return 'マイクがつかえないよ。「マイクをつかってもいい？」で「許可」をおしてね。まちがえて「許可しない」をおしたときは、ブラウザの設定でこのページのマイクを「許可」にして、ページを読みなおしてね。';
+    return 'マイクが使えないよ。「マイクを使ってもいい？」で「許可」をおしてね。まちがえて「許可しない」をおしたときは、ブラウザの設定でこのページのマイクを「許可」にして、ページを読みなおしてね。';
   if(n==='NotFoundError'||n==='DevicesNotFoundError'||n==='OverconstrainedError')
     return 'マイクが見つからないよ。マイクのある端末でためしてね。';
   if(n==='NotReadableError'||n==='TrackStartError'||n==='AbortError')
-    return 'マイクをほかのアプリがつかっているみたい。ほかのアプリをとじてから、もういちどおしてね。';
+    return 'マイクを、ほかのアプリが使っているみたい。ほかのアプリをとじてから、もういちどおしてね。';
   if(n==='unsupported')
-    return 'このブラウザではマイクがつかえないよ。画面の鍵盤でこたえてね。';
+    return 'このブラウザではマイクが使えないよ。画面の鍵盤でこたえてね。';
   if(n==='ended')
     return 'マイクがとまったよ。もういちど 🎤 をおしてね。';
-  return 'マイクがうまくうごかなかったよ。もういちどおしてね。';
+  return 'マイクがうまく動かなかったよ。もういちどおしてね。';
 };
 
 let cur=null;

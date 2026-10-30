@@ -427,14 +427,14 @@ PA.UNITS=[
   {id:'u3',title:'🧩 和音をもっと知る',sub:'7つの和音・和音のかたち・音のへだたり',apps:['diatonic','inversion','interval']},
   {id:'u4',title:'🌙 短調と臨時記号',sub:'Ⅴ・Ⅴ7・Ⅴ9・減七',apps:['minor-why','minor-signature','minor-family','minor-quiz']},
   {id:'u5',title:'🏁 おわりかた',sub:'曲のおわりの6つの形',apps:['ending','ending-quiz']},
-  {id:'u6',title:'🌈 変化和音',sub:'調の音を半音うごかす・よその調からかりる和音',apps:['doppel','secondary','aug6','neapolitan','borrowed','dim-halfdim','enharmonic','chroma-quiz']},
+  {id:'u6',title:'🌈 変化和音',sub:'調の音を半音動かす・よその調からかりる和音',apps:['doppel','secondary','aug6','neapolitan','borrowed','dim-halfdim','enharmonic','chroma-quiz']},
   {id:'ear',title:'👂 耳をきたえる（毎日すこしずつ）',sub:'聴いてパッとわかる',apps:['ear']}
 ];
 PA.APPS=[
   {id:'chord-build',ic:'🐸',title:'和音のしくみ',d:'音階のなんばんめから「ひとつとばし」で和音をつくる',type:'learn',practice:'chord-quiz'},
-  {id:'chord-quiz',ic:'🎯',title:'和音クイズ',d:'「ト長調のⅤ7は？」をけんばんでおさえる／えらぶ',type:'quiz'},
-  {id:'cadence',ic:'🎵',title:'カデンツ',d:'「おしまい」になる和音のならびⅠ→Ⅳ→Ⅰ→Ⅴ7→Ⅰを聴いて、伴奏の形を見る',type:'play',practice:'chord-quiz'},
-  {id:'chord-table',ic:'📋',title:'和音いちらん表',d:'ぜんぶの調のⅠ・Ⅳ・Ⅴ・Ⅴ7。かくしてれんしゅうも',type:'ref',practice:'chord-quiz'},
+  {id:'chord-quiz',ic:'🎯',title:'和音クイズ',d:'「ト長調のⅤ7は？」を、けんばんでおさえる／選ぶ',type:'quiz'},
+  {id:'cadence',ic:'🎵',title:'カデンツ',d:'「おしまい」になる和音のならび（Ⅰ→Ⅳ→Ⅰ→Ⅴ7→Ⅰ）を聴いて、伴奏の形を見る',type:'play',practice:'chord-quiz'},
+  {id:'chord-table',ic:'📋',title:'和音いちらん表',d:'ぜんぶの調のⅠ・Ⅳ・Ⅴ・Ⅴ7。かくして、れんしゅうもできる',type:'ref',practice:'chord-quiz'},
   {id:'accompaniment',ic:'🎼',title:'伴奏づけ',d:'知っている曲のメロディーにⅠ・Ⅳ・Ⅴ7をつける',type:'play'},
   {id:'diatonic',ic:'🎨',title:'7つの和音',d:'音階の7つの音から1つずつ。Ⅱ・Ⅲ・Ⅵ・Ⅶもなかまいり',type:'learn'},
   {id:'inversion',ic:'🔄',title:'和音のかたち',d:'ドミソ・ミソド・ソドミ。いちばん下の音で名前がかわる',type:'learn'},
@@ -442,11 +442,11 @@ PA.APPS=[
   {id:'minor-why',ic:'❓',title:'なぜ7ばんめを上げるの？',d:'長調と短調の「7ばんめ→主音」をくらべて聴く',type:'learn',practice:'minor-quiz'},
   {id:'minor-signature',ic:'♮',title:'調号と臨時記号',d:'調号に書けないわけ。♯・♮・<span class="ds">x</span>のいちらん',type:'learn',practice:'minor-quiz'},
   {id:'minor-family',ic:'🏠',title:'Ⅴの家族',d:'Ⅴ→Ⅴ7→Ⅴ9→減七と、Ⅰへのすすみかた',type:'learn',practice:'minor-quiz'},
-  {id:'minor-quiz',ic:'🎯',title:'短調クイズ',d:'短調のⅤの家族をおさえる／臨時記号をえらぶ',type:'quiz'},
+  {id:'minor-quiz',ic:'🎯',title:'短調クイズ',d:'短調のⅤの家族をおさえる／臨時記号を選ぶ',type:'quiz'},
   {id:'ending',ic:'🏁',title:'おわりかた',d:'完全終止・半終止・偽終止など6つのおわりかたを、聴いて・がくふで見る',type:'learn',practice:'ending-quiz'},
   {id:'ending-quiz',ic:'🎯',title:'おわりかたクイズ',d:'4つの和音を聴いて／がくふを見て、おわりかたの名前を当てる',type:'quiz'},
   {id:'doppel',ic:'🔺',title:'Ⅱ7とドッペルドミナント',d:'Ⅱ7の第3音を上げると「ⅤのためのⅤ7」になる',type:'learn',practice:'chroma-quiz'},
-  {id:'secondary',ic:'🧭',title:'副属和音',d:'Ⅱ・Ⅲ・Ⅳ・ⅥをいっときⅠにみたてる「その和音のためのⅤ7」',type:'learn',practice:'chroma-quiz'},
+  {id:'secondary',ic:'🧭',title:'副属和音',d:'Ⅱ・Ⅲ・Ⅳ・Ⅵを、いっときⅠにみたてる「その和音のためのⅤ7」',type:'learn',practice:'chroma-quiz'},
   {id:'aug6',ic:'↔️',title:'増六の和音',d:'イタリア・フランス・ドイツの6。外へひらいてⅤへ',type:'learn',practice:'chroma-quiz'},
   {id:'neapolitan',ic:'🌋',title:'ナポリの六',d:'2ばんめを半音下げた♭Ⅱ。いちばん下の音とⅤへのすすみかた',type:'learn',practice:'chroma-quiz'},
   {id:'borrowed',ic:'🎁',title:'準固有和音（借用和音）',d:'長調で、同じ主音の短調からかりるⅣ・♭Ⅵなど',type:'learn',practice:'chroma-quiz'},
@@ -495,7 +495,7 @@ PA.openKeySheet=o=>{
   let minor=!!o.minor;
   const draw=()=>{
     const n=PA.keyCount(minor), flatFrom=minor?PA.MINOR_FLAT_FROM:PA.MAJOR_FLAT_FROM;
-    let h=`<div class="sheet-head"><h2>調をえらぶ</h2><button class="iconbtn" data-sheet="close" aria-label="とじる">✕</button></div>`;
+    let h=`<div class="sheet-head"><h2>調を選ぶ</h2><button class="iconbtn" data-sheet="close" aria-label="とじる">✕</button></div>`;
     if(o.both) h+=`<div style="margin-bottom:10px">${PA.seg('pa-mode',[['0','☀️ 長調'],['1','🌙 短調']],minor?'1':'0','full')}</div>`;
     h+=`<div class="keygrid"><div class="sep">調号なし・♯の調</div>`;
     for(let i=0;i<n;i++){
@@ -524,9 +524,9 @@ PA.openSettings=()=>{
     <div class="setrow"><label for="pa-naming">音の名前</label><select id="pa-naming"><option value="solfa">ドレミ</option><option value="en">CDE</option><option value="ja">ハニホ</option></select></div>
     <div class="setrow"><label for="pa-pitch">基準の音（ラ）</label><select id="pa-pitch"><option value="440">440Hz</option><option value="441">441Hz</option><option value="442">442Hz</option><option value="443">443Hz</option></select></div>
     <div class="setrow"><label for="pa-sound">音を鳴らす</label><select id="pa-sound"><option value="1">🔊 鳴らす</option><option value="0">🔇 鳴らさない</option></select></div>
-    <p class="note">音の高さはふつうのピアノとおなじです。ラ（A4）の高さを440〜443Hz からえらべます。教室のピアノが442Hz なら442Hz に。<br>iPhone・iPad で音が出ないときは、消音（マナーモード）を解除してください。</p>
+    <p class="note">音の高さはふつうのピアノと同じです。ラ（A4）の高さを440〜443Hz から選べます。教室のピアノが442Hz なら、442Hz に。<br>iPhone・iPad で音が出ないときは、消音（マナーモード）を解除してください。</p>
     <div class="setsec"><h3>💾 きろくのひかえ</h3>
-      <p class="note">iPhone・iPad では、このサイトを1週間ほどひらかないと、きろくがきえることがあります。ホーム画面に追加するか、ときどきファイルに書きだしておくとあんしんです。<br>LINE などのリンクは Safari でひらくので、ホーム画面のアプリとはきろくがべつになるよ。うつすときは書きだし・読みこみをつかってね。</p>
+      <p class="note">iPhone・iPad では、このサイトを1週間ほどひらかないと、きろくがきえることがあります。ホーム画面に追加するか、ときどきファイルに書きだしておくと、あんしんです。<br>LINE などのリンクは Safari でひらくので、ホーム画面のアプリとは、きろくがべつになるよ。うつすときは、書きだし・読みこみを使ってね。</p>
       <div class="row"><button class="btn small" data-sheet="export">💾 きろくをファイルに書きだす</button><button class="btn small" data-sheet="import">📂 ファイルからよみこむ</button></div>
       <input type="file" id="pa-import" accept=".json,application/json" class="pa-sr" tabindex="-1" aria-hidden="true">
       <p class="note" id="pa-backup-msg" role="status"></p>
@@ -569,7 +569,7 @@ const pad2=n=>(n<10?'0':'')+n;
 // ファイルにできないブラウザ（iOS 12の Safari など）：中身を文字で見せて、コピーできるようにする
 function showBackupText(el,text){
   const box=el.querySelector('#pa-backup-text'); if(!box) return false;
-  box.innerHTML=`<p class="note">このブラウザではファイルにできないので、下の文字をぜんぶコピーして、メモなどにはりつけてとっておいてね。</p>`
+  box.innerHTML=`<p class="note">このブラウザではファイルにできないので、下の文字をぜんぶコピーして、メモなどにはりつけて、とっておいてね。</p>`
     +`<textarea id="pa-backup-ta" readonly rows="5" aria-label="きろくの中身" style="width:100%;font:16px/1.4 monospace;border:2px solid var(--line);border-radius:12px;padding:8px;background:var(--soft2);color:var(--ink)"></textarea>`
     +`<div class="row" style="margin-top:6px"><button type="button" class="btn small" data-sheet="copy">📋 コピーする</button></div>`;
   box.querySelector('#pa-backup-ta').value=text;
@@ -606,7 +606,7 @@ function exportRecords(el){
     try{file=new File([text],name,{type:'application/json'});}catch(e){}
     let can=false; try{can=!!file&&navigator.canShare({files:[file]});}catch(e){}
     if(can){
-      navigator.share({files:[file]}).then(()=>say('「'+name+'」を書きだしたよ（「ファイルに保存」をえらんだら「ファイル」アプリにあるよ）'),
+      navigator.share({files:[file]}).then(()=>say('「'+name+'」を書きだしたよ（「ファイルに保存」を選んだら、「ファイル」アプリにあるよ）'),
         err=>{if(err&&err.name==='AbortError') say('');else fallback();});
       return;
     }
@@ -628,7 +628,7 @@ function importRecords(file,el){
   r.onload=()=>{
     let data=null; try{data=PA.checkBackup(JSON.parse(String(r.result)));}catch(e){}
     if(!data){say('このファイルはよみこめないよ（ピアノ和音アプリのきろくではないみたい）');return;}
-    if(typeof confirm==='function'&&!confirm('いまのきろくを、ファイルのきろくでおきかえます。いまのきろくはきえます。よろしいですか？')) return;
+    if(typeof confirm==='function'&&!confirm('いまのきろくを、ファイルのきろくに入れかえます。いまのきろくは、きえます。よろしいですか？')) return;
     try{
       PA.store.keys().forEach(k=>localStorage.removeItem('pianoapps.'+k));
       Object.keys(data).forEach(k=>localStorage.setItem(k,data[k]));
@@ -667,7 +667,7 @@ PA.mountBar=o=>{
   const r=PA.store.get('return-to',null);
   let backEl=`<a class="iconbtn" href="${o.back||'index.html'}" aria-label="ホームにもどる">‹</a>`;
   if(!o.back&&r&&typeof r.app==='string'&&/^[a-z0-9-]+$/.test(r.app)&&r.app!==o.app&&Date.now()-r.t<36e5){
-    const prev=PA.app(r.app), name=prev?prev.title:'まえのアプリ';
+    const prev=PA.app(r.app), name=prev?prev.title:'前のアプリ';
     backEl=`<a class="backpill" href="${r.app}.html" data-pa="back" aria-label="${PA.esc(name)}にもどる"><span class="bp-ar" aria-hidden="true">‹</span><span class="bp-tx">${PA.esc(name)}</span>へ</a>`;
   }
   bar.innerHTML=`${backEl}<h1>${o.title}</h1><button class="iconbtn" data-pa="settings" aria-label="せってい">⚙️</button>`;
@@ -1734,9 +1734,9 @@ document.addEventListener('click',e=>{if(e.detail===0||!window.PointerEvent){con
     const title=o.title||(both?'📋 24調チェック表':modes[0]==='major'?'📋 長調チェック表':'📋 短調チェック表');
     const pairs=[modes.includes('major')?'嬰ヘ長調と変ト長調':'',modes.includes('minor')?'嬰ニ短調と変ホ短調':''].filter(Boolean).join('、');
     const note=o.note!=null?o.note
-      :`◎ はさいごの3回つづけてじぶんでできた調です。こたえるまえにヒントを見たときは 💡（×にはならない）。`
-        +`${pairs}はおなじ音の調で、書きかたがちがうだけ${mg?'なので、1つのますにまとめています':'です'}。`
-        +(pick?'ますをおすと、その調を3もんれんしゅうできます。':'');
+      :`◎は、さいごの3回つづけて、じぶんでできた調です。こたえる前にヒントを見たときは 💡（×にはならない）。`
+        +`${pairs}は同じ音の調で、書きかただけがちがいます${mg?'。1つのマスにまとめています':''}。`
+        +(pick?'マスをおすと、その調を3もん、れんしゅうできます。':'');
     const conf=o.confirm===false?'':' data-confirm="ほんとうにけす？（もういちどおす）"';
     return `<section class="card kd-check" data-quiz="${quiz}"><h2>${title}<small>できた調：${good}／${total}　（左から調号の少ないじゅん）</small></h2>`
       +`<div class="chips" style="margin-bottom:2px">${legend}</div>`
@@ -1750,7 +1750,7 @@ document.addEventListener('click',e=>{if(e.detail===0||!window.PointerEvent){con
  *   ちがう sig の start で上がきされたとちゅうの回は PA.store('sessionpause-<quiz>') にとっておき、あとでもどす
  * じぶんでできた＝ok で hint でない、ヒントでできた＝ok で hint、まちがえた＝ok でない
  */
-PA.HINT_NOTE='こたえるまえに見ても ×にはならないよ。「ヒントでできた」になるよ';
+PA.HINT_NOTE='こたえる前に見ても、×にはならないよ。「ヒントでできた」になるよ';
 (function(){
   const QUIZ_RE=/^[a-z0-9][a-z0-9-]{0,40}$/, HOURS12=12*36e5;
   const clampN=v=>{const n=parseInt(v,10);return n>=1?Math.min(20,n):0;};
@@ -1777,10 +1777,10 @@ PA.HINT_NOTE='こたえるまえに見ても ×にはならないよ。「ヒン
     const self=d.filter(e=>e.ok&&!e.hint).length, hint=d.filter(e=>e.ok&&e.hint).length, wrong=d.filter(e=>!e.ok).length;
     const pt=N?(self+hint*0.5)/N:0, stars=pt>=0.9?3:pt>=0.6?2:1;
     let msg;
-    if(N&&self===N) msg='ぜんぶじぶんでできたね！すごい！';
-    else if(N&&wrong===0) msg='ぜんぶできたね！つぎはヒントを見ないでやってみよう';
-    else if(pt>=0.6) msg='よくできたね。まちがえたところをもういちど見てみよう';
-    else msg='さいごまでがんばったね。まちがえたもんだいをもういちどやってみよう';
+    if(N&&self===N) msg='ぜんぶ、じぶんでできたね！すごい！';
+    else if(N&&wrong===0) msg='ぜんぶできたね！次は、ヒントを見ないでやってみよう';
+    else if(pt>=0.6) msg='よくできたね。まちがえたところを、もういちど見てみよう';
+    else msg='さいごまで、がんばったね。まちがえた問題を、もういちどやってみよう';
     return {n:N,done:d.length,self,hint,wrong,ok:self+hint,stars,msg};
   };
   const WD='日月火水木金土';
@@ -1840,8 +1840,8 @@ PA.HINT_NOTE='こたえるまえに見ても ×にはならないよ。「ヒン
         const stars='★★★'.slice(0,T.stars)+'☆☆☆'.slice(0,3-T.stars);
         const nm=t=>PA.H(PA.esc(t));
         const miss=d.done.filter(e=>!e.ok||e.hint);
-        const list=miss.length?`<div class="sess-miss"><h3>もういちど見ておきたいもんだい</h3><ul>`
-          +miss.map(e=>`<li><span class="sess-tag ${e.ok?'h':'x'}">${e.ok?'💡 ヒント':'✗ まちがい'}</span> ${nm(e.label||'（もんだい）')}</li>`).join('')+`</ul></div>`:'';
+        const list=miss.length?`<div class="sess-miss"><h3>もういちど見ておきたい問題</h3><ul>`
+          +miss.map(e=>`<li><span class="sess-tag ${e.ok?'h':'x'}">${e.ok?'💡 ヒント':'✗ まちがい'}</span> ${nm(e.label||'（問題）')}</li>`).join('')+`</ul></div>`:'';
         const set=p.settings!=null?PA.esc(p.settings):PA.esc(PA.paramsText(p.params||{}));
         return `<section class="card sess-card" aria-labelledby="sess-h">`
           +`<h2 id="sess-h">🎉 ${d.n}もんおわり！</h2>`
@@ -1857,7 +1857,7 @@ PA.HINT_NOTE='こたえるまえに見ても ×にはならないよ。「ヒン
           +`<dt>れんしゅう</dt><dd>${PA.esc(title)}</dd>`
           +(set?`<dt>せってい</dt><dd>${set}</dd>`:'')
           +`<dt>けっか</dt><dd>${d.n}もん中${T.ok}もん（じぶんで${T.self}・ヒント${T.hint}・まちがい${T.wrong}）${stars}</dd></dl>`
-          +`<div class="row">${PA.shareHTML(page,params,'🔗 おなじれんしゅうのリンク')}</div></div>`
+          +`<div class="row">${PA.shareHTML(page,params,'🔗 同じれんしゅうのリンク')}</div></div>`
           +`<div class="row sess-btns"><button type="button" class="btn primary" data-act="session-again">🔁 もういちど</button><button type="button" class="btn" data-act="session-free">🎈 じゆうにれんしゅう</button></div>`
           +`</section>`;
       }
@@ -1902,9 +1902,9 @@ PA.HINT_NOTE='こたえるまえに見ても ×にはならないよ。「ヒン
   E.ROOT={I:0,IV:3,V:4,V7:4,VI:5};
   E.TYPES=[
     {id:'perfect',name:'完全終止',yomi:'かんぜんしゅうし',nick:'おしまい！',emoji:'🏁',color:'#e8553d',light:'#fde5df',family:'full',minorOnly:false,
-      short:'Ⅴ7 → Ⅰ。どちらもいちばん下が根音で、さいごのいちばん上が主音。いちばんしっかりおわる。'},
+      short:'Ⅴ7 → Ⅰ。どちらもいちばん下が根音で、さいごのいちばん上が主音。いちばんしっかりと、おわる。'},
     {id:'imperfect',name:'不完全終止',yomi:'ふかんぜんしゅうし',nick:'おわり…かな？',emoji:'🌤',color:'#c96a00',light:'#fdebd3',family:'full',minorOnly:false,
-      short:'Ⅴ7 → Ⅰだけど、さいごのいちばん上が主音ではない（またはⅤ7のいちばん下が根音ではない）。おわるけどすこしかるい。'},
+      short:'Ⅴ7 → Ⅰだけど、さいごのいちばん上が主音ではない（またはⅤ7のいちばん下が根音ではない）。おわるけど、すこしかるい。'},
     {id:'half',name:'半終止',yomi:'はんしゅうし',nick:'つづく…',emoji:'⏸',color:'#2f7ee8',light:'#dfeafd',family:null,minorOnly:false,
       short:'Ⅴでとまる。まだつづく感じ。'},
     {id:'plagal',name:'変格終止',yomi:'へんかくしゅうし',nick:'アーメン',emoji:'🙏',color:'#22a06b',light:'#daf3e6',family:null,minorOnly:false,

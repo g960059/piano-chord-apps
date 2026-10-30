@@ -113,7 +113,7 @@ function json(data, status = 200, extra = {}) {
   });
 }
 const err = (status, message, extra) => json({ error: message }, status, extra);
-const methodNotAllowed = allow => err(405, 'その方法ではつかえないよ', { Allow: allow });
+const methodNotAllowed = allow => err(405, 'その方法では使えないよ', { Allow: allow });
 
 // ほかのサイトからの POST・DELETE は受けつけない（Origin があるときだけ見る）
 function sameOrigin(request) {
@@ -225,7 +225,7 @@ function upsertBest(env, period, playerId, name, res, at) {
 
 /* ===== API ===== */
 async function createRun(request, env, ctx) {
-  if (!sameOrigin(request)) return err(403, 'ほかのサイトからはつかえないよ');
+  if (!sameOrigin(request)) return err(403, 'ほかのサイトからは使えないよ');
   const now = Date.now();
   const { today, yesterday } = await ipHashes(env, request, now);
   const runId = crypto.randomUUID();
@@ -237,7 +237,7 @@ async function createRun(request, env, ctx) {
      WHERE (SELECT COUNT(*) FROM runs WHERE ip_hash IN (?4, ?5) AND created_at > ?6) < ?7`,
   ).bind(runId, seed, now, today, yesterday, now - 3600000, LIMITS.runsPerHour).run();
   if (!ins.meta || ins.meta.changes !== 1) {
-    return err(429, 'チャレンジが多すぎるよ。すこし休んでからまたやってね', { 'Retry-After': '600' });
+    return err(429, 'チャレンジが多すぎるよ。すこし休んでから、またやってね', { 'Retry-After': '600' });
   }
   const job = cleanup(env, now).catch(e => console.error('cleanup', e && e.message));
   if (ctx && ctx.waitUntil) ctx.waitUntil(job); else await job;
@@ -267,7 +267,7 @@ async function mayRank(env, ipHash, playerId, now) {
 }
 
 async function submitScore(request, env) {
-  if (!sameOrigin(request)) return err(403, 'ほかのサイトからはつかえないよ');
+  if (!sameOrigin(request)) return err(403, 'ほかのサイトからは使えないよ');
   const parsed = await readJson(request);
   if (parsed.error) return err(...parsed.error);
   const chk = checkScoreBody(parsed.body);
@@ -283,7 +283,7 @@ async function submitScore(request, env) {
   const took = Math.min(now - run.created_at, elapsedMs);
   if (took < minMs) {
     // run は使わずにのこるので、すこしまってもういちど送ればとおる
-    return err(400, 'ちょっとはやすぎたみたい。すこしまってからもういちどおしてね',
+    return err(400, 'ちょっとはやすぎたみたい。すこしまってから、もういちどおしてね',
       { 'Retry-After': String(Math.max(1, Math.ceil((minMs - took) / 1000))) });
   }
 
@@ -422,7 +422,7 @@ export async function handleApi(request, env, ctx) {
   const path = url.pathname.replace(/\/+$/, '');
   const method = request.method;
   // データベースがない（ブランチの Preview など）：ランキングはおやすみ。501なので画面は「オフライン」であそべる
-  if (!env || !env.DB) return err(501, 'ここではランキングはつかえないよ');
+  if (!env || !env.DB) return err(501, 'ここではランキングは使えないよ');
   if (path === '/api/run') return method === 'POST' ? createRun(request, env, ctx) : methodNotAllowed('POST');
   if (path === '/api/score') return method === 'POST' ? submitScore(request, env) : methodNotAllowed('POST');
   if (path === '/api/ranking') return method === 'GET' ? getRanking(url, env) : methodNotAllowed('GET');
@@ -453,7 +453,7 @@ export default {
         return await handleApi(request, env, ctx);
       } catch (e) {
         console.error('api error', e && e.stack || e);
-        return err(500, 'サーバーでこまったことがおきたよ。あとでもういちどためしてね');
+        return err(500, 'サーバーで、こまったことがおきたよ。あとで、もういちどためしてね');
       }
     }
     return serveAsset(request, env);

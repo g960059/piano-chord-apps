@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- meta:start -->
-<meta name="description" content="「おしまい」になる和音のならびⅠ→Ⅳ→Ⅰ→Ⅴ7→Ⅰを聴いて、伴奏の形を見る">
+<meta name="description" content="「おしまい」になる和音のならび（Ⅰ→Ⅳ→Ⅰ→Ⅴ7→Ⅰ）を聴いて、伴奏の形を見る">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ピアノ和音アプリ">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="カデンツ｜ピアノ和音アプリ">
-<meta property="og:description" content="「おしまい」になる和音のならびⅠ→Ⅳ→Ⅰ→Ⅴ7→Ⅰを聴いて、伴奏の形を見る">
+<meta property="og:description" content="「おしまい」になる和音のならび（Ⅰ→Ⅳ→Ⅰ→Ⅴ7→Ⅰ）を聴いて、伴奏の形を見る">
 <meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/cadence.html">
 <meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -132,10 +132,10 @@ function stepMsg(key,data,step,form){
   const common=prev?cur.rh.filter(n=>prev.rh.some(p=>p.midi===n.midi)):[];
   // 5つのメッセージは同じ場所にかさねるので（いちばん長いものの高さになる）、和音ごとにかわることだけ書く
   const ms=[];
-  if(form==='inv'&&common.length) ms.push(`🟡「${PA.namesH(common)}」は前の和音とおなじけんばん → <b>そのまま</b>動かさない！`);
+  if(form==='inv'&&common.length) ms.push(`🟡「${PA.namesH(common)}」は前の和音と同じけんばん → <b>そのまま</b>動かさない！`);
   const r=cur.rh.find(n=>n.raised);
   if(r) ms.push(`🌙 短調なので、7ばんめの音は半音上げて<b>「${PA.nmH(r)}」</b>にするよ。`);
-  if(!ms.length) ms.push(step===0?'まずはⅠ。ここからスタート！':`${lab}は根音「${PA.nmH(cur.lh[0])}」からひとつとばしでつむよ。`);
+  if(!ms.length) ms.push(step===0?'まずはⅠ。ここからスタート！':`${lab}は根音「${PA.nmH(cur.lh[0])}」から、ひとつとばしで音をつむよ。`);
   return {html:ms.join('<br>'),common};
 }
 function staffMinW(key){
@@ -152,7 +152,7 @@ function termsHTML(key,data,step,form){
   const dg=d=>`「${PA.nmH(PA.at(key.scale,d))}」`;
   const rhNow=role==='根音'
     ?`いまの${lab}は、右手もいちばん下が根音「${PA.nmH(lo)}」。`
-    :`いまの${lab}の右手だけを見ると、いちばん下が${role}「${PA.nmH(lo)}」なので${INV[role]}とおなじならび。`;
+    :`いまの${lab}の右手だけを見ると、いちばん下が${role}「${PA.nmH(lo)}」なので${INV[role]}と同じならび。`;
   return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や楽譜で見かける名前）</summary><dl>
     <dt>カデンツ</dt>
     <dd>ⅠではじまってⅠにもどる、和音のひとまとまり。このページのⅠ→Ⅳ→Ⅰ→Ⅴ7→Ⅰもそのひとつ。</dd>
@@ -165,7 +165,7 @@ function termsHTML(key,data,step,form){
     <dt>${yomi('基本形','きほんけい')}・${yomi('転回形','てんかいけい')}</dt>
     <dd>いちばん低い音が根音なら<b>基本形</b>。音のじゅんばんを入れかえて、いちばん下が第3音なら<b>第1転回形</b>、第5音なら<b>第2転回形</b>（Ⅴ7の第7音なら<b>第3転回形</b>）。このページでは左手が根音をひくので、🤲 なめらかな形も和音ぜんたいでは基本形。${form==='inv'?rhNow+`なめらかな形のⅤ7は${dg(1)}をはぶいているよ。`:''}</dd>
     <dt>${yomi('共通音','きょうつうおん')}</dt>
-    <dd>となりあう2つの和音のどちらにもある音（🟡 のわく）。うごかさずにのこすとなめらかにつながる。ⅠとⅣでは${dg(0)}、ⅠとⅤ7では${dg(4)}。</dd>
+    <dd>となりあう2つの和音のどちらにもある音（🟡 のわく）。動かさずにのこすと、なめらかにつながる。ⅠとⅣでは${dg(0)}、ⅠとⅤ7では${dg(4)}。</dd>
   </dl></details>`;
 }
 let lastStep=-1;
@@ -176,13 +176,13 @@ function render(){
   let h=`<div class="stack"><div class="duo-grid"><div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
     ${PA.seg('form',[['inv','🤲 なめらかな形<small>伴奏の形</small>'],['root','🧱 基本の形<small>ねもと</small>']],state.form,'full formseg')}
-    <p class="note" style="margin:-4px 2px 0">${state.form==='inv'?'右手の音のじゅんばんがかわっても、つかう音はおなじ和音の音だよ。':'基本の形は、どれも根音（いちばん下）からひとつとばしでつんだ形。'}</p>
+    <p class="note" style="margin:-4px 2px 0">${state.form==='inv'?'右手の音が入れかわっても、使う音は同じ和音の音だよ。':'基本の形は、どれも根音（いちばん下）から、ひとつとばしで音をつんだ形。'}</p>
     <p class="seqlabel">Ⅰ → Ⅳ → Ⅰ → Ⅴ7 → Ⅰ　タップするとその和音が鳴るよ</p>
     <div class="seq">`+data.map((d,i)=>`<button class="scard ${i===step?'on':''}" style="--c:${PA.COL[d.ch]};--l:${PA.LCOL[d.ch]}" data-act="step" data-v="${i}" aria-pressed="${i===step}" aria-label="${i+1}つめ${LABEL[d.ch]}"><span class="num">${LABEL[d.ch]}</span><span class="nm">${notesSpan(d.rh)}</span></button>`).join('')+`</div>
     <section class="card hero" style="--c:${col}">
       <div class="hero-top"><span class="badge" style="--c:${col}">${lab}</span>
         <div style="min-width:0"><div class="hk">${PA.keyName(key)}のカデンツ　${step+1}つめ</div>
-          <div class="hn"><span class="tag">右手</span>${cur.rh.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join(' ・ ')}</div>
+          <div class="hn"><span class="tag">右手</span>${cur.rh.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}</div>
           <div class="hl"><span class="tag">左手</span><b class="nw">${PA.nmH(cur.lh[0])}</b></div></div></div>
       <div class="msgs">${data.map((_,i)=>`<div class="msg" ${i===step?'':'aria-hidden="true" style="visibility:hidden"'}><span>${i===step?M.html:stepMsg(key,data,i,state.form).html}</span></div>`).join('')}</div>
       <div class="row" style="margin-top:10px">${PA.seg('speed',[['normal','🐇 ふつう'],['slow','🐢 ゆっくり']],state.speed)}</div>
@@ -207,9 +207,9 @@ function render(){
     sub:`${PA.keyName(key)}のⅠ・Ⅳ・Ⅴ・Ⅴ7を5もん。`,btn:'🎯 5もんためしてみる'});
   h+=`<details class="more" data-d="tips" ${state.more?'open':''}><summary>💡 カデンツのポイント</summary><ul>
       <li>左手は、和音の<b>根音</b>（基本の形でいちばん下にくる音）をひくよ。</li>
-      <li><b>🤲 なめらかな形</b>：前の和音とおなじけんばんは<b>そのまま</b>。手があまり動かないので、伴奏でよくつかうよ。</li>
+      <li><b>🤲 なめらかな形</b>：前の和音と同じけんばんは、<b>そのまま</b>。手があまり動かないので、伴奏でよく使うよ。</li>
       <li>なめらかな形の<b>Ⅴ7</b>は、「${PA.nmH(PA.at(key.scale,1))}」をはぶいて3つでひくことが多いよ。</li>
-      <li><b>🧱 基本の形</b>：どれも根音から<b>ひとつとばし</b>でつんだ形。</li>
+      <li><b>🧱 基本の形</b>：どれも根音から、<b>ひとつとばし</b>で音をつんだ形。</li>
       ${key.minor?`<li><b>🌙 短調</b>のⅤ7は、7ばんめの音「${PA.nmH(key.natLT)}」を<b>半音上げて</b>「${PA.nmH(key.lt)}」にする。</li>`:''}
     </ul>
     <p style="margin:10px 0 0"><button class="btn small" data-act="howto">🐸 ${lab}のつくりかたを見る</button></p></details>${termsHTML(key,data,step,state.form)}</div>`;
@@ -220,7 +220,7 @@ function render(){
   lastStep=step;
   PA.paint(document.getElementById('actions'),
     (state.playing?`<button class="btn" data-act="stop" data-hot="listen">⏹ とめる</button>`:`<button class="btn primary" data-act="cplay" data-hot="listen" aria-label="ながして聴く">▶️ <span class="lbl-w">ながして聴く</span><span class="lbl-n">ながす</span></button>`)+
-    `<button class="btn" data-act="again">🔊 もういちど</button><button class="btn nx" data-act="next" data-hot="next" aria-label="つぎの和音">つぎ ➡</button>`,'bar');
+    `<button class="btn" data-act="again">🔊 もういちど</button><button class="btn nx" data-act="next" data-hot="next" aria-label="次の和音">次 ➡</button>`,'bar');
 }
 
 /* ===== 音 ===== */

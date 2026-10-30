@@ -107,7 +107,7 @@ test('tally：数・ほし・ひとこと',()=>{
   const {PA}=mk();
   const T=(arr,n)=>PA.sessionTally(arr.map(c=>({ok:c!=='x',hint:c==='h'})),n);
   const a=T(['o','o','o','o','o'],5);
-  eq([a.self,a.hint,a.wrong,a.ok,a.stars],[5,0,0,5,3]); assert.ok(a.msg.includes('ぜんぶじぶんで'));
+  eq([a.self,a.hint,a.wrong,a.ok,a.stars],[5,0,0,5,3]); assert.ok(a.msg.includes('ぜんぶ、じぶんで'));
   const b=T(['o','h','o','o','o'],5);
   eq([b.self,b.hint,b.wrong,b.ok,b.stars],[4,1,0,5,3]); assert.ok(b.msg.includes('ヒントを見ないで'));
   const c=T(['o','x','o','h','o'],5);

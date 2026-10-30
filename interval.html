@@ -133,7 +133,7 @@ const IV=(()=>{
   // 名前：[ふだんのことば, 本の名前]
   function label(i){
     if(!i.q) return [i.num+'度',i.num+'度'];
-    if(i.num===1&&i.q==='P') return ['おなじ音の1度','完全1度'];
+    if(i.num===1&&i.q==='P') return ['同じ音の1度','完全1度'];
     return [QN[i.q][0]+i.sn+'度',QN[i.q][1]+i.sn+'度'];
   }
   // ミ・ファ（2）とシ・ド（6）のどこをまたぐか：文字のならびでしらべる
@@ -185,7 +185,7 @@ const yomi=(w,y)=>`<ruby>${w}<rt>${y}</rt></ruby>`; // ふりがな
 // 名前：8度より広いときは「1オクターブと広い3度（長10度）」のように、本の名前は10度のまま
 const fullLabel=i=>{
   if(!i.q||i.num<=8) return IV.label(i);
-  const Q=IV.QN[i.q], easy=i.sn===8?(i.q==='P'?'':Q[0]+' ')+i.oct+'オクターブ':`${i.oct}オクターブと${Q[0]}${i.sn}度`;
+  const Q=IV.QN[i.q], easy=i.sn===8?(i.q==='P'?'':Q[0])+i.oct+'オクターブ':`${i.oct}オクターブと${Q[0]}${i.sn}度`;
   return [easy,Q[1]+i.num+'度'];
 };
 const lab=i=>{const l=fullLabel(i);return l[0]===l[1]?l[0]:`${l[0]}<small>（${l[1]}）</small>`;};
@@ -213,12 +213,12 @@ const crossText=cr=>{
   const m=cr.filter(x=>x===2).length, s=cr.filter(x=>x===6).length, p=[];
   if(m) p.push(MIFA()+(m>1?`（${m}かい）`:''));
   if(s) p.push(SIDO()+(s>1?`（${s}かい）`:''));
-  return p.join(' と ');
+  return p.join('と');
 };
 // 広い・せまいのわけ：まず♯・♭をとった白鍵の形 → ♯・♭で1だんずつ広げる・せばめる
 function why(i){
-  if(i.num===1) return i.lo.acc===i.hi.acc?'おなじ音 → <b>1度</b>':`文字がおなじなので<b>1度</b>。♯・♭がちがうので<b>${lab(i)}</b>`;
-  if(i.steps>7) return i.sn===8?`${i.steps/7}オクターブ。`:`${i.oct}オクターブと${i.sn}度。広さは${i.sn}度とおなじようにかんがえるよ。`;
+  if(i.num===1) return i.lo.acc===i.hi.acc?'同じ音 → <b>1度</b>':`文字が同じなので<b>1度</b>。♯・♭がちがうので<b>${lab(i)}</b>`;
+  if(i.steps>7) return i.sn===8?`${i.steps/7}オクターブ。`:`${i.oct}オクターブと${i.sn}度。広さは${i.sn}度と同じように見るよ。`;
   const wl=IV.white(i.lo), wh=IV.white(i.hi), w=IV.info(wl,wh), cr=IV.crosses(i.lo,i.steps);
   const acc=i.lo.acc||i.hi.acc;
   let s=acc?`♯・♭をとると${PA.nmH(wl)}→${PA.nmH(wh)}。`:'';
@@ -259,7 +259,7 @@ function heroCard(key){
   }else{
     p.forEach(n=>marks.set(n.midi,{fill:BLUE,label:PA.nm(n),focus:true,sub:'1',subColor:BLUE}));
     top=`<div class="ivpair">${p.length?`<span class="nw">${PA.nmH(p[0])}</span><span class="ar">→</span>？`:'？<span class="ar">→</span>？'}</div><div class="ivnum"><b>？度</b></div>`;
-    line=p.length?`「${PA.nmH(p[0])}」をえらんだよ。<b>もう1つ</b>タップしてね。`:'👇 けんばんを<b>2つ</b>タップしてね。';
+    line=p.length?`「${PA.nmH(p[0])}」を選んだよ。<b>もう1つ</b>タップしてね。`:'👇 けんばんを<b>2つ</b>タップしてね。';
   }
   const staff=i?PA.staffSVG(key,[{notes:i.num===1&&i.lo.acc===i.hi.acc?[i.lo]:[i.lo,i.hi],color:BLUE,label:i.num+'度',labelColor:BLUE}],{minW:150,maxScale:1.4}):'';
   return `<section class="card hero">
@@ -267,8 +267,8 @@ function heroCard(key){
     <div class="ivtop" aria-live="polite">${top}</div>${cnt}
     <div class="msg" style="margin-top:10px">${line}</div>
     <div class="kbbox scroll" data-sk="kb" data-kbpick="1">${PA.kbSVG(KB_LO,KB_HI,marks)}</div>
-    <p class="note">数字＝かぞえた文字。<span class="mf">オレンジの印</span>＝${MIFA()}と${SIDO()}（白鍵どうしがとなりで、あいだに黒鍵がないせまいところ）</p>
-    ${staff?`<div class="ivstaff">${staff}</div><p class="note" style="text-align:center;margin-top:0">がくふでも線・間・線… と1つずつかぞえればおなじ数</p>`:''}
+    <p class="note">数字＝かぞえた文字。<span class="mf">オレンジの印</span>＝${MIFA()}と${SIDO()}（白鍵どうしがとなりで、あいだに黒鍵がない、せまいところ）</p>
+    ${staff?`<div class="ivstaff">${staff}</div><p class="note" style="text-align:center;margin-top:0">がくふでも、線・間・線…と1つずつかぞえれば同じ数</p>`:''}
   </section>`;
 }
 // 白鍵だけの3度・5度
@@ -281,21 +281,21 @@ function whiteCard(){
   const i=curPair();
   const row=(cls,name,formal,rule,ls,steps)=>`<div class="srow ${cls}"><div class="lab"><b>${name}</b><small>${formal}</small><small>… ${rule}</small></div><div class="chips">${ls.map(l=>exChip(l,steps,i)).join('')}</div></div>`;
   return `<section class="card">
-    <h2>📏 広い・せまいを白鍵でおぼえる<small>おなじ3度でも、広い3度とせまい3度があるよ。タップすると鳴るよ</small></h2>
-    <p class="note ink" style="margin-top:0">白鍵のとなりどうしで、${MIFA()}と${SIDO()}だけはあいだに黒鍵がない「せまいところ」。ここを<b>またぐかどうか</b>できまるよ。</p>
+    <h2>📏 広い・せまいを白鍵でおぼえる<small>同じ3度でも、広い3度とせまい3度があるよ。タップすると鳴るよ</small></h2>
+    <p class="note ink" style="margin-top:0">白鍵のとなりどうしで、${MIFA()}と${SIDO()}だけは、あいだに黒鍵がない。この<b>「せまいところ」をまたぐかどうか</b>で、広さがかわるよ。</p>
     <p class="sub3"><b>3度</b></p>
     ${row('wide','広い3度','（長3度）','またがない',EX3W,2)}
     ${row('narrow','せまい3度','（短3度）','1つまたぐ',EX3N,2)}
     <p class="sub3"><b>5度</b></p>
     ${row('wide','ちょうどよい5度','（完全5度）','1つまたぐ',EX5P,4)}
     ${row('narrow','せばめた5度','（減5度）','2つともまたぐ',EX5D,4)}
-    <p class="note">5度はほとんどがちょうどよい5度。${L(6)}→${L(3)}だけ${MIFA()}と${SIDO()}の2つをまたぐので、せまくなるよ。</p>
+    <p class="note">5度のほとんどは、ちょうどよい5度。${L(6)}→${L(3)}だけ${MIFA()}と${SIDO()}の2つをまたぐので、せまくなるよ。</p>
   </section>`;
 }
 // ♯・♭で広さをかえる
 const W_LINKS=[
   ['aug6.html','🎺 増六の和音','いちばん下といちばん上が<b>ひろげた6度（増6度）</b>'],
-  ['neapolitan.html','🌋 ナポリの六','つぎの和音へ<b>せばめた3度（減3度）</b>で下がる音がある'],
+  ['neapolitan.html','🌋 ナポリの六','次の和音へ<b>せばめた3度（減3度）</b>で下がる音がある'],
   ['dim-halfdim.html','🌀 減七と半減七','いちばん下といちばん上が<b>せばめた7度（減7度）</b>']
 ];
 function widgetCard(key){
@@ -310,7 +310,7 @@ function widgetCard(key){
   const [klo,khi]=kbRange(W.lo0.midi-3,W.hi0.midi+3); // ♯・♭は2つまでなので、もとの音のまわりでたりる
   const staff=PA.staffSVG(key,[{notes:[W.lo,W.hi],color:PUR,accColor:PUR,label:i.sn+'度',labelColor:PUR}],{minW:150,maxScale:1.3});
   return `<section class="card wcol">
-    <h2>🎚 ♯・♭で広さをかえる<small>文字がおなじなら何度かはかわらない。かわるのは広さだけ</small></h2>
+    <h2>🎚 ♯・♭で広さをかえる<small>文字が同じなら、何度かはかわらない。かわるのは広さだけ</small></h2>
     ${PA.seg('wn',[['3','3度'],['5','5度'],['6','6度'],['7','7度']],String(state.wn),'full')}
     <div class="ivtop" style="margin-top:10px" aria-live="polite"><div class="ivpair"><span class="nw">${PA.nmH(W.lo)}</span><span class="ar">→</span><span class="nw">${PA.nmH(W.hi)}</span></div>
       <div class="ivnum"><b style="color:${PUR}">${i.sn}度</b><span class="qn">${lab(i)}</span></div></div>
@@ -333,7 +333,7 @@ function wMsg(key){
   const B=IV.widget(key,state.wn,state.ml-d[0],state.mh-d[1]), W=IV.widget(key,state.wn,state.ml,state.mh);
   if(!B.ok||!W.ok) return '';
   const wider=d[1]>0||d[0]<0, who=d[1]?'上の音':'下の音', n=d[1]?W.hi:W.lo, was=d[1]?B.hi:B.lo;
-  return `${who}「${PA.nmH(was)}」を${d[0]+d[1]>0?'上げて':'下げて'}「${PA.nmH(n)}」→ 1だん${wider?'広く':'せまく'}なって<b>${labT(W.i)}</b>。<br>文字はおなじなので${W.i.sn}度のまま。`;
+  return `${who}「${PA.nmH(was)}」を${d[0]+d[1]>0?'上げて':'下げて'}「${PA.nmH(n)}」→ 1だん${wider?'広く':'せまく'}なって<b>${labT(W.i)}</b>。<br>文字は同じなので${W.i.sn}度のまま。`;
 }
 // けんばんのはんい：白鍵ではじまり白鍵でおわる（8つ以上）
 function kbRange(lo,hi){
@@ -371,10 +371,10 @@ function quizCard(key){
   const staff=PA.staffSVG(key,[{notes:[i.lo,i.hi],color:'#3a3245'}],{minW:130,maxScale:1.3});
   let fb='';
   if(done){
-    const head=right?'⭕ せいかい！':'❌ おしい！';
+    const head=right?'⭕ 正解！':'❌ おしい！';
     const body=q.type==='wide'?why(i):`${countText(i)}の${i.num}つ → <b>${i.num}度</b>`;
     const last=Q.n===Q.list.length-1;
-    fb=`<div class="fb ${right?'good':'bad'}" role="status"><b>${head}</b><br>${body}${last?`<br>🎉 <b>${Q.list.length}もん中${Q.ok}もん</b>できたよ！`:''}</div>`;
+    fb=`<div class="fb ${right?'good':'bad'}" role="status"><b>${head}</b><br>${body}${last?`<br>🎉 <b>${Q.list.length}問中${Q.ok}問</b>できたよ！`:''}</div>`;
   }
   const choices=q.opts.map(([v,t])=>{
     let cls='';
@@ -383,14 +383,14 @@ function quizCard(key){
   }).join('');
   const last=Q.n===Q.list.length-1;
   return `<section class="card quiz">
-    <h2 class="qhead">✅ たしかめよう<span class="qno">${Q.n+1} / ${Q.list.length}もん</span></h2>
+    <h2 class="qhead">✅ たしかめよう<span class="qno">${Q.n+1} / ${Q.list.length}問</span></h2>
     <p class="note" style="margin-top:-6px">${PA.keyName(key)}の音階の音から出すよ</p>
     <div class="ivpair" style="text-align:center;margin-top:6px"><span class="nw">${PA.nmH(i.lo)}</span><span class="ar">→</span><span class="nw">${PA.nmH(i.hi)}</span></div>
     <div class="qstaff">${staff}</div>
     <p class="askline">${ask}</p>
     <div class="choices" ${q.opts.length===2?'style="grid-template-columns:repeat(2,1fr)"':''}>${choices}</div>
     ${fb}
-    <div class="row" style="margin-top:10px"><button class="btn small" data-act="qplay">🔊 聴く</button>${done?`<button class="btn small primary" data-act="qnext" data-hot="next">${last?'🔁 もういちど':'つぎ ➡'}</button>`:''}</div>
+    <div class="row" style="margin-top:10px"><button class="btn small" data-act="qplay">🔊 聴く</button>${done?`<button class="btn small primary" data-act="qnext" data-hot="next">${last?'🔁 もういちど':'次 ➡'}</button>`:''}</div>
   </section>`;
 }
 
@@ -398,11 +398,11 @@ function quizCard(key){
 function tipsHTML(){
   return `<details class="more tips" data-d="tips"><summary>💡 おぼえかたのコツ</summary><ol>
     <li><b>何度かは文字でかぞえる</b>。はじめの音も「1つめ」。${L(0)}→${L(2)}は${L(0)}・${L(1)}・${L(2)}の3つで<b>3度</b>。</li>
-    <li><b>おなじ音は1度</b>、${L(0)}から上の${L(0)}は<b>8度</b>（オクターブ）。</li>
+    <li><b>同じ音は1度</b>、${L(0)}から上の${L(0)}は<b>8度</b>（オクターブ）。</li>
     <li>がくふでは、<b>線→線</b>か<b>間→間</b>なら3度・5度・7度。<b>線→間</b>なら2度・4度・6度。</li>
     <li><b>♯・♭は何度かをかえない</b>。${L(0)}→${L(2)}も${L(0)}→${PA.nmH({letter:2,acc:-1})}も3度。かわるのは広さだけ。</li>
-    <li><b>3度</b>：${MIFA()}か${SIDO()}をまたぐとせまい3度、またがなければ広い3度。</li>
-    <li><b>5度</b>：ほとんどちょうどよい5度。${L(6)}→${L(3)}だけせばめた5度。</li>
+    <li><b>3度</b>：${MIFA()}か${SIDO()}をまたぐと、せまい3度。またがなければ、広い3度。</li>
+    <li><b>5度</b>：ほとんどは、ちょうどよい5度。${L(6)}→${L(3)}だけせばめた5度。</li>
     <li><b>上の音に♯・下の音に♭</b> → 1だん広く。<b>上の音に♭・下の音に♯</b> → 1だんせまく。</li>
     <li>和音は3度のつみかさね。${L(0)}・${L(2)}・${L(4)}は広い3度＋せまい3度で明るいひびき。</li>
   </ol></details>`;
@@ -421,7 +421,7 @@ function termsHTML(){
     <dt>${yomi('増','ぞう')}・${yomi('減','げん')}</dt>
     <dd><b>増</b>はいちばん広い形よりもう1だん広げたもの（ひろげた）。<b>減</b>はいちばんせまい形よりもう1だんせばめたもの（せばめた）。<b>増6度</b>・<b>減3度</b>・<b>減7度</b>などが変化和音のページに出てくるよ。</dd>
     <dt>オクターブ</dt>
-    <dd>8度のこと。${L(0)}から上の${L(0)}まで。名前がおなじ音どうし。</dd>
+    <dd>8度のこと。${L(0)}から上の${L(0)}まで。名前が同じ音どうし。</dd>
   </dl></details>`;
 }
 
@@ -430,7 +430,7 @@ function render(){
   const key=curKey();
   if(!Q) newQuiz();
   const h=`<div class="stack">
-    <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}・えらんだ調の♯・♭で書くよ</span></div>
+    <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}・選んだ調の♯・♭で書くよ</span></div>
     ${heroCard(key)}${whiteCard()}${widgetCard(key)}${quizCard(key)}${tipsHTML()}${termsHTML()}</div>`;
   PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx);
   PA.paint(document.getElementById('actions'),

@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- meta:start -->
-<meta name="description" content="ぜんぶの調のⅠ・Ⅳ・Ⅴ・Ⅴ7。かくしてれんしゅうも">
+<meta name="description" content="ぜんぶの調のⅠ・Ⅳ・Ⅴ・Ⅴ7。かくして、れんしゅうもできる">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ピアノ和音アプリ">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="和音いちらん表｜ピアノ和音アプリ">
-<meta property="og:description" content="ぜんぶの調のⅠ・Ⅳ・Ⅴ・Ⅴ7。かくしてれんしゅうも">
+<meta property="og:description" content="ぜんぶの調のⅠ・Ⅳ・Ⅴ・Ⅴ7。かくして、れんしゅうもできる">
 <meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/chord-table.html">
 <meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -142,21 +142,21 @@ function termsHTML(minor,sel,hide){
   const c7=[{letter:0,acc:0},{letter:2,acc:0},{letter:4,acc:0},{letter:6,acc:-1}].map(br).join('・');
   return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や楽譜で見かける名前）</summary><dl>
     <dt>${yomi('主要三和音','しゅようさんわおん')}</dt>
-    <dd>Ⅰ・Ⅳ・Ⅴの3つをまとめたよびかた。いちばんよくつかう和音で、3つあわせると音階の7つの音がぜんぶ出てくる。</dd>
+    <dd>Ⅰ・Ⅳ・Ⅴの3つを、まとめてよぶ名前。いちばんよく使う和音で、3つあわせると音階の7つの音がぜんぶ出てくる。</dd>
     <dt>${yomi('主和音','しゅわおん')}・${yomi('下属和音','かぞくわおん')}・${yomi('属和音','ぞくわおん')}・${yomi('属七の和音','ぞくしちのわおん')}</dt>
     <dd>Ⅰ・Ⅳ・Ⅴ・Ⅴ7のべつのよびかた（じゅんばんに）。</dd>
     <dt>コードネーム</dt>
     <dd>いちばん下の音（根音）の英語の名前（C D E F G A B）と、ひびきのしるし。<ul>
       <li><b>C</b>（文字だけ）… 明るいひびきの和音（メジャー）</li>
       <li><b>Cm</b> … さびしいひびきの和音（マイナー）</li>
-      <li><b>C7</b> … ひとつとばしでもう1つ音をのせた4つの音の和音（<span class="nw">${c7}</span>）。Ⅴ7とおなじかたち。</li>
+      <li><b>C7</b> … ひとつとばしで、もう1つ音をのせた4つの音の和音（<span class="nw">${c7}</span>）。Ⅴ7と同じかたち。</li>
     </ul></dd>
     <dt>ローマ数字とコードネームのちがい</dt>
-    <dd>ローマ数字（Ⅰ・Ⅳ・Ⅴ）は<b>調の中でなんばんめか</b>、コードネームは<b>音そのもの</b>。おなじ G でもハ長調ではⅤ、ト長調ではⅠ。<ul>
+    <dd>ローマ数字（Ⅰ・Ⅳ・Ⅴ）は<b>調の中でなんばんめか</b>、コードネームは<b>音そのもの</b>。同じ G でもハ長調ではⅤ、ト長調ではⅠ。<ul>
       <li>長調のⅠ・Ⅳ・Ⅴはどれもメジャー（明るいひびき）。</li>
       <li>短調のⅠ・Ⅳはマイナー（m）。Ⅴは7ばんめの音を半音上げるのでメジャー。</li>
       ${hide?'':`<li>れい：${PA.keyName(k)} → ${ex}</li>`}
-      ${hide?'':`<li>調の名前のよこの${PA.keyEn(k)}なども、その調のⅠのコードネームとおなじ書きかた。</li>`}
+      ${hide?'':`<li>調の名前のよこの${PA.keyEn(k)}なども、その調のⅠのコードネームと同じ書きかた。</li>`}
     </ul></dd>
     <dt>ドイツ語の音の名前</dt>
     <dd>クラシックの本ではドイツ語の名前も出てくる。英語の<b>B</b>（${br(si)}）を<b>H</b>（ハー）、<b>B♭</b>（${br(sif)}）を<b>B</b>（ベー）とよぶので気をつけよう。</dd>
@@ -167,7 +167,7 @@ function tryHTML(minor,sel){
   const k=sel&&sel.minor===minor?keyAt(minor,sel.i):null;
   return PA.tryHTML({to:'chord-quiz',params:{key:k?PA.keyDeck.id(minor,sel.i):null,n:5},
     title:k?`<span class="nw">${PA.keyName(k)}の</span>和音をクイズでためそう`:'和音クイズでためしてみよう',
-    sub:k?`${PA.keyName(k)}の和音を5もん。表を見ないでこたえられるかな？`:'表の和音を5もん。マスをえらぶとその調でれんしゅうできるよ。',
+    sub:k?`${PA.keyName(k)}の和音を5もん。表を見ないで、こたえられるかな？`:'表の和音を5もん。マスを選ぶと、その調の問題になるよ。',
     btn:'🎯 5もんためす'});
 }
 function render(){
@@ -176,7 +176,7 @@ function render(){
     ${PA.seg('mode',[['0','☀️ 長調'],['1','🌙 短調']],minor?'1':'0','full')}
     <div class="msg">${state.hide
       ?'🙈「？」をタップするとこたえが出るよ。言えたらタップしてたしかめよう！'
-      :'マスをタップすると音が出るよ。えらんだマスの作り方は<b>🐸 つくりかた</b>で見られるよ。調の名前をタップするとその調の「和音のしくみ」へ。'}</div>`;
+      :'マスをタップすると音が出るよ。選んだマスの作り方は<b>🐸 つくりかた</b>で見られるよ。調の名前をタップすると、その調の「和音のしくみ」へ。'}</div>`;
   if(state.hide) h+=`<div class="toprow"><span class="count">ひらいたマス：${openedCount()} / ${total()}</span></div>`;
   h+=`<div class="list" role="list" aria-label="${minor?'短調':'長調'}のいちらん表">
     <div class="colhead" aria-hidden="true"><span class="k0">調</span>${CH.map(k=>`<span style="${colVars(k)}">${CHORDS[k].label}</span>`).join('')}</div>`;
@@ -202,7 +202,7 @@ function render(){
   h+=`</div>
     <details class="more"><summary>💡 表の見かた</summary><ul>
       <li><b>Ⅰ・Ⅳ・Ⅴ</b>は、音階の<b>1・4・5ばんめ</b>の音から<b>ひとつとばし</b>で3つかさねた和音。</li>
-      <li><b>Ⅴ7</b>は、Ⅴにもうひとつとばしてのせた<b>4つの音</b>。</li>
+      <li><b>Ⅴ7</b>は、Ⅴの上にもう1つ、ひとつとばしで音をのせた<b>4つの音</b>。</li>
       <li>マスの下の小さな字は<b>コードネーム</b>（Am の m はさびしいひびきの「マイナー」）。</li>
       <li>🌙 <b>短調のⅤ・Ⅴ7</b>は、7ばんめの音を<b>半音上げる</b>。だから短調でもⅤは明るいひびき。</li>
       <li>🙈 <b>かくしてれんしゅう</b>：「？」の和音を先に声に出して言ってからタップ。音と名前でたしかめよう。</li>
@@ -214,7 +214,7 @@ function render(){
   const hasSel=!!(sel&&sel.minor===minor);
   PA.paint(document.getElementById('actions'),state.hide
     ?`<button class="btn" data-act="thide">👀 ぜんぶ見せる</button><button class="btn primary wide" data-act="treset">🔄 もういちどかくす</button>`
-    :`<button class="btn primary wide" data-act="thide">🙈 かくしてれんしゅう</button><button class="btn night" data-act="tbuild" ${hasSel?'':'disabled'} aria-label="${hasSel?PA.keyName(keyAt(sel.minor,sel.i))+'の'+CHORDS[sel.ch].label+'の ':''}つくりかたを見る">🐸 ${hasSel?`<span class="lbl-w">${CHORDS[sel.ch].label}の</span>`:''}つくりかた</button>`,'bar');
+    :`<button class="btn primary wide" data-act="thide">🙈 かくしてれんしゅう</button><button class="btn night" data-act="tbuild" ${hasSel?'':'disabled'} aria-label="${hasSel?PA.keyName(keyAt(sel.minor,sel.i))+'の'+CHORDS[sel.ch].label+'の':''}つくりかたを見る">🐸 ${hasSel?`<span class="lbl-w">${CHORDS[sel.ch].label}の</span>`:''}つくりかた</button>`,'bar');
 }
 
 /* ほかのページをひらく：「和音のしくみ」の状態を先に書いておく */
