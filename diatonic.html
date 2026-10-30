@@ -265,7 +265,7 @@ function famCard(key){
   h+=DIA.FAMS.map((F,f)=>`<div class="frow ${f===f0?'on':''}" style="--fc:${FAMC[f]};--fl:${FAML[f]}"><h3>${FAMN[f]}<small>${FAMW[f]}</small></h3>
     <div class="fmem" role="group" aria-label="${FAMN[f]}">${F.ds.map(d=>`<button class="${d===d0?'on':''}" style="--c:${colOf(d)};--t:${tcolOf(d)}" data-act="fdeg" data-v="${d}" aria-pressed="${d===d0}" aria-label="${ROM[d]}（${PA.namesT(DIA.tones(key,d))}）">${ROM[d]}</button>`).join('')}</div>
     <p class="note">${famNote(key,f)}</p></div>`).join('');
-  h+=`<h2 style="margin-top:16px">🎧 ながれで聴く<small>上の色の線＝なかま。タップすると、その和音が鳴るよ</small></h2>`;
+  h+=`<h2 style="margin-top:16px">🎧 ながれで聴く<small>上の色の線＝なかま${PA.once('tap-sound','。タップすると、その和音が鳴るよ')}</small></h2>`;
   h+=PA.seg('prog',[['basic','Ⅰ・Ⅳ・Ⅴだけ'],['fam','なかまも使う']],state.prog,'full');
   h+=`<div class="seq" style="--n:${fl.length}">`+fl.map((c,i)=>`<button class="scard ${i===state.step?'on':''}" style="--c:${colOf(c.d)};--t:${tcolOf(c.d)};--l:${lcolOf(c.d)};--fc:${FAMC[DIA.famOf(c.d)]}" data-act="pstep" data-v="${i}" aria-pressed="${i===state.step}" aria-label="${i+1}つめ${ROM[c.d]}"><span class="num">${ROM[c.d]}</span><span class="nm"><span class="lh">${PA.nmH(c.lh[0])}</span>${stackNames(c.rh)}</span></button>`).join('')+`</div>`;
   h+=`<p class="flow">${state.prog==='fam'
@@ -326,7 +326,7 @@ function render(){
     </section>`;
   const marks=new Map();
   t.forEach(n=>marks.set(n.midi,{fill:col,label:PA.nm(n),focus:true,sub:n.raised?'半音上げ':'',subColor:LT}));
-  h+=`<section class="card"><h2>🎹 けんばん<small>さわると音が出るよ。オレンジの印＝白鍵どうしがとなり</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(60,88,marks)}</div></section>`;
+  h+=`<section class="card"><h2>🎹 けんばん<small>${PA.once('tap-sound','さわると音が出るよ。')}オレンジの印＝白鍵どうしがとなり</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(60,88,marks)}</div></section>`;
   const st=PA.stepOf(t[0]);
   const cols=[0,1,2,3,4,5,6].map(k=>({notes:DIA.tones(key,k),color:colOf(k),ltColor:LT,accColor:LT,op:k===d?1:0.28,label:ROM[k],labelColor:colOf(k)}));
   h+=`<section class="card"><h2>🎼 がくふ<small>7つならべると、かいだんになる。いまの和音がこい色</small></h2>${staffBox(PA.staffSVG(key,cols,{colW:52}),'staff',0.6)}

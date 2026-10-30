@@ -97,14 +97,6 @@
 .terms dt:first-child{margin-top:2px}
 .terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
 .terms .yomi{font-weight:400;font-size:12px;color:var(--sub)}
-/* たたんだカード（見たいときにひらく）。PA.paint が data-d でひらいたままにする */
-details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;min-height:48px;margin:-4px 0}
-details.fold>summary::-webkit-details-marker{display:none}
-details.fold>summary h2{margin:0;flex:1;min-width:0}
-/* 「ひらく／とじる」は見た目だけ（読み上げは見出しと「ひらいている／とじている」だけに。古い Safari は2つめをむしして1つめをつかう） */
-details.fold>summary::after{content:"ひらく ▾";content:"ひらく ▾"/"";flex:none;font-size:13px;font-weight:700;color:var(--sub);padding:4px 10px;border-radius:999px;background:var(--soft2);white-space:nowrap}
-details.fold[open]>summary::after{content:"とじる ▴";content:"とじる ▴"/""}
-details.fold[open]>summary{margin-bottom:10px}
 .rolenote{margin-top:6px;font-size:13px}
 </style>
 </head>
@@ -451,7 +443,7 @@ function scaleCard(key,id){
     return `<span class="${cls} ${minor&&used.has(n.letter)&&df?'use':''}">${PA.nmH(n)}</span>`;
   };
   const dg=[1,2,3,4,5,6,7].map(d=>`<span class="dg">${d}</span>`).join('');
-  return `<section class="card"><h2>🌙 短調から音をかりるって？<small>${PA.keyName(key)}と${PA.keyName(pm)}は主音が同じ</small></h2>
+  return `<details class="card fold" data-d="scale"><summary><h2>🌙 短調から音をかりるって？<small>${PA.keyName(key)}と${PA.keyName(pm)}は主音が同じ</small></h2></summary>
     <p class="slab">☀️ ${PA.keyName(key)}の音階</p>
     <div class="scl">${dg}${maj.map((n,i)=>cell(n,i,false)).join('')}</div>
     <p class="slab">🌙 ${PA.keyName(pm)}の音階（調号のとおり）</p>
@@ -459,29 +451,29 @@ function scaleCard(key,id){
     ${pm.enh?`<p class="note">${PA.keyName(pm)}は、ふつうは<b>${PA.keyName(PA.minorKey(pm.idx))}</b>と書く調（同じけんばん）。準固有和音では主音の文字をかえずにかりるので、${PA.keyName(pm)}として見るよ。</p>`:''}
     <p class="note" style="color:var(--ink)">ちがうのは<b>3・6・7ばんめ</b>。準固有和音（短調からかりた和音）でかりるのはおもに<b class="bo">6ばんめ${q(nat[5])}</b>（♭Ⅵでは3ばんめ${q(nat[2])}も）。${c.length?`いまの和音でかりているのは${c.map(x=>q(x.b)).join('と')}（下線）。`:''}</p>
     <div class="rule" style="margin-top:10px">調号は${PA.keyName(key)}のまま。かりた音には<b>臨時記号</b>をつける。<br><span style="font-weight:400">長調の明るさの中に、短調のかげが、すっとさすよ。</span></div>
-  </section>`;
+  </details>`;
 }
 function kbCaption(key,id,seq){
   const A=state.anim;
   if(A) return A.kbCap;
   if(state.cad){const s=seq[state.cad.i];return `カデンツ${state.cad.i+1}/${seq.length}：<b style="color:${s.col}">${PA.H(s.lab)}</b>　${s.ns.slice(1).map(n=>nmB(n,s.x&&state.on)).join('・')}（左手${nmB(s.ns[0],s.x&&state.on)}）`;}
   if(state.res===1){const N=H.nextOf(key,id,state.on);return `<b style="color:${nextCol(id)}">${nextLab(id)}</b>：${N.slice(1).map(nmW).join('・')}（左手${PA.nmH(N[0])}）`;}
-  return `<b style="color:${colOf(state.on)}">${labelOf(key,id,state.on)}</b>：左手はいちばん下の音。${state.on?'<span class="bo">赤＝かりた音</span>。':''}さわると音が出るよ`;
+  return `<b style="color:${colOf(state.on)}">${labelOf(key,id,state.on)}</b>：左手はいちばん下の音。${state.on?'<span class="bo">赤＝かりた音</span>。':''}${PA.once('tap-sound','さわると音が出るよ')}`;
 }
 // 聴きくらべの2つ（A・B は音の名前（CDE）とまちがえやすいので、画面では ①・②）
 const AB_NM={A:'①',B:'②'};
 function abCard(key,id){
   const ab=state.ab, D=H.diatonic(key,id), B=H.borrowed(key,id), bl=labelOf(key,id,true), dl=labelOf(key,id,false);
-  let h=`<section class="card"><h2>👂 どっちがかりた和音？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>①と②の後には、どちらも${nextLab(id)}が鳴るよ</small></h2>
+  let h=`<details class="card fold" data-d="ab"><summary><h2>👂 どっちがかりた和音？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>①と②の後には、どちらも${nextLab(id)}が鳴るよ</small></h2></summary>
     <p class="note" style="margin-top:0">ひとつは${dl}、もうひとつは${bl}（短調のかげがあるほう）。どっちかな？</p>`;
-  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext">${PA.icon('dice')}問題を出す</button></div></section>`;
+  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext">${PA.icon('dice')}問題を出す</button></div></details>`;
   h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">${PA.icon('play')}①をきく</button><button class="btn" data-act="abplay" data-v="B">${PA.icon('play')}②をきく</button></div>`;
-  if(ab.answer==null) return h+`<p class="askline">🌙 かりた和音（${bl}）は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">①が${bl}</button><button class="btn night" data-act="qchoose" data-v="B">②が${bl}</button></div></section>`;
+  if(ab.answer==null) return h+`<p class="askline">🌙 かりた和音（${bl}）は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">①が${bl}</button><button class="btn night" data-act="qchoose" data-v="B">②が${bl}</button></div></details>`;
   const ok=ab.answer===ab.b, other=ab.b==='A'?'B':'A', c=changes(key,id);
   return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！もういちど聴きくらべてみよう。'}
       <b>${AB_NM[ab.b]}</b>が${bl}（${members(B).map(x=>nmB(x.n)).join('・')}）、<b>${AB_NM[other]}</b>が${dl}（${members(D).map(x=>nmW(x.n)).join('・')}）。
       <br>${c.map(x=>q(x.b)).join('と')}が入ると、ひびきに短調のかげがさすよ。</div>
-    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}次の問題</button></div></section>`;
+    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}次の問題</button></div></details>`;
 }
 function linksCard(key){
   const n6=H.neapolitan(key), b2=n6[n6.length-1];
@@ -552,7 +544,9 @@ function render(){
   // がくふ：ふつうの形 → かりた形 → つぎの和音
   const c=changes(key,id), N=H.nextOf(key,id,true), six=c.find(x=>x.b.letter===sixL(key));
   h+=`<section class="card"><h2>🎼 がくふ<small>左：${labelOf(key,id,false)}（調の音だけ）　まん中：${labelOf(key,id,true)}（かりた）　右：${nextLab(id)}</small></h2>${mainStaff(key,id)}
-    <p class="note">${c.map(x=>`${q(x.d,false)}に<b class="bo">${accOf(x.b)}</b>をつけて${q(x.b)}`).join('、')}。${six?`かりた${q(six.b)}は<b style="color:${NIGHT}">半音下の${q(N[six.i],false)}へ</b>すすむよ。`:''}</p></section>`;
+    <p class="note">${c.map(x=>`${q(x.d,false)}に<b class="bo">${accOf(x.b)}</b>をつけて${q(x.b)}`).join('、')}。${six?`かりた${q(six.b)}は<b style="color:${NIGHT}">半音下の${q(N[six.i],false)}へ</b>すすむよ。`:''}</p>
+    ${H.borrowed(key,id).some(n=>n.acc===-2)?`<p class="note">${PA.H('𝄫')}はダブルフラットの書き方です。</p>`:''}</section>`;
+  h+=tryCard();
   h+=scaleCard(key,id);
   // カデンツ（ふだんはたたむ。下の「🎵 カデンツ」で鳴らしはじめに1回だけひらく：playCad）
   h+=`<details class="card fold" data-d="cad"><summary><h2>🎵 カデンツ<small>下の「🎵 カデンツ」で鳴らすよ。スイッチで${labelOf(key,id,false)} ↔ ${labelOf(key,id,true)}</small></h2></summary>
@@ -561,11 +555,10 @@ function render(){
     <p class="note">ソプラノ（いちばん上）は<b>${seq.map(s=>nmB(s.ns[3],s.x&&on)).join(' → ')}</b>。${id==='bVI'?'カデンツではⅤを<b>Ⅴ7</b>にして、Ⅰへすすむよ。':''}${on?'スイッチをきって、かりない形とも聴きくらべてみよう。':'🌙 スイッチをおすと、かりた和音のカデンツになるよ。'}</p>
   </details>`;
   h+=abCard(key,id);
-  h+=tryCard();
   h+=linksCard(key);
   h+=tipsHTML(key);
   h+=termsHTML(key);
-  h+=`<p class="note">※ 音の高さはふつうのピアノと同じです。${dblOf(key)?`${PA.H('𝄫')}はダブルフラットの書き方です。`:''}</p></div>`;
+  h+=`</div>`;
   PA.paint(document.getElementById('view'),h,'borrowed:'+state.keyIdx+':'+id);
   if(state.anim||state.cad||state.res===1) PA.follow(document.getElementById('view')); // 音の高さがかわっても光る鍵が見えるように
   renderActions();

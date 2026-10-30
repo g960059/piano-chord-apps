@@ -83,10 +83,11 @@ details.unit[open]>summary::after{transform:rotate(180deg)}
 .arow .ic{flex:none;width:36px;height:36px;border-radius:11px;background:var(--soft2);display:grid;place-items:center;font-size:20px}
 .arow .tx{flex:1;min-width:0;line-height:1.35}
 .arow .tx b{font-size:15.5px}
-.arow .d{display:block;color:var(--sub);font-size:12.5px;line-height:1.45}
+.arow .d{display:block;color:var(--sub);font-size:12.5px;line-height:1.45;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .arow .st{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:12px;font-weight:700;white-space:nowrap}
 .ty{display:inline-block;font-size:11.5px;font-weight:800;padding:0 7px;border-radius:999px;border:1.5px solid var(--line);color:var(--sub);background:#fff;line-height:1.5}
-.arow .seen{color:var(--ok);font-size:12px}
+.arow .seen{color:var(--ok);font-size:16px;font-weight:800}
+#view li a.arow.seen-row{min-height:48px}
 .arow .kd{color:var(--ok);font-size:12px}
 .foot{margin:4px 4px 0;font-size:13px;line-height:1.6}
 .foot>summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center}
@@ -163,19 +164,21 @@ function topHTML(vis){
       <a class="btn primary" href="chord-build.html">ここから始める ›</a>
       <p class="site">Ⅰ・Ⅳ・Ⅴから7つの和音、短調、おわりかた、変化和音、伴奏づけ、耳のれんしゅうまで。「見て・聴いて・さわって」おぼえよう。</p></section>`;
   }
-  const main=lp||ll||old||fallbackRec(vis);
+  // つづき：さいごにひらいたページ（クイズ・しくみの新しいほう）
+  const main=(lp&&ll?(ll.t>lp.t?ll:lp):lp||ll)||old||fallbackRec(vis);
   // にがてふくしゅう：クイズのページだけ（key と n でその調の3もん）
-  const ws=PA.weakSummary(30).filter(w=>{const a=PA.app(w.quiz);return a&&a.type==='quiz';}).slice(0,3);
+  const ws0=PA.weakSummary(30).filter(w=>{const a=PA.app(w.quiz);return a&&a.type==='quiz';});
+  const ws=ws0.filter(w=>w.quiz===ws0[0].quiz).slice(0,3); // いちばんにがてのクイズだけ（1行に）
   if(!main&&!ws.length) return '';
   let h=`<section class="card" aria-labelledby="today-h"><h2 id="today-h" class="pa-sr">きょうのれんしゅう</h2>`;
   if(main){
     const app=PA.app(main.app), meta=[when(main.t),lastDone(app)].filter(Boolean).join('・');
     h+=`<a class="go" href="${app.id}.html"><span class="ic" aria-hidden="true">${app.ic}</span><span class="tx"><span class="eye">${PA.icon('play')}つづきから</span><b>${ESC(app.title)}</b>${meta?`<span class="meta">${ESC(meta)}</span>`:''}</span></a>`;
   }
-  // さいごがしくみのページ（練習はまだ）：その練習をすすめる
-  const pr=!lp&&main?PA.app(PA.app(main.app).practice||''):null;
+  // すすめは1つだけ：つづきがしくみのページならそのれんしゅう、ちがえば にがての調（1つのクイズ）
+  const pr=main?PA.app(PA.app(main.app).practice||''):null;
   if(pr) h+=`<div class="weakrow"><a href="${pr.id}.html"><span aria-hidden="true">${pr.ic}</span>${ESC(pr.title)}でれんしゅう</a></div>`;
-  if(ws.length){
+  else if(ws.length){
     // クイズが1つだけなら見出しに書き、ボタンは調の名前だけ
     const one=ws.every(w=>w.quiz===ws[0].quiz), q0=PA.app(ws[0].quiz);
     h+=`<div class="weakrow"><span class="wl">${PA.icon('retry')}にがてを3もん${one?`（${ESC(q0.title)}）`:''}</span>`
@@ -203,13 +206,14 @@ function quizStat(id){
   const t=PA.keyDeck.tally(id,{modes:TALLY_MODES[id]||['major','minor']});
   return {good:t.good,total:t.total};
 }
+// 行は アイコン＋名前＋ようす だけ。説明は まだひらいていない行だけ1行で（ひらいたことがあれば中身はわかっているので）
 function appRow(app,vis){
-  const ty=typeOf(app), seen=vis.has(app.id);
-  let st=`<span class="ty">${ty.label}</span>`;
-  if(app.type==='quiz'&&seen){const q=quizStat(app.id);st+=`<span class="kd">できた調${q.good}／${q.total}</span>`;}
-  else if(seen) st+=`<span class="seen">✓ ひらいた</span>`;
-  return `<li><a class="arow" href="${app.href?ESC(app.href):app.id+'.html'}"><span class="ic" aria-hidden="true">${app.ic}</span>`
-    +`<span class="tx"><b>${ESC(app.title)}</b><span class="d">${app.d}</span></span><span class="st">${st}</span></a></li>`;
+  const seen=vis.has(app.id);
+  let st='';
+  if(app.type==='quiz'&&seen){const q=quizStat(app.id);st=`<span class="kd">できた調${q.good}／${q.total}</span>`;}
+  else if(seen) st=`<span class="seen" role="img" aria-label="ひらいた">✓</span>`;
+  return `<li><a class="arow${seen?' seen-row':''}" href="${app.href?ESC(app.href):app.id+'.html'}"><span class="ic" aria-hidden="true">${app.ic}</span>`
+    +`<span class="tx"><b>${ESC(app.title)}</b>${seen?'':`<span class="d">${app.d}</span>`}</span>${st?`<span class="st">${st}</span>`:''}</a></li>`;
 }
 function courseHTML(vis){
   const saved=PA.store.get('home-units',{}), sv=isObj(saved)?saved:{};

@@ -343,7 +343,7 @@ function render(){
     marks.set(mv.to,{fill:'#ffc93c',tc:'#3a3245',ring:'#f4a100',label:PA.nm(mv.note),sub:'⤴ ここへ',subColor:'#8f5a00',focus:true});
   }
   const [lo,hi]=chordRange(key,ch);
-  h+=`<section class="card"><h2>🎹 けんばん<small><span style="color:#8f5a00">オレンジのわく</span>＝いちばん下の音。さわると音が出るよ</small></h2>${kbBox(lo,hi,marks,'kb')}</section>`;
+  h+=`<section class="card"><h2>🎹 けんばん<small><span style="color:#8f5a00">オレンジのわく</span>＝いちばん下の音${PA.once('tap-sound','。さわると音が出るよ')}</small></h2>${kbBox(lo,hi,marks,'kb')}</section>`;
   const cols=all.map((sh,j)=>staffCol(j===i||!!(mv&&j===i+1),ch,{notes:sh,label:INV.labelText(ch,j),sub:INV.SHORT[j]}));
   const arrows=mv&&i+1<n?[{c1:i,i1:0,c2:i+1,i2:n-1,color:'#f4a100',dash:'5 4'}]:[];
   const raised=s.some(x=>x.raised);

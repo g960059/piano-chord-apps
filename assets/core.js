@@ -808,6 +808,7 @@ PA.openSettings=()=>{
       <p class="note" id="pa-backup-msg" role="status"></p>
       <div id="pa-backup-text" hidden></div>
     </div>
+    <div class="row" style="margin-top:12px"><button class="btn small" data-sheet="once-reset">${PA.icon('book')}はじめの説明をもういちど出す</button></div>
     <p class="note pa-links"><a href="support.html">🛟 こまったとき・おといあわせ</a>　<a href="privacy.html">🔒 プライバシーポリシー</a></p>`;
   const el=sheet(h);
   el.querySelector('#pa-naming').value=S.naming; el.querySelector('#pa-pitch').value=String(S.pitchA); el.querySelector('#pa-sound').value=S.sound?'1':'0'; el.querySelector('#pa-voice').value=S.voice;
@@ -827,6 +828,7 @@ PA.openSettings=()=>{
     if(b.dataset.sheet==='import') el.querySelector('#pa-import').click();
     if(b.dataset.sheet==='copy') copyBackupText(el);
     if(b.dataset.sheet==='midi-pair') PA.midi.pair();
+    if(b.dataset.sheet==='once-reset'){PA.onceReset();b.innerHTML=PA.icon('check')+'出すようにしたよ';PA.announce('はじめの説明を、また出すようにしたよ');if(PA.onSettings) PA.onSettings();}
     if(b.dataset.sheet==='midi-connect'){
       const st=el.querySelector('#pa-midi-st');
       PA.midi.connect().then(ok=>{if(!ok&&st) st.textContent='つなげなかったよ。電子ピアノをつないでから、もういちどおしてね（「MIDI を使ってもいい？」ときかれたら「許可」）';});
@@ -2145,6 +2147,19 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
  * じぶんでできた＝ok で hint でない、ヒントでできた＝ok で hint、まちがえた＝ok でない
  */
 PA.HINT_NOTE='こたえる前に見ても、×にはならないよ。「ヒントでできた」になるよ';
+/* はじめの数回だけ出す説明：PA.once(id, html, n=3) → ひらいた回が n 回までは html、そのあとは ''
+ * 1回ひらいたページの中では、なんど描きなおしても出しつづける（きゅうに消えない）。PA.store 'once'＝{id: 見た回数}
+ * ⚙️ の「はじめの説明をもういちど出す」で、ぜんぶ数えなおす（PA.onceReset） */
+const onceSeen=new Set();
+PA.once=(id,html,n)=>{
+  const max=n==null?3:n, all=PA.store.get('once',{}), o=all&&typeof all==='object'&&!Array.isArray(all)?all:{};
+  const c=typeof o[id]==='number'?o[id]:0;
+  if(onceSeen.has(id)) return c<=max?html:'';
+  if(c>=max) return '';
+  onceSeen.add(id); o[id]=c+1; PA.store.set('once',o);
+  return html;
+};
+PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
 (function(){
   const QUIZ_RE=/^[a-z0-9][a-z0-9-]{0,40}$/, HOURS12=12*36e5;
   const clampN=v=>{const n=parseInt(v,10);return n>=1?Math.min(20,n):0;};
@@ -2246,12 +2261,13 @@ PA.HINT_NOTE='こたえる前に見ても、×にはならないよ。「ヒン�
           +`<div class="sc-hint"><b>${T.hint}</b><span>ヒントを見てできた</span></div>`
           +`<div class="sc-wrong"><b>${T.wrong}</b><span>まちがえた</span></div></div>`
           +list
-          +`<div class="sess-teacher"><h3>👩‍🏫 先生に見せる</h3><dl>`
+          // 先生に見せる：日づけ・せってい・リンク（けっかは上の大きな字を見せる）。ふだんはたたんでおく
+          +`<details class="sess-teacher" data-d="sess-teacher"><summary>👩‍🏫 先生に見せる</summary><dl>`
           +`<dt>日づけ</dt><dd>${dateText(+now())}</dd>`
           +`<dt>れんしゅう</dt><dd>${PA.esc(title)}</dd>`
           +(set?`<dt>せってい</dt><dd>${set}</dd>`:'')
-          +`<dt>けっか</dt><dd>${d.n}もん中${T.ok}もん（じぶんで${T.self}・ヒント${T.hint}・まちがい${T.wrong}）${stars}</dd></dl>`
-          +`<div class="row">${PA.shareHTML(page,params,PA.icon('link')+'同じれんしゅうのリンク')}</div></div>`
+          +`</dl>`
+          +`<div class="row">${PA.shareHTML(page,params,PA.icon('link')+'同じれんしゅうのリンク')}</div></details>`
           +`<div class="row sess-btns"><button type="button" class="btn primary" data-act="session-again">${PA.icon('retry')}もういちど</button><button type="button" class="btn" data-act="session-free">🎈 じゆうにれんしゅう</button></div>`
           +`</section>`;
       }

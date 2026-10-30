@@ -208,7 +208,7 @@ function render(){
     const lit=[...A.scaleLit], curK=A.frog!=null?A.frog:(lit.length&&lit.length<=8?lit[lit.length-1]:null);
     lit.forEach(k=>{const m=PA.at(key.scale,k).midi;if(!marks.has(m))marks.set(m,{fill:PA.BLACK.has(m%12)?'#8a7440':'#fff3c4',focus:k===curK&&!shown.length});});
   }
-  h+=`<div class="stack duo-side"><section class="card"><h2>🎹 けんばん<small>さわると音が出るよ</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(60,88,marks)}</div></section>`;
+  h+=`<div class="stack duo-side"><section class="card"><h2>🎹 けんばん${PA.once('tap-sound','<small>さわると音が出るよ</small>')}</h2><div class="scroll" data-sk="kb">${PA.kbSVG(60,88,marks)}</div></section>`;
   let staffNote='';
   if(shown.length){const st=PA.stepOf(shown[0]);staffNote=`ひとつとばしだから、この和音は<b>${(st-30)%2===0?'線・線・線':'間・間・間'}</b>にならぶよ。`;}
   h+=`<section class="card"><h2>🎼 がくふ</h2><div class="scroll" data-sk="staff">${PA.staffSVG(key,[{notes:shown,color:col,ltColor:'#d1495b',accColor:'#d1495b'}],{minW:220})}</div><p class="note">${staffNote}</p></section></div></div>`;

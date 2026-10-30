@@ -94,6 +94,8 @@ const curKey=()=>PA.keyOf(state.minor,state.keyIdx);
 const nH=n=>{const c=n.tag==='low'?'lo':n.tag==='lt'?'up':'';return `<span class="nw ${c}">${PA.nmH(n)}</span>`;};
 const q=n=>`「${nH(n)}」`;
 const namesC=(ns,sep='・')=>ns.map(nH).join(sep);
+// 𝄪 が出ているときだけ、がくふの下に書き方をそえる（cols の中に1つでも 𝄪 があれば）
+const dsNote=cols=>cols.some(c=>c.notes.some(n=>n.acc===2))?'<p class="note"><span class="ds">x</span>はダブルシャープの楽譜での書き方です。</p>':'';
 const I64H='Ⅰ<span class="fig"><span>6</span><span>4</span></span>';
 const I64S='Ⅰ<tspan font-size="11" dy="-7">6</tspan><tspan font-size="11" dx="-6.5" dy="11">4</tspan>';
 const sym=ns=>PA.H(PA.LET_EN[ns.letter]+PA.ACC[ns.acc]);
@@ -221,24 +223,24 @@ function heroCard(key,t){
   return h;
 }
 function compareCard(key){
-  let h=`<section class="card"><h2>👂 3つを聴きくらべ<small>${PA.keyName(key)}で。どれも、いちばん下といちばん上は同じ増6度</small></h2>`;
+  let h=`<details class="card fold" data-d="cmp"><summary><h2>👂 3つを聴きくらべ<small>${PA.keyName(key)}で。どれも、いちばん下といちばん上は同じ増6度</small></h2></summary>`;
   TKEYS.forEach(t=>{
     const T=TYPES[t], a=aug(key,t);
     h+=`<div class="cmprow ${(state.cmp?state.cmp===t:t===state.type)?'on':''}" style="--c:${AUG}"><button class="btn" data-act="cmp" data-v="${t}" aria-pressed="${state.cmp===t}">${PA.icon('listen')}${T.short}</button>
       <div class="tx"><b>${a.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}</b><br>${T.from}・根音${T.root?'あり':'なし'}・${T.n}つの音</div></div>`;
   });
-  return h+`<p class="note">イタリアは<b>うすくかるい</b>（3つの音）。フランスは根音が入って<b>ふしぎ・ふわっと</b>。ドイツは<b>こくてⅤ7みたい</b>。</p></section>`;
+  return h+`<p class="note">イタリアは<b>うすくかるい</b>（3つの音）。フランスは根音が入って<b>ふしぎ・ふわっと</b>。ドイツは<b>こくてⅤ7みたい</b>。</p></details>`;
 }
 function staffCard(key,t){
   const A=state.anim;
-  if(A) return `<section class="card"><h2>🎼 がくふ<small>${A.staffCap||''}</small></h2>${staff(key,A.cols.map(c=>({color:AUG,...c})),A.arrows,{sk:'staff'})}</section>`;
+  if(A) return `<section class="card"><h2>🎼 がくふ<small>${A.staffCap||''}</small></h2>${staff(key,A.cols.map(c=>({color:AUG,...c})),A.arrows,{sk:'staff'})}${dsNote(A.cols)}</section>`;
   const st=stagesOf(key,t,state.gerPath), a=st[0].notes, nx=st[1].notes, low=a[0], up=a[a.length-1];
   const cols=st.map((s,i)=>({notes:s.notes,color:s.color,label:s.label,op:state.res>0&&i!==state.res?0.45:1}));
   const arrows=[{c1:0,n1:low,c2:1,n2:nx[0],color:LOW,text:'半音↓'},{c1:0,n1:up,c2:1,n2:nx[nx.length-1],color:LT,text:'半音↑'}];
   if(t==='ger'&&state.gerPath==='direct') arrows.push({c1:0,n1:a[2],c2:1,n2:nx[2],color:PAR,text:'平行5度',dash:'5 4'});
   let h=`<section class="card"><h2>🎼 がくふ ── Ⅴへすすむ<small>${st.map(s=>s.id==='aug'?TYPES[t].name:s.id==='i64'?I64H:'Ⅴ').join(' → ')}</small></h2>`;
   if(t==='ger') h+=`<div style="margin-bottom:8px">${PA.seg('gpath',[['i64',`${I64H}をとおる<small>（ふつう）</small>`],['direct','Ⅴへちょくせつ']],state.gerPath,'full pseg')}</div>`;
-  h+=staff(key,cols,arrows,{sk:'staff'});
+  h+=staff(key,cols,arrows,{sk:'staff'})+dsNote(cols);
   const V=C.aug6ToV(key,t);
   h+=`<p class="note"><b class="lo">${PA.nmH(low)}</b>は半音下へ、<b class="up">${PA.nmH(up)}</b>は半音上へ。<b>外へひらいて</b>、Ⅴの根音${q(V[0])}がオクターブでならぶよ。</p>`;
   if(t==='ger'){
@@ -279,7 +281,7 @@ function borrowDetails(key,t){
   if(t==='ger'){
     const alt=C.gerMajorAlt(key), g=aug(key,'ger'), i64=C.gerToI64(key);
     h+=`<p>ドイツの6が${I64H}へすすむときは、${q(g[2])}を${q(alt[2])}と書くこともあるよ。${q(alt[2])}→${q(i64[2])}と<b>上へすすむ</b>形が見えるから。けんばんは同じ。</p>
-      ${staff(key,[{notes:alt,color:AUG,label:'ドイツ'},{notes:i64,color:ICOL,label:I64S},{notes:C.aug6ToV(key,'ger'),color:VCOL,label:'Ⅴ'}],[{c1:0,n1:alt[2],c2:1,n2:i64[2],color:AUG,text:'半音↑'}],{sk:'alt',cw:100})}
+      ${staff(key,[{notes:alt,color:AUG,label:'ドイツ'},{notes:i64,color:ICOL,label:I64S},{notes:C.aug6ToV(key,'ger'),color:VCOL,label:'Ⅴ'}],[{c1:0,n1:alt[2],c2:1,n2:i64[2],color:AUG,text:'半音↑'}],{sk:'alt',cw:100})}${dsNote([{notes:alt}])}
       <div class="row"><button class="btn small" data-act="altplay">${PA.icon('listen')}${PA.nmH(alt[2])}の形で${I64H} → Ⅴ</button></div>`;
   }
   return h+`</details>`;
@@ -321,10 +323,10 @@ function tryCard(key){
     links:[{to:'chroma-quiz',params:{mode:'ear',level:2,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:PA.icon('ear')+'耳で聴きわける'}]});
 }
 function linksCard(){
-  return `<section class="card"><h2>🔗 つながるアプリ</h2><div class="links">
+  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>ドッペルドミナント・Ⅴの家族</small></h2></summary><div class="links">
     <button class="btn" data-act="go" data-v="doppel">🔺 Ⅱ7とドッペルドミナント<small>増六のもとになる和音</small></button>
     <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族<small>Ⅴ9の根音をはぶくと減七</small></button>
-  </div></section>`;
+  </div></details>`;
 }
 
 /* ===== 画面 ===== */
@@ -348,16 +350,16 @@ function render(){
       cap=s.id==='V'?'Ⅴ（根音がオクターブでならぶ）':`${I64H}（Ⅰの第5音がいちばん下）`;
     }
   }
-  h+=`<section class="card"><h2>🎹 けんばん<small>${cap}　さわると音が出るよ</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(lo,hi,mk)}</div></section>`;
+  h+=`<section class="card"><h2>🎹 けんばん<small>${cap}${PA.once('tap-sound','　さわると音が出るよ')}</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(lo,hi,mk)}</div></section>`;
   h+=staffCard(key,t);
-  h+=compareCard(key);
   h+=tryCard(key);
+  h+=compareCard(key);
   if(t==='ger') h+=bIIDetails(key);
   if(!key.minor) h+=borrowDetails(key,t);
   h+=tipsHTML(key);
   h+=termsHTML(key,t);
   h+=linksCard();
-  h+=`<p class="note">※ 音の高さはふつうのピアノと同じです。<span class="ds">x</span>はダブルシャープの楽譜での書き方です。</p></div>`;
+  h+=`</div>`;
   PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx+':'+t);
   if(state.anim) PA.follow(document.getElementById('view')); // つくりかたで音の高さがかわっても鍵が見えるように
   const acts=(A?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+

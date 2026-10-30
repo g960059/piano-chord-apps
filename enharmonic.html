@@ -80,14 +80,6 @@
 .terms dt:first-child{margin-top:2px}
 .terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
 .terms .yomi{font-weight:400;font-size:12px;color:var(--sub)}
-/* たたんだカード（見たいときにひらく）。PA.paint が data-d でひらいたままにする */
-details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;min-height:48px;margin:-4px 0}
-details.fold>summary::-webkit-details-marker{display:none}
-details.fold>summary h2{margin:0;flex:1;min-width:0}
-/* 「ひらく／とじる」は見た目だけ（読み上げは見出しと「ひらいている／とじている」だけに。古い Safari は2つめをむしして1つめをつかう） */
-details.fold>summary::after{content:"ひらく ▾";content:"ひらく ▾"/"";flex:none;font-size:13px;font-weight:700;color:var(--sub);padding:4px 10px;border-radius:999px;background:var(--soft2);white-space:nowrap}
-details.fold[open]>summary::after{content:"とじる ▴";content:"とじる ▴"/""}
-details.fold[open]>summary{margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -275,7 +267,7 @@ function heroCard(){
   const pi=state.play?state.play.i:-1;
   h+='<tr>'+rs.map((x,i)=>`<td class="pl"><button class="pbtn ${i===pi?'on':''}" style="--rc:${RCOL[i]}" data-act="rplay" data-v="${x.key.idx}" aria-label="${PA.keyName(x.key)}としてⅠへすすむのをきく">${PA.icon('play')}きく</button></td>`).join('')+'</tr>';
   h+=`</tbody></table>
-    <div class="legend"><span>よこにならんだ4つ＝同じけんばん</span><span class="up"><b>赤＝導音</b>（半音上の主音へ）</span>${rs.some(x=>x.next)?'<span>※＝第9音がいちばん下の形</span>':''}</div>
+    <div class="legend"><span>よこにならんだ4つ＝同じけんばん</span><span class="up"><b>赤＝導音</b>（半音上の主音へ）</span>${rs.some(x=>x.next)?'<span>※＝第9音がいちばん下の形</span>':''}<!--sym--></div>
     <div class="msg" style="margin-top:10px">${A?A.msg:state.autoWait?'👆 どこかをタッチすると、<b>4つの行き先</b>めぐりが始まるよ':staticMsg(r)}</div>
   </section>`;
   return h;
@@ -294,7 +286,7 @@ function kbCard(){
     r.next.forEach(n=>mk.set(n.midi,{fill:n.tag==='lt'?LT:VCOL,label:PA.nm(n),focus:true}));
     cap=`${PA.keyName(r.key)}のⅤ（この後Ⅰ）`;
   }
-  return `<section class="card"><h2>🎹 けんばん<small>${cap}　さわると音が出るよ</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(DIM_RANGE[0],DIM_RANGE[1],mk)}</div></section>`;
+  return `<section class="card"><h2>🎹 けんばん<small>${cap}${PA.once('tap-sound','　さわると音が出るよ')}</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(DIM_RANGE[0],DIM_RANGE[1],mk)}</div></section>`;
 }
 function staffCard(){
   const {si,r,res}=view(), rc=RCOL[si], key=r.key;
@@ -316,9 +308,9 @@ function staffCard(){
 }
 function quizCard(){
   const Q=state.quiz, rs=readingsOf(state.keyIdx);
-  let h=`<section class="card"><h2>🎲 どこへ行った？<small>減七の後に鳴る和音を聴いて、行き先の調をあてよう</small></h2>`;
+  let h=`<details class="card fold" data-d="quiz"><summary><h2>🎲 どこへ行った？<small>減七の後に鳴る和音を聴いて、行き先の調をあてよう</small></h2></summary>`;
   if(state.qN) h+=`<p class="note score" style="margin-top:0">${state.qOk} / ${state.qN}問正解</p>`;
-  if(!Q) return h+`<div class="ab one"><button class="btn night" data-act="qnext">${PA.icon('dice')}問題を出す</button></div></section>`;
+  if(!Q) return h+`<div class="ab one"><button class="btn night" data-act="qnext">${PA.icon('dice')}問題を出す</button></div></details>`;
   h+=`<div class="ab one"><button class="btn" data-act="qplay">${PA.icon('repeat')}もういちどきく</button></div>`;
   // 答えは主音の高さ（tpc）でおぼえる：おなじ家族の中で調をかえても（嬰ニ短調⇔変ホ短調）、おなじ答えのまま
   h+=`<p class="askline">どの調へ行った？</p><div class="choices">`+rs.map(x=>{
@@ -331,7 +323,7 @@ function quizCard(){
     h+=`<div class="fb ${ok?'good':'bad'}" role="status" style="margin-top:10px">${ok?'🎉 そのとおり！':'🤔 おしい！'}行き先は<b>${PA.keyName(r.key)}</b>。${PA.keyName(r.key)}の読みかたでは${q(r.lt)}が導音で、${q(tonicOf(r.key))}へすすんだね。</div>
       <div class="ab"><button class="btn" data-act="pick" data-v="${r.key.idx}">${PA.icon('eye')}この読みかたを見る</button><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}次の問題</button></div>`;
   }
-  return h+`</section>`;
+  return h+`</details>`;
 }
 
 /* ===== ↔️ ドイツの6とⅤ7/♭Ⅱ（PA.henka.ger6Vs7） ===== */
@@ -381,7 +373,7 @@ function gerCard(){
     </div>
     ${odds.length?`<p class="note">${odds.map(n=>`${q(n)}は${q(plainOf(n))}`).join('、')}のけんばんだよ。</p>`:''}
     <div class="scroll" data-sk="gkb" style="margin-top:8px">${PA.kbSVG(lo,hi,mk)}</div>
-    <p class="note" style="margin-top:2px">${cap}　さわると音が出るよ</p>
+    <p class="note" style="margin-top:2px">${cap}${PA.once('tap-sound','　さわると音が出るよ')}</p>
     ${staff(key,[{notes:g.ger,color:GER,label:'ドイツ'},{notes:i64,color:ICOL,label:I64S},{notes:V,color:VCOL,label:'Ⅴ'}],
       [{c1:0,n1:gn,c2:1,n2:i64[d],color:LT,text:'半音↑'},{c1:0,n1:g.ger[0],c2:1,n2:i64[0],color:LOW,text:'半音↓'}],{sk:'g1',cw:100})}
     ${staff(key,[{notes:g.v7,color:V7C,label:'Ⅴ7/♭Ⅱ'},{notes:g.v7Res,color:V7C,label:'♭Ⅱ'}],
@@ -432,15 +424,15 @@ function render(){
     ${heroCard()}
     ${kbCard()}
     ${staffCard()}
-    ${quizCard()}
     ${tryCard()}
+    ${quizCard()}
     ${gerCard()}
     ${linksCard()}
     ${termsHTML()}`;
-  // この画面に出てくる記号だけ説明する
+  // この画面に出てくる記号だけ、音の名前の表の下で説明する（出てこないときは出さない）
   const ds=h.includes('class="ds"'), df=h.includes('class="df"');
-  h+=`<p class="note">※ 音の高さはふつうのピアノと同じです。${ds?'<span class="ds">x</span>はダブルシャープ'+(df?'、':'の楽譜での書き方です。'):''}${df?'<span class="df" style="letter-spacing:-.12em">♭♭</span>はダブルフラットの楽譜での書き方です。':''}</p>
-  </div>`;
+  h=h.replace('<!--sym-->',(ds?'<span><span class="ds">x</span>＝ダブルシャープ（楽譜での書き方）</span>':'')+(df?'<span><span class="df" style="letter-spacing:-.12em">♭♭</span>＝ダブルフラット（楽譜での書き方）</span>':''));
+  h+=`</div>`;
   PA.paint(document.getElementById('view'),h,state.keyIdx+':'+state.fam);
   // 光るけんばんが見えるように：鳴らしているほうのけんばんだけうごかす（もう一方は手でうごかした位置のまま）
   const box=sk=>{const b=document.querySelector(`[data-sk="${sk}"]`);return b&&b.parentElement;};

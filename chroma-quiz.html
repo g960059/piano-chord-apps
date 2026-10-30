@@ -29,7 +29,6 @@
 <style>
 .hero{border-top:6px solid var(--c);scroll-margin-top:64px}
 .score{font-size:16px;display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;margin-bottom:6px}
-.stars{font-size:13px;letter-spacing:-.05em}
 .qhead{display:flex;align-items:center;justify-content:space-between;gap:4px 10px;flex-wrap:wrap}
 .qhead .qtitle{flex:1 1 170px}
 .qtitle{font-size:clamp(20px,6vw,28px);font-weight:800;display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;line-height:1.3}
@@ -821,7 +820,7 @@ const checkHTML=()=>KD.checkTableHTML(QUIZ,{modes:effModes(),title:'📋 調の�
 // ⭐ と 📝（きょうの5もん・とちゅうの数）と「この調だけ」
 function scoreHTML(m){
   const s=Q.sc[m], lk=lockOn();
-  return `<div class="score" style="margin-top:8px">⭐ ${s.right} / ${s.total}${m==='keys'?'問正解':''} <span class="note" style="margin:0">${s.hint?`💡 ヒントでできた${s.hint}・`:''}れんぞく${s.streak}</span> <span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(s.streak,10))}</span></div>`
+  return `<div class="score" style="margin-top:8px">⭐ ${s.right} / ${s.total}${m==='keys'?'問正解':''} <span class="note" style="margin:0">${s.hint?`💡 ヒントでできた${s.hint}・`:''}れんぞく${s.streak}</span></div>`
     +`<div class="sessrow">${(sess.active()||sess.finished())?sess.progressHTML():`<button class="btn small" data-act="sess5">${PA.icon('session')}きょうの5問</button>`}`
     +(lk?`<span class="chip lockchip">🔑 ${PA.keyName(PA.keyOf(lk.minor,lk.idx))}だけ</span><button class="btn small" data-act="qkeyfree">ほかの調も出す</button>`:'')+`</div>`;
 }
@@ -861,7 +860,7 @@ function keysView(){
   const names=[...Q.picked].sort((a,b)=>a-b).map(m=>nwH(PA.H(nameOf(m,key,book))));
   h+=`<section class="card"><h2>🎹 けんばんで音をおさえよう<small>${done?'緑の○＝あたり・赤の×＝ちがう音・わくだけ＝たりない音':`<b>${n}つ</b>の音をタップ・どのオクターブでも OK`}</small></h2>
     <div class="scroll" data-sk="kb">${PA.kbSVG(...kbOf(key,t),keysMarks(key,t,book))}</div>
-    <div class="picked">おさえた音：<b>${names.length?names.join('・'):'まだなし'}</b>${done?'':'<small>もういちどタップするとけせるよ</small>'}</div></section>`;
+    <div class="picked">おさえた音：<b>${names.length?names.join('・'):'まだなし'}</b>${done?'':PA.once('tap-erase','<small>もういちどタップするとけせるよ</small>')}</div></section>`;
   const msg=keysFb(key,t);
   if(msg) h+=`<div class="fb ${Q.lastOk?'good':'bad'}" id="fb" role="status">${msg}</div>`;
   else if(Q.hint>=1){
@@ -870,7 +869,7 @@ function keysView(){
   }
   h+=`<div class="row center"><button class="btn small" data-act="qexplain">🐸 ${t==='ddim'?'ドッペルの家族を見る':'つくりかたを見る'}</button></div>`+
     (t==='ddim'?`<p class="qsub" style="text-align:center;margin:0">ひらいたら下の 🏠 ドッペルの家族で「減七/Ⅴ」を選んでね</p>`:'')+
-    (done||Q.result!==null?'':`<p class="qsub" style="text-align:center;margin:0">${PA.HINT_NOTE}</p>`);
+    (done||Q.result!==null?'':PA.once('hint-rule',`<p class="qsub" style="text-align:center;margin:0">${PA.HINT_NOTE}</p>`));
   if(done){
     const st=stepsOf(key,t);
     const cap=isNew(t)?capNew(key,t,ans):ans.some(isRed)?'赤い音＝'+redLabel(ans,t)+(ans.some(isLow)?'・下の青＝下げた第5音':''):'Ⅱ7には導音はないよ。調の音だけ';
@@ -999,12 +998,12 @@ function earView(){
     ${scoreHTML('ear')}
     <p class="note" style="margin-top:0">${Q.earLv===1?'和音の後にⅤが鳴るよ。Ⅴへ引っぱるちからのつよさを聴きくらべよう。毎回、調と高さがかわるよ。':Q.earLv===2?'増六の和音だけが鳴るよ。ひびきの「こさ」で当てよう。毎回、調と高さがかわるよ。':'長調の和音のならび<b>Ⅰ → ？ → Ⅴ7 → Ⅰ</b>が鳴るよ。2ばんめの和音を当てよう。となりどうし（ⅣとⅣm、Ⅳmとナポリ）は1つの音だけちがうよ。毎回、調がかわるよ（長調だけ）。'}</p>
     ${mute&&!(e&&Q.ans)?`<div class="msg">🔇 音がオフになっているので、${e?'いまは何も鳴っていないよ':'おしても和音が鳴らないよ'}。上の<b>音を出す</b>をおしてから${e?'<b>もういちどきく</b>':'<b>始める</b>'}をおしてね。</div>`
-      :e?'':`<div class="msg">下の<b>始める</b>をおすと和音が鳴るよ。</div>`}
+      :e?'':PA.once('ear-start','<div class="msg">下の<b>始める</b>をおすと和音が鳴るよ。</div>')}
     <div class="echoices n${types.length}">${types.map(echoiceHTML).join('')}</div>
     ${e&&Q.ans?earFb():''}
   </section>`;
   const k=cmpKey();
-  h+=`<section class="card"><h2>🎧 くらべてきく<small>${PA.keyName(k)}でならべたよ</small></h2>${e&&!Q.ans?`<p class="qsub" style="margin:0 0 8px">${PA.HINT_NOTE}</p>`:''}<div class="cmpgrid">`+types.map(t=>{
+  h+=`<section class="card"><h2>🎧 くらべてきく<small>${PA.keyName(k)}でならべたよ</small></h2>${e&&!Q.ans?PA.once('hint-rule',`<p class="qsub" style="margin:0 0 8px">${PA.HINT_NOTE}</p>`):''}<div class="cmpgrid">`+types.map(t=>{
     if(Q.earLv===3){const c=cadOf(k,t);return `<button class="cmpbtn" style="--c:${T[t].color}" data-act="ecmp" data-v="${t}"><b>${T[t].emoji}Ⅰ → ${T[t].long} → Ⅴ7 → Ⅰ</b><small>${namesN(roleSort(c.X))} → ${namesN(uniqM(c.V))}</small></button>`;}
     const c=t==='ii7'||t==='dd'?C[t](k):C.aug6(k,t), st=stepsOf(k,t);
     return `<button class="cmpbtn" style="--c:${T[t].color}" data-act="ecmp" data-v="${t}"><b>${T[t].emoji} ${T[t].long} → ${st.map(x=>labH(x.label)).join(' → ')}</b><small>${namesN(disp(t,c))} → ${st.map(x=>namesN(uniqM(x.notes))).join(' → ')}</small></button>`;
@@ -1025,13 +1024,15 @@ function settingsHTML(){
   const warn=!skip.length?'':fb?`選んだ和音は${ks0}では出ないので、${other}から出すよ。`
     :`${Q.keyset==='minor'?'短調':'長調'}では${skip.map(t=>T[t].label).join('・')}は出ないよ。`;
   const lk=lockOn(), lkName=lk?`🔑 ${PA.keyName(PA.keyOf(lk.minor,lk.idx))}だけ`:'';
-  let h=`<details class="more" id="qsetd" ${Q.openSet?'open':''}><summary><span class="sumtx">🎛 問題の選びかた<small>${lk?lkName:ks}${Q.mode==='keys'?`${lk?'':`・${tr.emoji}調号${tr.min}〜${tr.max}`}・${kLvName()}`:''}</small></span></summary>
+  let h=`<details class="more" id="qsetd" ${Q.openSet?'open':''}><summary><span class="sumtx">🎛 問題の選びかた<small>${lk?lkName:ks}${Q.mode==='keys'?`${lk?'':`・${tr.emoji}調号${tr.min}〜${tr.max}`}`:''}</small></span></summary>
     <div class="opt"><span class="lab">調</span>${PA.seg('qkeyset',KEYSETS,Q.keyset,'full')}${ear3?'<p class="note">👂 レベル3（Ⅳ・Ⅳm・ナポリ）はいつも長調から出すよ。</p>':''}</div>`;
   if(Q.mode==='keys') h+=`<div class="opt"><span class="lab">調のむずかしさ（調号の数）</span>${KD.tierSeg('qtier',Q.tier)}
       <div class="tog one"><button class="${Q.weak?'on':''}" style="--c:#c4462a" data-act="qweak" aria-pressed="${Q.weak}">${Q.weak?PA.icon('checkOn'):PA.icon('checkOff')}にがてな調を多めに<small>まちがえた調が出やすくなるよ</small></button></div></div>
     <div class="opt" id="qtypes"><span class="lab">和音（タップで入れる・はずす）</span><p class="note" style="margin:0">いまは<b>${kLvName()}</b>。ここで選ぶと「じぶんで選ぶ」になるよ。</p>${GROUPS.map(([g,ts])=>`<span class="grp">${g}</span><div class="tog" role="group" aria-label="${g}">${ts.map(btn).join('')}</div>`).join('')}${warn?`<p class="note">${warn}</p>`:''}</div>`;
-  return h+`<div class="opt"><button class="btn small" data-act="qreset">${Q.mode==='keys'?'🎹':'👂'}スコアを0にもどす</button></div>`
-    +`<div class="opt"><span class="lab">先生へ</span><p class="note" style="margin:0">いまのせってい（${PA.esc(settingsText())}）で5問のれんしゅうをするリンクをおくれるよ。</p><div class="row">${PA.shareHTML(QUIZ,Object.assign(linkParams(),{n:5}),PA.icon('send')+'このれんしゅうをおくる')}</div></div></details>`;
+  // まれにしかつかわない・先生むけのボタンは「その他」にたたむ
+  return h+`<details class="more" data-d="chroma-other" style="margin-top:12px"><summary>その他</summary>`
+    +`<div class="opt"><button class="btn small" data-act="qreset">${Q.mode==='keys'?'🎹':'👂'}スコアを0にもどす</button></div>`
+    +`<div class="opt"><span class="lab">先生へ</span><p class="note" style="margin:0">いまのせってい（${PA.esc(settingsText())}）で5問のれんしゅうをするリンクをおくれるよ。</p><div class="row">${PA.shareHTML(QUIZ,Object.assign(linkParams(),{n:5}),PA.icon('send')+'このれんしゅうをおくる')}</div></div></details></details>`;
 }
 function tipsHTML(){
   return `<details class="more tips" data-d="tips"><summary>💡 おぼえておこう</summary><ul>

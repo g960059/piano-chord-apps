@@ -29,7 +29,6 @@
 <style>
 .hero{border-top:6px solid #c98500;scroll-margin-top:64px}
 .score{font-size:16px;display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;margin-top:8px}
-.stars{font-size:13px;letter-spacing:-.05em}
 .qtitle{font-size:clamp(20px,6vw,26px);font-weight:800;display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;line-height:1.3;margin-top:8px}
 .qkey{background:var(--soft);border-radius:12px;padding:2px 12px}
 .qsub{color:var(--sub);font-size:15px;margin:4px 0 0}
@@ -98,6 +97,7 @@
 .opt{display:flex;flex-direction:column;gap:6px;margin-top:12px}
 .opt>.lab{font-size:14px;color:var(--sub);font-weight:700}
 .opt>small{font-size:13px;color:var(--sub)}
+#qsetd details.more{background:var(--card);margin-top:12px} /* その他（あまりつかわないボタン） */
 .seg.kd-tiers button{padding:6px 4px;border-radius:16px;line-height:1.25}
 .tog{display:grid;grid-template-columns:1fr;gap:6px}
 .tog button{min-height:48px;border-radius:14px;font-weight:800;font-size:16px;background:var(--card);color:var(--sub);border:3px solid var(--line)}
@@ -328,7 +328,7 @@ function fbHTML(key,data){
 function scoreHTML(key,data,labels){
   const step=Q.step, cur=data[step], col=labels?PA.COL[cur.ch]:'#3a3245', ink='#5b5266', light='#f1ebf6';
   const nmS=c=>`<span class="lh">${PA.nmH(c.lh[0])}</span>`+c.rh.map(n=>`<span>${PA.nmH(n)}</span>`).join('');
-  let h=`<section class="card"><h2>🎼 4つの和音<small>${labels?'タップすると、その和音が鳴るよ':'ローマ数字はかくしてあるよ。タップすると、その和音が鳴るよ'}</small></h2><div class="seq">`+data.map((c,i)=>{
+  let h=`<section class="card"><h2>🎼 4つの和音${labels?PA.once('tap-sound','<small>タップすると、その和音が鳴るよ</small>'):`<small>ローマ数字はかくしてあるよ。${PA.once('tap-sound','タップすると、その和音が鳴るよ')}</small>`}</h2><div class="seq">`+data.map((c,i)=>{
     const cc=labels?PA.COL[c.ch]:ink, ll=labels?PA.LCOL[c.ch]:light;
     return `<button class="scard ${i===step?'on':''}" style="--c:${cc};--l:${ll}" data-act="qstep" data-v="${i}" aria-pressed="${i===step}" aria-label="${i+1}つめ${labels?E.labelText(c):''}"><span class="num">${labels?c.label:i+1}</span>${labels&&c.inv?'<span class="inv">てんかい</span>':''}<span class="nm">${nmS(c)}</span></button>`;
   }).join('')+`</div>`;
@@ -351,8 +351,10 @@ function settingsHTML(){
     ${pin}
     ${pk?'':`<div class="opt"><span class="lab">調のむずかしさ（調号の数）</span>${KD.tierSeg('qtier',Q.tier)}</div>`}
     <div class="opt"><div class="tog" role="group"><button class="${Q.weak?'on':''}" style="--c:#c9542e;--l:#fde5df" data-act="qweak" aria-pressed="${Q.weak}">${PA.icon(Q.weak?'checkOn':'checkOff')}📈 にがてな調を多めに</button></div><small>まちがえた調がすこし多く出るよ</small></div>
-    <div class="opt"><button class="btn small" data-act="qreset">${PA.icon(Q.mode==='ear'?'ear':'eye')}スコアを0にもどす</button></div>
-    <div class="opt"><div class="row">${PA.shareHTML('ending-quiz',Object.assign(linkParams(),{n:5}),PA.icon('send')+'れんしゅうをおくる')}</div><small>リンクをひらくと、いまのせってい（${PA.esc(settingsText())}）で5もんできるよ</small></div>
+    <details class="more" data-d="ending-quiz-other"><summary>その他</summary>
+      <div class="opt"><button class="btn small" data-act="qreset">${PA.icon(Q.mode==='ear'?'ear':'eye')}スコアを0にもどす</button></div>
+      <div class="opt"><div class="row">${PA.shareHTML('ending-quiz',Object.assign(linkParams(),{n:5}),PA.icon('send')+'れんしゅうをおくる')}</div><small>リンクをひらくと、いまのせってい（${PA.esc(settingsText())}）で5もんできるよ</small></div>
+    </details>
   </details>`;
 }
 // 調のチェック表（レベル1〜3は長調だけ → 「長調チェック表」）。ますをおすとその調を3もん
@@ -384,15 +386,15 @@ function render(){
   const q=Q.q, key=keyOfQ(q), data=dataOf(q), L=LV(Q.level), s=Q.sc[Q.mode], labels=showLabels();
   let h=`<div class="stack">${PA.seg('qmode',[['ear',PA.icon('ear')+'きいて当てる'],['see',PA.icon('eye')+'見て当てる']],Q.mode,'full')}
     <section class="card hero">${lvHTML()}
-      <div class="score">⭐ ${s.right} / ${s.total}もん正解${s.hint?` <span class="note" style="margin:0">💡 ヒントでできた${s.hint}</span>`:''} <span class="note" style="margin:0">れんぞく${s.streak}</span> <span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(s.streak,10))}</span></div>
+      <div class="score">⭐ ${s.right} / ${s.total}もん正解${s.hint?` <span class="note" style="margin:0">💡 ヒントでできた${s.hint}</span>`:''} <span class="note" style="margin:0">れんぞく${s.streak}</span></div>
       ${sessHTML()}
       <div class="qtitle"><span class="qkey">${PA.keyName(key)}</span><span>のおわりかたは？</span></div>
-      <p class="qsub">（${PA.sigLabel(key)}）${Q.mode==='ear'?'和音が4つ鳴るよ。さいごのほうをよく聴こう。なんかい聴いてもいいよ。':'がくふとけんばんを見て当てよう。'}</p>`;
+      <p class="qsub">（${PA.sigLabel(key)}）${Q.mode==='ear'?'和音が4つ鳴るよ。さいごのほうをよく聴こう。'+PA.once('ending-replay','なんかい聴いてもいいよ。'):'がくふとけんばんを見て当てよう。'}</p>`;
   if(Q.muteHint&&!PA.settings.sound) h+=`<div class="rinfo soundhint" role="status">🔇 音がオフだよ<button type="button" class="btn small" data-pa="sound-on">${PA.icon('listen')}音を出す</button></div>`;
   if(Q.mode==='see'&&Q.hint&&!Q.ans) h+=`<div class="msg" role="status" style="margin-top:10px">💡 ヒント：ローマ数字を出したよ。<b>さいごの2つ</b>を見よう。</div>`;
   // 見て当てる：がくふ・けんばんを先に、こたえはその下に（見てからえらぶ）
   const ans=`<div class="echoices ${L.choices.length%2?'odd':''}">${L.choices.map(choiceHTML).join('')}</div>`+(Q.ans?fbHTML(key,data):'');
-  if(Q.mode==='see') h+=`</section>${scoreHTML(key,data,labels)}<section class="card"><h2>✋ どれかな？</h2>${ans}${!Q.ans&&!Q.hint?`<p class="note hintnote">💡 ヒント：${PA.HINT_NOTE}</p>`:''}</section>`;
+  if(Q.mode==='see') h+=`</section>${scoreHTML(key,data,labels)}<section class="card"><h2>✋ どれかな？</h2>${ans}${!Q.ans&&!Q.hint?PA.once('hint-rule',`<p class="note hintnote">💡 ヒント：${PA.HINT_NOTE}</p>`):''}</section>`;
   else h+=`${ans}</section>${Q.ans?scoreHTML(key,data,labels):''}`;
   h+=settingsHTML()+checkHTML()+tipsHTML()+`</div>`;
   PA.paint(view,h,Q.qid+':'+Q.mode+':'+(Q.ans?1:0)+':'+(labels?1:0));

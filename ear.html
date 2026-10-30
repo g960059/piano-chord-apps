@@ -143,7 +143,6 @@ body{display:flex;flex-direction:column;min-height:calc(100vh - env(safe-area-in
 .score{flex:1 1 0;text-align:right;font-size:17px;font-weight:800;line-height:1.35}
 .score .sub{margin-left:.45em;font-size:15px;font-weight:400;color:var(--sub);white-space:nowrap}
 .score b{white-space:nowrap}
-.stars{display:block;font-size:13px;letter-spacing:1px}
 .pdots,.rdots{display:inline-flex;align-items:center;gap:5px;vertical-align:middle}
 .pdots i,.rdots i{display:inline-block;width:14px;height:14px;border-radius:50%;background:var(--soft);border:2px solid #d9cdbb}
 .pdots i.on{background:#f4a100;border-color:#d68a00}
@@ -865,7 +864,7 @@ function feedbackHTML(){
   const all=[...marks.keys()], mn=Math.min(...all), mx=Math.max(...all);
   const lo=Math.min(48,mn-mod(mn,12)), hi=Math.max(84,mx+11-mod(mx,12));
   h+=`<div class="kbwrap"><div class="scroll" data-sk="kb">${PA.kbSVG(lo,hi,marks)}</div>
-    <div class="legend"><span><i style="background:${E.color}"></i>この和音</span>${res?`<span><i style="border:3px solid #e8553d"></i>すすんだ先（Ⅰ）</span>`:''}<span>さわると音が出るよ</span></div></div>`;
+    <div class="legend"><span><i style="background:${E.color}"></i>この和音</span>${res?`<span><i style="border:3px solid #e8553d"></i>すすんだ先（Ⅰ）</span>`:''}${PA.once('tap-sound','<span>さわると音が出るよ</span>')}</div></div>`;
   if(K) h+=`<button class="btn small" data-act="efam" style="width:100%;margin-top:10px">🏠 Ⅴの家族で${q.type==='dim7'?'減七の3つのなかま':'Ⅴ7'}を見る</button>`;
   return h;
 }
@@ -1014,7 +1013,7 @@ function heroHTML(){
     // ひらきなおしたピアノのチャレンジで、録音を読んでいるあいだ（ボタンはうけつけない）
     if(chGated()) score+=`<div class="msg" role="status" style="margin-top:8px">⏳ ピアノの音を用意しているよ。少しまってね</div>`;
   }
-  else score=`<div class="score"><b>⭐ ${state.right} / ${state.total}</b>${state.hint?`<span class="sub" aria-label="ヒントでできた${state.hint}もん">💡 ${state.hint}</span>`:''}<span class="sub">れんぞく${state.streak}</span>${state.streak?`<span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(state.streak,10))}</span>`:''}</div>`;
+  else score=`<div class="score"><b>⭐ ${state.right} / ${state.total}</b>${state.hint?`<span class="sub" aria-label="ヒントでできた${state.hint}もん">💡 ${state.hint}</span>`:''}<span class="sub">れんぞく${state.streak}</span></div>`;
   const R=replaysOf(lv,state.mode);
   let h=`<section class="card hero"><div class="qhead"><h2>👂 この和音はどれ？</h2>${score}</div>`;
   if(inCh&&ch.offline&&!NO_RANK) h+=`<span class="offtag">${ch.offWhy==='time'?'⏰ 2時間をすぎたのでランキングなし':ch.offWhy==='busy'?'⏳ こみあっているので、ランキングなしであそんでいるよ':'📴 オフライン：ランキングなしであそんでいるよ'}</span>`;
@@ -1064,7 +1063,7 @@ function render(){
   const open=!!state.q&&!state.answer&&!sumView(), lock=open&&state.mode==='ch';
   const cmp=state.mode==='rank'?'':`<section class="card">
       <h2>🎧 くらべてきく<small>同じ「${PA.nmH({letter:0,acc:0})}」からつくった10しゅるい</small></h2>
-      ${lock?'<p class="note" style="margin:0 0 8px">🏆 チャレンジでは、こたえた後できけるよ</p>':open?`<p class="note" style="margin:0 0 8px">💡 ${PA.HINT_NOTE}</p>`:''}
+      ${lock?'<p class="note" style="margin:0 0 8px">🏆 チャレンジでは、こたえた後できけるよ</p>':open?PA.once('hint-rule',`<p class="note" style="margin:0 0 8px">💡 ${PA.HINT_NOTE}</p>`):''}
       <div class="cmp">${ORDER.map(t=>`<button class="btn" style="--c:${T[t].color}" data-act="ecmp" data-v="${t}" aria-label="${T[t].label}（${T[t].word}）をきく"${lock?' disabled':''}><span>${T[t].emoji} ${T[t].label}</span><small>${T[t].word}</small></button>`).join('')}</div>
       <details class="more" style="margin-top:10px"><summary>💡 ひびきのことばヒント</summary>
         <ul class="hints">${ORDER.map(t=>`<li>${T[t].emoji} <b style="color:${T[t].color}">${T[t].label}</b>：${T[t].desc}</li>`).join('')}</ul></details>

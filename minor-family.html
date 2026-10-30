@@ -251,7 +251,7 @@ function render(){
     shown.forEach(n=>marks.set(n.midi,{fill:n.raised?LT:NIGHT,label:PA.nm(n),focus:true}));
     if(R) bassOf(key,f,'V').forEach(n=>marks.set(n.midi,{fill:'#c9d0f0',tc:'#24316f',label:PA.nm(n),sub:'左手',subColor:NIGHT}));
   }
-  const kbCap=R&&state.res===2?'Ⅰ（おちついた和音）・左手のベースは左のほう（←）':R?`${FAM[f].label}${f==='DIM'?'':'・左手のベースは左のほう（←）'}`:'赤＝導音。さわると音が出るよ';
+  const kbCap=R&&state.res===2?'Ⅰ（おちついた和音）・左手のベースは左のほう（←）':R?`${FAM[f].label}${f==='DIM'?'':'・左手のベースは左のほう（←）'}`:'赤＝導音'+PA.once('tap-sound','。さわると音が出るよ');
   h+=`<section class="card"><h2>🎹 けんばん<small>${kbCap}　<span style="color:#8f5a00">オレンジの印＝ミファ・シド（白鍵どうしがとなり）</span></small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(45,89,marks)}</div></section>`;
 
   // がくふ（Ⅴの家族 → Ⅰの解決）

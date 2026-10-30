@@ -146,7 +146,7 @@ function render(){
       <p class="cap"><b>${PA.keyName(key)}の音階</b>（7ばんめを上げたもの）</p>
       <div class="scroll staffbox" data-sk="harm">${PA.staffSVG(key,harm8.map(n=>({notes:[n],color:n.raised?'#d1495b':'#3b4fa8',accColor:'#d1495b',accRing:true})),{colW:40,minW:380})}</div>
       <p class="note">赤い${PA.H(MARK[key.ltType])}が臨時記号。調号には書かずに、使う音のすぐ前に書くよ。</p>
-      <p class="cap" style="margin-top:12px"><b>🎹 けんばんで見ると</b>（さわると音が出るよ）</p>
+      <p class="cap" style="margin-top:12px"><b>🎹 けんばんで見ると</b>${PA.once('tap-sound','（さわると音が出るよ）')}</p>
       <div class="scroll kbbox" data-sk="kb">${ltKeyboard(key)}</div>
       <div class="kbleg"><span><i style="background:#fff;border:2px solid #857c8f"></i>調号のまま「${PA.nmH(key.natLT)}」</span><span><i style="background:#d1495b"></i>上げた7ばんめ「${PA.nmH(key.lt)}」</span><span><i style="background:#3b4fa8"></i>主音「${PA.nmH(key.nat[0])}」</span></div>
       <div class="row" style="margin-top:8px"><button class="btn small" data-act="lt">🔔 ${PA.nmH(key.lt)} → ${PA.nmH(key.nat[0])}</button><span class="note" style="margin:0">主音のすぐ下（となり）</span></div>
@@ -165,7 +165,7 @@ function render(){
     <div class="legend3"><span class="t-sharp">♯シャープ：調号に何もない音を上げる</span><span class="t-natural">♮ナチュラル：♭をとって上げる</span><span class="t-dsharp"><span class="ds">x</span>ダブルシャープ：♯がついた音をもっと上げる</span></div>
     ${PA.seg('hide',[['0',PA.icon('eye')+'ぜんぶ見せる'],['1',PA.icon('eyeOff')+'かくしてれんしゅう']],state.hide?'1':'0','full')}
     ${state.hide?`<div class="hidebar"><p class="note">「？」をタップするとこたえが出るよ（${nRev}/${NKEYS}）</p><button class="btn small" data-act="rehide" ${nRev?'':'disabled'}>${PA.icon('retry')}もういちどかくす</button></div>`
-      :`<p class="note">短調の名前をタップすると、上の楽譜とけんばんが、その調にかわるよ。右のこたえをタップすると音が出るよ。</p>`}
+      :`<p class="note">短調の名前をタップすると、上の楽譜とけんばんが、その調にかわるよ。${PA.once('tap-sound','右のこたえをタップすると音が出るよ。')}</p>`}
     <div class="klist" role="list">
       <div class="khead" aria-hidden="true"><span>短調</span><span>7ばんめ<br>（調号のまま）</span><span>上げると・つける記号</span></div>`;
   KEYS.forEach((k,i)=>{
