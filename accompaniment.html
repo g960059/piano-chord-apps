@@ -95,7 +95,7 @@ input[type=checkbox]{flex:none;width:22px;height:22px;accent-color:var(--ink)}
 .cbtn.clear{--c:#857c8f;--l:#f4efe8;padding:4px 10px}
 .cbtn.clear .nm{display:block;font-size:12px;font-weight:700}
 /* せまい画面：アイコンの下に 小さな字を のこす（タッチでは title が 見えないので） */
-@media (max-width:420px){.selinfo .pre{display:none}.pbtn{flex-direction:column;width:auto;min-width:52px;padding:2px 6px;gap:0;font-size:18px;line-height:1.1}.pbtn .t{display:block;font-size:10.5px}}
+@media (max-width:420px){.selinfo .pre,.pbtn .long{display:none}.pbtn{flex-direction:column;width:auto;min-width:52px;padding:2px 6px;gap:0;font-size:18px;line-height:1.1}.pbtn .t{display:block;font-size:10.5px}}
 @media (min-width:600px){
   .palette{gap:8px}
   .cbtn{padding:6px 4px}
@@ -121,6 +121,23 @@ input[type=checkbox]{flex:none;width:22px;height:22px;accent-color:var(--ink)}
   .cbtn.clear .num{font-size:18px}
   .cbtn.clear .nm{display:block;font-size:13px}
 }
+.pbtn[aria-disabled="true"],.cbtn[aria-disabled="true"]{opacity:.4;cursor:default}
+/* つぎの マスへ（えらんでも すすまない ときだけ パレットの 右はし）。和音ボタンが せまく ならないように、けす と いっしょに 細く */
+.palette.wnext{grid-template-columns:repeat(4,minmax(0,1fr)) auto auto}
+.palette.wnext .cbtn.clear{padding:4px 6px;min-width:44px}
+.cbtn.go{--c:#3a3245;--l:#fff;padding:4px 6px;min-width:44px}
+.cbtn.go .nm{display:block;font-size:12px;font-weight:700;line-height:1.2;white-space:nowrap}
+.cbtn.go .gl,.selinfo .mi{display:none}
+.selinfo .mw{white-space:nowrap}
+@media (min-width:600px){.cbtn.go .gs{display:none}.cbtn.go .gl{display:inline}}
+@media (min-width:600px) and (max-width:699px){.palette.wnext{gap:6px}.palette.wnext .cbtn .nm{font-size:12px}}
+/* とても せまい 画面：「メロディー」を ♪ に して、いま えらんでいるマスの 行を みじかく */
+@media (max-width:360px){.palette.wnext{gap:4px}.selinfo{font-size:14px}.selinfo .mw{display:none}.selinfo .mi{display:inline}}
+@media (max-height:500px) and (orientation:landscape){.cbtn.go{flex-direction:row;gap:2px;padding:2px 8px}.cbtn.go .num{font-size:18px}.cbtn.go .nm{font-size:13px}.cbtn.go .gs{display:inline}.cbtn.go .gl{display:none}.cbtn.clear .nm{white-space:nowrap}.pbtn .long{display:none}}
+/* がくふの マス：キーボードで えらんでいる とき */
+.hit:focus{outline:none;stroke:#2f7ee8;stroke-width:3}
+.hit:focus:not(:focus-visible){stroke:none} /* 古い Safari は この行を よまないので、いつも 青い わくが 出る */
+.sharerow{display:flex;justify-content:flex-end;margin-top:8px}
 .tips ol{margin:0;padding-left:1.4em}
 .tips li{margin:6px 0}
 </style>
@@ -262,11 +279,12 @@ function beatsJa(b){
 }
 
 /* ===== 状態（音の名前・基準の音・音あり なしは 共通の設定） ===== */
+// autoNext：えらんだら つぎの マスへ すすむ（はじめは オフ。おなじ マスで いろいろ ためせるように）
 const state={songId:'mary',keyIdx:0,randTier:'all',randKey:null,randSeen:[],diceUsed:false,tempo:88,style:'oompah',
-  melOn:true,accOn:true,hint:true,autoPlay:true,choices:{},sel:0,checked:false,reveal:false,play:null,clearArm:false,tipsOpen:false};
+  melOn:true,accOn:true,hint:true,autoPlay:true,autoNext:false,choices:{},sel:0,checked:false,reveal:false,play:null,clearArm:false,tipsOpen:false};
 const STORE='accompaniment';
 function save(){
-  PA.store.set(STORE,{tempo:state.tempo,style:state.style,melOn:state.melOn,accOn:state.accOn,hint:state.hint,autoPlay:state.autoPlay,
+  PA.store.set(STORE,{tempo:state.tempo,style:state.style,melOn:state.melOn,accOn:state.accOn,hint:state.hint,autoPlay:state.autoPlay,autoNext:state.autoNext,
     choices:state.choices,songId:state.songId,keyIdx:state.keyIdx,randTier:state.randTier,randSeen:state.randSeen});
 }
 function load(){
@@ -274,7 +292,7 @@ function load(){
     const d=PA.store.get(STORE,null); if(!d||typeof d!=='object') return;
     if(['block','oompah','alberti'].includes(d.style)) state.style=d.style;
     if(Number.isFinite(d.tempo)&&d.tempo>=50&&d.tempo<=140) state.tempo=d.tempo;
-    ['melOn','accOn','hint','autoPlay'].forEach(k=>{if(typeof d[k]==='boolean')state[k]=d[k];});
+    ['melOn','accOn','hint','autoPlay','autoNext'].forEach(k=>{if(typeof d[k]==='boolean')state[k]=d[k];});
     if(SONGS.some(s=>s.id===d.songId)) state.songId=d.songId;
     if(Number.isInteger(d.keyIdx)&&KEYS[d.keyIdx]) state.keyIdx=d.keyIdx;
     if(PA.keyDeck.TIERS.some(t=>t.id===d.randTier)) state.randTier=d.randTier;
@@ -287,6 +305,16 @@ function load(){
     }
   }catch(e){}
 }
+// 先生の リンク：?song=曲の id（mary など）&key=M0〜M12（長調だけ）。ちがう 値は つかわない。いまの 設定として ほぞんする
+function applyLink(){
+  const p=PA.params();
+  const s=typeof p.song==='string'?SONGS.find(x=>x.id===p.song):null;
+  const k=typeof p.key==='string'?PA.keyDeck.parse(p.key):null;
+  if(s&&s.id!==state.songId){state.songId=s.id;state.sel=0;}
+  if(k&&!k.minor&&KEYS[k.idx]) state.keyIdx=k.idx;
+  if(s||(k&&!k.minor)) save();
+}
+const shareParams=()=>({song:state.songId,key:PA.keyDeck.id(false,state.keyIdx)});
 const curSong=()=>SONGS.find(s=>s.id===state.songId);
 const curKey=()=>KEYS[state.keyIdx];
 /* 🎲 ランダム：長調だけの くじの ふくろ（ぜんぶ 1回ずつ 出るまで おなじ 調は 出ない）。きろくは つけない
@@ -376,47 +404,74 @@ function accEvents(key,ch,L,meter=4,off=0){
   }
   return ev;
 }
-let playToken=0,playTimers=[];
+let playToken=0,playTimers=[],playTick=null;
 function stopPlay(){
   const was=!!state.play;
-  playToken++; playTimers.forEach(clearTimeout); playTimers=[];
+  playToken++; playTimers.forEach(clearTimeout); playTimers=[]; clearTimeout(playTick); playTick=null;
   if(was) PA.stopSound();
   state.play=null;
 }
+/* 少しずつ 先に 鳴らす：曲ぜんぶの 音を いちどに 用意すると 古い スマホでは おもいので、
+ * TICK ごとに「いまから LOOK 秒 先まで」の 音と 光る 場所だけを 用意する。画面が かくれている ときは タイマーが おそく なるので 長めに */
+const LOOK=1.2, LOOK_HIDDEN=4, TICK=250;
 // withPickup：はじめから きくときは 弱起の メロディーを 先に（slot＝-1 の あいだは 弱起）。「このマスだけ」は マスだけ
 function playRange(from,to,model=false,withPickup=false){
   stopPlay();
   const my=playToken, song=curSong(), key=curKey(), chs=model?song.slots.map(s=>s.ans):choices().slice();
-  const spb=60/state.tempo, snd=PA.settings.sound&&!!PA.audio(), lead=0.3;
+  const spb=60/state.tempo, ac=PA.settings.sound?PA.audio():null, lead=0.3;
+  // 時計：音が 鳴っているときは 音の 時計（光る 場所と 音が ずれない）。音が まだ 出ない ときは ふつうの 時計
+  const useAc=!!ac&&ac.state==='running', clock=useAc?()=>ac.currentTime:()=>Date.now()/1000;
   const pk=withPickup&&from===0?song.pickupNotes:[], pre=sumBeats(pk);
   state.play={slot:pk.length?-1:from,note:0,model,from,to};
-  // メロディー：休みは 鳴らさない（光る 場所だけ うごかす）
-  const mel=(si,notes,start)=>{
+  // notes：{t(はじめからの 秒), d, m, vel, mel}、marks：光る 場所 {t, si, ni}。休みは 鳴らさない（光る 場所だけ うごかす）
+  const notes=[], marks=[];
+  const mel=(si,ns,start)=>{
     let b=start;
-    notes.forEach((n,ni)=>{
-      if(!n.rest&&state.melOn&&snd) PA.playNote(noteAt(key,n.k).midi,lead+b*spb,n.beats*spb+0.3,0.27);
-      const at=b;
-      playTimers.push(setTimeout(()=>{if(my!==playToken)return;const prev=state.play.slot;state.play.slot=si;state.play.note=ni;renderPlayback();if(si!==prev)followSlot(Math.max(si,0));},(lead+at*spb)*1000));
+    ns.forEach((n,ni)=>{
+      if(!n.rest) notes.push({t:b*spb,d:n.beats*spb+0.3,m:noteAt(key,n.k).midi,vel:0.27,mel:true});
+      marks.push({t:b*spb,si,ni});
       b+=n.beats;
     });
   };
   mel(-1,pk,0);
   for(let si=from;si<=to;si++){
     const sl=song.slots[si], rel=pre+(si-from)*song.slotBeats, ch=chs[si];
-    if(ch&&state.accOn&&snd) accEvents(key,ch,song.slotBeats,song.meter,firstBeat(song,si)-1).forEach(e=>e.ms.forEach(m=>PA.playNote(m,lead+(rel+e.t)*spb,e.d*spb+0.35,e.vel)));
+    if(ch) accEvents(key,ch,song.slotBeats,song.meter,firstBeat(song,si)-1).forEach(e=>e.ms.forEach(m=>notes.push({t:(rel+e.t)*spb,d:e.d*spb+0.35,m,vel:e.vel,mel:false})));
     mel(si,sl.notes,rel);
   }
-  const total=pre+(to-from+1)*song.slotBeats;
-  playTimers.push(setTimeout(()=>{
+  notes.sort((x,y)=>x.t-y.t);
+  const total=(pre+(to-from+1)*song.slotBeats)*spb;
+  const light=k=>()=>{if(my!==playToken||!state.play)return;const prev=state.play.slot;state.play.slot=k.si;state.play.note=k.ni;renderPlayback();if(k.si!==prev)followSlot(Math.max(k.si,0));};
+  const finish=()=>{
     if(my!==playToken)return;
-    state.play=null;
+    state.play=null; playTimers=[];
     if(renderSafe()) return;
     // はやさを うごかしている とちゅう：スライダーは そのまま、がくふ・けんばん・ボタンだけ もどす
     renderPlayback();
     const st=document.querySelector('[data-act="stop"]'); if(st) st.outerHTML=playBtnHTML(false);
     const bn=document.querySelector('.banner'); if(bn) bn.remove();
-  },(lead+total*spb)*1000+300));
+  };
+  const t0=clock()+lead;
+  let ni=0, mi=0;
+  const tick=()=>{
+    if(my!==playToken) return;
+    const now=clock()-t0, until=now+(document.hidden?LOOK_HIDDEN:LOOK);
+    // メロディー・伴奏の オン・オフは 鳴らす ときに 見る（とちゅうで かえても すぐ きく）
+    for(;ni<notes.length&&notes[ni].t<until;ni++){
+      const n=notes[ni], when=n.t-now;
+      if(!ac||when<-0.05) continue; // おくれすぎた 音は とばす（画面が かくれていた など）
+      if(n.mel?state.melOn:state.accOn) PA.playNote(n.m,Math.max(0,when),n.d,n.vel);
+    }
+    for(;mi<marks.length&&marks[mi].t<until;mi++){
+      const k=marks[mi];
+      if(mi+1<marks.length&&marks[mi+1].t<=now) continue; // もう すぎた 場所は 光らせない（さいごの 1つだけ）
+      playTimers.push(setTimeout(light(k),Math.max(0,k.t-now)*1000));
+    }
+    if(ni>=notes.length&&mi>=marks.length){playTick=null;playTimers.push(setTimeout(finish,Math.max(0,total-now)*1000+300));return;}
+    playTick=setTimeout(tick,TICK);
+  };
   render();
+  tick();
 }
 function playChordNow(key,ch){
   const v=voicing(key,ch);
@@ -424,6 +479,15 @@ function playChordNow(key,ch){
 }
 
 /* ===== がくふ SVG ===== */
+// マスの 読み上げ：「3小節目、Ⅳ を えらんだ（○ これでも 合う）」（ただの 文字。HTML に 入れる ときは PA.esc）
+function slotAria(song,si,ch,g,model){
+  const sl=song.slots[si];
+  let t=whereLabel(song,si)+'、'+(ch?(model?`おてほんは ${CHORDS[ch].label}`:`${CHORDS[ch].label} を えらんだ`):'まだ えらんでいない');
+  if(g==='best') t+='（◎ おてほんと おなじ）';
+  else if(g==='good') t+='（○ これでも 合う）';
+  else if(g==='bad') t+=`（× 合わない${state.reveal?`。おてほんは ${CHORDS[sl.ans].label}`:''}）`;
+  return t;
+}
 let lastPerRow=4;
 // 弱起の ところの 幅（ないときは 0）
 const pickupW=(song,PADL=16,BW=32)=>song.pickupNotes.length?PADL+song.pickupBeats*BW+8:0;
@@ -469,7 +533,7 @@ function scoreRows(){
     });
     for(let i=0;i<items.length-1;i++){
       const a=items[i], b=items[i+1];
-      if(!a.n.rest&&!b.n.rest&&a.n.beats===0.5&&b.n.beats===0.5&&Math.abs((a.mb??a.b)%1)<1e-9&&Math.abs(b.b-a.b-0.5)<1e-9&&b.si===a.si){a.beamWith=b;b.beamed=true;}
+      if(!a.n.rest&&!b.n.rest&&a.n.beats===0.5&&b.n.beats===0.5&&Math.abs((a.mb!=null?a.mb:a.b)%1)<1e-9&&Math.abs(b.b-a.b-0.5)<1e-9&&b.si===a.si){a.beamWith=b;b.beamed=true;}
     }
     const head=(it)=>{
       let g='';
@@ -512,7 +576,7 @@ function scoreRows(){
   };
   let out='';
   for(let r=0;r*perRow<nMeasures;r++){
-    let s=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="がくふ ${r*perRow+1}小節目から">`;
+    let s=''; // 絵（読み上げでは よまない）。マス（hits）は ボタンとして 読む
     const mCount=Math.min(perRow,nMeasures-r*perRow), X0=HW+(r===0?PW:0), endX=X0+mCount*MW;
     for(let i=0;i<5;i++) s+=`<line x1="6" x2="${endX}" y1="${TB-i*10}" y2="${TB-i*10}" stroke="#6b6273" stroke-width="1.2"/>`;
     s+=`<line x1="6" x2="6" y1="${TB-40}" y2="${TB}" stroke="#6b6273" stroke-width="1.2"/>`;
@@ -570,10 +634,11 @@ function scoreRows(){
           else if(g==='bad'&&state.reveal){under='→ '+CHORDS[sl.ans].label;uc='#d1495b';}
         }
         if(under) s+=`<text x="${cx+cw/2}" y="${cy+CHH+UFS+5}" text-anchor="middle" font-size="${UFS}" font-weight="700" fill="${uc}">${under}</text>`;
-        hits.push(`<rect class="hit" data-slot="${si}" x="${cx}" y="${TB-56}" width="${cw}" height="${cy+CHH-(TB-56)}" fill="transparent"><title>${whereLabel(song,si)}</title></rect>`);
+        // キーボード：えらんでいる マスだけ Tab で 来る（←→ で となりへ）
+        hits.push(`<rect class="hit" data-slot="${si}" role="button" tabindex="${si===state.sel?0:-1}" ${si===state.sel?'aria-current="true"':''} aria-label="${PA.esc(slotAria(song,si,ch,g,modelShown))}" x="${cx}" y="${TB-56}" width="${cw}" height="${cy+CHH-(TB-56)}" fill="transparent"/>`);
       }
     }
-    out+=s+hits.join('')+'</svg>';
+    out+=`<svg viewBox="0 0 ${W} ${H}" role="group" aria-label="がくふ ${r*perRow+1}小節目から"><g aria-hidden="true">${s}</g>${hits.join('')}</svg>`;
   }
   return out;
 }
@@ -661,15 +726,16 @@ function view(){
     <div><p class="lbl">② 調をえらぶ</p><div class="toprow"><div class="keyrow">${PA.keyChip(key)}<button class="btn dice" data-act="randkey" aria-label="ランダムに ほかの 調に する">🎲 ランダム</button></div>
       ${state.randKey===state.keyIdx?`<p class="note keymsg">🎲 <b>${PA.keyName(key)}</b>に したよ。えらんだ 和音は そのまま。音の 高さだけが かわるよ</p>`:`<p class="note">調を かえても、えらんだ 和音は そのまま。音の 高さだけが かわるよ</p>`}</div>
       ${state.diceUsed||state.randSeen.length||state.randTier!=='all'?`<details class="more randset" id="randset"><summary>🎲 ランダムで 出す 調：${randTierOf(state.randTier).emoji} ${randTierOf(state.randTier).name}</summary>${PA.keyDeck.tierSeg('randtier',state.randTier)}
-        <p class="note">長調の 中から 出すよ。ぜんぶの 調が 1回ずつ 出るまで、おなじ 調は 出ないよ。嬰ヘ長調と 変ト長調は おなじ 音で 書きかたが ちがうだけ なので、1つと かぞえるよ。</p></details>`:''}</div>
+        <p class="note">長調の 中から 出すよ。ぜんぶの 調が 1回ずつ 出るまで、おなじ 調は 出ないよ。嬰ヘ長調と 変ト長調は おなじ 音で 書きかたが ちがうだけ なので、1つと かぞえるよ。</p></details>`:''}
+      <div class="sharerow">${PA.shareHTML('accompaniment',shareParams(),'👩‍🏫 この 曲を おくる')}</div></div>
     <section class="card scorecard">
       <div class="scorehead"><h2>③ 和音をえらぶ<small>${song.tip(key)}</small></h2>
         <div class="progress"><b>${filled}</b> / ${N} マス えらんだ</div></div>
       ${P&&P.model?`<div class="banner">🎧 おてほんを ながしているよ。${state.reveal?'マスには おてほんの 和音を 出しています。':'よく きいて、自分の 和音と くらべてみよう。'}</div>`:''}
       <div class="scroll" data-sk="score">${scoreRows()}</div>
-      <p class="note" style="margin-top:2px">マスを タップして、下の Ⅰ・Ⅳ・Ⅴ・Ⅴ7 から えらんでね。</p>
+      <p class="note" style="margin-top:2px">マスを タップして、下の Ⅰ・Ⅳ・Ⅴ・Ⅴ7 から えらんでね。${state.autoNext?'えらぶと つぎの マスへ すすむよ。':'いろいろ ためしたら「➡ つぎの マスへ」で すすもう。'}</p>
       <div class="btns">
-        <button class="btn ok ${state.checked&&!state.reveal?'':'wide'}" data-act="check">✅ こたえあわせ</button>
+        <button class="btn ok ${state.checked&&!state.reveal?'':'wide'}" data-act="check" data-hot="check">✅ こたえあわせ</button>
         ${state.checked&&!state.reveal?`<button class="btn reveal" data-act="reveal">👀 こたえを見る</button>`:''}
         <button class="btn" data-act="model">🎧 おてほんを きく</button>
         <button class="btn ${state.clearArm?'warn':''}" data-act="clear">${state.clearArm?'ほんとうに けす？':'🧽 ぜんぶ けす'}</button>
@@ -691,16 +757,19 @@ function view(){
       <label><input type="checkbox" id="accOn" ${state.accOn?'checked':''}> 伴奏</label>
       <label><input type="checkbox" id="hint" ${state.hint?'checked':''}> ヒント（合う音を色で見せる・なかま表）</label>
       <label><input type="checkbox" id="autoPlay" ${state.autoPlay?'checked':''}> えらんだら そのマスを鳴らす</label>
+      <label><input type="checkbox" id="autoNext" ${state.autoNext?'checked':''}> えらんだら つぎの マスへ すすむ</label>
     </div></section>`;
   // パレット：いつも 画面の下に くっつく（このページの ただ一つの 下のバー）
   h+=`<div class="palbar" role="group" aria-label="和音を えらぶ">
       <div class="selrow">
-        <p class="selinfo"><span class="pre">いま えらんでいるマス： </span><b>${whereLabel(song,si)}</b>　メロディー <b>${namesH(sounding(sl.notes).map(n=>noteAt(key,n.k)),' ')||'（休み）'}</b></p>
+        <p class="selinfo"><span class="pre">いま えらんでいるマス： </span><b>${whereLabel(song,si)}</b>　<span class="mw">メロディー</span><span class="mi" aria-hidden="true">♪</span> <b>${namesH(sounding(sl.notes).map(n=>noteAt(key,n.k)),' ')||'（休み）'}</b></p>
+        <button class="pbtn" data-act="undo" aria-label="ひとつ もどす" title="ひとつ もどす" ${canUndo()?'':'aria-disabled="true"'}>↩<span class="t"><span class="long">ひとつ </span>もどす</span></button>
         <button class="pbtn" data-act="playsel" aria-label="このマスだけ きく" title="このマスだけ きく">🔁<span class="t">このマス</span></button>
         ${playBtnHTML(!!P)}
       </div>
-      <div class="palette">`+CH_KEYS.map((c,i)=>`<button class="cbtn ${cur===c?'on':''}" style="--c:${COL[c]};--l:${LCOL[c]}" data-act="pick" data-v="${c}" aria-pressed="${cur===c}" aria-label="${CHORDS[c].label}（キー ${[1,4,5,7][i]}）"><span class="num">${CHORDS[c].label}</span><span class="nm">${namesH(chordTones(key,c))}</span><span class="sym">${PA.H(chordSym(key,c))}</span></button>`).join('')+
-      `<button class="cbtn clear" data-act="pick" data-v="" aria-label="けす"><span class="num">？</span><span class="nm">けす</span></button></div>
+      <div class="palette ${state.autoNext?'':'wnext'}">`+CH_KEYS.map((c,i)=>`<button class="cbtn ${cur===c?'on':''}" style="--c:${COL[c]};--l:${LCOL[c]}" data-act="pick" data-v="${c}" aria-pressed="${cur===c}" aria-label="${CHORDS[c].label}（キー ${[1,4,5,7][i]}）"><span class="num">${CHORDS[c].label}</span><span class="nm">${namesH(chordTones(key,c))}</span><span class="sym">${PA.H(chordSym(key,c))}</span></button>`).join('')+
+      `<button class="cbtn clear" data-act="pick" data-v="" aria-label="けす"><span class="num">？</span><span class="nm">けす</span></button>`+
+      (state.autoNext?'':`<button class="cbtn go" data-act="next" aria-label="つぎの マスへ" ${si<N-1?'':'aria-disabled="true"'}><span class="num">➡</span><span class="nm"><span class="gs">つぎへ</span><span class="gl">つぎの<br>マスへ</span></span></button>`)+`</div>
     </div>`;
   const mi=PA.nmH(noteAt(key,2)), la=PA.nmH(noteAt(key,5)), re_si=namesH([noteAt(key,1),noteAt(key,6)]), shared=namesH([noteAt(key,0),noteAt(key,3),noteAt(key,4)]);
   h+=`<details class="more tips" ${state.tipsOpen?'open':''}><summary>💡 伴奏づけの コツ</summary><p class="note" style="margin:0 0 6px">${PA.keyName(key)}の 音名で 書いているよ</p><ol>
@@ -709,7 +778,7 @@ function view(){
     <li><b>${mi}</b> が 長く鳴れば Ⅰ、<b>${la}</b> なら Ⅳ、<b>${re_si}</b> なら Ⅴ7。<b>${shared}</b> は 2つの和音に 入っているので、ほかの音で きめよう。</li>
     <li>曲の <b>はじめ</b> と <b>さいご</b> は Ⅰ。さいごの 前は Ⅴ7 が 多いよ。</li>
     <li>えらんだら きいてみよう。にごって きこえたら、べつの和音を ためそう。</li></ol>
-    <p class="note">※ キーボードでも操作できます：1＝Ⅰ、4＝Ⅳ、5＝Ⅴ、7＝Ⅴ7、←→＝マスの移動、Delete＝けす、スペース＝再生／停止。<br>※ 曲はどれも古くから歌われている曲や、作曲者が亡くなって長い年月がたった曲のメロディーです。</p></details>`;
+    <p class="note">※ キーボードでも操作できます：1＝Ⅰ、4＝Ⅳ、5＝Ⅴ、7＝Ⅴ7、←→＝マスの移動、Delete＝けす、Ctrl（⌘）＋Z＝ひとつ もどす、スペース＝再生／停止、Enter＝こたえあわせ。<br>※ 曲はどれも古くから歌われている曲や、作曲者が亡くなって長い年月がたった曲のメロディーです。</p></details>`;
   return h+`</div>`;
 }
 
@@ -728,6 +797,7 @@ function render(){
   const viewEl=document.getElementById('view');
   deferRender=false;
   const ae=document.activeElement, focusId=ae&&ae.id, fa=ae&&ae.dataset?ae.dataset.act:null, wasBtn=!!ae&&ae.tagName==='BUTTON';
+  const wasSlot=!!ae&&!!ae.getAttribute&&ae.getAttribute('data-slot')!=null;
   try{
     PA.paint(viewEl,view(),state.songId+':'+state.keyIdx);
   }catch(err){
@@ -742,6 +812,10 @@ function render(){
   const lost=document.activeElement===document.body||document.activeElement==null||!document.contains(document.activeElement);
   if(lost){
     if(focusId&&document.getElementById(focusId)) document.getElementById(focusId).focus({preventScroll:true});
+    else if(wasSlot){ // がくふの マス：えらんでいる マスへ（←→ で フォーカスも いっしょに うごく）
+      const el=viewEl.querySelector(`[data-sk="score"] [data-slot="${state.sel}"]`);
+      if(el) el.focus({preventScroll:true});
+    }
     else if(wasBtn&&fa){
       const act=fa==='stop'?'playall':fa==='playall'?'stop':fa==='reveal'?'check':fa;
       const el=viewEl.querySelector(`[data-act="${act}"]`);
@@ -755,10 +829,36 @@ function render(){
 function renderPlayback(){
   const sb=document.querySelector('[data-sk="score"]'), kb=document.querySelector('[data-sk="kb"]');
   if(!sb||!kb) return render();
-  const l=kb.scrollLeft;
-  sb.innerHTML=scoreRows();
+  const l=kb.scrollLeft, ae=document.activeElement;
+  const hadSlot=!!ae&&!!ae.getAttribute&&ae.getAttribute('data-slot')!=null&&sb.contains(ae);
+  const html=scoreRows();
+  if(!patchScore(sb,html)){
+    sb.innerHTML=html;
+    if(hadSlot){const el=sb.querySelector(`[data-slot="${state.sel}"]`);if(el)el.focus({preventScroll:true});} // キーボードで いた マスを わすれない
+  }
   kb.innerHTML=kbHTML();
   kb.scrollLeft=l;
+}
+// がくふの 絵だけを 入れかえ、マス（data-slot）は 同じ ものを のこして 中みだけ なおす
+// （キーボードや 読み上げで マスに いる 人の フォーカスが 音ごとに とんだり、読みなおされたり しないように）。形が ちがえば false
+function patchScore(sb,html){
+  const t=document.createElement('div'); t.innerHTML=html;
+  const A=sb.children, B=t.children;
+  if(A.length!==B.length) return false;
+  for(let i=0;i<A.length;i++){
+    if(A[i].children.length!==B[i].children.length||A[i].getAttribute('viewBox')!==B[i].getAttribute('viewBox')) return false;
+  }
+  const sync=(o,n)=>{
+    [...o.attributes].forEach(x=>{if(!n.hasAttribute(x.name))o.removeAttribute(x.name);});
+    [...n.attributes].forEach(x=>{if(o.getAttribute(x.name)!==x.value)o.setAttribute(x.name,x.value);});
+  };
+  for(let i=0;i<A.length;i++){
+    const o=A[i], n=B[i], oc=[...o.children], nc=[...n.children];
+    sync(o,n);
+    o.replaceChild(nc[0],oc[0]); // 音符などの 絵（aria-hidden の g）
+    for(let j=1;j<oc.length;j++) sync(oc[j],nc[j]);
+  }
+  return true;
 }
 // 再生中、光っている マスが 画面の外（上の バーや 下の パレットの うら）に 出たら 見える所へ。がくふを 見ていないときは 動かさない
 function followSlot(si){
@@ -778,31 +878,64 @@ function scrollSelIntoView(){
 }
 
 /* ===== 操作 ===== */
+/* ↩ ひとつ もどす：曲ごとの かえた きろく（この ページを ひらいている あいだだけ）
+ * {si, prev}＝1つの マスを かえた、{all, sel}＝🧽 ぜんぶ けした */
+const hist={}, HIST_MAX=60;
+const histOf=id=>hist[id]||(hist[id]=[]);
+const canUndo=()=>histOf(state.songId).length>0;
+function pushHist(e){const h=histOf(state.songId);h.push(e);if(h.length>HIST_MAX)h.shift();}
+function undo(){
+  const e=histOf(state.songId).pop(); if(!e) return;
+  stopPlay();
+  const song=curSong(), chs=choices();
+  if(e.all){e.all.forEach((c,i)=>{chs[i]=c;});state.sel=e.sel;announce('けした 和音を もとに もどしたよ');}
+  else{chs[e.si]=e.prev;state.sel=e.si;announce(`${whereLabel(song,e.si)}を ${e.prev?CHORDS[e.prev].label:'まだ えらんでいない'}に もどしたよ`);}
+  save(); render(); scrollSelIntoView();
+  if(state.autoPlay&&chs[state.sel]) playChordNow(curKey(),chs[state.sel]);
+}
 function pick(ch){
   const song=curSong(), chs=choices();
   stopPlay();
-  const si=state.sel;
+  const si=state.sel, prev=chs[si];
+  if((ch||null)!==prev) pushHist({si,prev});
   chs[si]=ch||null; save();
-  if(ch&&state.sel<song.slots.length-1) state.sel++;
+  if(ch&&state.autoNext&&state.sel<song.slots.length-1) state.sel++;
   if(ch&&state.autoPlay&&PA.settings.sound) playRange(si,si); else render();
   scrollSelIntoView();
 }
+// となりの マスへ（←→・「➡ つぎの マスへ」）
+function moveSel(d){
+  const song=curSong(), to=Math.max(0,Math.min(song.slots.length-1,state.sel+d));
+  if(state.play) stopPlay();
+  if(to===state.sel){render();return;}
+  state.sel=to; render(); scrollSelIntoView();
+}
+// マスを えらぶ（タップ・キーボードの Enter）
+function selectSlot(si){
+  if(state.play) stopPlay();
+  state.sel=si; render();
+  const ch=choices()[state.sel];
+  if(ch) playChordNow(curKey(),ch);
+}
 let clearTimer=null;
+// マウス・指で マスを おしたときは マスに フォーカスを うつさず、さっき おした ボタンからも はずす
+// （そのあとの スペースが 和音ボタンなどを おしてしまわず、これまでどおり 再生／停止に なるように）
+document.addEventListener('mousedown',e=>{
+  if(!(e.target.closest&&e.target.closest('[data-slot]'))) return;
+  e.preventDefault();
+  const ae=document.activeElement; if(ae&&ae!==document.body&&ae.blur) ae.blur();
+});
 document.addEventListener('click',e=>{
   const hit=e.target.closest('[data-slot]');
-  if(hit){
-    if(state.play) stopPlay();
-    state.sel=+hit.dataset.slot; render();
-    const ch=choices()[state.sel];
-    if(ch) playChordNow(curKey(),ch);
-    return;
-  }
+  if(hit){selectSlot(+hit.dataset.slot);return;}
   const el=e.target.closest('[data-act]'); if(!el) return;
   const a=el.dataset.act, v=el.dataset.v;
   if(a!=='clear'&&state.clearArm){state.clearArm=false;clearTimeout(clearTimer);}
   switch(a){
     case 'song': if(v===state.songId) break; stopPlay(); state.songId=v; state.randKey=null; state.sel=0; state.checked=false; state.reveal=false; save(); break;
     case 'pick': pick(v); return;
+    case 'undo': if(canUndo()) undo(); return;
+    case 'next': moveSel(1); return;
     case 'randkey': randomKey(); return;
     case 'randtier': if(v===state.randTier||!PA.keyDeck.TIERS.some(t=>t.id===v)) break; state.randTier=v; state.randSeen=[]; state.diceUsed=true; randDeck().setOptions({tier:v}); save(); break;
     case 'playall': playRange(0,curSong().slots.length-1,false,true); return;
@@ -819,6 +952,7 @@ document.addEventListener('click',e=>{
         const b=document.querySelector('[data-act="clear"]'); if(b){b.classList.remove('warn');b.textContent='🧽 ぜんぶ けす';}
       },3000);break;}
       clearTimeout(clearTimer); state.clearArm=false; stopPlay();
+      if(choices().some(Boolean)) pushHist({all:choices().slice(),sel:state.sel});
       state.choices[curSong().id]=Array(curSong().slots.length).fill(null); state.sel=0; state.checked=false; state.reveal=false; save(); break;
     default: return;
   }
@@ -826,7 +960,7 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target;
-  if(['melOn','accOn','hint','autoPlay'].includes(t.id)){state[t.id]=t.checked;save();render();}
+  if(['melOn','accOn','hint','autoPlay','autoNext'].includes(t.id)){state[t.id]=t.checked;save();render();}
   else if(t.id==='tempo'){state.tempo=+t.value;save();}
 });
 document.addEventListener('input',e=>{
@@ -845,16 +979,22 @@ document.addEventListener('pointercancel',()=>{
 // コツの ひらき方を おぼえておく（toggle は 上に つたわらないので capture で）
 document.addEventListener('toggle',e=>{if(e.target&&e.target.matches&&e.target.matches('details.tips'))state.tipsOpen=e.target.open;},true);
 document.addEventListener('keydown',e=>{
-  if(e.ctrlKey||e.metaKey||e.altKey||e.isComposing) return;
+  if(e.isComposing) return;
   if(e.target.closest&&e.target.closest('input,select,textarea,dialog')) return;
   if(document.querySelector('dialog[open]')) return; // 調や せっていの シートが ひらいているときは 何もしない
+  // Ctrl（⌘）＋Z：ひとつ もどす
+  if((e.ctrlKey||e.metaKey)&&!e.altKey&&!e.shiftKey&&(e.key==='z'||e.key==='Z')){if(canUndo())undo();e.preventDefault();return;}
+  if(e.ctrlKey||e.metaKey||e.altKey) return;
   const song=curSong(), map={'1':'I','4':'IV','5':'V','7':'V7'};
   if(e.repeat&&(map[e.key]||e.key===' '||e.key==='Delete'||e.key==='Backspace')){e.preventDefault();return;}
+  // がくふの マスに フォーカス：Enter で その マスを えらぶ（スペースは ほかと おなじ 再生／停止）
+  const hs=e.target.closest&&e.target.closest('[data-slot]');
+  if(hs&&e.key==='Enter'){selectSlot(+hs.dataset.slot);e.preventDefault();return;}
   if(map[e.key]){pick(map[e.key]);e.preventDefault();}
-  else if(e.key==='ArrowRight'){if(state.play)stopPlay();state.sel=Math.min(song.slots.length-1,state.sel+1);render();scrollSelIntoView();e.preventDefault();}
-  else if(e.key==='ArrowLeft'){if(state.play)stopPlay();state.sel=Math.max(0,state.sel-1);render();scrollSelIntoView();e.preventDefault();}
+  else if(e.key==='ArrowRight'){moveSel(1);e.preventDefault();}
+  else if(e.key==='ArrowLeft'){moveSel(-1);e.preventDefault();}
   else if(e.key==='Delete'||e.key==='Backspace'){pick('');e.preventDefault();}
-  else if(e.key===' '&&!(e.target.closest&&e.target.closest('button,summary,a,[role="button"]'))){state.play?(stopPlay(),render()):playRange(0,song.slots.length-1,false,true);e.preventDefault();}
+  else if(e.key===' '&&(hs||!(e.target.closest&&e.target.closest('button,summary,a,[role="button"]')))){state.play?(stopPlay(),render()):playRange(0,song.slots.length-1,false,true);e.preventDefault();}
 });
 // 画面の幅で 1行の小節数（4か2）が かわったら 書きなおす
 let resizeTimer=null;
@@ -874,7 +1014,7 @@ PA.onStopCancel=()=>render();
 PA.onKeySheet=()=>PA.openKeySheet({minor:false,both:false,idx:state.keyIdx,onPick:(minor,idx)=>{
   stopPlay(); state.keyIdx=idx; state.randKey=null; save(); render(); playChordNow(curKey(),'I');
 }});
-load(); render();
+load(); applyLink(); render();
 </script>
 </body>
 </html>

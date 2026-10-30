@@ -13,7 +13,7 @@
 .list{display:flex;flex-direction:column;gap:8px}
 .colhead,.krow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
 .colhead{position:sticky;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:5;background:var(--bg);padding:6px 6px 4px}
-.colhead span{display:flex;align-items:center;justify-content:center;min-height:34px;border-radius:10px;background:var(--l);color:var(--c);font-size:20px;font-weight:800;line-height:1}
+.colhead span{display:flex;align-items:center;justify-content:center;min-height:34px;border-radius:10px;background:var(--l);color:var(--d,var(--c));font-size:20px;font-weight:800;line-height:1}
 .colhead .k0{display:none}
 @media (max-height:500px) and (orientation:landscape){.colhead{top:calc(env(safe-area-inset-top,0px) + 46px)}} /* 横にした スマホは 上のバーが うすい */
 .krow{background:var(--card);border-radius:16px;padding:6px;box-shadow:0 2px 0 #eadfce,0 6px 18px rgba(80,60,30,.06)}
@@ -23,13 +23,13 @@
 .khead .go{margin-left:auto;color:var(--sub);font-size:13px;white-space:nowrap}
 .khead .go::after{content:" ›";font-size:18px}
 .cell{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:64px;padding:6px 2px;border-radius:12px;
-  background:var(--l);color:var(--c);border:2px solid transparent;font-weight:800;font-size:15px;line-height:1.3;text-align:center;min-width:0}
+  background:var(--l);color:var(--d,var(--c));border:2px solid transparent;font-weight:800;font-size:15px;line-height:1.3;text-align:center;min-width:0}
 /* 音の名前は 1つずつ たてに かさねる（いちばん低い音が 下＝楽譜と おなじ）。和音の とちゅうで 改行しない */
 .cell .ns{display:flex;flex-direction:column-reverse;align-items:center;line-height:1.2}
 .cell .ns>span{display:block;white-space:nowrap}
 .cell .ns>span>i{display:none}
-.cell small{display:block;font-weight:700;font-size:12.5px;opacity:.8;margin-top:2px}
-.cell.hid{background:#f1ece4;color:#b3a99c;font-size:24px}
+.cell small{display:block;font-weight:700;font-size:12.5px;margin-top:2px}
+.cell.hid{background:#f1ece4;color:var(--sub);font-size:24px}
 .cell.sel{border-color:var(--c);box-shadow:0 0 0 2px var(--c) inset}
 .sep{font-size:13px;color:var(--sub);margin:6px 4px -2px;font-weight:700}
 .toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
@@ -48,7 +48,7 @@
 .terms dd ul{margin:4px 0 0}
 .terms dd li{margin:4px 0}
 .terms rt{font-weight:400;font-size:.6em;color:var(--sub)}
-.terms .nw{white-space:nowrap}
+.nw{white-space:nowrap}
 @media (max-width:359px){.actionbar .btn{font-size:14px}.cell{font-size:14px}}
 @media (min-width:620px){
   .colhead,.krow{grid-template-columns:minmax(150px,1.3fr) repeat(4,minmax(0,1fr));gap:5px}
@@ -68,6 +68,9 @@
 /* 和音いちらん表：ぜんぶの調の Ⅰ・Ⅳ・Ⅴ・Ⅴ7。「かくして れんしゅう」では「？」をタップして こたえを たしかめる */
 const CHORDS={I:{deg:0,n:3,label:'Ⅰ'},IV:{deg:3,n:3,label:'Ⅳ'},V:{deg:4,n:3,label:'Ⅴ'},V7:{deg:4,n:4,label:'Ⅴ7'}};
 const CH=Object.keys(CHORDS);
+// 文字に つかう こい色（PA.COL の うすい 地の 上でも 読みやすい こさ）。わくや 地の 色は PA.COL のまま
+const DK={I:'#b8361f',IV:'#127048',V:'#1c5bb8',V7:'#6a32c0'};
+const colVars=ch=>`--c:${PA.COL[ch]};--l:${PA.LCOL[ch]};--d:${DK[ch]}`;
 const saved=PA.store.get('chord-table',{})||{};
 // ひらいた マスも おぼえておく（ほかのページへ 行って もどっても つづきから）
 const okId=id=>typeof id==='string'&&/^[01]-(\d|1[0-2])-(I|IV|V|V7)$/.test(id);
@@ -80,6 +83,23 @@ const save=()=>PA.store.set('chord-table',{minor:state.minor,hide:state.hide,rev
 const BACK_KEY='pianoapps.chord-table-back';
 const ss={get(){try{return JSON.parse(sessionStorage.getItem(BACK_KEY));}catch(e){return null;}},set(v){try{sessionStorage.setItem(BACK_KEY,JSON.stringify(v));}catch(e){}},
   clear(){try{sessionStorage.removeItem(BACK_KEY);}catch(e){}}};
+// リンクの key（M0〜M12・m0〜m12）と chord（I・IV・V・V7）：その 調の 表を 出して、chord が あれば その マスを えらぶ。ほかの 値は すてる。
+// 「もどる」で 来たときは つかわない（あとから えらんだ マスを そのままに）。
+// 「和音のしくみ」の ‹ は history.back() か、key の ない chord-table.html へ 行くので、URL に key が あれば いつも ほんとうの リンク
+const linkSel=(function(){
+  let back=false;
+  try{const ne=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];back=ne?ne.type==='back_forward':!!(performance.navigation&&performance.navigation.type===2);}catch(e){}
+  if(back) return null;
+  const p=PA.params(), k=p.key!=null?PA.keyDeck.parse(p.key):null;
+  if(!k) return null;
+  const ch=CH.includes(p.chord)?p.chord:null;
+  state.minor=k.minor;
+  // chord が ない（または まちがい）ときは その 調の Ⅰ を えらぶ（前の べつの 調の マスは のこさない）。🙈 かくす ときは えらばない
+  if(!state.hide) state.sel={minor:k.minor,i:k.idx,ch:ch||'I'};
+  else if(state.sel&&(state.sel.minor!==k.minor||state.sel.i!==k.idx)) state.sel=null;
+  save();
+  return {i:k.idx,ch};
+})();
 const keyAt=(minor,i)=>PA.keyOf(minor,i,60); // 主音は ド4〜シ4（「和音のしくみ」と おなじ高さ）
 const chordTones=(key,ch)=>{const c=CHORDS[ch];return Array.from({length:c.n},(_,j)=>PA.at(key.scale,c.deg+2*j));};
 function chordSymT(t){
@@ -124,6 +144,14 @@ function termsHTML(minor,sel,hide){
     <dd>クラシックの 本では ドイツ語の 名前も 出てくる。英語の <b>B</b>（${br(si)}）を <b>H</b>（ハー）、<b>B♭</b>（${br(sif)}）を <b>B</b>（ベー）と よぶので 気をつけよう。</dd>
   </dl></details>`;
 }
+/* 🎯 和音クイズで 5もん。えらんだ マスが あれば その 調で（なければ 調は クイズの せっていの まま） */
+function tryHTML(minor,sel){
+  const k=sel&&sel.minor===minor?keyAt(minor,sel.i):null;
+  return PA.tryHTML({to:'chord-quiz',params:{key:k?PA.keyDeck.id(minor,sel.i):null,n:5},
+    title:k?`<span class="nw">${PA.keyName(k)}の</span> 和音を クイズで ためそう`:'和音クイズで ためしてみよう',
+    sub:k?`${PA.keyName(k)}の 和音を 5もん。表を 見ないで こたえられるかな？`:'表の 和音を 5もん。マスを えらぶと その 調で れんしゅう できるよ。',
+    btn:'🎯 5もん ためす'});
+}
 function render(){
   const minor=state.minor, n=PA.keyCount(minor), flatFrom=minor?PA.MINOR_FLAT_FROM:PA.MAJOR_FLAT_FROM, sel=state.sel;
   let h=`<div class="stack">
@@ -133,7 +161,7 @@ function render(){
       :'マスをタップすると 音が出るよ。えらんだ マスの 作り方は <b>🐸 つくりかた</b> で 見られるよ。調の名前をタップすると その調の「和音のしくみ」へ。'}</div>`;
   if(state.hide) h+=`<div class="toprow"><span class="count">ひらいた マス：${openedCount()} / ${total()}</span></div>`;
   h+=`<div class="list" role="list" aria-label="${minor?'短調':'長調'}の いちらん表">
-    <div class="colhead" aria-hidden="true"><span class="k0">調</span>${CH.map(k=>`<span style="--c:${PA.COL[k]};--l:${PA.LCOL[k]}">${CHORDS[k].label}</span>`).join('')}</div>`;
+    <div class="colhead" aria-hidden="true"><span class="k0">調</span>${CH.map(k=>`<span style="${colVars(k)}">${CHORDS[k].label}</span>`).join('')}</div>`;
   for(let i=0;i<n;i++){
     if(i===0) h+=`<div class="sep">調号なし・♯の調</div>`;
     if(i===flatFrom) h+=`<div class="sep">♭の調</div>`;
@@ -148,7 +176,7 @@ function render(){
       if(state.hide&&!state.revealed.has(id)) h+=`<button class="cell hid" data-act="cell" data-v="${i}|${ch}" aria-label="${PA.keyName(k)}の ${CHORDS[ch].label}（かくれている）">？</button>`;
       else{
         const on=!state.hide&&sel&&sel.minor===minor&&sel.i===i&&sel.ch===ch;
-        h+=`<button class="cell${on?' sel':''}" style="--c:${PA.COL[ch]};--l:${PA.LCOL[ch]}" data-act="cell" data-v="${i}|${ch}" aria-pressed="${!!on}" aria-label="${PA.keyName(k)}の ${CHORDS[ch].label}：${PA.namesT(t,'、')}（${chordSymT(t)}）"><span class="ns">${namesCell(t)}</span><small>${chordSym(t)}</small></button>`;
+        h+=`<button class="cell${on?' sel':''}" style="${colVars(ch)}" data-act="cell" data-v="${i}|${ch}" aria-pressed="${!!on}" aria-label="${PA.keyName(k)}の ${CHORDS[ch].label}：${PA.namesT(t,'、')}（${chordSymT(t)}）"><span class="ns">${namesCell(t)}</span><small>${chordSym(t)}</small></button>`;
       }
     });
     h+=`</div>`;
@@ -162,6 +190,7 @@ function render(){
       <li>🙈 <b>かくして れんしゅう</b>：「？」の 和音を 先に 声に出して 言ってから タップ。音と 名前で たしかめよう。</li>
     </ul></details>
     ${termsHTML(minor,sel,state.hide)}
+    ${tryHTML(minor,sel)}
   </div>`;
   PA.paint(document.getElementById('view'),h,'table:'+minor);
   const hasSel=!!(sel&&sel.minor===minor);
@@ -207,6 +236,11 @@ render();
 // 「和音のしくみ」から もどってきたら、ひらいていた マスを まん中に
 (function(){
   const b=ss.get(); ss.clear();
+  if(linkSel){ // リンクで 来た：その 調の 行（chord が あれば その マス）を まん中に
+    const c=document.querySelector(`[data-act="cell"][data-v="${linkSel.i}|${linkSel.ch||'I'}"]`);
+    if(c&&c.scrollIntoView) c.scrollIntoView({block:'center'});
+    return;
+  }
   if(!b||b.minor!==state.minor||!Number.isInteger(b.i)||!CH.includes(b.ch)) return;
   const c=document.querySelector(`[data-act="cell"][data-v="${b.i}|${b.ch}"]`);
   if(c&&c.scrollIntoView) c.scrollIntoView({block:'center'});

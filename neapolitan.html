@@ -35,6 +35,7 @@
 .role.on{background:#dfeafd;outline:2px solid #2f7ee8}
 .role.on .rt{background:#2f7ee8;color:#fff}
 .role.bor .rt{background:#fdebd3;color:#8a4a06}
+.rcap{margin:6px 0 0;font-size:13px}
 .srcrow{display:flex;align-items:center;gap:8px;margin-top:10px;flex-wrap:wrap}
 .srcrow>span{font-size:14px;font-weight:700;color:var(--sub)}
 .srcrow .seg{flex:1 1 200px}
@@ -263,7 +264,8 @@ function rolesHTML(key){
   return `<div class="roles">`+
     box('根音',n6[3],ii[3],'半音下げた','on')+
     box('第3音',n6[0],null,'いちばん下')+
-    box('第5音',n6[2],key.minor?null:ii[2],key.minor?'':'かりた音',key.minor?'':'bor')+`</div>`;
+    box('第5音',n6[2],key.minor?null:ii[2],key.minor?'':'かりた音',key.minor?'':'bor')+`</div>`+
+    `<p class="note rcap">根音＝和音の もとの 音。そこから ひとつとばしに 第3音・第5音。</p>`;
 }
 function heroCard(key){
   const n6=n6Of(key), A=state.anim;
@@ -283,7 +285,7 @@ function staffCard(key){
   if(A) return `<section class="card"><h2>🎼 がくふ<small>${A.staffCap||''}</small></h2>${staff(key,A.cols,A.arrows,{sk:'staff'})}</section>`;
   const p=state.path, st=stagesOf(key,p), n6=st[0].notes, nx=st[1].notes, V=st[st.length-1].notes;
   const cur=state.res;
-  const cols=st.map((s,i)=>({notes:s.notes,color:s.color,label:s.label,op:cur!=null&&i!==cur?.45:1,hl:i===0?isLow:null,hlColor:i===0?LOW:LT}));
+  const cols=st.map((s,i)=>({notes:s.notes,color:s.color,label:s.label,op:cur!=null&&i!==cur?0.45:1,hl:i===0?isLow:null,hlColor:i===0?LOW:LT}));
   const arrows=[{c1:0,n1:n6[0],c2:1,n2:nx[0],color:GHOST}];
   if(p==='direct'){
     arrows.push({c1:0,n1:n6[3],c2:1,n2:nx[3],color:LOW,text:'減3度↓',dy:-3},{c1:0,n1:n6[2],c2:1,n2:nx[2],color:N_COL,text:'半音↓',dy:9},{c1:0,n1:n6[1],c2:1,n2:nx[1],color:V7_COL,dash:'4 4',text:'そのまま（第7音）',mid:true});
@@ -297,7 +299,7 @@ function staffCard(key){
     </div>`;
   h+=staff(key,cols,arrows,{sk:'staff'});
   const tonic=scaleOf(key)[0], lt=V[3];
-  if(p==='direct') h+=`<p class="note"><b class="lo">根音${q(n6[3])}は 主音${q(tonic)}を とびこえて、導音${q(lt)}へ おりる</b>。第5音${q(n6[2])}は Ⅴ の 根音${q(nx[2])}へ 半音下へ、ベースは${q(nx[0])}へ 上がるよ。上の${q(n6[1])}は <b style="color:${V7_COL}">そのまま のこって Ⅴ7 の 第7音</b>に なる（第5音の ない Ⅴ7）。</p>`;
+  if(p==='direct') h+=`<p class="note"><b class="lo">根音${q(n6[3])}は 主音${q(tonic)}を とびこえて、導音${q(lt)}へ おりる</b>（導音＝主音へ のぼりたがる 音。この はばが「減3度」＝ふつうの 3度より せまい 3度）。第5音${q(n6[2])}は Ⅴ の 根音${q(nx[2])}へ 半音下へ、ベースは${q(nx[0])}へ 上がるよ。上の${q(n6[1])}は <b style="color:${V7_COL}">そのまま のこって Ⅴ7 の 第7音</b>に なる（第5音の ない Ⅴ7）。</p>`;
   else h+=`<p class="note">${I64H} を はさむと、<b class="lo">根音${q(n6[3])}は まず 主音${q(nx[3])}へ 半音下へ</b>、それから 導音${q(lt)}へ。第5音${q(n6[2])}は${q(nx[2])}へ。ベースは${q(nx[0])}の まま Ⅴ へ すすんで、Ⅴ の 前に「ため」が うまれるよ。</p>`;
   return h+`</section>`;
 }
@@ -315,7 +317,7 @@ function placeCard(key){
     h+=`<div class="cmprow ${state.cmp===id?'on':''}" style="--c:${col===SRC_COL?DARK[SRC_COL]:col}"><button class="btn" data-act="cmp" data-v="${id}" aria-pressed="${state.cmp===id}">🔊 ${lab}</button>
       <div class="tx"><b>${uniqNames(ns).map(nH).join('・')}</b><br>${tx}</div></div>`;
   });
-  return h+`<p class="note">ナポリは <b>明るい 長三和音</b>${key.minor?'だけど、下げた 根音で':'なのに、下げた 音が 2つ 入って'}、ふっと <b>かげが さす</b> ような ひびき。Ⅴ が いっそう まちどおしく 聞こえるよ。</p></section>`;
+  return h+`<p class="note">ナポリは <b>明るい 長三和音</b>（明るい ひびきの 3つの 音の 和音）${key.minor?'だけど、下げた 根音で':'なのに、下げた 音が 2つ 入って'}、ふっと <b>かげが さす</b> ような ひびき。Ⅴ が いっそう まちどおしく 聞こえるよ。</p></section>`;
 }
 function cadCard(key){
   const cp=state.cadPath, seq=cadSeq(key,cp), cur=state.cad;
@@ -332,15 +334,15 @@ function cadCard(key){
 function abCard(key){
   const ab=state.ab;
   let h=`<section class="card"><h2>👂 どっちが ナポリ？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>A と B、どちらも そのあと Ⅴ7 を 鳴らすよ</small></h2>
-    <p class="note" style="margin-top:0">ひとつは ナポリの六、もうひとつは Ⅳ か Ⅱ6。${key.minor?'短調では ナポリだけが 長三和音。ほかより ぱっと 明るく 聞こえるのは どっち？':'ふっと くらく なるのは どっち？'}</p>`;
-  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext">🎲 もんだいを 出す</button></div></section>`;
+    <p class="note" style="margin-top:0">ひとつは ナポリの六、もうひとつは Ⅳ か Ⅱ6。${key.minor?'短調では ナポリだけが 長三和音（明るい ひびきの 和音）。ほかより ぱっと 明るく 聞こえるのは どっち？':'ふっと くらく なるのは どっち？'}</p>`;
+  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 もんだいを 出す</button></div></section>`;
   h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ A を きく</button><button class="btn" data-act="abplay" data-v="B">▶️ B を きく</button></div>`;
   if(ab.answer==null) return h+`<p class="askline">ナポリの六は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">A が ナポリ</button><button class="btn night" data-act="qchoose" data-v="B">B が ナポリ</button></div></section>`;
   const ok=ab.answer===ab.n6, other=ab.n6==='A'?'B':'A', n6=n6Of(key), o=srcChord(key,ab.other,false);
   return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！ もういちど 聴きくらべてみよう。'}
       <b>${ab.n6}</b> が ナポリ（${uniqNames(n6).map(nH).join('・')}）、<b>${other}</b> が ${ab.other==='iv'?'Ⅳ':'Ⅱ6'}（${uniqNames(o).map(nH).join('・')}）。
       <br>ナポリの 根音${q(n6[3])}は、Ⅴ7 で 導音${q(toV7(key)[3])}へ おりるよ。</div>
-    <div class="ab one"><button class="btn night" data-act="qnext">🎲 つぎの もんだい</button></div></section>`;
+    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 つぎの もんだい</button></div></section>`;
 }
 function nameDetails(key){
   const n6=n6Of(key);
@@ -386,10 +388,15 @@ function termsHTML(key){
     <li><b>共通音</b> … となりの 和音にも ある おなじ 音。おなじ 声で そのまま のこすと なめらか。ナポリの${q(n6[1])}は、そのまま Ⅴ7 の 第7音に なるよ。</li>
   </ul></details>`;
 }
+// 変化和音クイズへ：いまの 調で、🎹 おさえる レベル4（増六 ＋ ナポリ・Ⅳm・♭Ⅵ）を 5もん。👂 聴きわけは レベル3（Ⅳ・Ⅳm・ナポリ）
+function tryCard(key){
+  return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',level:4,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
+    sub:`${PA.keyName(key)}で、ナポリの六（と 増六${key.minor?'':'・かりた 和音'}）を けんばんで おさえてみよう（5もん）。`,btn:'🎯 けんばんで 5もん',
+    links:[{to:'chroma-quiz',params:{mode:'ear',level:3,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:'👂 耳で 聴きわける'}]});
+}
 function linksCard(){
   return `<section class="card"><h2>🔗 つながる アプリ</h2><div class="links">
     <button class="btn" data-act="go" data-v="aug6">↔️ 増六の和音 <small>おなじ「下げた 第6音」を つかう 和音</small></button>
-    <button class="btn" data-act="go" data-v="chroma-quiz">🎯 変化和音クイズ <small>ナポリの六も 出るよ（けんばん／耳）</small></button>
   </div></section>`;
 }
 function footNote(key){
@@ -416,12 +423,12 @@ function render(){
   const key=curKey(), A=state.anim;
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
-    ${heroCard(key)}${kbCard(key)}${staffCard(key)}${placeCard(key)}${cadCard(key)}${abCard(key)}
+    ${heroCard(key)}${kbCard(key)}${staffCard(key)}${placeCard(key)}${cadCard(key)}${abCard(key)}${tryCard(key)}
     ${nameDetails(key)}${key.minor?'':borrowDetails(key)}${tipsHTML(key)}${termsHTML(key)}${linksCard()}${footNote(key)}</div>`;
   PA.paint(document.getElementById('view'),h,'neapolitan:'+state.minor+':'+state.keyIdx);
   if(A||state.playing) PA.follow(document.getElementById('view')); // 音の高さが かわっても 鍵が 見えるように
   const acts=(A||state.playing?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
-    `<button class="btn" data-act="play">🔊 いっしょに</button><button class="btn primary" data-act="resolve">➡️ ${state.path==='i64'?I64H+'→Ⅴ':'Ⅴへ'}</button>`;
+    `<button class="btn" data-act="play" data-hot="listen">🔊 いっしょに</button><button class="btn primary" data-act="resolve">➡️ ${state.path==='i64'?I64H+'→Ⅴ':'Ⅴへ'}</button>`;
   if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
 }
 
@@ -434,7 +441,7 @@ async function playSeq(seq,o={}){
   state.playing=true; Object.assign(state,o.extra||{});
   for(let i=0;i<seq.length;i++){
     const s=seq[i], last=i===seq.length-1;
-    state.alt=o.show===false?null:s; state.res=s.res??null; state.cad=s.cad??null; render();
+    state.alt=o.show===false?null:s; state.res=s.res==null?null:s.res; state.cad=s.cad==null?null:s.cad; render();
     PA.chord(midisOf(s.notes),{dur:last?2.2:(s.ms||1300)/1000+0.1});
     await PA.sleep(s.ms||1300); if(my!==token) return;
   }
@@ -561,7 +568,6 @@ document.addEventListener('click',e=>{
   else if(a==='go'){
     stop(); render();
     if(v==='aug6'){const p=PA.store.get('aug6',{}), t=p&&['it','fr','ger'].includes(p.type)?p.type:'it';PA.store.set('aug6',{minor:state.minor,keyIdx:state.keyIdx,type:t});PA.go('aug6.html');}
-    else if(v==='chroma-quiz') PA.go('chroma-quiz.html');
   }
 });
 const AUTO=PA.store.get('neapolitan-auto',false);

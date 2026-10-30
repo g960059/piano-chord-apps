@@ -44,8 +44,6 @@
 .hidebar .btn{justify-self:start}
 #demo{scroll-margin-top:calc(68px + env(safe-area-inset-top,0px))}
 #done{scroll-margin-bottom:90px}
-.links{display:grid;gap:8px}
-.links .btn{justify-content:flex-start}
 @media (min-width:560px){
   .khead,.krow{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,1.4fr)}
   .kname b{font-size:16px}
@@ -169,10 +167,9 @@ function render(){
     <details class="more" style="margin-top:12px"><summary>💡 ${PA.nmH({letter:2,acc:1})} や ${PA.nmH({letter:3,acc:2})} は どこを ひくの？</summary>
       <p class="note" style="margin-top:0">${PA.nmH({letter:2,acc:1})} は ${PA.nmH({letter:3,acc:0})}の けんばん、${PA.nmH({letter:3,acc:2})} は ${PA.nmH({letter:4,acc:0})}の けんばんで ひくよ。でも 7ばんめは 主音の すぐ下の 線・間の まま なので、名前は かえずに 記号を つけて 書く（音階では ${PA.nmH({letter:0,acc:0})}〜${PA.nmH({letter:6,acc:0})}を 1回ずつ 使う）。</p></details>
   </section>
-  <section class="card"><h2>🔗 つぎは</h2><div class="links">
-    <a class="btn" href="minor-why.html">❓ なぜ 7ばんめを 上げるの？</a>
-    <a class="btn" href="minor-quiz.html">🎯 短調クイズ（臨時記号を えらぶ）</a>
-  </div></section>
+  ${PA.tryHTML({to:'minor-quiz',params:{mode:'mark',key:PA.keyDeck.id(true,state.keyIdx),n:3},
+    sub:`${PA.keyName(key)}の 7ばんめに つける 記号を、クイズで えらんでみよう（3もん）`,btn:'🎯 記号を えらぶ クイズ（3もん）',
+    links:[{to:'minor-why',label:'❓ なぜ 7ばんめを 上げるの？'}]})}
   ${termsHTML(key)}</div>`;
   PA.paint(document.getElementById('view'),h,String(state.keyIdx));
   PA.paint(document.getElementById('actions'),

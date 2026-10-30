@@ -52,6 +52,14 @@
 .terms dd ul{margin:4px 0 0}
 .terms dd li{margin:4px 0}
 .terms rt{font-weight:400;font-size:.6em;color:var(--sub)}
+/* 広い 画面（2れつ）：右の れつに けんばんと がくふが ぜんぶ 入るように、けんばんは 左手・右手を よこに ならべ、がくふは 大きく しすぎない */
+@media (min-width:1000px){
+  .duo-side .kbcard{padding-inline:10px}
+  .duo-side .kbpair{display:grid;gap:8px;align-items:start} /* れつの はばは 白鍵の 数の わりあい（インラインの grid-template-columns）。左手は いつも ぜんぶ 見える はば、右手は 入りきらなければ よこに スクロール */
+  .duo-side .handblk{margin:0 auto;width:100%}
+  .duo-side .handblk.kbl{order:-1} /* ピアノと おなじ：左に 左手 */
+  .duo-side .staffw{max-width:440px;max-width:clamp(300px,calc((100vh - 540px) * 1.58),440px)} /* ひくい 画面（1024×768 など）では すこし 小さく */
+}
 @media (min-width:600px){
   .seq{gap:8px}
   .scard .nm{font-size:13px}
@@ -61,7 +69,7 @@
 </head>
 <body>
 <header class="appbar" id="appbar"></header>
-<main class="page" id="view"></main>
+<main class="page duo" id="view"></main>
 <div class="actionbar" id="actions"></div>
 <script src="assets/core.js"></script>
 <script>
@@ -146,7 +154,8 @@ let lastStep=-1;
 function render(){
   const key=curKey(), data=cadData(key,state.form), step=state.step, cur=data[step], col=PA.COL[cur.ch], lab=LABEL[cur.ch];
   const M=stepMsg(key,data,step,state.form);
-  let h=`<div class="stack">
+  // 広い 画面（1000px〜）：左＝えらぶ・和音の ならび・説明、右＝けんばんと がくふ（ついてくる）。せまい 画面は たてに ならぶ
+  let h=`<div class="stack"><div class="duo-grid"><div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
     ${PA.seg('form',[['inv','🤲 なめらかな形<small>伴奏の形</small>'],['root','🧱 基本の形<small>ねもと</small>']],state.form,'full formseg')}
     <p class="note" style="margin:-4px 2px 0">${state.form==='inv'?'右手の 音の じゅんばんが かわっても、つかう音は おなじ 和音の音だよ。':'基本の形は、どれも 根音（いちばん下）から ひとつとばしで つんだ形。'}</p>
@@ -159,7 +168,7 @@ function render(){
           <div class="hl"><span class="tag">左手</span><b class="nw">${PA.nmH(cur.lh[0])}</b></div></div></div>
       <div class="msgs">${data.map((_,i)=>`<div class="msg" ${i===step?'':'aria-hidden="true" style="visibility:hidden"'}><span>${i===step?M.html:stepMsg(key,data,i,state.form).html}</span></div>`).join('')}</div>
       <div class="row" style="margin-top:10px">${PA.seg('speed',[['normal','🐇 ふつう'],['slow','🐢 ゆっくり']],state.speed)}</div>
-    </section>`;
+    </section></div><div class="duo-side stack">`;
   // けんばん：上＝右手、下＝左手（がくふと 同じ ならび）
   const rmarks=new Map(), lmarks=new Map();
   cur.rh.forEach(n=>{const isC=state.form==='inv'&&M.common.some(x=>x.midi===n.midi);
@@ -168,13 +177,16 @@ function render(){
     lmarks.set(n.midi,blk?{fill:col,light:true,tc:'#fff',label:PA.nm(n),sub:'左手',subColor:col,focus:true}
                          :{fill:PA.LCOL[cur.ch],tc:col,label:PA.nm(n),sub:'左手',subColor:col,focus:true});});
   const [rlo,rhi]=rhRange(data);
-  const kb=(lo,hi,marks,sk,hand)=>`<div class="handblk" style="max-width:${whiteCount(lo,hi)*54}px"><div class="hand">${hand}</div><div class="scroll" data-sk="${sk}"><div class="kbw">${PA.kbSVG(lo,hi,marks)}</div></div></div>`;
-  h+=`<section class="card"><h2>🎹 けんばん<small>こい色＝右手、うすい色＝左手。🟡のわく＝そのまま</small></h2>
-    ${kb(rlo,rhi,rmarks,'kbr','✋ 右手')}
-    ${kb(48,59,lmarks,'kbl','🤚 左手')}</section>`;
+  const kb=(lo,hi,marks,sk,hand)=>`<div class="handblk ${sk}" style="max-width:${whiteCount(lo,hi)*54}px"><div class="hand">${hand}</div><div class="scroll" data-sk="${sk}"><div class="kbw">${PA.kbSVG(lo,hi,marks)}</div></div></div>`;
+  h+=`<section class="card kbcard"><h2>🎹 けんばん<small>こい色＝右手、うすい色＝左手。🟡のわく＝そのまま</small></h2>
+    <div class="kbpair" style="grid-template-columns:minmax(${whiteCount(48,59)*36}px,${whiteCount(48,59)}fr) minmax(0,${whiteCount(rlo,rhi)}fr)">${kb(rlo,rhi,rmarks,'kbr','✋ 右手')}
+    ${kb(48,59,lmarks,'kbl','🤚 左手')}</div></section>`;
   const cols=data.map((d,i)=>({notes:d.rh,lh:d.lh,color:PA.COL[d.ch],accColor:'#d1495b',op:i===step?1:0.28,label:LABEL[d.ch],labelColor:PA.COL[d.ch]}));
   h+=`<section class="card"><h2>🎼 がくふ<small>いま ひいている和音が こい色。上が右手、下が左手</small></h2>
-    <div class="scroll" data-sk="staff"><div class="staffw" style="min-width:${staffMinW(key)}px">${PA.staffSVG(key,cols,{grand:true,colW:66})}</div></div></section>`;
+    <div class="scroll" data-sk="staff"><div class="staffw" style="min-width:${staffMinW(key)}px">${PA.staffSVG(key,cols,{grand:true,colW:66})}</div></div></section></div></div>`;
+  // 和音クイズへ：いまの 調の Ⅰ・Ⅳ・Ⅴ・Ⅴ7 を 5もん
+  h+=PA.tryHTML({to:'chord-quiz',params:{key:PA.keyDeck.id(state.minor,state.keyIdx),chord:'I,IV,V,V7',n:5},
+    sub:`${PA.keyName(key)}の Ⅰ・Ⅳ・Ⅴ・Ⅴ7 を 5もん。`,btn:'🎯 5もん ためしてみる'});
   h+=`<details class="more" data-d="tips" ${state.more?'open':''}><summary>💡 カデンツの ポイント</summary><ul>
       <li>左手は、和音の <b>根音</b>（基本の形で いちばん下に くる音）を ひくよ。</li>
       <li><b>🤲 なめらかな形</b>：前の和音と おなじ けんばんは <b>そのまま</b>。手が あまり 動かないので、伴奏で よく つかうよ。</li>
@@ -189,8 +201,8 @@ function render(){
   if(step!==lastStep){const b=view.querySelector('[data-sk="kbr"]'); if(b) PA.placeScroll(b);}
   lastStep=step;
   PA.paint(document.getElementById('actions'),
-    (state.playing?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn primary" data-act="cplay" aria-label="ながして聴く">▶️ <span class="lbl-w">ながして聴く</span><span class="lbl-n">ながす</span></button>`)+
-    `<button class="btn" data-act="again">🔊 もういちど</button><button class="btn nx" data-act="next" aria-label="つぎの和音">つぎ ➡</button>`,'bar');
+    (state.playing?`<button class="btn" data-act="stop" data-hot="listen">⏹ とめる</button>`:`<button class="btn primary" data-act="cplay" data-hot="listen" aria-label="ながして聴く">▶️ <span class="lbl-w">ながして聴く</span><span class="lbl-n">ながす</span></button>`)+
+    `<button class="btn" data-act="again">🔊 もういちど</button><button class="btn nx" data-act="next" data-hot="next" aria-label="つぎの和音">つぎ ➡</button>`,'bar');
 }
 
 /* ===== 音 ===== */

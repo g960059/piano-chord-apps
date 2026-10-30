@@ -38,6 +38,7 @@
  *       おすと、その ページから 来たばかりなら history.back()（れきしが ふえない）、ちがえば その ページへ。
  *       ホームへ もどるときは まるい ‹（aria-label「ホームに もどる」）
  *     ・PA.store の 'last'＝{app,title,t}（これまでどおり）、'last-practice'（type が quiz・play・ear）、'last-learn'（learn・ref）
+ *       'visited'＝{アプリの id: さいごに ひらいた 時刻}（ホームの ✓・「3 / 4 ひらいた」）
  *     ・音が オフの ときは バーの 下に「🔇 音が オフに なっているよ ［🔊 音を 出す］」（おすと 音を オンにして PA.onSettings）
  *   PA.go(page, params?) … ‹ で いまの アプリに もどれるように して page へ（params は PA.url と おなじ）
  *   PA.updateSoundBar() … 音の オン・オフを かえた あと、バーの 下の「🔇 音が オフ」を 出す／けす（設定シートでは core が よぶ）
@@ -628,6 +629,8 @@ PA.mountBar=o=>{
     const t=Date.now(), a=PA.app(o.app);
     PA.store.set('last',{app:o.app,title:o.title,t});
     if(a) PA.store.set(/^(quiz|play|ear)$/.test(a.type)?'last-practice':'last-learn',{app:a.id,title:a.title,t});
+    // 'visited'＝{アプリの id: さいごに ひらいた 時刻}（ホームの ✓ と「3 / 4 ひらいた」）
+    if(a){const v=PA.store.get('visited',{}), vv=v&&typeof v==='object'&&!Array.isArray(v)?v:{};vv[a.id]=t;PA.store.set('visited',vv);}
   }
   updateSoundBar();
 };
