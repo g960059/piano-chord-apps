@@ -28,75 +28,63 @@
 <title>ピアノ和音アプリ</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
-/* 種類の 色は PA.APP_TYPES の dk（白い 字を のせて 4.5:1 いじょう）だけ。和音の 色（赤・緑・青・むらさき）とは わける */
-.home h2{margin:0;font-size:18px}
+/* 入口は「しずかに」：目立たせるのは「つづき」と「つぎ」の 単元だけ（こい 墨色）。種類の ラベルは 灰色の 文字で、和音の 色（赤・緑・青・むらさき）は つかわない */
+.home h2{margin:0;font-size:17px}
 .home h2 small{display:block;font-weight:400;color:var(--sub);font-size:13px;margin-top:2px}
-.site{margin:2px 4px 0;color:var(--sub);font-size:14px;line-height:1.6}
+.lbl{margin:4px 4px -4px;font-size:15px;font-weight:800;color:var(--ink)}
 /* はじめての 人 */
-.hero{border:3px solid var(--ink);text-align:center;padding:18px 16px}
+.hero{text-align:center;padding:18px 16px}
 .hero .big{font-size:44px;line-height:1}
 .hero h2{font-size:22px;margin-top:6px}
 .hero .lead{color:var(--ink);font-size:16px;margin:6px 0 12px;word-break:keep-all;overflow-wrap:anywhere}
 .hero .btn{display:flex;width:100%;min-height:56px;font-size:18px}
-/* つづきから */
-.go{display:flex;align-items:center;gap:12px;min-height:72px;margin-top:8px;padding:10px 14px;border-radius:16px;background:var(--tc);color:#fff;text-decoration:none}
-.go .ic{flex:none;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.92);display:grid;place-items:center;font-size:25px}
+.hero .site{margin:12px 0 0;color:var(--sub);font-size:13px;line-height:1.6;text-align:left}
+/* きょうの れんしゅう（つづき＋にがて） */
+.go{display:flex;align-items:center;gap:12px;min-height:68px;padding:10px 14px;border-radius:16px;background:var(--ink);color:#fff;text-decoration:none}
+.go .ic{flex:none;width:44px;height:44px;border-radius:13px;background:rgba(255,255,255,.95);display:grid;place-items:center;font-size:24px}
 .go .tx{flex:1;min-width:0}
 .go b{display:block;font-size:18px;line-height:1.3}
-.go .meta{display:block;font-size:13px;line-height:1.45;opacity:.95}
+.go .meta{display:block;font-size:13px;line-height:1.45;opacity:.9}
+.go .eye{display:block;font-size:12px;font-weight:800;line-height:1.3;opacity:.85}
 .go::after{content:"›";flex:none;font-size:28px}
-.go2{display:flex;align-items:center;gap:8px;min-height:48px;margin-top:8px;padding:6px 12px;border-radius:14px;background:var(--soft2);color:var(--ink);text-decoration:none;font-size:15px}
-.go2 .tx{flex:1;min-width:0}
-.go2 small{color:var(--sub);font-size:13px}
-.go2::after{content:"›";flex:none;color:var(--sub);font-size:22px}
-/* にがて ふくしゅう */
-.weak ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
-#view .weak li a{display:flex;margin:0;align-items:center;gap:10px;min-height:52px;padding:6px 12px;border-radius:14px;background:var(--soft2);color:var(--ink);text-decoration:none}
-.weak .tx{flex:1;min-width:0;line-height:1.35}
-.weak .tx b{display:block;font-size:16px}
-.weak .tx small{color:var(--sub);font-size:13px}
-.weak .wtag{flex:none;font-size:12px;font-weight:800;padding:2px 8px;border-radius:999px;border:2px solid #a3273a;color:#a3273a;background:#fff}
-.weak .wtag.l{border-color:#6e4c00;color:#6e4c00}
-.weak .w3{flex:none;font-weight:800;font-size:14px;white-space:nowrap}
-/* コース */
-.course-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;margin:6px 4px 0}
-.units{display:grid;gap:10px;align-items:start}
-@media (min-width:760px){.units{grid-template-columns:1fr 1fr}}
-details.unit{background:var(--card);border-radius:18px;box-shadow:0 2px 0 #eadfce,0 6px 18px rgba(80,60,30,.06);min-width:0}
-details.unit>summary{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 14px;cursor:pointer;list-style:none}
+.weakrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:10px}
+.weakrow .wl{flex-basis:100%;font-size:13px;font-weight:800;color:var(--sub)}
+#view .weakrow a{display:inline-flex;align-items:center;gap:4px;min-height:44px;padding:4px 12px;border-radius:999px;background:var(--soft2);color:var(--ink);text-decoration:none;font-size:14px;font-weight:700;border:2px solid var(--line)}
+.weakrow a small{font-weight:400;color:var(--sub);font-size:12px}
+/* いつでも（どうぐ） */
+.tools{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tool{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:76px;padding:8px 4px;border-radius:16px;background:var(--card);box-shadow:0 2px 0 #eadfce;color:var(--ink);text-decoration:none;text-align:center}
+.tool .ic{font-size:24px;line-height:1.1}
+.tool b{font-size:14px;line-height:1.3;word-break:keep-all;overflow-wrap:anywhere}
+.tool small{color:var(--sub);font-size:11.5px;line-height:1.3;white-space:nowrap}
+@media (max-width:360px){.tool{padding:8px 2px}.tool b{font-size:13px}.tool small{font-size:11px}}
+/* コース：番号つきの 単元。ひらくのは「つぎ」の 単元だけ */
+.units{display:flex;flex-direction:column;gap:8px}
+details.unit{background:var(--card);border-radius:16px;box-shadow:0 2px 0 #eadfce;min-width:0}
+details.unit>summary{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 12px;cursor:pointer;list-style:none}
 details.unit>summary::-webkit-details-marker{display:none}
-details.unit>summary::after{content:"▾";flex:none;color:var(--sub);font-size:15px;transition:transform .15s}
+details.unit>summary::after{content:"▾";flex:none;color:var(--sub);font-size:14px;transition:transform .15s}
 details.unit[open]>summary::after{transform:rotate(180deg)}
+.unit .no{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:15px;background:var(--soft);color:var(--ink)}
+.unit.done .no{background:var(--ok);color:#fff}
 .unit .ut{flex:1;min-width:0}
 .unit .ut b{display:block;font-size:16px;line-height:1.35}
 .unit .ut small{display:block;color:var(--sub);font-size:12.5px;line-height:1.4}
-.unit .prog{flex:none;text-align:right;font-size:12.5px;font-weight:700;color:var(--sub);white-space:nowrap}
-.unit .prog.done{color:var(--ok)}
-.unit .bar{display:block;width:64px;height:6px;margin:3px 0 0 auto;border-radius:3px;background:var(--soft);overflow:hidden}
-.unit .bar i{display:block;height:100%;background:var(--ok)}
-.unit.next{outline:3px solid var(--ink);outline-offset:-3px}
-.unit .nexttag{display:inline-block;margin-right:4px;font-size:11.5px;font-weight:800;padding:0 7px;border-radius:999px;background:var(--ink);color:#fff;vertical-align:2px}
-.alist{list-style:none;margin:0;padding:0 8px 8px;display:flex;flex-direction:column;gap:4px}
-#view li a.arow{display:flex;margin:0;align-items:center;gap:10px;min-height:56px;padding:6px 8px;border-radius:14px;color:var(--ink);text-decoration:none;border-left:5px solid var(--tc)}
+.unit .prog{flex:none;font-size:13px;font-weight:700;color:var(--sub);white-space:nowrap}
+.unit.next{box-shadow:0 0 0 3px var(--ink)}
+.unit.next .no{background:var(--ink);color:#fff}
+.unit .nexttag{display:inline-block;margin-left:6px;font-size:11.5px;font-weight:800;padding:0 7px;border-radius:999px;background:var(--ink);color:#fff;vertical-align:2px}
+.alist{list-style:none;margin:0;padding:0 8px 8px;display:flex;flex-direction:column;gap:2px;border-top:1px solid var(--line)}
+#view li a.arow{display:flex;margin:0;align-items:center;gap:10px;min-height:56px;padding:6px 6px;border-radius:12px;color:var(--ink);text-decoration:none}
 .arow:hover{background:var(--soft2)}
-.arow .ic{flex:none;width:38px;height:38px;border-radius:12px;background:var(--soft2);display:grid;place-items:center;font-size:21px}
+.arow .ic{flex:none;width:36px;height:36px;border-radius:11px;background:var(--soft2);display:grid;place-items:center;font-size:20px}
 .arow .tx{flex:1;min-width:0;line-height:1.35}
 .arow .tx b{font-size:15.5px}
 .arow .d{display:block;color:var(--sub);font-size:12.5px;line-height:1.45}
-.ty{display:inline-block;font-size:11.5px;font-weight:800;padding:0 7px;border-radius:999px;background:var(--tc);color:#fff;margin-right:4px;vertical-align:1px;white-space:nowrap}
-.arow .st{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:12px;font-weight:700;color:var(--sub);white-space:nowrap}
-.arow .seen{color:var(--ok);font-size:16px}
-.arow .kd{color:var(--ok)}
-/* どうぐ */
-.tools{display:grid;gap:6px;margin-top:8px}
-.tool{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 12px;border-radius:14px;background:var(--soft2);color:var(--ink);text-decoration:none;border-left:5px solid var(--tc)}
-.tool .ic{flex:none;font-size:22px;line-height:1}
-.tool .tx{flex:1;min-width:0;line-height:1.35}
-.tool b{font-size:15px}
-.tool small{color:var(--sub);font-size:12.5px;margin-left:6px}
-@media (max-width:599px){.tool small.opt{display:none}} /* スマホは 1行に（耳の「まいにち すこしずつ」だけ のこす） */
-.tool::after{content:"›";flex:none;color:var(--sub);font-size:22px}
-@media (min-width:600px){.tools{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.arow .st{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:3px;font-size:12px;font-weight:700;white-space:nowrap}
+.ty{display:inline-block;font-size:11.5px;font-weight:800;padding:0 7px;border-radius:999px;border:1.5px solid var(--line);color:var(--sub);background:#fff;line-height:1.5}
+.arow .seen{color:var(--ok);font-size:12px}
+.arow .kd{color:var(--ok);font-size:12px}
 .foot{margin:4px 4px 0;font-size:13px;line-height:1.6}
 .foot>summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center}
 .foot p{margin:0 0 4px}
@@ -104,18 +92,25 @@ details.unit[open]>summary::after{transform:rotate(180deg)}
 </head>
 <body>
 <header class="appbar" id="appbar"></header>
-<main class="page wide" id="view"></main>
+<main class="page" id="view"></main>
 <script src="assets/core.js"></script>
 <script>
-/* 入口：つづきから・にがて ふくしゅう・コース（PA.UNITS の じゅん）・どうぐ
+/* 入口：きょうの れんしゅう（つづき＋にがて）・いつでも（どうぐ）・コース（番号つきの 単元）
  *   目次は core の PA.UNITS・PA.APPS・PA.APP_TYPES（このページでは もたない）。app.title は ただの 文字、app.d は HTML
+ *   「いつでも」の 3つ（TOOLS）は コースの 単元には ならべない（おなじ ものを 2回 出さない）
  *   ひらいた アプリ：PA.store 'visited'（PA.mountBar が きろく）。まえからの 人は 'last'・'keystats-…' なども 見る
  *   コースの ひらく／とじる：PA.store 'home-units'＝{unit の id: true/false}（じぶんで おした ときだけ ほぞん） */
 const T=PA.APP_TYPES, ESC=PA.esc;
+const TOOLS=[['accompaniment','曲に つける'],['ear','まいにち すこし'],['chord-table','ぜんぶの 調']];
+const TOOL_IDS=TOOLS.map(t=>t[0]);
 const TALLY_MODES={'minor-quiz':['minor']}; // 短調クイズは 短調だけ（12）。ほかは 長調・短調（24）
 const isObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const rec=k=>{const v=PA.store.get(k,null);return isObj(v)&&typeof v.app==='string'&&PA.app(v.app)?v:null;};
 const typeOf=a=>T[a.type]||T.learn;
+// コースに ならべる 単元（「いつでも」の アプリを のぞいて、のこりが ある 単元だけ）
+const COURSE=PA.UNITS.map(u=>({id:u.id,title:u.title,sub:u.sub,apps:u.apps.filter(id=>PA.app(id)&&TOOL_IDS.indexOf(id)<0)})).filter(u=>u.apps.length);
+// 単元の 名前の 先頭の 絵文字は 番号に かえる（「🎹 はじめの 和音」→「はじめの 和音」）
+const plainTitle=t=>String(t).replace(/^(?:[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u266C\u2670-\u27BF])\uFE0F?\s*/,'');
 
 // ひらいた ことの ある アプリ（id の Set）
 function visitedSet(){
@@ -137,7 +132,7 @@ function when(t){
 function lastDone(app){
   if(!/^(quiz|ear)$/.test(app.type)) return '';
   let st=null; try{st=PA.session(app.id).state();}catch(e){}
-  if(st&&st.done.length<st.n) return `📝 きょうの ${st.n}もん　${st.done.length} / ${st.n} の とちゅう`;
+  if(st&&st.done.length<st.n) return `📝 ${st.n}もんの とちゅう（${st.done.length} / ${st.n}）`;
   if(st){const t=PA.sessionTally(st.done,st.n);return `📝 ${st.n}もん中 ${t.ok}もん できた`;}
   if(app.type!=='quiz') return '';
   const s=PA.keyDeck.stats(app.id); let best=null;
@@ -145,19 +140,15 @@ function lastDone(app){
   const p=best&&PA.keyDeck.parse(best);
   return p?'さいごの 調：'+PA.keyName(PA.keyOf(p.minor,p.idx)):'';
 }
-function goCard(app,t){
-  const ty=typeOf(app), meta=[ty.label,when(t),lastDone(app)].filter(Boolean).join('・');
-  return `<a class="go" href="${app.id}.html" style="--tc:${ty.dk}"><span class="ic" aria-hidden="true">${app.ic}</span><span class="tx"><b>${ESC(app.title)}</b><span class="meta">${ESC(meta)}</span></span></a>`;
-}
 
-/* ----- 上：はじめての 人／つづきから・にがて ふくしゅう ----- */
+/* ----- 上：はじめての 人／きょうの れんしゅう ----- */
 // 'last…' が ない けれど ひらいた ことが ある 人：さいごに ひらいた アプリ（'visited' の 時こく）、なければ つぎの 単元の まだ ひらいて いない アプリ
 function fallbackRec(vis){
   const v=PA.store.get('visited',{}); let best=null;
   if(isObj(v)) Object.keys(v).forEach(id=>{const t=v[id];if(PA.app(id)&&typeof t==='number'&&t>0&&(!best||t>best.t)) best={app:id,t};});
   if(best) return best;
-  const nx=PA.UNITS.find(u=>u.id===nextUnitId(vis))||PA.UNITS[0];
-  const id=nx&&(nx.apps.find(a=>PA.app(a)&&!vis.has(a))||nx.apps.find(a=>PA.app(a)));
+  const nx=COURSE.find(u=>u.id===nextUnitId(vis))||COURSE[0];
+  const id=nx&&(nx.apps.find(a=>!vis.has(a))||nx.apps[0]);
   return id?{app:id,t:0}:null;
 }
 function topHTML(vis){
@@ -166,38 +157,43 @@ function topHTML(vis){
     return `<section class="card hero" aria-labelledby="hero-h"><div class="big" aria-hidden="true">🐸</div>
       <h2 id="hero-h">はじめての 和音</h2>
       <p class="lead">ド・ミ・ソを 見て・聴いて・つくって みよう</p>
-      <a class="btn primary" href="chord-build.html">ここから はじめる ›</a></section>`;
+      <a class="btn primary" href="chord-build.html">ここから はじめる ›</a>
+      <p class="site">Ⅰ・Ⅳ・Ⅴ から 7つの 和音、短調、おわりかた、変化和音、伴奏づけ、耳の れんしゅうまで。「見て・聴いて・さわって」おぼえよう。</p></section>`;
   }
   const main=lp||ll||old||fallbackRec(vis);
-  let h='';
-  if(main){
-    const app=PA.app(main.app);
-    h+=`<section class="card" aria-labelledby="cont-h"><h2 id="cont-h">▶️ つづきから</h2>${goCard(app,main.t)}`;
-    if(ll&&main!==ll&&ll.app!==main.app){
-      const la=PA.app(ll.app);
-      h+=`<a class="go2" href="${la.id}.html"><span aria-hidden="true">📖</span><span class="tx">${ESC(la.title)} <small>（${typeOf(la).label}・${when(ll.t)}）</small></span></a>`;
-    }else if(!lp&&main.app){
-      const pr=PA.app(PA.app(main.app).practice||'');
-      if(pr) h+=`<a class="go2" href="${pr.id}.html"><span aria-hidden="true">${pr.ic}</span><span class="tx">${ESC(pr.title)}で れんしゅう <small>（${typeOf(pr).label}）</small></span></a>`;
-    }
-    h+=`</section>`;
-  }
   // にがて ふくしゅう：クイズの ページだけ（key と n で その 調の 3もん）
   const ws=PA.weakSummary(30).filter(w=>{const a=PA.app(w.quiz);return a&&a.type==='quiz';}).slice(0,3);
-  if(ws.length){
-    h+=`<section class="card weak" aria-labelledby="weak-h"><h2 id="weak-h">🔁 にがて ふくしゅう<small>まちがえやすい 調を 3もんずつ</small></h2><ul>`
-      +ws.map(w=>{
-        const a=PA.app(w.quiz), weak=w.mastery==='weak';
-        return `<li><a href="${ESC(PA.url(w.quiz,{key:w.id,n:3}))}"><span class="tx"><b>${ESC(w.name)}</b><small>${ESC(a.title)}</small></span>`
-          +`<span class="wtag${weak?'':' l'}">${weak?'にがて':'もうすこし'}</span><span class="w3">3もん ›</span></a></li>`;
-      }).join('')+`</ul></section>`;
+  if(!main&&!ws.length) return '';
+  let h=`<section class="card" aria-labelledby="today-h"><h2 id="today-h" class="pa-sr">きょうの れんしゅう</h2>`;
+  if(main){
+    const app=PA.app(main.app), meta=[when(main.t),lastDone(app)].filter(Boolean).join('・');
+    h+=`<a class="go" href="${app.id}.html"><span class="ic" aria-hidden="true">${app.ic}</span><span class="tx"><span class="eye">▶️ つづきから</span><b>${ESC(app.title)}</b>${meta?`<span class="meta">${ESC(meta)}</span>`:''}</span></a>`;
   }
-  return h;
+  // さいごが しくみの ページ（練習は まだ）：その 練習を すすめる
+  const pr=!lp&&main?PA.app(PA.app(main.app).practice||''):null;
+  if(pr) h+=`<div class="weakrow"><a href="${pr.id}.html"><span aria-hidden="true">${pr.ic}</span>${ESC(pr.title)}で れんしゅう</a></div>`;
+  if(ws.length){
+    // クイズが 1つだけ なら 見出しに 書き、ボタンは 調の 名前だけ
+    const one=ws.every(w=>w.quiz===ws[0].quiz), q0=PA.app(ws[0].quiz);
+    h+=`<div class="weakrow"><span class="wl">🔁 にがてを 3もん${one?`（${ESC(q0.title)}）`:''}</span>`
+      +ws.map(w=>{const a=PA.app(w.quiz);
+        return `<a href="${ESC(PA.url(w.quiz,{key:w.id,n:3}))}" aria-label="${ESC(w.name+'（'+a.title+'）を 3もん')}">${ESC(w.name)}${one?'':`<small>${ESC(a.title)}</small>`}</a>`;}).join('')
+      +`</div>`;
+  }
+  return h+`</section>`;
 }
 
-/* ----- コース：単元ごとに 1まい ----- */
+/* ----- いつでも：伴奏づけ・聴きわけ・いちらん表 ----- */
+function toolsHTML(){
+  return `<h2 class="lbl" id="tools-h">いつでも</h2><nav class="tools" aria-labelledby="tools-h">`
+    +TOOLS.map(([id,sub])=>{const a=PA.app(id);if(!a) return '';
+      return `<a class="tool" href="${a.id}.html"><span class="ic" aria-hidden="true">${a.ic}</span><b>${ESC(a.title)}</b><small>${sub}</small></a>`;}).join('')
+    +`</nav>`;
+}
+
+/* ----- コース：番号つきの 単元 ----- */
 function nextUnitId(vis){
-  const u=PA.UNITS.find(u=>u.apps.some(id=>!vis.has(id)));
+  const u=COURSE.find(u=>u.apps.some(id=>!vis.has(id)));
   return u?u.id:null;
 }
 function quizStat(id){
@@ -206,37 +202,27 @@ function quizStat(id){
 }
 function appRow(app,vis){
   const ty=typeOf(app), seen=vis.has(app.id);
-  let st='';
-  if(seen) st+=`<span class="seen" aria-hidden="true">✓</span><span class="pa-sr">ひらいた ことが ある</span>`;
+  let st=`<span class="ty">${ty.label}</span>`;
   if(app.type==='quiz'&&seen){const q=quizStat(app.id);st+=`<span class="kd">できた 調 ${q.good}／${q.total}</span>`;}
-  return `<li><a class="arow" href="${app.href?ESC(app.href):app.id+'.html'}" style="--tc:${ty.dk}"><span class="ic" aria-hidden="true">${app.ic}</span>`
-    +`<span class="tx"><span class="ty" style="--tc:${ty.dk}">${ty.label}</span><b>${ESC(app.title)}</b><span class="d">${app.d}</span></span>`
-    +(st?`<span class="st">${st}</span>`:'')+`</a></li>`;
+  else if(seen) st+=`<span class="seen">✓ ひらいた</span>`;
+  return `<li><a class="arow" href="${app.href?ESC(app.href):app.id+'.html'}"><span class="ic" aria-hidden="true">${app.ic}</span>`
+    +`<span class="tx"><b>${ESC(app.title)}</b><span class="d">${app.d}</span></span><span class="st">${st}</span></a></li>`;
 }
 function courseHTML(vis){
   const saved=PA.store.get('home-units',{}), sv=isObj(saved)?saved:{};
-  const wide=!!(window.matchMedia&&matchMedia('(min-width:760px)').matches);
   const nx=nextUnitId(vis);
-  const cards=PA.UNITS.map(u=>{
-    const apps=u.apps.map(PA.app).filter(Boolean), n=apps.filter(a=>vis.has(a.id)).length, done=n===apps.length;
-    const open=typeof sv[u.id]==='boolean'?sv[u.id]:(wide||u.id===nx);
-    const isNext=u.id===nx;
-    return `<details class="unit${isNext?' next':''}" data-d="unit-${u.id}" data-u="${u.id}"${open?' open':''}>`
-      +`<summary><span class="ut"><b>${isNext?'<span class="nexttag">つぎは ここ</span>':''}${ESC(u.title)}</b><small>${ESC(u.sub)}</small></span>`
-      +`<span class="prog${done?' done':''}">${done?'✓ ':''}${n} / ${apps.length} ひらいた<span class="bar" aria-hidden="true"><i style="width:${Math.round(n/Math.max(1,apps.length)*100)}%"></i></span></span></summary>`
+  const cards=COURSE.map((u,i)=>{
+    const apps=u.apps.map(PA.app), n=apps.filter(a=>vis.has(a.id)).length, done=n===apps.length;
+    const isNext=u.id===nx, open=typeof sv[u.id]==='boolean'?sv[u.id]:isNext;
+    return `<details class="unit${isNext?' next':''}${done?' done':''}" data-d="unit-${u.id}" data-u="${u.id}"${open?' open':''}>`
+      +`<summary><span class="no" aria-hidden="true">${done?'✓':i+1}</span><span class="ut"><b>${ESC(plainTitle(u.title))}${isNext?'<span class="nexttag">つぎ</span>':''}</b>${u.sub?`<small>${ESC(u.sub)}</small>`:''}</span>`
+      +`<span class="prog">${done?'<span class="pa-sr">おわった、</span>':''}${n}/${apps.length}<span class="pa-sr"> ひらいた</span></span></summary>`
       +`<ul class="alist">${apps.map(a=>appRow(a,vis)).join('')}</ul></details>`;
   }).join('');
-  return `<div class="course-head"><h2>🗺️ コース</h2></div><div class="units">${cards}</div>`;
+  return `<h2 class="lbl">コース</h2><div class="units">${cards}</div>`;
 }
 
-/* ----- どうぐ・さいごの おしらせ ----- */
-function toolsHTML(){
-  const tool=(id,sub,keep)=>{const a=PA.app(id);if(!a) return '';const ty=typeOf(a);
-    return `<a class="tool" href="${a.id}.html" style="--tc:${ty.dk}"><span class="ic" aria-hidden="true">${a.ic}</span><span class="tx"><b>${ESC(a.title)}</b><small${keep?'':' class="opt"'}>${sub}</small></span></a>`;};
-  return `<section class="card" aria-labelledby="tools-h"><h2 id="tools-h">🧰 どうぐ<small>どの 単元の ときでも つかえる</small></h2><div class="tools">`
-    +tool('chord-table','ぜんぶの 調の 和音')+tool('accompaniment','曲に 和音を つける')+tool('ear','まいにち すこしずつ',true)
-    +`</div></section>`;
-}
+/* ----- さいごの おしらせ ----- */
 function footHTML(){
   return `<details class="note foot" data-d="foot"><summary>ℹ️ つかいかたの メモ（⚙️ 設定・ホーム画面・きろくの ひかえ）</summary>
     <p>⚙️（右上）：音の 名前（ドレミ／CDE／ハニホ）と 基準の 音（ラ＝440〜443Hz）。どの アプリも おなじ 設定です。</p>
@@ -247,9 +233,7 @@ function footHTML(){
 
 function render(){
   const vis=visitedSet();
-  const h=`<div class="stack home">${topHTML(vis)}
-    <p class="site">Ⅰ・Ⅳ・Ⅴ から 7つの 和音、短調、おわりかた、変化和音、伴奏づけ、耳の れんしゅうまで。「見て・聴いて・さわって」おぼえよう。</p>
-    ${courseHTML(vis)}${toolsHTML()}${footHTML()}</div>`;
+  const h=`<div class="stack home">${topHTML(vis)}${toolsHTML()}${courseHTML(vis)}${footHTML()}</div>`;
   PA.paint(document.getElementById('view'),h,'home');
 }
 // じぶんで ひらいた／とじた 単元だけ おぼえる
