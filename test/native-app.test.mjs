@@ -177,7 +177,7 @@ test('app.css：おしたときの見た目（:active と .is-pressed）・動�
   const rm=css.split('@media (prefers-reduced-motion:reduce)').slice(1).join('');
   assert.match(rm,/transform:none/); assert.match(rm,/animation:none/);
   // ページごとの .echoice:active はなくして app.css にまとめた
-  ['chroma-quiz.html','ending-quiz.html','ear.html'].forEach(f=>assert.ok(!fs.readFileSync(path.join(root,f),'utf8').includes('.echoice:not([disabled]):active'),f));
+  ['chroma-quiz.html','ending-quiz.html','ear.html','progression.html'].forEach(f=>assert.ok(!fs.readFileSync(path.join(root,f),'utf8').includes('.echoice:not([disabled]):active'),f));
 });
 
 test('PA.midi.reset：おさえていた鍵の画面のへこみも、もどす（機器がはずれたとき）',()=>{

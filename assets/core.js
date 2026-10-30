@@ -2580,9 +2580,13 @@ PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
   const roughN=(A,B)=>{let n=Math.abs(B[0].midi-A[0].midi)>9?1:0;
     for(let j=1;j<3;j++){if(B[j].midi>A[j+1].midi) n++; if(B[j+1].midi<A[j].midi) n++;}
     return n;};
+  // 増2度（たとえば短調のファ→ソ♯）でとぶ声の数
+  const aug2N=(A,B)=>{let n=0;for(let v=0;v<A.length;v++) if(Math.abs(B[v].midi-A[v].midi)===3&&Math.abs(B[v].k-A[v].k)===1) n++;return n;};
   // data の i ばんめを、和音 ch・左手の度数 bd にかえた形（ためしに入れて聴く・くらべてきく）。
   //   右手は1つ1つ近い音へ、左手は P.BASS のなかで右手より下。和音の音がそろう（Ⅴ7は根音・第3音・第7音）・導音と第7音は1つだけ。
-  //   となりの和音と5度・8度のままうごかない形を先にえらび、つぎに右手の動きが小さい形
+  //   となりの和音と5度・8度のままうごかない・増2度でとばない形を先にえらぶ。
+  //   つぎに、つぎがⅠ・Ⅵのとき Ⅴ7の第7音は1つ下へ・いちばん上の導音は主音へすすむ形（ルール4。左手はきまっているので右手だけ）。
+  //   そのあとで右手の動きが小さい形
   const revoice=(key,data,i,ch,bd)=>{
     const row=data[i], prev=data[i-1], next=data[i+1];
     const degs=degsOf(ch), need=(ch==='V7'?[degs[0],degs[1],degs[3]]:degs).map(d=>mod(d,7));
@@ -2599,9 +2603,15 @@ PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
           if(!need.every(d=>ks.indexOf(d)>=0)) return;
           if(lt!=null&&ks.filter(d=>d===lt).length>1) return;
           if(sev!=null&&ks.filter(d=>d===sev).length>1) return;
-          const pp=(prev?parN(vox(prev),vs):0)+(next?parN(vs,vox(next)):0), rough=(prev?roughN(vox(prev),vs):0)+(next?roughN(vs,vox(next)):0);
+          const pp=(prev?parN(vox(prev),vs)+aug2N(vox(prev),vs):0)+(next?parN(vs,vox(next))+aug2N(vs,vox(next)):0), rough=(prev?roughN(vox(prev),vs):0)+(next?roughN(vs,vox(next)):0);
+          let tend=0;
+          if(next&&(next.ch==='I'||next.ch==='VI')){
+            const B=vox(next);
+            if(sev!=null) for(let j=1;j<4;j++) if(mod(vs[j].k,7)===sev&&B[j].k!==vs[j].k-1) tend++;
+            if(lt!=null&&mod(c.k,7)===lt&&B[3].k!==c.k+1) tend++;
+          }
           const mv=Math.abs(a.midi-row.rh[0].midi)+Math.abs(b.midi-row.rh[1].midi)+Math.abs(c.midi-row.rh[2].midi);
-          const cost=[pp,rough,mv,Math.abs(bs.midi-row.lh[0].midi),Math.abs(c.midi-row.rh[2].midi),c.midi,b.midi,a.midi,bs.midi];
+          const cost=[pp,tend,rough,mv,Math.abs(bs.midi-row.lh[0].midi),Math.abs(c.midi-row.rh[2].midi),c.midi,b.midi,a.midi,bs.midi];
           if(!best||less(cost,best.cost)) best={cost,rh:[a,b,c],bs};
         });
       })));

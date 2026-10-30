@@ -29,7 +29,6 @@
 <style>
 .hero{border-top:6px solid #c98500;scroll-margin-top:64px}
 .score{font-size:16px;display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;margin-top:8px}
-.stars{font-size:13px;letter-spacing:-.05em}
 .qtitle{font-size:clamp(19px,5.6vw,24px);font-weight:800;display:flex;align-items:center;flex-wrap:wrap;gap:6px 8px;line-height:1.3;margin-top:10px}
 .qkey{background:var(--soft);border-radius:12px;padding:2px 12px}
 .qsub{color:var(--sub);font-size:15px;margin:4px 0 0}
@@ -43,6 +42,8 @@
 .stseg button.on small{color:var(--ink)}
 @media (min-width:600px){.seg.stseg{grid-template-columns:repeat(5,minmax(0,1fr))}.seg.stseg button:last-child{grid-column:auto}}
 .stdesc{font-size:14px;color:var(--sub);margin:6px 2px 0;line-height:1.45}
+.stnow{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:15px;padding-bottom:8px;border-bottom:1px dashed var(--line);margin-bottom:8px}
+.stnow .btn{min-height:40px;padding:2px 12px;font-size:14px}
 .stdesc b{color:var(--ink)}
 .rec{display:flex;flex-wrap:wrap;align-items:center;gap:2px 8px;margin-top:6px;font-size:14px;color:var(--sub);font-weight:700}
 .rec b{color:var(--ink)}
@@ -78,7 +79,6 @@
 .echoices.one{grid-template-columns:1fr}
 .echoice{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:72px;padding:8px 6px;border-radius:18px;
   background:var(--soft2);color:var(--t,var(--c));border:3px solid transparent;font-weight:800;line-height:1.25;text-align:center;min-width:0}
-.echoice:not([disabled]):active{transform:scale(.97)}
 .echoice .wd{font-size:24px}
 .echoice .wd.sm{font-size:16.5px;word-break:keep-all;overflow-wrap:anywhere}
 .echoice .lb{font-size:13px;font-weight:700}
@@ -104,6 +104,7 @@
 .abrow .btn small{font-size:13px;font-weight:700;color:var(--c)}
 .abrow .btn.on{background:var(--c);color:#fff}
 .abrow .btn.on small{color:#fff}
+.abrow .btn span svg.ic,.trybtns .btn span svg.ic{margin-right:4px} /* PA.icon と字のあいだ */
 .staffw{margin:0 auto}
 .sumtx{display:flex;flex-direction:column;line-height:1.35;padding:6px 0}
 .sumtx small{font-weight:400;color:var(--sub);font-size:13px}
@@ -260,7 +261,12 @@ const soundOff=()=>{if(PA.settings.sound) return false; Q.muteHint=true; render(
 /* ===== 画面 ===== */
 const N=n=>PA.nmH(n);
 const recOf=n=>Q.rec[n];
+// ステップのえらびかた：はじめての人（まだ1もんもこたえていない）と「かえる」をおしたときだけ大きくひらく。
+// ふだんは「ステップN：…［かえる］」の1行（こたえる画面の主役は もんだい なので）
+let stepOpen=null;
+const stepsOpen=()=>stepOpen!=null?stepOpen:!STEPS.some(s=>recOf(s.n).total>0);
 function stepsHTML(){
+  if(!stepsOpen()) return `<div class="stnow"><span><b>ステップ${Q.step}</b>：${ST(Q.step).name}</span><button class="btn small" data-act="pstepopen" aria-expanded="false">かえる</button></div>`;
   return `<div class="seg stseg" role="group" aria-label="ステップ">`+STEPS.map(s=>{
     const on=s.n===Q.step, done=recOf(s.n).best>=CLEAR;
     return `<button class="${on?'on':''}" data-act="pstep" data-v="${s.n}" aria-pressed="${on}" aria-label="ステップ${s.n}：${s.name}${done?`。${CLEAR}もんれんぞくできた`:''}">`
@@ -268,9 +274,9 @@ function stepsHTML(){
   }).join('')+`</div><p class="stdesc"><b>ステップ${Q.step}</b>：${ST(Q.step).desc}</p>`;
 }
 function scoreHTML(){
-  const r=recOf(Q.step);
-  return `<div class="score">⭐ ${r.right} / ${r.total}もん正解${r.hint?` <span class="note" style="margin:0">💡 ヒントでできた${r.hint}</span>`:''} <span class="note" style="margin:0">れんぞく${r.streak}</span> <span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(r.streak,10))}</span></div>`
-    +`<div class="rec">📒 ステップ${Q.step}のさいこう：<b>${r.best?`${r.best}もんれんぞく`:'まだないよ'}</b>${r.best>=CLEAR?'✓':`<span>（${CLEAR}もんれんぞくで ✓）</span>`}</div>`;
+  const r=recOf(Q.step), rec=stepsOpen(); // ステップごとのさいこうは、ステップをえらぶときだけ
+  return `<div class="score">⭐ ${r.right} / ${r.total}もん正解${r.hint?` <span class="note" style="margin:0">💡 ヒントでできた${r.hint}</span>`:''} <span class="note" style="margin:0">れんぞく${r.streak}</span></div>`
+    +(!rec?'':`<div class="rec">📒 ステップ${Q.step}のさいこう：<b>${r.best?`${r.best}もんれんぞく`:'まだないよ'}</b>${r.best>=CLEAR?'✓':`<span>（${CLEAR}もんれんぞくで ✓）</span>`}</div>`);
 }
 const sessHTML=()=>`<div class="sessrow">${sess.active()||sess.finished()?sess.progressHTML():`<button class="btn small" data-act="sess5">${PA.icon('session')}きょうの5もん</button>`}</div>`;
 const titleText=q=>q.type==='chord'?'「？」の和音は？':q.type==='bass'?'「？」の和音の、いちばん下の音は？':'いちばん上の音は、どう動いた？';
@@ -318,8 +324,8 @@ function tryHTML(){
   const what=q.type==='top'?'3つのならびを聴きくらべる':'「？」のところに入れて聴く';
   const sum=q.type==='top'?'3つのならびを<span class="nw">聴きくらべる</span>':Q.ans?'ほかのも「？」に<span class="nw">入れて聴く</span>':'ためしに「？」に<span class="nw">入れて聴く</span>';
   return `<details class="more trybox" data-d="try"><summary><span>💡 ${sum}</span></summary>
-    ${Q.ans?'':`<p class="note" style="margin:0">${what}よ。こたえる前に聴いても、×にはならないよ。正解すると「ヒントでできた」になるよ。</p>`}
-    <div class="trybtns">${ch.map(c=>{const on=Q.playing==='try:'+c;return `<button class="btn ${on?'on':''}" style="--c:${col(c)}" data-act="ptry" data-v="${c}" aria-pressed="${on}"><span>${on?'⏹ とめる':lab(c)}</span></button>`;}).join('')}</div></details>`;
+    ${Q.ans?'':PA.once('hint-rule',`<p class="note" style="margin:0">${what}よ。こたえる前に聴いても、×にはならないよ。正解すると「ヒントでできた」になるよ。</p>`)}
+    <div class="trybtns">${ch.map(c=>{const on=Q.playing==='try:'+c;return `<button class="btn ${on?'on':''}" style="--c:${col(c)}" data-act="ptry" data-v="${c}" aria-pressed="${on}"><span>${on?PA.icon('stop')+'とめる':lab(c)}</span></button>`;}).join('')}</div></details>`;
 }
 function abBtn(v,label,sub,color){
   const on=Q.playing===v;
@@ -333,7 +339,7 @@ function fbHTML(){
   h+=`<span class="sm">${P.why(q)}</span>`;
   if(!ok){
     if(q.type==='chord') h+=`<span class="sm">選んだ${E.LABEL[Q.ans]}は「${feel(Q.ans)}」。</span>`;
-    h+=`<div class="abrow">${abBtn('mine',PA.icon('listen')+'選んだほう',q.type==='top'?topLineOf(Q.ans).map(N).join('→<wbr>'):PA.esc(ansText(Q.ans)),col(Q.ans))}${abBtn('right',PA.icon('listen')+'正解',q.type==='top'?topLineOf(right).map(N).join('→<wbr>'):PA.esc(ansText(right)),col(right))}</div>`;
+    h+=`<div class="abrow">${abBtn('mine',PA.icon('repeat')+'選んだほう',q.type==='top'?topLineOf(Q.ans).map(N).join('→<wbr>'):PA.esc(ansText(Q.ans)),col(Q.ans))}${abBtn('right',PA.icon('repeat')+'正解',q.type==='top'?topLineOf(right).map(N).join('→<wbr>'):PA.esc(ansText(right)),col(right))}</div>`;
   }
   if(q.type==='top'){const on=Q.playing==='top';h+=`<div class="row"><button class="btn small ${on?'on':''}" data-act="ptop" aria-pressed="${on}">${on?PA.icon('stop')+'とめる':PA.icon('music')+'上の音だけ'}</button></div>`;}
   return h+`</div>`;
@@ -368,7 +374,7 @@ function tipsHTML(){
     <li><b>Ⅵ「Ⅰのかわり」</b>：Ⅰとにた和音。Ⅴ7のあとⅠのかわりに来ると「あれっ？」となる。</li>
     <li><b>いちばん下の音</b>：根音（和音の土台の音。${C(0)}${C(2)}${C(4)}なら${C(0)}）がいちばん下なら「基本の形」、第3音（${C(2)}）なら「第1転回形」、第5音（${C(4)}）なら「第2転回形」。</li>
     <li><b>いちばん上の音</b>：メロディーのように、上の音だけを追いかけて聴こう。</li>
-  </ul><p class="row" style="margin:10px 0 0"><a class="btn small" href="inversion.html">🔄 和音のかたち</a><a class="btn small" href="ending.html">🏁 おわりかた</a></p></details>`;
+  </ul><p class="row" style="margin:10px 0 0"><a class="btn small" href="inversion.html">${PA.icon('refresh')}和音のかたち</a><a class="btn small" href="ending.html">${PA.icon('flag')}おわりかた</a></p></details>`;
 }
 function render(){
   if(!Q.q) newQ();
@@ -385,7 +391,7 @@ function render(){
     <p class="qsub">${subText(q)}${Q.played||Q.ans?'':PA.once('prog-play','下の<b>聴く</b>をおすと鳴るよ。')}</p>
     ${cardsHTML(data,reveal)}
     <div class="keyline"><span class="kn">${PA.keyName(key)}（${PA.sigLabel(key)}）</span><button class="tgl" data-act="pslow" aria-pressed="${Q.slow}">🐢 ゆっくり</button></div>`;
-  if(Q.muteHint&&!PA.settings.sound) h+=`<div class="rinfo soundhint" role="status">🔇 音がオフだよ<button type="button" class="btn small" data-pa="sound-on">🔊 音を出す</button></div>`;
+  if(Q.muteHint&&!PA.settings.sound) h+=`<div class="rinfo soundhint" role="status">🔇 音がオフだよ<button type="button" class="btn small" data-pa="sound-on">${PA.icon('listen')}音を出す</button></div>`;
   if(Q.hint&&!Q.ans) h+=`<div class="msg" role="status" style="margin-top:10px">💡 ためしに入れて聴いたよ。正解すると「ヒントでできた」になるよ。</div>`;
   const cls=q.type==='top'?'one':`n${ch.length}${ch.length%2?' odd':''}`;
   h+=`<div class="echoices ${cls}">${ch.map(choiceHTML).join('')}</div>`;
@@ -450,7 +456,8 @@ document.addEventListener('click',e=>{
   const el=e.target.closest('[data-act]'); if(!el||el.disabled) return;
   const a=el.dataset.act, v=el.dataset.v;
   switch(a){
-    case 'pstep': {const n=+v; if(!isInt(n,1,5)||n===Q.step) return; stop(); setStep(n); newQ(); break;}
+    case 'pstep': {const n=+v; if(!isInt(n,1,5)) return; if(n===Q.step){stepOpen=false;break;} stop(); setStep(n); newQ(); stepOpen=false; break;}
+    case 'pstepopen': stepOpen=true; render(); {const f=document.querySelector('#view .stseg button.on');if(f) f.focus({preventScroll:true});} return;
     case 'pslow': Q.slow=!Q.slow; break;
     case 'preset': Q.rec[Q.step]=newRec(); break; // 2回おすたしかめは core
     case 'sess5': stop(); sess=PA.session(QUIZ,{sig:sigOf(Q.step)}); sess.start(5); Q.mixAt=0; Q.sum=false; goNext(); return;
@@ -462,7 +469,8 @@ document.addEventListener('click',e=>{
       if(!Q.ans&&Date.now()-askedAt<600) return; // 「つぎへ」の2どおしですぐ鳴りなおさないように
       listen(); return;
     case 'stop': if(freshPlay()) return; stop(); render(); return;
-    case 'ponly': if(Q.q.type==='top'||soundOff()) return; playOne(Q.q.i); return;
+    // 「つぎへ」の2どおしの2回めがここにおちても、鳴りはじめたならびを止めない
+    case 'ponly': if(Q.q.type==='top'||(!Q.ans&&Date.now()-askedAt<600)||soundOff()) return; playOne(Q.q.i); return;
     case 'pcard': {const i=+v, d=dataOf(); if(!isInt(i,0,d.length-1)) return; if(soundOff()) return; playOne(i); return;}
     case 'ptry': {
       if(P.choices(Q.q).indexOf(v)<0) return;
@@ -487,7 +495,10 @@ document.addEventListener('click',e=>{
     }
     case 'pans': {
       if(Q.ans||P.choices(Q.q).indexOf(v)<0) return;
+      // キーボード・読み上げでこたえたら、フォーカスは「つぎへ」へ（こたえのボタンは描きなおしで消える）
+      const kf=!!document.activeElement&&!!document.activeElement.dataset&&document.activeElement.dataset.act==='pans';
       stop(); answer(v); save(); Q.fresh=true; render();
+      if(kf){const n=document.querySelector('#actions [data-act="pnext"]');if(n) n.focus({preventScroll:true});}
       reveal(document.getElementById('fb')); return;
     }
     case 'pnext': {

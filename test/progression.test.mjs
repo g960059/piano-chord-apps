@@ -266,6 +266,15 @@ test('ためしに入れて聴く・くらべてきく：「？」に入れた�
           if(i>0) pp.push(...parallels(voices(s[i-1]),voices(x),true),...parallels(voices(s[i-1]),voices(x),false));
           if(s[i+1]) pp.push(...parallels(voices(x),voices(s[i+1]),true),...parallels(voices(x),voices(s[i+1]),false));
           assert.deepEqual(pp,[],ww);
+          // 増2度でとばない（短調のファ→ソ♯など）
+          [[s[i-1],x],[x,s[i+1]]].forEach(([P0,P1])=>{if(!P0||!P1) return;const A=voices(P0),B=voices(P1);
+            A.forEach((a,v)=>assert.ok(!(Math.abs(B[v].midi-a.midi)===3&&Math.abs(B[v].k-a.k)===1),ww+' 増2度'));});
+          // 「？」に入れたⅤ7・ⅤのあとがならびのとおりⅠ・Ⅵなら、右手のⅤ7の第7音は1つ下へ、いちばん上の導音は主音へ
+          if(type==='chord'&&(c==='V7'||c==='V')&&s[i+1]&&(s[i+1].ch==='I'||s[i+1].ch==='VI')){
+            const A=voices(x),B=voices(s[i+1]), sev=mod(E.ROOT.V7+6,7), lt=mod(E.ROOT.V+2,7);
+            if(c==='V7') for(let j=1;j<4;j++) if(mod(A[j].k,7)===sev) assert.equal(B[j].k,A[j].k-1,ww+' 第7音は下へ');
+            if(mod(A[3].k,7)===lt) assert.equal(B[3].k,A[3].k+1,ww+' 上の導音は主音へ');
+          }
           if(type==='chord'){assert.equal(x.ch,c); assert.equal(x.inv,0); assert.equal(pc(x.lh[0]),want[0]);}
           else{assert.equal(x.ch,d[i].ch); assert.equal(P.roleOf(x),c); assert.equal(pc(x.lh[0]),want[P.BASS_ROLES[c].d/2]);}
         });
