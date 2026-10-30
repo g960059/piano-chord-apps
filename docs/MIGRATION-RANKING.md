@@ -28,8 +28,9 @@
    - **Deploy command**：`npx wrangler deploy`
    - **Root directory**：`/`（からっぽ）
    - **Non-production branch deploy command**（ブランチの プレビュー）を つかう ときは `npx wrangler versions upload`。
-     ⚠️ プレビューも おなじ D1（ほんとうの ランキング）に つながります。プレビューで チャレンジを 送ると ランキングに のります。
-     気に なる ときは「Builds for non-production branches」を オフに してください。
+     プレビューは `wrangler.jsonc` の `"previews": {}` の 設定で うごき、D1 には つながりません。
+     プレビューの チャレンジは「オフライン」（ランキングなし）で あそべて、ほんとうの ランキングには のりません。
+     プレビューでも ランキングを ためしたい ときは、べつの D1 を つくって `previews.d1_databases` に 書きます（本番の D1 は 書かない）。
    - Node.js の バージョン：テストは Node.js 22.13 いじょうが ひつよう（`node:sqlite` を つかう）。
      ふつうは もう 22 いじょう です。ちがう ときは ビルドの 環境変数で `NODE_VERSION` を `22`（または `24`）に します。
 3. **Settings → Variables and Secrets** で **Add** → 種類 **Secret**、名前 `ADMIN_KEY`、値は 24文字 いじょうの ランダムな 文字

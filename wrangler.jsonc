@@ -31,5 +31,9 @@
   // 毎日 16:05 UTC（日本時間 1:05）に 古い run・塩・週の 記録を そうじする（無料プランで つかえる）
   "triggers": { "crons": ["5 16 * * *"] },
   // console.error などの ログだけ のこす。1回ごとの リクエストの 記録（URL・場所の 情報など）は のこさない
-  "observability": { "enabled": true, "logs": { "enabled": true, "invocation_logs": false } }
+  "observability": { "enabled": true, "logs": { "enabled": true, "invocation_logs": false } },
+  // ブランチの Preview（main いがい の ビルド）の 設定。Preview は 上の 設定を うけつがない。
+  // わざと D1 を つながない：Preview で あそんでも 本物の ランキングに のらない（/api は 501 → 画面は「オフライン」で あそべる）。
+  // Preview でも ランキングを ためしたい ときは、べつの D1（例 waon-ranking-preview）を つくって ここに "d1_databases" を 書く。
+  "previews": {}
 }

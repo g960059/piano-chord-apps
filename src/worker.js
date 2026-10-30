@@ -421,6 +421,8 @@ export async function handleApi(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '');
   const method = request.method;
+  // データベースが ない（ブランチの Preview など）：ランキングは おやすみ。501 なので 画面は「オフライン」で あそべる
+  if (!env || !env.DB) return err(501, 'ここでは ランキングは つかえないよ');
   if (path === '/api/run') return method === 'POST' ? createRun(request, env, ctx) : methodNotAllowed('POST');
   if (path === '/api/score') return method === 'POST' ? submitScore(request, env) : methodNotAllowed('POST');
   if (path === '/api/ranking') return method === 'GET' ? getRanking(url, env) : methodNotAllowed('GET');
@@ -458,6 +460,7 @@ export default {
   },
   // 毎日の そうじ（wrangler.jsonc の triggers.crons）
   async scheduled(controller, env, ctx) {
+    if (!env || !env.DB) return;
     const job = cleanup(env, (controller && controller.scheduledTime) || Date.now(), true);
     if (ctx && ctx.waitUntil) ctx.waitUntil(job); else await job;
   },
