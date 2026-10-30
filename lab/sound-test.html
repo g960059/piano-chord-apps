@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>音の聴き比べ（試作）</title>
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/app.css">
+<style>
+.page{padding-left:16px;padding-right:16px}
+.page>.card{margin-top:12px}
+h1{font-size:21px;margin:8px 0 4px}
+.lead{color:var(--sub);font-size:14px;margin:0}
+.srcs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.src{min-height:64px;overflow-wrap:anywhere;border-radius:14px;border:2px solid var(--line);background:var(--card);color:var(--ink);font:inherit;font-weight:700;font-size:15px;padding:6px 8px;line-height:1.25;cursor:pointer}
+.src small{display:block;font-weight:400;font-size:12px;color:var(--sub);margin-top:2px}
+.src.on{border-color:var(--ink);box-shadow:inset 0 0 0 1px var(--ink)}
+.src.playing{background:#fff4d6}
+.items{display:grid;gap:8px}
+.item{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px;align-items:center;border-top:1px solid var(--line);padding-top:8px}
+.item:first-child{border-top:none;padding-top:0}
+.item b{display:block;font-size:15px}
+.item span{display:block;font-size:12px;color:var(--sub)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.opts{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 10px;align-items:center;font-size:14px}
+.opts select{width:100%}
+.kb{position:relative;height:150px;user-select:none;-webkit-user-select:none;touch-action:none;margin-top:6px}
+.kb.wait{opacity:.5}
+.kb button{position:absolute;top:0;border:1px solid #8a8090;border-radius:0 0 6px 6px;padding:0;font:inherit;font-size:11px;display:flex;align-items:flex-end;justify-content:center;padding-bottom:6px}
+.kb .w{background:#fff;color:var(--sub);height:150px;z-index:1}
+.kb .b{background:#3a3245;color:#fff;height:92px;z-index:2}
+.kb button.down{background:#ffd76a}
+.meter{font-variant-numeric:tabular-nums;font-size:13px;color:var(--sub)}
+.meter b.hot{color:#c0392b}
+table{border-collapse:collapse;width:100%;font-size:13px;font-variant-numeric:tabular-nums}
+td,th{border-bottom:1px solid var(--line);padding:4px 6px;text-align:left;vertical-align:top}
+.scroll{overflow-x:auto}
+.rate{display:grid;grid-template-columns:auto minmax(0,1fr) minmax(0,1fr);gap:6px 8px;align-items:center;font-size:14px}
+.rate select{width:100%}
+textarea{width:100%;box-sizing:border-box;min-height:80px;font:inherit;font-size:16px;border:2px solid var(--line);border-radius:12px;padding:8px;background:var(--card);color:var(--ink)}
+.note{font-size:13px;color:var(--sub)}
+.loadst{margin:10px 0 0;font-size:14px;color:var(--sub)}
+.loadst.bad{color:#c0392b}
+[data-play][disabled],[data-seq][disabled]{opacity:.35}
+</style>
+</head>
+<body>
+<main class="page">
+  <h1>🎧 音の聴き比べ（試作）</h1>
+  <p class="lead">いまの音と、録音したピアノの音2つを比べます。ヘッドホンではなく、ふだん使う iPhone・iPad のスピーカーで聴いてみてください。録音の音は、ページを開くと読みこみます（2つで約8.5MB）。録音は、頭の無音をとって4.5秒・モノラルにしています（ほんとうに入れるときの形）。</p>
+
+  <section class="card">
+    <h2>音のもと<small id="blindNote">ボタンをおすと、その音で鳴ります。</small></h2>
+    <div class="srcs" id="srcs"></div>
+    <p class="loadst" id="loadst" role="status">録音を読みこんでいます…</p>
+    <div class="row" style="margin-top:10px">
+      <label class="row" style="gap:6px;font-size:14px"><input type="checkbox" id="blind"> かくして聴く（A・B・C に入れかえる）</label>
+      <button class="btn small" id="reveal" hidden>こたえを見る</button>
+      <button class="btn small" id="shuffle" hidden>入れかえなおす</button>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>聴くもの<small>▶＝えらんだ音で1回。「3つで」「A→B→C」＝同じものを3つの音でつづけて。</small></h2>
+    <div class="items" id="items"></div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn small" id="stop">■ とめる</button>
+      <span class="meter" id="meter">いちばん大きいところ：—</span>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>けんばん<small>ド3〜ド5。おすと、えらんだ音で鳴ります。</small></h2>
+    <div class="kb wait" id="kb"></div>
+  </section>
+
+  <section class="card">
+    <h2>せってい</h2>
+    <div class="opts">
+      <label for="a4">ラ（A4）</label>
+      <select id="a4"><option value="440">440Hz</option><option value="441">441Hz</option><option value="442">442Hz</option><option value="443">443Hz</option></select>
+      <label for="fix">録音の高さ</label>
+      <select id="fix"><option value="global">全体だけ直す</option><option value="each">1音ずつ直す</option><option value="raw">録音のまま</option></select>
+      <label for="comp">コンプレッサー</label>
+      <select id="comp"><option value="now">いまのアプリ</option><option value="soft">弱め</option><option value="off">なし</option></select>
+      <label for="stag">和音の鳴らしかた</label>
+      <select id="stag"><option value="0.012">いまのアプリ</option><option value="0">同時</option></select>
+    </div>
+    <ul class="note" style="padding-left:18px;margin:10px 0 0">
+      <li>録音の高さ：「全体だけ直す」は、まんなかの音が平均律になるように、ピアノ全体をそろえます（高い音・低い音の少しのずれはそのまま）。「1音ずつ直す」は、1つずつ平均律に合わせます。</li>
+      <li>和音：「いまのアプリ」は、下の音から12msずつずらして鳴らします。</li>
+      <li>音量は、ド4の最初の1秒の大きさを「いまの音」にそろえています。コンプレッサーを変えても、だいたい同じ大きさになるようにしています。</li>
+    </ul>
+  </section>
+
+  <section class="card">
+    <h2>聴いた感じ<small>5がいちばん良い。かくして聴くときは A・B・C のまま書けます。入れかえるたびに新しい回になり、前の回は「けっかをコピー」に入ります。</small></h2>
+    <div class="rate" id="rate"></div>
+    <p style="margin:10px 0 4px;font-size:14px">メモ</p>
+    <textarea id="memo" placeholder="例：Bは低い音がこもる。Cは減七と半減七のちがいがわかりやすい。"></textarea>
+    <div class="row" style="margin-top:8px">
+      <button class="btn small primary" id="copy">けっかをコピー</button>
+      <button class="btn small" id="clear">記録をぜんぶ消す</button>
+      <span class="note" id="copied"></span>
+    </div>
+    <textarea id="out" readonly hidden aria-label="コピーするけっか" style="margin-top:8px;min-height:160px"></textarea>
+  </section>
+
+  <section class="card">
+    <h2>はかったこと<small>読みこんだ録音の中身。ずれは A4＝440Hz の平均律とくらべたセント（100セント＝半音）。いちばん低い音・高い音は、はかりにくいので、たしかでないときはとなりの音の値を使います。</small></h2>
+    <div id="stats" class="scroll"><p class="note">読みこみがおわると、ここに出ます。</p></div>
+  </section>
+
+  <section class="card">
+    <h2>音のクレジット</h2>
+    <ul class="note" id="credits" style="padding-left:18px;margin:0"></ul>
+  </section>
+</main>
+<script src="sampler.js"></script>
+<script>
+(()=>{
+'use strict';
+const L=window.SoundLab, eng=new L.Engine(), $=id=>document.getElementById(id);
+const KEY='pianoapps.lab.sound';
+const SRC=Object.fromEntries(L.SOURCES.map(s=>[s.id,s]));
+const IDS=L.SOURCES.map(s=>s.id), SAMPLERS=L.SOURCES.filter(s=>s.kind==='sampler');
+const LET=['A','B','C'];
+
+/* ===== 記録（この端末だけ） ===== */
+// 1回＝1つの入れかた（map）での評価。かくしはじめる・やめる・入れかえるたびに、前の回を rounds にしまう
+let st;try{st=JSON.parse(localStorage.getItem(KEY));}catch(e){st=null;}
+if(!st||typeof st!=='object') st={};
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){}};
+const shuffleMap=()=>{const a=IDS.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+// 前の版の記録や、こわれた値は、ふつうの値にもどす
+if(!IDS.includes(st.cur)) st.cur='synth';
+st.blind=!!st.blind;st.revealed=!!st.revealed;
+if(!Array.isArray(st.map)||st.map.length!==IDS.length||!IDS.every(i=>st.map.includes(i))) st.map=shuffleMap();
+if(!st.ratings||typeof st.ratings!=='object'||Array.isArray(st.ratings)) st.ratings={};
+if(!Array.isArray(st.rounds)) st.rounds=[];
+st.memo=typeof st.memo==='string'?st.memo:'';
+if(!['global','each','raw'].includes(st.fix)) st.fix='global';
+if(!['now','soft','off'].includes(st.comp)) st.comp='now';
+st.stag=String(st.stag);if(!['0.012','0'].includes(st.stag)) st.stag='0.012';
+st.a4=+st.a4;
+if(![440,441,442,443].includes(st.a4)){
+  st.a4=440;
+  try{const s=JSON.parse(localStorage.getItem('pianoapps.settings'))||{};if([440,441,442,443].includes(s.pitchA)) st.a4=s.pitchA;}catch(e){}
+}
+const hidden=()=>st.blind&&!st.revealed; // どれがどの音か、まだ見せないとき
+const order=()=>st.blind?st.map:IDS;
+const label=id=>{
+  if(!st.blind) return SRC[id].name;
+  const l=LET[st.map.indexOf(id)];
+  return st.revealed?l+'＝'+SRC[id].name:l;
+};
+const settingsText=r=>`A4=${r.a4}Hz／高さ=${{global:'全体だけ直す',each:'1音ずつ直す',raw:'録音のまま'}[r.fix]}／コンプレッサー=${{now:'いまのアプリ',soft:'弱め',off:'なし'}[r.comp]}／和音=${r.stag==='0'?'同時':'12msずらし'}`;
+const hasContent=()=>st.memo.trim()||Object.values(st.ratings).some(r=>r&&(r.piano||r.ear));
+// いまの回をしまって、新しい回をはじめる
+function newRound(blind){
+  if(hasContent()) st.rounds.push({blind:st.blind,map:st.map.slice(),ratings:st.ratings,memo:st.memo,a4:st.a4,fix:st.fix,comp:st.comp,stag:st.stag});
+  st.ratings={};st.memo='';$('memo').value='';
+  st.blind=blind;st.revealed=false;st.map=shuffleMap();
+  if(blind) st.cur=st.map[0]; // えらんでいる枠は、いつも A から（前の音のまま動かすと、どれかわかってしまう）
+  save();drawSrcs();drawItems();drawRate();drawStats();drawRounds();drawLoad();
+}
+
+/* ===== 読みこみ ===== */
+let allReady=false, loadErr=null;
+function drawLoad(prog){
+  const el=$('loadst');el.classList.toggle('bad',!!loadErr);
+  if(loadErr){el.innerHTML=`読みこめませんでした。インターネットにつながっているか見てください。${hidden()?'':`<br><small>${loadErr}</small>`} <button class="btn small" id="retry">もう一度読む</button>`;return;}
+  if(!allReady){el.textContent=`録音を読みこんでいます… ${prog||''}`;return;}
+  el.textContent=hidden()?'用意できました。':'用意できました（'+SAMPLERS.map(s=>`${s.short} ${(s.bytes/1048576).toFixed(1)}MB`).join('・')+'）。';
+}
+async function loadAll(){
+  loadErr=null;const done={},all=SAMPLERS.reduce((n,s)=>n+s.samples.length,0);
+  drawLoad();
+  try{
+    await Promise.all(SAMPLERS.map(s=>eng.load(s,n=>{done[s.id]=n;drawLoad(Object.values(done).reduce((a,b)=>a+b,0)+'/'+all);})));
+    allReady=true;
+  }catch(e){loadErr=e&&e.message||String(e);}
+  drawLoad();drawItems();drawStats();$('kb').classList.toggle('wait',!allReady);
+}
+$('loadst').addEventListener('click',e=>{if(e.target.id==='retry') loadAll();});
+// 音を出すのは、さわったときだけ許される（iPhone）。どこかをさわったら、音の道を開ける
+['pointerup','touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>eng.ensure(),{capture:true,passive:true}));
+
+/* ===== 音のもと ===== */
+function drawSrcs(){
+  $('srcs').innerHTML=order().map(id=>{
+    const s=SRC[id], l=LET[st.map.indexOf(id)];
+    const top=!st.blind?`${s.short}<small>${s.piano}</small>`:st.revealed?`${l}＝${s.short}<small>${s.piano}</small>`:`${l}<small>　</small>`;
+    return `<button class="src${st.cur===id?' on':''}" data-src="${id}" aria-pressed="${st.cur===id}">${top}</button>`;
+  }).join('');
+  $('blindNote').textContent=st.blind?(st.revealed?'こたえを出しています。':'どれがどの音かは、かくしてあります。'):'ボタンをおすと、その音で鳴ります。';
+  $('reveal').hidden=!st.blind||st.revealed;$('shuffle').hidden=!st.blind;
+  $('blind').checked=st.blind;
+}
+$('srcs').addEventListener('click',e=>{
+  const b=e.target.closest('[data-src]');if(!b) return;
+  const id=b.dataset.src;
+  eng.ensure();eng.stop();clearSeq();st.cur=id;save();drawSrcs();
+  if(allReady||SRC[id].kind==='synth') eng.note(SRC[id],60,0,1.6,0.22);
+});
+$('blind').addEventListener('change',e=>{eng.stop();clearSeq();newRound(e.target.checked);});
+$('reveal').addEventListener('click',()=>{st.revealed=true;save();drawSrcs();drawRate();drawStats();drawLoad();});
+$('shuffle').addEventListener('click',()=>{eng.stop();clearSeq();newRound(true);});
+
+/* ===== 聴くもの ===== */
+// ev＝[when, midis, dur, opts]。ハ長調・イ短調、アプリでよく使う高さ
+const I=[60,64,67], Im=[60,63,67];
+const ITEMS=[
+  {id:'c4',t:'ド4（まんなかのド）',d:'1つの音',ev:[[0,[60],2.5]]},
+  {id:'low',t:'低いド（ド2）',d:'スピーカーで聴こえるか',ev:[[0,[36],3]]},
+  {id:'high',t:'高いド（ド6）',d:'かたすぎないか',ev:[[0,[84],2]]},
+  {id:'scale',t:'ドレミファソラシド',d:'音がそろっているか',ev:[60,62,64,65,67,69,71,72].map((m,i)=>[i*0.32,[m],0.5])},
+  {id:'maj',t:'長三和音（ド・ミ・ソ）',d:'',ev:[[0,I,2.5]]},
+  {id:'min',t:'短三和音（ド・ミ♭・ソ）',d:'',ev:[[0,Im,2.5]]},
+  {id:'majmin',t:'長三和音→短三和音',d:'つづけて聴きわける',ev:[[0,I,1.6],[1.9,Im,2.2]]},
+  {id:'dim',t:'減七→半減七',d:'シ・レ・ファ・ラ♭とシ・レ・ファ・ラ',ev:[[0,[59,62,65,68],1.8],[2.1,[59,62,65,69],2.4]]},
+  {id:'v7i',t:'Ⅴ7→Ⅰ',d:'ソ・シ・ファ・ソ → ド・ド・ミ・ソ',ev:[[0,[43,59,65,67],1.4],[1.5,[48,60,64,67],2.4]]},
+  {id:'cad',t:'Ⅰ→Ⅳ→Ⅴ7→Ⅰ',d:'おわりの形',ev:[[0,[48,64,67,72],0.95],[1,[41,65,69,72],0.95],[2,[43,65,67,71],0.95],[3,[48,64,67,72],2.4]]},
+  {id:'arp',t:'分散和音',d:'ド・ミ・ソ・ドを1つずつ',ev:[[0,[60,64,67,72],1.6,{arp:true}]]},
+  {id:'acc',t:'伴奏の形',d:'ド・ソ・ミ・ソ×2 → ド・ラ・ファ・ラ×2',ev:[48,55,52,55,48,55,52,55,48,57,53,57,48,57,53,57].map((m,i)=>[i*0.22,[m],0.4])},
+  {id:'lowch',t:'低い和音',d:'ド2＋ド3・ミ3・ソ3（にごらないか）',ev:[[0,[36,48,52,55],2.5]]},
+];
+const len=it=>Math.max(...it.ev.map(([w,ms,d,o])=>w+d+(o&&o.arp?(ms.length-1)*(o.gap||0.36):0)));
+function playItem(it,id,when){
+  const s=SRC[id];
+  it.ev.forEach(([w,ms,d,o])=>{if(ms.length===1&&!(o&&o.arp)) eng.note(s,ms[0],when+w,d,0.22);else eng.chord(s,ms,when+w,d,o);});
+}
+function drawItems(){
+  const dis=allReady?'':' disabled';
+  $('items').innerHTML=ITEMS.map(it=>`<div class="item"><div><b>${it.t}</b>${it.d?`<span>${it.d}</span>`:''}</div>
+    <button class="btn small" data-play="${it.id}" aria-label="${it.t}を鳴らす"${dis}>▶</button>
+    <button class="btn small" data-seq="${it.id}" aria-label="${it.t}を3つの音でつづけて"${dis}>${st.blind?'A→B→C':'3つで'}</button></div>`).join('');
+}
+let seqTimers=[];
+function clearSeq(){seqTimers.forEach(clearTimeout);seqTimers=[];document.querySelectorAll('.src.playing').forEach(b=>b.classList.remove('playing'));}
+$('items').addEventListener('click',e=>{
+  const p=e.target.closest('[data-play]'), q=e.target.closest('[data-seq]');
+  if((!p&&!q)||!allReady) return;
+  eng.ensure();eng.stop();clearSeq();
+  if(p){playItem(ITEMS.find(x=>x.id===p.dataset.play),st.cur,0);return;}
+  const it=ITEMS.find(x=>x.id===q.dataset.seq), ids=order(), gap=len(it)+0.9;
+  ids.forEach((id,i)=>{
+    playItem(it,id,i*gap);
+    seqTimers.push(setTimeout(()=>{document.querySelectorAll('.src').forEach(b=>b.classList.toggle('playing',b.dataset.src===id));},i*gap*1000));
+  });
+  seqTimers.push(setTimeout(clearSeq,ids.length*gap*1000));
+});
+$('stop').addEventListener('click',()=>{eng.stop();clearSeq();});
+// 音がわれていないか：鳴っている間のいちばん大きいところ
+let peak=-Infinity,peakAt=0;
+(function tick(){
+  const db=eng.peakDb(), now=performance.now();
+  if(db>peak||now-peakAt>2500){peak=db;peakAt=now;}
+  $('meter').innerHTML=isFinite(peak)?`いちばん大きいところ：<b class="${peak>-1?'hot':''}">${peak.toFixed(1)} dB</b>${peak>-1?'（われそう）':''}`:'いちばん大きいところ：—';
+  requestAnimationFrame(tick);
+})();
+
+/* ===== けんばん ===== */
+(function drawKb(){
+  const lo=48,hi=72,BL=new Set([1,3,6,8,10]),whites=[];
+  for(let m=lo;m<=hi;m++) if(!BL.has(m%12)) whites.push(m);
+  const W=100/whites.length;let h='';
+  whites.forEach((m,i)=>{h+=`<button class="w" data-m="${m}" style="left:${i*W}%;width:${W}%" aria-label="${L.noteName(m)}">${m%12===0?L.noteName(m).replace('C','ド'):''}</button>`;});
+  for(let m=lo;m<=hi;m++) if(BL.has(m%12)){const i=whites.indexOf(m-1);h+=`<button class="b" data-m="${m}" style="left:${(i+1)*W-W*0.3}%;width:${W*0.6}%" aria-label="${L.noteName(m)}"></button>`;}
+  $('kb').innerHTML=h;
+})();
+// iPhone では、さいしょのタッチの pointerdown ではまだ音の道が開かない。そのときは指をはなしたときに鳴らす
+let kbPending=null;
+const kbPlay=m=>eng.note(SRC[st.cur],m,0,1.4,0.24);
+$('kb').addEventListener('pointerdown',e=>{
+  const k=e.target.closest('[data-m]');if(!k||!allReady) return;
+  e.preventDefault();
+  k.classList.add('down');setTimeout(()=>k.classList.remove('down'),180);
+  if(eng.ctx&&eng.ctx.state==='running'){kbPlay(+k.dataset.m);kbPending=null;}
+  else kbPending=+k.dataset.m;
+});
+$('kb').addEventListener('pointerup',()=>{if(kbPending!==null){eng.ensure();kbPlay(kbPending);kbPending=null;}});
+$('kb').addEventListener('click',e=>{ // キーボード（Tab と Enter）でもひけるように
+  const k=e.target.closest('[data-m]');if(!k||!allReady||e.detail) return;
+  eng.ensure();kbPlay(+k.dataset.m);
+});
+
+/* ===== せってい ===== */
+const applyOpts=()=>{eng.a4=+st.a4;eng.fix=st.fix;eng.stagger=+st.stag;eng.comp=st.comp;if(eng.ctx) eng.setComp(st.comp);};
+['a4','fix','comp','stag'].forEach(k=>{
+  $(k).value=String(st[k]);
+  $(k).addEventListener('change',e=>{st[k]=k==='a4'?+e.target.value:e.target.value;save();eng.ensure();applyOpts();});
+});
+
+/* ===== 聴いた感じ ===== */
+function drawRate(){
+  const opt=v=>`<option value="">—</option>`+[1,2,3,4,5].map(n=>`<option${String(v)===String(n)?' selected':''}>${n}</option>`).join('');
+  $('rate').innerHTML=`<span></span><b style="font-size:13px">ピアノらしさ</b><b style="font-size:13px">聴きわけやすさ</b>`+
+    order().map(id=>{const r=st.ratings[id]||{};return `<span>${label(id)}</span><select data-r="${id}:piano" aria-label="${label(id)}のピアノらしさ">${opt(r.piano)}</select><select data-r="${id}:ear" aria-label="${label(id)}の聴きわけやすさ">${opt(r.ear)}</select>`;}).join('');
+}
+$('rate').addEventListener('change',e=>{const [id,k]=e.target.dataset.r.split(':');(st.ratings[id]=st.ratings[id]||{})[k]=e.target.value;save();});
+$('memo').value=st.memo;
+$('memo').addEventListener('input',e=>{st.memo=e.target.value;save();});
+function drawRounds(){$('copied').textContent=st.rounds.length?`前の回：${st.rounds.length}回ぶん`:'';}
+function roundText(r,n){
+  const lines=[`■ ${n}回目（${r.blind?'かくして聴く：'+r.map.map((id,i)=>LET[i]+'＝'+SRC[id].name).join('、'):'かくさずに聴いた'}）`,'せってい：'+settingsText(r)];
+  (r.blind?r.map:IDS).forEach((id,i)=>{const x=r.ratings[id]||{};lines.push(`${r.blind?LET[i]+'＝':''}${SRC[id].name}：ピアノらしさ ${x.piano||'—'}／聴きわけやすさ ${x.ear||'—'}`);});
+  if(r.memo.trim()) lines.push('メモ：'+r.memo.trim());
+  return lines.join('\n');
+}
+$('copy').addEventListener('click',async()=>{
+  const cur={blind:st.blind,map:st.map,ratings:st.ratings,memo:st.memo,a4:st.a4,fix:st.fix,comp:st.comp,stag:st.stag};
+  const all=st.rounds.concat(hasContent()?[cur]:[]);
+  const text=['音の聴き比べ（試作）のけっか',`端末：${navigator.userAgent}`,''].concat(all.length?all.map((r,i)=>roundText(r,i+1)):['（まだ評価がありません）']).join('\n');
+  $('out').hidden=true;
+  try{await navigator.clipboard.writeText(text);$('copied').textContent='コピーしました';}
+  catch(e){$('out').value=text;$('out').hidden=false;$('out').select();$('copied').textContent='自動でコピーできないので、下の文をえらんでコピーしてください';}
+});
+$('clear').addEventListener('click',()=>{
+  if(!confirm('評価とメモを、前の回もふくめてぜんぶ消します。いいですか？')) return;
+  st.rounds=[];st.ratings={};st.memo='';$('memo').value='';$('out').hidden=true;save();drawRate();drawRounds();
+});
+
+/* ===== はかったこと ===== */
+function drawStats(){
+  if(hidden()){$('stats').innerHTML='<p class="note">かくして聴いている間は出しません。「こたえを見る」と出ます。</p>';return;}
+  const rows=SAMPLERS.filter(s=>s.ready);
+  if(!rows.length){$('stats').innerHTML='<p class="note">読みこみがおわると、ここに出ます。</p>';return;}
+  let h='<table><tr><th>音</th><th>ファイル</th><th>ダウンロード</th><th>メモリ（元→4.5秒・モノラル）</th><th>全体のずれ</th><th>1音ずつのずれ（最小〜最大）</th><th>頭の無音（最大）</th></tr>';
+  rows.forEach(s=>{
+    const c=s.ready.filter(x=>x.sure).map(x=>x.cents), on=s.ready.map(x=>x.headMs);
+    h+=`<tr><td>${s.name}</td><td>${s.ready.length}</td><td>${(s.bytes/1048576).toFixed(2)}MB</td><td>${(s.fullMemory/1048576).toFixed(0)}MB→${(s.memory/1048576).toFixed(1)}MB</td>
+      <td>${s.globalCents>=0?'+':''}${s.globalCents.toFixed(1)}セント（A4＝${(440*Math.pow(2,s.globalCents/1200)).toFixed(1)}Hz くらい）</td><td>${Math.min(...c).toFixed(1)}〜${Math.max(...c).toFixed(1)}</td><td>${Math.max(...on).toFixed(0)}ms</td></tr>`;
+  });
+  h+='</table>';
+  rows.forEach(s=>{
+    h+=`<details style="margin-top:8px"><summary style="font-size:14px">${s.name}：1つずつ</summary><table><tr><th>音</th><th>はかったずれ</th><th>たしかさ</th><th>1音ずつで使うずれ</th><th>頭の無音</th></tr>`+
+      s.ready.map(x=>`<tr><td>${L.noteName(x.midi)}</td><td>${x.cents>=0?'+':''}${x.cents.toFixed(1)}</td><td>${x.clarity.toFixed(2)}</td><td>${x.sure?'同じ':(x.fixCents>=0?'+':'')+x.fixCents.toFixed(1)+'（となりの音から）'}</td><td>${x.headMs.toFixed(0)}ms</td></tr>`).join('')+'</table></details>';
+  });
+  $('stats').innerHTML=h;
+}
+$('credits').innerHTML=L.SOURCES.filter(s=>s.credit).map(s=>`<li>${s.credit}</li>`).join('')+'<li>この試作では、録音を作者の公開場所（GitHub Pages）から直接読みこんでいます。</li>';
+
+applyOpts();drawSrcs();drawItems();drawRate();drawRounds();
+loadAll();
+window.soundTest={eng,SRC,ITEMS,playItem}; // しらべる用
+})();
+</script>
+</body>
+</html>
