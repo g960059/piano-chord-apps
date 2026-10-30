@@ -95,14 +95,14 @@ details.fold[open]>summary{margin-bottom:10px}
 <div class="actionbar" id="actions"></div>
 <script src="assets/core.js"></script>
 <script>
-/* 異名同音の 読みかえ（画面では 家族を ①②③ と よぶので、2つの 話は 🔀・↔️ で わける）：
- *  🔀 減七の和音は 3つの家族だけ。おなじ けんばんを 4つの 短調の 減七（Ⅴ9 の 根音省略）として 書きわけると、4つの 調へ 解決する（第9音が いちばん下の 読みは Ⅰ6/4 → Ⅴ → Ⅰ）
+/* 異名同音の 読みかえ（画面では 減七の なかまを ①②③ と よぶので、2つの 話は 🔀・↔️ で わける）：
+ *  🔀 減七の和音は 3つの なかまだけ。おなじ けんばんを 4つの 短調の 減七（Ⅴ9 の 根音省略）として 書きわけると、4つの 調へ 解決する（第9音が いちばん下の 読みは Ⅰ6/4 → Ⅴ → Ⅰ）
  *  ↔️ ドイツの6 と Ⅴ7/♭Ⅱ（ふだんは たたんで おく）：おなじ けんばん、♯4 と ♭5 の 書きかえで、行き先が Ⅴ と ♭Ⅱ に わかれる
  * 和音の つづり・高さ・解決は すべて PA.henka（dimReadings・ger6Vs7）と PA.chroma（↔️ は aug6.html と おなじ 高さ・名前：gerSet）、Ⅴ→Ⅰ は vToI */
 const H=PA.henka;
 const NIGHT='#3b4fa8', LT='#d1495b', LOW='#2f7ee8', VCOL='#2f7ee8', GER='#8a4fe0', V7C='#1f8a5b', GHOST='#9b9184', ICOL=PA.COL.I;
 const RCOL=['#e07a00','#22a06b','#2f7ee8','#8a4fe0']; // 4つの 読みかた（行き先）の 色
-// 減七の 3つの家族（Ⅴの家族の ページと おなじ 書き方）。家族 i ＝ 導音の 高さを 3で わった あまり
+// 減七の 3つの なかま（Ⅴの家族の ページと おなじ 書き方）。家族 i ＝ 導音の 高さを 3で わった あまり
 // よびかたは ①②③（Ａ・Ｂ・Ｃ だと 音の 名前（CDE）と まちがえやすい）
 const DIM_FAMS=[[[0,0],[2,-1],[4,-1],[5,0]],[[0,1],[2,0],[4,0],[6,-1]],[[1,0],[3,0],[5,-1],[6,0]]];
 const FAM_NO=['①','②','③'];
@@ -165,7 +165,7 @@ function easiestIn(f){
   const rs=H.dimReadings(famPcs(f));
   return rs.reduce((a,r)=>!a||PA.sigInfo(r.key).letters.length<PA.sigInfo(a.key).letters.length?r:a,null).key.idx;
 }
-// けんばんの はんい：3つの家族 ぜんぶ（どの 読みかた・解決でも おなじ はんいの けんばん）
+// けんばんの はんい：3つの なかま ぜんぶ（どの 読みかた・解決でも おなじ はんいの けんばん）
 const whiteDown=m=>{while(PA.BLACK.has(PA.mod(m,12)))m--;return m;};
 const whiteUp=m=>{while(PA.BLACK.has(PA.mod(m,12)))m++;return m;};
 const kbRange=lists=>{const ms=lists.flat().filter(Boolean).map(n=>n.midi);return [whiteDown(Math.min(...ms)-2),whiteUp(Math.max(...ms)+2)];};
@@ -233,7 +233,7 @@ function view(){
   return {rs,si,r:rs[si],res};
 }
 function famButtons(){
-  return `<div class="fams">`+DIM_FAMS.map((ns,i)=>`<button class="fbtn ${i===state.fam?'on':''}" data-act="fam" data-v="${i}" aria-pressed="${i===state.fam}"><span class="num">${FAM_NO[i]}の家族</span><span class="nm">${PA.namesH(ns.map(([l,a])=>({letter:l,acc:a})))}</span></button>`).join('')+`</div>`;
+  return `<div class="fams">`+DIM_FAMS.map((ns,i)=>`<button class="fbtn ${i===state.fam?'on':''}" data-act="fam" data-v="${i}" aria-pressed="${i===state.fam}"><span class="num">${FAM_NO[i]}の なかま</span><span class="nm">${PA.namesH(ns.map(([l,a])=>({letter:l,acc:a})))}</span></button>`).join('')+`</div>`;
 }
 function staticMsg(r){
   const key=r.key, t=tonicOf(key), root=PA.at(key.harm,4);
@@ -263,7 +263,7 @@ function enhExample(rs){
 function heroCard(){
   const {rs,si,r,res}=view(), A=state.anim, ex=enhExample(rs);
   const ms=rs[0].spelling.map(n=>n.midi).sort((a,b)=>b-a);
-  let h=`<section class="card hero"><h2>🔀 減七の 読みかえ<small>${FAM_NO[state.fam]}の家族を、4つの 調の 減七として 書きわけると…</small></h2>
+  let h=`<section class="card hero"><h2>🔀 減七の 読みかえ<small>${FAM_NO[state.fam]}の なかまを、4つの 調の 減七として 書きわけると…</small></h2>
     <div class="rule">同じ けんばん、ちがう 名前、ちがう 行き先</div>
     <p class="note" style="color:var(--ink)">${ex.map(q).join('と')}のように、<b>おなじ けんばんで 名前が ちがう 音</b>を「異名同音」と いうよ。${aug2Msg(rs,r)}</p>`;
   h+=`<table class="rt"><thead><tr>`+rs.map((x,i)=>`<th><button class="rk ${i===si?'on':''}" style="--rc:${RCOL[i]}" data-act="pick" data-v="${x.key.idx}" aria-pressed="${i===si}">${PA.keyName(x.key)}<small>${PA.keyEn(x.key)}</small></button></th>`).join('')+`</tr></thead><tbody>`;
@@ -391,7 +391,7 @@ function gerCard(){
 }
 function linksCard(){
   return `<details class="card fold" data-d="links"><summary><h2>🔗 つながる アプリ<small>Ⅴの家族・増六の和音・減七と 半減七</small></h2></summary><div class="links">
-    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族 <small>Ⅴ9 の 根音を はぶくと 減七（3つの家族）</small></button>
+    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族 <small>Ⅴ9 の 根音を はぶくと 減七（3つの なかま）</small></button>
     <button class="btn" data-act="go" data-v="aug6">↔️ 増六の和音 <small>イタリア・フランス・ドイツの6</small></button>
     <button class="btn" data-act="go" data-v="dim-halfdim">⚖️ 減七と 半減七 <small>ちがうのは 第7音だけ</small></button>
   </div></details>`;
@@ -413,7 +413,7 @@ function termsHTML(){
     <dt>異名同音<span class="yomi">（いめい どうおん）</span></dt>
       <dd>名前（書き方）は ちがうけれど、けんばんは おなじ 音（${ex.map(q).join('と')} など）。調にも あって、嬰ヘ長調と 変ト長調は おなじ けんばんの 調。</dd>
     <dt>転調<span class="yomi">（てんちょう）</span></dt>
-      <dd>曲の とちゅうで べつの 調へ うつる こと。この ページの 2つの 読みかえ（🔀 減七・↔️ ドイツの6）は、音の 名前を 書きかえて うつる やりかた（本では「異名同音的転調<span class="yomi">（いめいどうおんてき てんちょう）</span>」と 書く）。1つの 減七は、書き方を かえると 4つの 短調の Ⅶ7 に なる（${FAM_NO[state.fam]}の家族なら ${rs.map(x=>PA.keyName(x.key)).join('・')}）ので、遠い 調へも いっきに 行けるよ。おなじ 主音の 長調の ○Ⅶ7（準固有和音）と 読めば、長調へも 行ける。</dd>
+      <dd>曲の とちゅうで べつの 調へ うつる こと。この ページの 2つの 読みかえ（🔀 減七・↔️ ドイツの6）は、音の 名前を 書きかえて うつる やりかた（本では「異名同音的転調<span class="yomi">（いめいどうおんてき てんちょう）</span>」と 書く）。1つの 減七は、書き方を かえると 4つの 短調の Ⅶ7 に なる（${FAM_NO[state.fam]}の なかまなら ${rs.map(x=>PA.keyName(x.key)).join('・')}）ので、遠い 調へも いっきに 行けるよ。おなじ 主音の 長調の ○Ⅶ7（準固有和音）と 読めば、長調へも 行ける。</dd>
     <dt>解決<span class="yomi">（かいけつ）</span></dt>
       <dd>ドキドキする 和音が、おちつく 和音（Ⅰ など）へ すすむ こと。この ページの「Ⅰへ すすむ」の こと。</dd>
     <dt>増2度<span class="yomi">（ぞう 2ど）</span></dt>
@@ -426,7 +426,7 @@ let lastActions='';
 function render(){
   const key=curKey(), A=state.anim;
   let h=`<div class="stack">
-    <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">減七は 3つの 家族だけ</span></div>
+    <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">減七は 3つの なかまだけ</span></div>
     ${famButtons()}
     ${heroCard()}
     ${kbCard()}
@@ -473,7 +473,7 @@ async function runTour(){
   const rs=readingsOf(state.keyIdx), A={i:0,stage:0,msg:''}; state.anim=A; state.res=0; state.quiz=null;
   const upd=m=>{if(m!==undefined)A.msg=m;render();};
   const wait=async ms=>{await PA.sleep(ms);return alive();};
-  upd(`<b>${FAM_NO[state.fam]}の家族</b>の 減七を、4つの 調の 名前で 書いて、それぞれ Ⅰへ すすめてみよう。<b>けんばんは ずっと おなじ</b> だよ。`);
+  upd(`<b>${FAM_NO[state.fam]}の なかま</b>の 減七を、4つの 調の 名前で 書いて、それぞれ Ⅰへ すすめてみよう。<b>けんばんは ずっと おなじ</b> だよ。`);
   PA.chord(midis(rs[0].spelling),{dur:1.6});
   if(!await wait(2000)) return;
   for(let i=0;i<rs.length;i++){

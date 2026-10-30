@@ -63,8 +63,8 @@
 .actionbar:empty{display:none}
 .qnow{display:flex;align-items:center;flex-wrap:wrap;gap:4px 10px;margin-top:10px;padding-top:8px;border-top:1px dashed var(--line);font-size:14px;color:var(--sub)}
 .qnow b{color:var(--ink)}
-.qnow .btn{min-height:40px;padding:4px 14px;font-size:14px}
-.score .btn.small{min-height:40px;padding:4px 12px;font-size:14px;margin-left:auto}
+.qnow .btn{min-height:44px;padding:2px 12px;font-size:14px}
+.score .btn.small{min-height:44px;padding:2px 10px;font-size:14px;margin-left:auto}
 .onlynote{margin:10px 0 0;display:flex;flex-direction:column;gap:6px}
 .onlynote .btn{align-self:flex-start}
 .microw{justify-content:center;margin-top:10px}
@@ -141,8 +141,19 @@ function sameKeyIds(id){
   const tpc=PA.keyOf(k.minor,k.idx).tpc;
   return KD.ids({tier:'all',modes:[k.minor?'minor':'major']}).filter(x=>{const p=KD.parse(x);return PA.keyOf(p.minor,p.idx).tpc===tpc;});
 }
-// ⭐の 数えかた（1もんめの 答えだけ）：ヒントや「つくりかた」を 見て できた ときは せいかいに かぞえず、れんぞくも そのまま
-function scoreAnswer(s,ok,hinted){s.total++;if(ok&&!hinted){s.right++;s.streak++;}else if(!ok) s.streak=0;return s;}
+// ⭐の 数えかた（1もんめの 答えだけ）：ヒントや「つくりかた」を 見て できた ときは「じぶんで」には かぞえず hinted に（×では ない）。れんぞくも そのまま
+function scoreAnswer(s,ok,hinted){
+  s.total++;
+  if(ok&&!hinted){s.right++;s.streak++;}
+  else if(ok){if(typeof s.hinted==='number') s.hinted++;}
+  else s.streak=0;
+  return s;
+}
+// ⭐の 行（ただの 文字）：ヒントで できた ものが あれば べつに 出す（まちがいに 見えないように）
+function scoreText(s){
+  const h=s.hinted||0;
+  return h?`⭐ じぶんで ${s.right}・💡 ヒントで ${h} ／ ${s.total}もん`:`⭐ ${s.right} / ${s.total} もん せいかい`;
+}
 // </cq-logic>
 const ROM=['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ'];
 // まえの「調号の数（〜つまで）」＝ 0〜N の 調 → 出る 調が いちばん 近い むずかしさ（ちがう 調の 数が 少ない もの）。
@@ -161,13 +172,28 @@ const keyNameOfId=id=>{const p=KD.parse(id);return p?PA.keyName(PA.keyOf(p.minor
 
 /* ===== 状態（せってい・スコアは 保存する） =====
  * peeked＝こたえる まえに「つくりかたを 見る」を おした。hint＝💡ヒントの 段（0〜2）。どちらかで できたら「ヒントで できた」
- * only＝この 調だけ（id。チェック表の ます→onlyBy 'pick'、リンクの key→'link'）。view＝'quiz'｜'summary'（れんしゅうの 回の けっか） */
-const Q={type:'keys',tier:'all',weak:true,keyset:'major',chords:{I:true,IV:true,V:true,V7:true},right:0,total:0,streak:0,openSet:false,
+ * only＝この 調だけ（id。チェック表の ます→onlyBy 'pick'、リンクの key→'link'）。view＝'quiz'｜'summary'（れんしゅうの 回の けっか）
+ * hinted＝ヒントを 見て できた 数（right には 入れない。×でも ない）
+ * BASE＝生徒が じぶんで えらんだ せってい（ほぞんする）。RUN＝リンクの せってい（その 1回だけ。BASE は かえない）
+ *   RUN＝{type,tier,keyset,chords,key,sig,id}。sig＝リンクで はじめた 回の しるし、id＝この れきしの ページ（history.state.cqLink）
+ *   RUN は「もどる」の 読みなおし（おなじ れきしの ページ）と、その リンクの 回の つづきの ときだけ つかう */
+const Q={type:'keys',tier:'all',weak:true,keyset:'major',chords:{I:true,IV:true,V:true,V7:true},right:0,total:0,hinted:0,streak:0,openSet:false,
   q:null,qid:0,picked:new Set(),checked:false,result:null,recorded:false,lastOk:null,hint:0,peeked:false,wasHint:false,byMic:false,choices:null,chosen:null,
   only:null,onlyBy:null,view:'quiz'};
 const LINK=linkSettings(PA.params());
 const isInt=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
 let deck=null, deckOne=null, sess=null, lastQ=null; // lastQ＝ひらいたとき、まえに 出ていた もんだい（つづけて おなじ もんだいに しない）
+let BASE=null, RUN=null;
+const settingsOf=o=>({type:o.type,tier:o.tier,keyset:o.keyset,chords:Object.assign({},o.chords)});
+// ほぞんした RUN を たしかめて よむ（形が ちがえば null）
+function readRun(r){
+  if(!r||typeof r!=='object'||!TYPES.includes(r.type)||!TIER_IDS.includes(r.tier)||!KEYSETS.some(([v])=>v===r.keyset)) return null;
+  if(!r.chords||typeof r.chords!=='object'||typeof r.id!=='string'||typeof r.sig!=='string') return null;
+  const c={}; CHORD_IDS.forEach(k=>c[k]=r.chords[k]===true);
+  if(!Object.values(c).some(x=>x)) return null;
+  const k=typeof r.key==='string'?KD.parse(r.key):null;
+  return {type:r.type,tier:r.tier,keyset:r.keyset,chords:c,key:k&&k.id===r.key?k.id:null,sig:r.sig,id:r.id};
+}
 const validQ=q=>!!q&&typeof q==='object'&&typeof q.minor==='boolean'&&isInt(q.keyIdx,0,PA.keyCount(q.minor)-1)&&Object.prototype.hasOwnProperty.call(CHORDS,q.chord);
 
 /* ===== 🎤 マイク（assets/mic.js）。phase：off・intro（はじめての 説明）・wait（じゅんび中）・on（きいている）・error ===== */
@@ -192,25 +218,39 @@ function stopMic(){
     }
   }
   if(typeof d.weak==='boolean') Q.weak=d.weak;
-  if(isInt(d.total,0,1e6)&&isInt(d.right,0,d.total)&&isInt(d.streak,0,d.right)){Q.total=d.total;Q.right=d.right;Q.streak=d.streak;}
+  if(isInt(d.total,0,1e6)&&isInt(d.right,0,d.total)&&isInt(d.streak,0,d.right)){
+    Q.total=d.total;Q.right=d.right;Q.streak=d.streak;
+    if(isInt(d.hinted,0,d.total-d.right)) Q.hinted=d.hinted;
+  }
   Q.openSet=d.openSet===true;
-  // リンクの せってい（この 回は これで。ほぞんも する）
-  if(LINK.type) Q.type=LINK.type;
-  if(LINK.tier) Q.tier=LINK.tier;
-  if(LINK.keyset) Q.keyset=LINK.keyset;
-  if(LINK.chords) Q.chords=Object.assign({},LINK.chords);
+  BASE=settingsOf(Q);
   // れんしゅうの 回：リンクに n が あれば その 回（おなじ リンクの とちゅうなら つづき）。なければ のこっている 回を よむ
   sess=LINK.n?PA.session(QUIZ,{n:LINK.n,sig:linkSig(LINK)}):PA.session(QUIZ);
-  if(LINK.key){Q.only=LINK.key;Q.onlyBy='link';}
-  else if(!LINK.n&&d.onlyBy==='pick'&&typeof d.only==='string'&&KD.parse(d.only)&&sess.n()>0){Q.only=KD.parse(d.only).id;Q.onlyBy='pick';} // チェック表の 3もんの つづき
-  else if(!Object.keys(LINK).length){ // key つきの リンクで はじめた 回の つづき（ホームから ひらいても その 調だけ。べつの リンクで ひらいた ときは しない）
-    const st=sess.state(), m=st?/^key=([Mm]\d{1,2})(?:&|$)/.exec(st.sig):null, k=m?KD.parse(m[1]):null;
-    if(k&&k.id===m[1]){Q.only=k.id;Q.onlyBy='link';}
+  let st=sess.state();
+  if(sess.finished()){ // おわった 回：おわって すぐ（「もどる」の 読みなおし）か リンクの n の ときだけ けっかを 出す
+    const recent=!!st&&st.endedAt!=null&&Date.now()-st.endedAt<10*6e4;
+    if(recent||LINK.n) Q.view='summary';
+    else{sess.clear();st=null;}
   }
-  if(sess.finished()){
-    const st=sess.state(), recent=!!st&&st.endedAt!=null&&Date.now()-st.endedAt<10*6e4;
-    if(d.view==='summary'||recent||LINK.n) Q.view='summary';
-    else{sess.clear();if(Q.onlyBy==='pick'||!LINK.key){Q.only=null;Q.onlyBy=null;}}
+  // リンクの せってい（その 1回だけ。BASE は かえない）
+  let histId=null; try{histId=history.state&&history.state.cqLink||null;}catch(e){}
+  if(Object.keys(LINK).length){
+    RUN={type:LINK.type||BASE.type,tier:LINK.tier||BASE.tier,keyset:LINK.keyset||BASE.keyset,chords:Object.assign({},LINK.chords||BASE.chords),
+      key:LINK.key||null,sig:LINK.n?linkSig(LINK):'',id:String(Date.now())};
+  }else{
+    const R=readRun(d.run);
+    // おなじ れきしの ページの 読みなおし（「つくりかたを 見る」から もどった など）か、その リンクで はじめた 回の つづき
+    if(R&&((histId&&histId===R.id)||(R.sig&&st&&st.sig===R.sig))) RUN=R;
+  }
+  // リンクの パラメータは 1回だけ つかう：アドレスから けす（読みなおしても リンクで もとに もどさない）
+  if(location.search){try{history.replaceState({cqLink:RUN&&Object.keys(LINK).length?RUN.id:histId},'',PA.url(QUIZ)+location.hash);}catch(e){}}
+  if(RUN){
+    Object.assign(Q,{type:RUN.type,tier:RUN.tier,keyset:RUN.keyset,chords:Object.assign({},RUN.chords)});
+    if(RUN.key){Q.only=RUN.key;Q.onlyBy='link';}
+  }
+  // チェック表の 3もんの つづき
+  if(!Q.only&&!Object.keys(LINK).length&&d.onlyBy==='pick'&&typeof d.only==='string'&&KD.parse(d.only)&&st&&st.sig==='pick='+KD.parse(d.only).id){
+    Q.only=KD.parse(d.only).id;Q.onlyBy='pick';
   }
   deck=KD.create({quiz:QUIZ,tier:Q.tier,modes:modesOf(Q.keyset),weak:Q.weak});
   deckOne=KD.create({quiz:QUIZ,tier:'all',modes:CHECK_MODES,weak:false}); // 「この 調だけ」の ときに つかう（むずかしさ・長調／短調に かかわらず）
@@ -229,8 +269,11 @@ function stopMic(){
     }else lastQ=s;
   }
 })();
+// せっていは BASE を ほぞん。リンクの 回（RUN）の あいだに かえた ものは RUN だけに 入れる
 function save(){
-  PA.store.set('chord-quiz',{type:Q.type,tier:Q.tier,weak:Q.weak,keyset:Q.keyset,chords:Q.chords,right:Q.right,total:Q.total,streak:Q.streak,openSet:Q.openSet,
+  if(RUN){Object.assign(RUN,settingsOf(Q));RUN.key=Q.onlyBy==='link'?Q.only:null;}
+  else BASE=settingsOf(Q);
+  PA.store.set('chord-quiz',{type:BASE.type,tier:BASE.tier,weak:Q.weak,keyset:BASE.keyset,chords:BASE.chords,right:Q.right,total:Q.total,hinted:Q.hinted,streak:Q.streak,openSet:Q.openSet,run:RUN,
     q:Q.q?{minor:Q.q.minor,keyIdx:Q.q.keyIdx,chord:Q.q.chord}:null,answered:isDone(),scored:Q.result!==null,recorded:Q.recorded,peeked:Q.peeked,hint:Q.hint,
     only:Q.only,onlyBy:Q.onlyBy,view:Q.view,deck:deck.state()});
 }
@@ -511,7 +554,7 @@ function render(){
   const q=Q.q, key=keyOfQ(q), c=CHORDS[q.chord], col=PA.COL[q.chord], t=chordTones(key,q.chord), done=isDone();
   let h=`<div class="stack">${PA.seg('qtype',[['keys','🎹 けんばんで おさえる'],['choice','✋ 4つから えらぶ']],Q.type,'full')}
     <section class="card hero" style="--c:${col}">
-      <div class="score">⭐ ${Q.right} / ${Q.total} もん せいかい <span>れんぞく ${Q.streak}</span> ${'🌟'.repeat(Math.min(Q.streak,10))}${sessHead()}</div>
+      <div class="score">${scoreText(Q)} <span>れんぞく ${Q.streak}</span> ${'🌟'.repeat(Math.min(Q.streak,10))}${sessHead()}</div>
       <div class="qwrap"><div class="qtext">
         <div class="qtitle"><span class="qkey">${PA.keyName(key)}</span><span>の</span><span class="badge sm" style="--c:${col}">${c.label}</span><span>は？</span></div>
         <div class="qsub">${PA.sigLabel(key)}・${c.n}つの音</div></div>
@@ -568,11 +611,14 @@ function clearOnly(){
 function ensureQuestion(){if(!Q.q||isDone()||!inPool(Q.q)) newQuestion();}
 // れんしゅうの 回を はじめる とき：もう かぞえた もんだい（×のあと「もういちど」の とちゅう）は 回に 入らないので 新しい もんだいに
 function freshQuestion(){if(Q.result!==null) newQuestion(); else ensureQuestion();}
-// 「じゆうに れんしゅう」：アドレスから n を はずす（読みなおしても また n もんの 回に ならないように。ほかの リンクの せっていは のこす）
-function dropLinkN(){
-  if(!LINK.n) return;
-  LINK.n=0;
-  try{history.replaceState(null,'',PA.url('chord-quiz',{key:LINK.key||null,chord:LINK.chords?CHORD_IDS.filter(x=>LINK.chords[x]).join(','):null,mode:LINK.type||null,tier:LINK.tier||null,keyset:LINK.keyset||null}));}catch(e){}
+// リンクの せってい（RUN）を おわりにして、生徒が じぶんで えらんだ せってい（BASE）に もどす
+function endRun(){
+  if(!RUN) return;
+  RUN=null;
+  Object.assign(Q,settingsOf(BASE));
+  if(Q.onlyBy==='link'){Q.only=null;Q.onlyBy=null;}
+  deck.setOptions({tier:Q.tier,modes:modesOf(Q.keyset)});
+  try{history.replaceState({cqLink:null},'',location.href);}catch(e){}
 }
 
 /* ===== 操作 ===== */
@@ -594,7 +640,7 @@ document.addEventListener('click',e=>{
     case 'qkeyset': if(Q.keyset===v||!KEYSETS.some(([x])=>x===v)) return; Q.keyset=v; clearOnly(); deck.setOptions({modes:modesOf(v)}); newQuestion(); break;
     case 'qweak': Q.weak=!Q.weak; deck.setOptions({weak:Q.weak}); break; // えらべる 調は かわらないので ふくろの のこりは そのまま。つぎの ふくろから
     case 'qchord': if(!Object.prototype.hasOwnProperty.call(CHORDS,v)) return; Q.chords[v]=!Q.chords[v]; if(!Object.values(Q.chords).some(x=>x)) Q.chords[v]=true; newQuestion(); break;
-    case 'qonlyoff': clearOnly(); newQuestion(); break;
+    case 'qonlyoff': clearOnly(); endRun(); newQuestion(); break; // ふつうの れんしゅう＝じぶんの せってい
     case 'qsetopen': {
       Q.openSet=true; save(); render();
       const d=document.getElementById('qsetd'); if(!d) return;
@@ -608,6 +654,7 @@ document.addEventListener('click',e=>{
       const k=KD.parse(v); if(!k||k.id!==v) return;
       Q.only=k.id; Q.onlyBy='pick'; Q.view='quiz';
       sess=PA.session(QUIZ,{sig:'pick='+k.id}); sess.start(3);
+      if(RUN) RUN.sig=sess.state().sig; // リンクの せってい（こたえかた・和音）の まま。つづきも おなじ せっていで
       PA.stopSound(); newQuestion(); save(); render();
       const d=document.getElementById('kdcheck'); if(d) d.open=false;
       PA.scrollTop(); return;
@@ -615,14 +662,16 @@ document.addEventListener('click',e=>{
     case 'sess5': // きょうの 5もん（いまの せっていで。チェック表の「この 調だけ」は やめる）
       if(Q.onlyBy==='pick'){Q.only=null;Q.onlyBy=null;}
       sess=PA.session(QUIZ,{sig:linkSig({key:Q.only,chords:Q.chords,type:Q.type,tier:Q.tier,keyset:Q.keyset})}); sess.start(5);
+      if(RUN) RUN.sig=sess.state().sig; // リンクの せっていの まま はじめた 回：ホームから ひらいても この せっていで つづき
       freshQuestion(); break;
     case 'session-again': if(!sess) return; sess.start(sess.n()); Q.view='quiz'; freshQuestion(); save(); render(); PA.scrollTop(); return;
     case 'session-free':
+      // じゆうに れんしゅう：リンクの せっていも「この 調だけ」も やめて、じぶんの せっていに もどる
       if(sess) sess.clear();
-      dropLinkN();
-      if(Q.onlyBy==='pick'||!LINK.key){Q.only=null;Q.onlyBy=null;} // アドレスに key が ある ときだけ「この 調だけ」を のこす
-      Q.view='quiz'; ensureQuestion(); save(); render(); PA.scrollTop(); return;
-    case 'qreset': Q.right=Q.total=Q.streak=0; break;
+      endRun();
+      Q.only=null; Q.onlyBy=null;
+      Q.view='quiz'; newQuestion(); save(); render(); PA.scrollTop(); return;
+    case 'qreset': Q.right=Q.total=Q.hinted=Q.streak=0; break;
     case 'qcheck': if(Q.type!=='keys'||Q.checked||!Q.picked.size) return; checkKeys(); save(); render(); showFeedback(); return;
     case 'qclear': Q.picked=new Set(); break;
     case 'qhint': Q.hint=Math.min(2,Q.hint+1); break;

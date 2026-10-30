@@ -32,7 +32,7 @@
 .lbl .cnt{font-weight:400;font-size:13px}
 /* 曲：やさしい順に 横に ならべて スクロール（スマホ） */
 .songs{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
-  margin-inline:-16px;padding:2px 16px 6px;scroll-padding-inline:16px;scrollbar-width:thin}
+  margin-left:-16px;margin-right:-16px;padding:2px 16px 6px;scroll-padding-left:16px;scroll-padding-right:16px;scrollbar-width:thin}
 .song{flex:none;width:160px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;
   min-height:72px;padding:7px 8px;border-radius:14px;background:var(--card);border:2px solid var(--line)}
 .song.on{border-color:var(--ink);box-shadow:0 2px 0 #eadfce}
@@ -43,7 +43,7 @@
 .song .used{display:flex;gap:4px;flex-wrap:wrap}
 /* iPad など：ぜんぶの曲を ならべて 見せる（横スクロールで 切れた カードを のこさない）。スマホの 横向きは 1行の まま */
 @media (min-width:700px) and (min-height:501px){
-  .songs{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));overflow:visible;margin-inline:0;padding:2px 0 4px}
+  .songs{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));overflow:visible;margin-left:0;margin-right:0;padding:2px 0 4px}
   .song{width:auto}
   .lbl .swipe{display:none}
 }
@@ -52,7 +52,7 @@
 .toprow .note{margin:0;flex:1 1 200px;font-size:14px}
 /* 調の ボタンと 🎲（せまい 画面では 2つで 1行、メモは その下） */
 .keyrow{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
-.dice{padding-inline:14px;font-size:15px;white-space:nowrap}
+.dice{padding-left:14px;padding-right:14px;font-size:15px;white-space:nowrap}
 .toprow .note.keymsg{color:var(--ink)}
 .randset{margin-top:8px}
 .randset>summary{font-size:15px}
@@ -66,7 +66,7 @@
 .hit{cursor:pointer;scroll-margin-top:calc(72px + env(safe-area-inset-top,0px));scroll-margin-bottom:calc(185px + env(safe-area-inset-bottom,0px))}
 .banner{background:var(--model);color:var(--modelink);border-radius:12px;padding:6px 12px;font-weight:700;font-size:15px;margin-top:8px}
 .btns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
-.btns .btn{padding-inline:8px;font-size:15px;white-space:normal;line-height:1.25}
+.btns .btn{padding-left:8px;padding-right:8px;font-size:15px;white-space:normal;line-height:1.25}
 .btns .wide{grid-column:1/-1}
 .btn.reveal{background:var(--model);color:var(--modelink)}
 .fb{margin-top:10px}
@@ -81,7 +81,7 @@
 .fit thead th.first{background:#fff0c9}
 .fit thead th.blank{background:none;min-width:0}
 .fit thead th.cnth{font-size:12px;color:var(--sub);font-weight:400;white-space:nowrap}
-.fit tbody th{text-align:left;white-space:nowrap;background:var(--l);color:var(--c);font-weight:800;padding-inline:8px}
+.fit tbody th{text-align:left;white-space:nowrap;background:var(--l);color:var(--c);font-weight:800;padding-left:8px;padding-right:8px}
 .fit tbody th small{display:block;font-weight:700;font-size:11.5px;white-space:normal}
 .fit tbody th small .nw{white-space:nowrap}
 .fit td.y{background:#dcf5e8;color:#137a4f;font-weight:800}
@@ -97,7 +97,7 @@
 input[type=range]{accent-color:var(--ink);height:32px}
 input[type=checkbox]{flex:none;width:22px;height:22px;accent-color:var(--ink)}
 /* パレット（いつも 下に くっつく。親指で えらべる） */
-.palbar{position:sticky;bottom:0;z-index:20;margin-inline:-16px;padding:6px 12px calc(8px + env(safe-area-inset-bottom,0px));
+.palbar{position:-webkit-sticky;position:sticky;bottom:0;z-index:20;margin-left:-16px;margin-right:-16px;padding:6px 12px calc(8px + env(safe-area-inset-bottom,0px));
   background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
   box-shadow:0 -4px 12px rgba(80,60,30,.10);border-radius:16px 16px 0 0;border-top:1px solid var(--line)}
 .selrow{display:flex;align-items:center;gap:6px}
@@ -123,7 +123,7 @@ input[type=checkbox]{flex:none;width:22px;height:22px;accent-color:var(--ink)}
 }
 /* iPad など：パレットが 横に のびすぎないように、中みを まん中に まとめる */
 @media (min-width:700px){
-  .palbar>.selrow,.palbar>.palette{max-width:640px;margin-inline:auto}
+  .palbar>.selrow,.palbar>.palette{max-width:640px;margin-left:auto;margin-right:auto}
 }
 /* スマホを 横にしたとき：パレットを 1行に まとめて うすくし、がくふが 見えるように */
 @media (max-height:500px) and (orientation:landscape){
@@ -984,13 +984,19 @@ document.addEventListener('change',e=>{
 document.addEventListener('input',e=>{
   if(e.target.id==='tempo'){state.tempo=+e.target.value;save();const tv=document.getElementById('tempoVal');if(tv)tv.textContent=state.tempo;}
 });
-document.addEventListener('pointerdown',e=>{if(e.target&&e.target.id==='tempo')tempoDrag=true;});
+const tempoDown=e=>{if(e.target&&e.target.id==='tempo')tempoDrag=true;};
+document.addEventListener('pointerdown',tempoDown);
+if(!window.PointerEvent){ // iOS 12 の Safari など：Pointer Events が ないので タッチ・マウスで
+  document.addEventListener('touchstart',tempoDown,{passive:true});
+  document.addEventListener('mousedown',tempoDown);
+}
 function endTempoDrag(){
   if(!tempoDrag) return;
   tempoDrag=false;
   if(deferRender) setTimeout(()=>{if(tempoDrag||!deferRender)return;deferRender=false;render();},0); // change の あとで
 }
 document.addEventListener('pointerup',endTempoDrag);
+if(!window.PointerEvent){document.addEventListener('touchend',endTempoDrag);document.addEventListener('touchcancel',endTempoDrag);document.addEventListener('mouseup',endTempoDrag);}
 document.addEventListener('pointercancel',()=>{
   endTempoDrag();
 });

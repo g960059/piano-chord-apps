@@ -13,7 +13,9 @@
   padding-bottom:env(safe-area-inset-bottom,0px);
 }
 *{box-sizing:border-box}
-html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%;
+  /* キーボードで うごいた ところが 上と 下の バーの 下に かくれない */
+  scroll-padding-top:calc(64px + env(safe-area-inset-top,0px));scroll-padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
 body{font-family:var(--font);font-size:16px;line-height:1.6;-webkit-tap-highlight-color:transparent}
 body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
@@ -24,7 +26,7 @@ select{font:inherit;font-size:16px;min-height:44px;padding:6px 10px;border-radiu
 [hidden]{display:none!important}
 
 /* ===== 上のバー ===== */
-.appbar{position:sticky;top:env(safe-area-inset-top,0px);z-index:30;display:flex;align-items:center;gap:6px;min-height:56px;
+.appbar{position:-webkit-sticky;position:sticky;top:env(safe-area-inset-top,0px);z-index:30;display:flex;align-items:center;gap:6px;min-height:56px;
   padding:6px max(10px,env(safe-area-inset-right,0px)) 6px max(10px,env(safe-area-inset-left,0px));
   background:rgba(253,248,240,.94);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
 .appbar h1{flex:1;min-width:0;margin:0;font-size:18px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
@@ -32,7 +34,7 @@ select{font:inherit;font-size:16px;min-height:44px;padding:6px 10px;border-radiu
 @media (hover:hover){.iconbtn:hover{filter:brightness(.97)}}
 
 /* ===== ページ ===== */
-.page{max-width:760px;margin:0 auto;padding-block:12px 24px;
+.page{max-width:760px;margin:0 auto;padding-top:12px;padding-bottom:24px;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .page.wide{max-width:1040px}
 .stack{display:flex;flex-direction:column;gap:12px}
@@ -46,11 +48,11 @@ select{font:inherit;font-size:16px;min-height:44px;padding:6px 10px;border-radiu
 .grid2>*{min-width:0}
 
 /* ===== 下のボタンバー（親指で おしやすい位置） ===== */
-.actionbar{position:sticky;bottom:0;z-index:25;display:flex;gap:8px;justify-content:center;
+.actionbar{position:-webkit-sticky;position:sticky;bottom:0;z-index:25;display:flex;gap:8px;justify-content:center;
   padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));
   background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid var(--line);
   margin-bottom:calc(-1 * env(safe-area-inset-bottom,0px))}
-.actionbar .btn{flex:1 1 0;min-width:0;max-width:280px;padding-inline:6px;font-size:15px;white-space:nowrap;letter-spacing:-.01em}
+.actionbar .btn{flex:1 1 0;min-width:0;max-width:280px;padding-left:6px;padding-right:6px;font-size:15px;white-space:nowrap;letter-spacing:-.01em}
 
 /* ===== ボタン ===== */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:10px 16px;border-radius:999px;
@@ -63,7 +65,7 @@ select{font:inherit;font-size:16px;min-height:44px;padding:6px 10px;border-radiu
 .btn.small{min-height:44px;padding:6px 14px;font-size:15px}
 .btn[disabled]{opacity:.4;cursor:default}
 .seg{display:inline-flex;flex-wrap:wrap;gap:2px;padding:3px;border-radius:22px;background:var(--soft)}
-.seg button{min-height:44px;padding:6px 14px;border-radius:20px;font-weight:700;font-size:15px}
+.seg button{min-height:44px;padding:6px 14px;border-radius:20px;font-weight:700;font-size:15px;word-break:keep-all;overflow-wrap:anywhere}
 .seg button.on{background:var(--card);box-shadow:0 1px 3px rgba(0,0,0,.12)}
 .seg.full{display:flex}
 .seg.full button{flex:1 1 0}
@@ -138,8 +140,15 @@ button,.btn,.seg,.keychip,.kbtn,.appcard,.choice{-webkit-user-select:none;user-s
   .appbar{min-height:46px;padding-top:3px;padding-bottom:3px}
   .appbar h1{font-size:16px}
   .actionbar{padding-top:5px;padding-bottom:calc(5px + env(safe-area-inset-bottom,0px))}
-  .actionbar .btn{min-height:44px;padding-block:6px}
-  .page{padding-block:8px 16px}
+  .actionbar .btn{min-height:44px;padding-top:6px;padding-bottom:6px}
+  .page{padding-top:8px;padding-bottom:16px}
+}
+/* とても せまい 画面（320px など）：下の バーの 3つの ボタンの 文字が はみださないように */
+@media (max-width:359px){
+  .actionbar{gap:6px;padding-left:max(8px,env(safe-area-inset-left,0px));padding-right:max(8px,env(safe-area-inset-right,0px))}
+  .actionbar .btn{font-size:13.5px;padding-left:4px;padding-right:4px;letter-spacing:-.03em}
+  .seg button{padding-left:8px;padding-right:8px}
+  .seg.full button{flex:1 1 auto} /* 長い ことばの ボタンを すこし 広く（ことばの とちゅうで おれない） */
 }
 /* iPad など：1行が 長くなりすぎないように ページの はばは そのまま、ボタンバーも まん中に まとめる */
 @media (min-width:700px){
@@ -183,7 +192,7 @@ dialog.sheet.pa-fb>.sheet-in{width:100%;max-width:640px;background:var(--card);b
 @media (min-width:1000px){
   .page.duo{max-width:1180px}
   .duo-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
-  .duo-side{position:sticky;top:calc(64px + env(safe-area-inset-top,0px))}
+  .duo-side{position:-webkit-sticky;position:sticky;top:calc(64px + env(safe-area-inset-top,0px))}
 }
 
 /* ===== 学ぶ ページの「ためしてみる」カード（PA.tryHTML。色は 行き先の アプリの 種類） ===== */
@@ -226,3 +235,15 @@ dialog.sheet.pa-fb>.sheet-in{width:100%;max-width:640px;background:var(--card);b
 /* チェック表の ます（pickable） */
 .kd-cell{cursor:pointer}
 @media (hover:hover){.kd-cell:hover{filter:brightness(.97)}}
+
+/* ===== 古い iPhone・iPad（Safari 14.0 まで）：flex の gap が ないので、すきまを margin で つくる =====
+   inset は flex の gap と おなじ Safari 14.1 から。新しい ブラウザには きかない */
+@supports not (inset:0){
+  .row>*+*,.actionbar>*+*,.appbar>*+*,.sheet-head>*+*,.keychip>*+*{margin-left:8px}
+  .chips>*+*,.btn>*+*{margin-left:6px}
+  .setrow>*+*{margin-left:12px}
+  .seg>*+*{margin-left:2px}
+  .row>*,.chips>*{margin-top:3px;margin-bottom:3px}
+  .stack>*+*,.duo-grid>*+*{margin-top:12px}
+  @media (min-width:1000px){.duo-grid>*+*{margin-top:0}}
+}

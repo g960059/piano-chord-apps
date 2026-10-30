@@ -64,6 +64,8 @@
 /* 和音のしくみ：各調の Ⅰ・Ⅳ・Ⅴ・Ⅴ7 を「音階の なんばんめ」から「ひとつとばし」で つくる */
 const CHORDS={I:{deg:0,n:3,label:'Ⅰ'},IV:{deg:3,n:3,label:'Ⅳ'},V:{deg:4,n:3,label:'Ⅴ'},V7:{deg:4,n:4,label:'Ⅴ7'}};
 const ROM=['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ'];
+// 「ためしてみる」の 和音クイズ：Ⅰ・Ⅳ・Ⅴ と、いま 見ている 和音（Ⅴ7 なら たす）
+const tryChords=ch=>['I','IV','V'].concat(ch==='V7'?['V7']:[]);
 // 文字に つかう こい色（PA.COL の うすい 地の 上でも 読みやすい こさ）
 const DK={I:'#b8361f',IV:'#127048',V:'#1c5bb8',V7:'#6a32c0'};
 const GREY='#6f667a'; // 小さな 字の グレー（白の 上でも 読みやすい こさ）
@@ -211,8 +213,9 @@ function render(){
   if(shown.length){const st=PA.stepOf(shown[0]);staffNote=`ひとつとばし だから、この和音は <b>${(st-30)%2===0?'線・線・線':'間・間・間'}</b> に ならぶよ。`;}
   h+=`<section class="card"><h2>🎼 がくふ</h2><div class="scroll" data-sk="staff">${PA.staffSVG(key,[{notes:shown,color:col,ltColor:'#d1495b',accColor:'#d1495b'}],{minW:220})}</div><p class="note">${staffNote}</p></section></div></div>`;
   h+=`<div class="duo-grid"><div class="stack"><details class="more tips"><summary>💡 おぼえかたの コツ</summary>${tipsHTML(key)}</details>${termsHTML(key,ch,tones)}</div>`
-    +PA.tryHTML({to:'chord-quiz',params:{key:kid,chord:ch,mode:'keys',n:3},
-      title:`<span class="nw">${PA.keyName(key)}の</span> <span class="nw">${c.label}を</span> <span class="nw">じぶんで</span> <span class="nw">つくって</span> みよう`,
+    // おなじ 調の Ⅰ・Ⅳ・Ⅴ（いま 見ている 和音も 入れる）。和音が かわるので 3もんとも おなじ もんだいに ならない
+    +PA.tryHTML({to:'chord-quiz',params:{key:kid,chord:tryChords(ch).join(','),mode:'keys',n:3},
+      title:`<span class="nw">${PA.keyName(key)}の</span> <span class="nw">${tryChords(ch).map(x=>CHORDS[x].label).join('・')}を</span> <span class="nw">じぶんで</span> <span class="nw">つくって</span> みよう`,
       sub:'「和音クイズ」で けんばんを おさえて 3もん。',btn:'🎯 けんばんで 3もん',
       links:[{to:'cadence',params:{key:kid},label:'🎵 カデンツで きく'},{to:'chord-table',params:{key:kid,chord:ch},label:'📋 いちらん表で 見る'}]})+`</div>`;
   PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx);

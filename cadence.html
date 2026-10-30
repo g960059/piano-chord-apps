@@ -28,7 +28,7 @@
 <link rel="stylesheet" href="assets/app.css">
 <style>
 .toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
-.formseg button{line-height:1.25;padding-block:6px}
+.formseg button{line-height:1.25;padding-top:6px;padding-bottom:6px}
 .formseg button small{display:block;font-weight:400;font-size:12px;color:var(--sub)}
 .seqlabel{margin:0 0 -4px;font-size:14px;color:var(--sub)}
 .seq{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:5px}
@@ -49,7 +49,7 @@
 .handblk:first-of-type{margin-top:0} /* 広い画面では 名前を けんばんの 左はしに そろえる */
 .kbw{margin:0 auto}
 .staffw{margin:0 auto}
-.actionbar .btn{padding-inline:4px;gap:4px;overflow:hidden}
+.actionbar .btn{padding-left:4px;padding-right:4px;gap:4px;overflow:hidden}
 .actionbar .btn.nx{flex-grow:.6}
 .nw{white-space:nowrap}
 .msgs{display:grid;margin-top:10px}
@@ -57,7 +57,7 @@
 .lbl-n{display:none}
 @media (max-width:359px){
   .actionbar{gap:6px}
-  .actionbar .btn{font-size:14px;gap:2px;padding-inline:3px;letter-spacing:-.03em}
+  .actionbar .btn{font-size:14px;gap:2px;padding-left:3px;padding-right:3px;letter-spacing:-.03em}
   .lbl-w{display:none}.lbl-n{display:inline}
 }
 .more ul{margin:0;padding-left:1.3em}
@@ -72,7 +72,7 @@
 .terms rt{font-weight:400;font-size:.6em;color:var(--sub)}
 /* 広い 画面（2れつ）：右の れつに けんばんと がくふが ぜんぶ 入るように、けんばんは 左手・右手を よこに ならべ、がくふは 大きく しすぎない */
 @media (min-width:1000px){
-  .duo-side .kbcard{padding-inline:10px}
+  .duo-side .kbcard{padding-left:10px;padding-right:10px}
   .duo-side .kbpair{display:grid;gap:8px;align-items:start} /* れつの はばは 白鍵の 数の わりあい（インラインの grid-template-columns）。左手は いつも ぜんぶ 見える はば、右手は 入りきらなければ よこに スクロール */
   .duo-side .handblk{margin:0 auto;width:100%}
   .duo-side .handblk.kbl{order:-1} /* ピアノと おなじ：左に 左手 */

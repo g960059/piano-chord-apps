@@ -174,7 +174,7 @@ function shapeCard(key,f){
   const rootL=PA.at(key.harm,4).letter;
   let h=`<h2>🧩 かたちで おぼえる<small>計算しないで、パッと わかるように</small></h2>`;
   if(f!=='DIM'){
-    h+=`<p class="note" style="margin-top:0;color:var(--ink)">白鍵だけの 和音は 7つ。これを まるごと おぼえて、あとは 臨時記号で かえる。<br><b style="color:#c98500">ミファ・シド を またぐと せまい 3度（短3度）</b>、またがなければ ひろい 3度（長3度）。</p>`;
+    h+=`<p class="note" style="margin-top:0;color:var(--ink)">白鍵だけの 和音は 7つ。これを まるごと おぼえて、あとは 臨時記号で かえる。<br><b style="color:#8f5a00">ミファ・シド を またぐと せまい 3度（短3度）</b>、またがなければ ひろい 3度（長3度）。</p>`;
     h+=['長','短','減'].map(q=>{
       const mine=WHITE_TRIADS.some(w=>w[1]===q&&w[0]===rootL);
       return `<div class="srow ${mine?'on':''}"><b>${q}</b><div class="chips" style="margin:0">${WHITE_TRIADS.filter(w=>w[1]===q).map(([L])=>{
@@ -252,7 +252,7 @@ function render(){
     if(R) bassOf(key,f,'V').forEach(n=>marks.set(n.midi,{fill:'#c9d0f0',tc:'#24316f',label:PA.nm(n),sub:'左手',subColor:NIGHT}));
   }
   const kbCap=R&&state.res===2?'Ⅰ（おちついた 和音）・左手の ベースは 左の ほう（←）':R?`${FAM[f].label}${f==='DIM'?'':'・左手の ベースは 左の ほう（←）'}`:'赤＝導音。さわると 音が出るよ';
-  h+=`<section class="card"><h2>🎹 けんばん<small>${kbCap}　<span style="color:#c98500">オレンジの印＝ミファ・シド（白鍵どうしが となり）</span></small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(45,89,marks)}</div></section>`;
+  h+=`<section class="card"><h2>🎹 けんばん<small>${kbCap}　<span style="color:#8f5a00">オレンジの印＝ミファ・シド（白鍵どうしが となり）</span></small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(45,89,marks)}</div></section>`;
 
   // がくふ（Ⅴの家族 → Ⅰ の 解決）
   const arrows=[];

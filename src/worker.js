@@ -96,12 +96,14 @@ export function ipKey(ip) {
   return full.slice(0, 4).map(x => x.replace(/^0+(?=.)/, '')).join(':') + '::/64';
 }
 
+// 安全用の ヘッダー：ここの ものは Worker が かえす 応答（/api/*・見つからない ページ）だけに つく。
+// ページ・assets/ などの 静的ファイルは Worker を 通らないので、リポジトリの いちばん上の _headers で おなじ ものを つける（両方 そろえて なおす）
 const SEC_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'X-Frame-Options': 'DENY',
   'Content-Security-Policy': "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'",
-  // マイク（assets/mic.js）は ページで つかうので ここでは とめない（この ヘッダーが つくのは API と 見つからない ページだけ）
+  // マイク（assets/mic.js）は ページで つかうので ここでも _headers でも とめない
   'Permissions-Policy': 'camera=(), geolocation=(), payment=()',
 };
 function json(data, status = 200, extra = {}) {
@@ -188,15 +190,21 @@ async function cleanup(env, now, withScores = false) {
 // 並び：マスター → 到達レベル → 正解数 → 先に記録 →（最後の念のため）player_id
 const ORDER = 'mastered DESC, level DESC, correct DESC, at ASC, player_id ASC';
 const BETTER = `(mastered > ?2 OR (mastered = ?2 AND (level > ?3 OR (level = ?3 AND (correct > ?4 OR (correct = ?4 AND (at < ?5 OR (at = ?5 AND player_id < ?6))))))))`;
-const rowOut = (r, rank) => ({ rank, name: r.name, level: r.level, mastered: !!r.mastered, correct: r.correct, total: r.total, at: r.at });
+// 公開の ランキングには 時刻（at）を 出さない（いつ あそんだかは 見せない。並びは ORDER・BETTER の SQL の 中だけで つかう）
+const rowOut = (r, rank) => ({ rank, name: r.name, level: r.level, mastered: !!r.mastered, correct: r.correct, total: r.total });
 
-async function playerEntry(env, period, playerId) {
+// → { entry: 公開用の 行（rowOut）, at: 記録した 時刻（サーバーの 中だけで つかう） } または null
+async function playerRecord(env, period, playerId) {
   const r = await env.DB.prepare('SELECT player_id, name, level, mastered, correct, total, at FROM scores WHERE player_id = ?1 AND period = ?2')
     .bind(playerId, period).first();
   if (!r) return null;
   const c = await env.DB.prepare(`SELECT COUNT(*) AS n FROM scores WHERE period = ?1 AND ${BETTER}`)
     .bind(period, r.mastered, r.level, r.correct, r.at, r.player_id).first();
-  return rowOut(r, (c ? c.n : 0) + 1);
+  return { entry: rowOut(r, (c ? c.n : 0) + 1), at: r.at };
+}
+async function playerEntry(env, period, playerId) {
+  const p = await playerRecord(env, period, playerId);
+  return p ? p.entry : null;
 }
 
 // 自己ベストのときだけ上書き。名前はいつも新しいものにする
@@ -302,15 +310,16 @@ async function submitScore(request, env) {
     await env.DB.prepare('UPDATE runs SET used = 0 WHERE id = ?1').bind(runId).run().catch(() => {});
     throw e;
   }
-  let bestAll = null, bestWeek = null;
+  let recAll = null, recWeek = null;
   try {
-    [bestAll, bestWeek] = await Promise.all([playerEntry(env, 'all', playerId), playerEntry(env, week, playerId)]);
+    [recAll, recWeek] = await Promise.all([playerRecord(env, 'all', playerId), playerRecord(env, week, playerId)]);
   } catch (e) { console.error('rank read', e && e.message); }
+  const bestAll = recAll ? recAll.entry : null, bestWeek = recWeek ? recWeek.entry : null;
   return json({
     level: res.level, mastered: res.mastered, correct: res.correct, total: res.total,
     rankAll: bestAll ? bestAll.rank : null, rankWeek: bestWeek ? bestWeek.rank : null,
     bestAll, bestWeek, week, ranked,
-    newBestAll: ranked && !!bestAll && bestAll.at === now, newBestWeek: ranked && !!bestWeek && bestWeek.at === now,
+    newBestAll: ranked && !!recAll && recAll.at === now, newBestWeek: ranked && !!recWeek && recWeek.at === now,
   });
 }
 

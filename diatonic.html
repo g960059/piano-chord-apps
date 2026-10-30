@@ -30,7 +30,7 @@
 .toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 /* 7つの 和音：スマホでも 1れつ */
 .chords{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
-.cbtn{border-radius:14px;padding:5px 1px 4px;background:var(--l);color:var(--c);border:3px solid var(--c);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:44px;min-width:0}
+.cbtn{border-radius:14px;padding:5px 1px 4px;background:var(--l);color:var(--t,var(--c));border:3px solid var(--c);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:44px;min-width:0}
 .cbtn .num{font-size:22px;font-weight:800;line-height:1.15}
 .cbtn .fe{font-size:15px;line-height:1.2}
 .cbtn .nm{font-size:11px;font-weight:700;line-height:1.3;letter-spacing:-.04em;display:flex;flex-direction:column-reverse;align-items:center;margin-top:2px} /* 1音1行。下が ひくい音 */
@@ -53,15 +53,15 @@
 .frow h3 small{font-weight:700;color:var(--fc);margin-left:6px;font-size:14px}
 .frow.on{background:var(--fl)}
 .fmem{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
-.fmem button{min-width:48px;min-height:44px;padding:2px 12px;border-radius:12px;background:var(--card);border:3px solid var(--c);color:var(--c);font-weight:800;font-size:18px}
+.fmem button{min-width:48px;min-height:44px;padding:2px 12px;border-radius:12px;background:var(--card);border:3px solid var(--c);color:var(--t,var(--c));font-weight:800;font-size:18px}
 .fmem button.on{background:var(--c);color:#fff}
 .frow .note{margin-top:4px}
 .seq{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:5px;margin-top:10px}
-.scard{border-radius:12px;padding:4px 1px;background:var(--l);color:var(--c);border:3px solid var(--c);border-top:7px solid var(--fc);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:72px;min-width:0}
+.scard{border-radius:12px;padding:4px 1px;background:var(--l);color:var(--t,var(--c));border:3px solid var(--c);border-top:7px solid var(--fc);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;min-height:72px;min-width:0}
 .scard .num{font-size:21px;font-weight:800;line-height:1.15}
 .scard .nm{font-size:11px;font-weight:700;line-height:1.3;letter-spacing:-.04em;display:flex;flex-direction:column-reverse;align-items:center}
 .scard .nm>span{display:block;white-space:nowrap}
-.scard .nm>.lh{border-top:1px dashed currentColor;margin-top:2px;padding-top:1px;opacity:.85}
+.scard .nm>.lh{border-top:1px dashed currentColor;margin-top:2px;padding-top:1px}
 .scard.on{background:var(--c);color:#fff;transform:translateY(-3px);box-shadow:0 4px 10px rgba(40,30,50,.15)}
 .flow{margin:8px 0 0;font-size:14.5px}
 /* この あと つかうよ */
@@ -91,6 +91,11 @@
   .cbtn .nm,.scard .nm{font-size:13px;letter-spacing:0}
   .seq{gap:8px}
 }
+/* 320px：7つの ボタンが 44px 以上に なるように（左右へ 10px ずつ はみだして、すきまを なくす） */
+@media (max-width:359px){
+  .chords{gap:0;margin-left:-10px;margin-right:-10px}
+  .cbtn{padding-left:0;padding-right:0;border-width:2px;border-radius:10px}
+}
 </style>
 </head>
 <body>
@@ -99,7 +104,7 @@
 <div class="actionbar" id="actions"></div>
 <script src="assets/core.js"></script>
 <script>
-/* 7つの 和音：音階の 1〜7ばんめ から「ひとつとばし」で つくる Ⅰ〜Ⅶ。ひびき（明るい・くらい・ドキドキ）と 3つの なかま
+/* 7つの 和音：音階の 1〜7ばんめ から「ひとつとばし」で つくる Ⅰ〜Ⅶ。ひびき（明るい・さびしい・きゅうくつ）と 3つの なかま
  * 保存（'diatonic'）：minor・keyIdx・deg（0〜6）・prog（ながれ） */
 
 // <dia-logic>（test/diatonic.test.mjs が ここだけ 切りだして、24調 ぜんぶ たしかめる）
@@ -162,7 +167,8 @@ const DIA=(function(){
   const shuffle=(arr,rnd)=>{const a=arr.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(rnd()*(i+1));const t=a[i];a[i]=a[j];a[j]=t;}return a;};
   const quiz=rnd=>{
     const d1=pick([1,2,5,6],rnd), others=shuffle([0,1,2,3,4,5,6].filter(x=>x!==d1),rnd).slice(0,3);
-    const d2=pick([1,2,5,6].filter(x=>x!==d1),rnd), d3=pick([0,1,2,3,4,5,6].filter(x=>x!==d1&&x!==d2),rnd);
+    // なかまの もんだいは Ⅱ・Ⅶ だけ（Ⅲ は Ⅴ とも、Ⅵ は Ⅳ とも 音が 2つ おなじで、まよって しまうから）
+    const d2=pick([1,6].filter(x=>x!==d1),rnd), d3=pick([0,1,2,3,4,5,6].filter(x=>x!==d1&&x!==d2),rnd);
     return [
       {type:'notes',d:d1,choices:shuffle([d1].concat(others),rnd),ans:d1,pick:null},
       {type:'fam',d:d2,choices:[0,1,2],ans:famOf(d2),pick:null},
@@ -177,9 +183,11 @@ const ROM=DIA.ROM;
 const NEU='#6f6579', NEUL='#efeaf2', LT='#d1495b';
 const colOf=d=>d===0?PA.COL.I:d===3?PA.COL.IV:d===4?PA.COL.V:NEU;
 const lcolOf=d=>d===0?PA.LCOL.I:d===3?PA.LCOL.IV:d===4?PA.LCOL.V:NEUL;
+// 字の 色（うすい 色の 上でも 読みやすい こい 色。わく・ぬりは colOf）
+const tcolOf=d=>d===0?'#b8381f':d===3?'#137049':d===4?'#1f5fb8':'#5e5468';
 const FAMC=[PA.COL.I,PA.COL.IV,PA.COL.V], FAML=[PA.LCOL.I,PA.LCOL.IV,PA.LCOL.V];
 const FAMN=['Ⅰの なかま','Ⅳの なかま','Ⅴの なかま'], FAMW=['おちつく','ひろがる','Ⅰに もどりたくなる'];
-const FEEL={maj:{em:'☀️',w:'明るい',n:'長三和音',y:'ちょうさんわおん'},min:{em:'☁️',w:'くらい',n:'短三和音',y:'たんさんわおん'},dim:{em:'💓',w:'ドキドキ',n:'減三和音',y:'げんさんわおん'},aug:{em:'❓',w:'ふしぎ',n:'増三和音',y:'ぞうさんわおん'}};
+const FEEL={maj:{em:'☀️',w:'明るい',n:'長三和音',y:'ちょうさんわおん'},min:{em:'🌧️',w:'さびしい',n:'短三和音',y:'たんさんわおん'},dim:{em:'😖',w:'きゅうくつ',n:'減三和音',y:'げんさんわおん'},aug:{em:'🌀',w:'ふしぎ',n:'増三和音',y:'ぞうさんわおん'}};
 const feelOf=(key,d)=>FEEL[DIA.quality(DIA.tones(key,d))];
 
 const saved=(x=>x&&typeof x==='object'?x:{})(PA.store.get('diatonic',{}));
@@ -204,8 +212,10 @@ function chordMsg(key,d){
 }
 function famNote(key,f){
   const F=DIA.FAMS[f];
-  return F.ds.filter(d=>d!==F.head).map(d=>`${ROM[d]} は ${ROM[F.head]} と <b class="nw">${PA.namesH(DIA.common(key,d,F.head))}</b> が おなじ`).join('、')+'。';
+  return F.ds.filter(d=>d!==F.head).map(d=>`${ROM[d]} は ${ROM[F.head]} と <b class="nw">${PA.namesH(DIA.common(key,d,F.head))}</b> が おなじ`).join('、')+'。'+(f===0?FAM0:'');
 }
+// Ⅵ・Ⅲ は ほかの 和音とも 2つ おなじ。でも ふつうは Ⅰ の なかま
+const FAM0='（Ⅵ は Ⅳ とも、Ⅲ は Ⅴ とも 2つ おなじ だけど、ふつうは Ⅰ の なかまに 入れるよ）';
 function tipsHTML(key){
   const pat=minor=>{const k=PA.keyOf(minor,0,60);return [0,1,2,3,4,5,6].map(d=>`${ROM[d]}${feelOf(k,d).em}`).join(' ');};
   const li=[
@@ -227,20 +237,20 @@ function termsHTML(key){
     <dd>ひとつとばしで 3つ かさねた 和音。この ページの Ⅰ〜Ⅶ は ぜんぶ 三和音。</dd>
     <dt>${yomi('主要三和音','しゅようさんわおん')}・${yomi('副三和音','ふくさんわおん')}</dt>
     <dd>Ⅰ・Ⅳ・Ⅴ を <b>主要三和音</b>、Ⅱ・Ⅲ・Ⅵ・Ⅶ を <b>副三和音</b> と いうよ。副三和音は、それぞれ Ⅰ・Ⅳ・Ⅴ の どれかの なかま。</dd>
-    <dt>3度（ひろい 3度・せまい 3度）</dt>
-    <dd>${W(0)}・${W(1)}・${W(2)} の ように、文字で 数えて 3つ はなれた 2つの 音が <b>3度</b>。3度には <b>ひろい 3度</b>（長3度）と <b>せまい 3度</b>（短3度）が ある。白いけんばんだけ なら、間に ${mifa}（白鍵どうしが となり）が 入ると せまい 3度。たとえば ${W(0)}→${W(2)} は ひろい、${W(2)}→${W(4)} は せまい。</dd>
+    <dt>3度（広い 3度・せまい 3度）</dt>
+    <dd>はじめの 音も 1つめに 入れて、文字で 数えて 3つめの 音までが <b>3度</b>（${W(0)}・${W(1)}・${W(2)} なら ${W(0)}→${W(2)}）。3度には <b>広い 3度</b>（長3度）と <b>せまい 3度</b>（短3度）が ある。白いけんばんだけ なら、間に ${mifa}（白鍵どうしが となり）が 入ると せまい 3度。たとえば ${W(0)}→${W(2)} は 広い、${W(2)}→${W(4)} は せまい。</dd>
     <dt>${yomi('長三和音','ちょうさんわおん')}・${yomi('短三和音','たんさんわおん')}・${yomi('減三和音','げんさんわおん')}</dt>
     <dd><ul style="margin:4px 0 0;padding-left:1.2em">
-      <li>☀️ <b>長三和音</b>（明るい）… 下が ひろい 3度、上が せまい 3度。れい ${W(0)}・${W(2)}・${W(4)}</li>
-      <li>☁️ <b>短三和音</b>（くらい）… 下が せまい 3度、上が ひろい 3度。れい ${W(5)}・${W(0)}・${W(2)}</li>
-      <li>💓 <b>減三和音</b>（ドキドキ）… 下も 上も せまい 3度。れい ${W(6)}・${W(1)}・${W(3)}</li>
+      <li>☀️ <b>長三和音</b>（明るい）… 下が 広い 3度、上が せまい 3度。れい ${W(0)}・${W(2)}・${W(4)}</li>
+      <li>🌧️ <b>短三和音</b>（さびしい）… 下が せまい 3度、上が 広い 3度。れい ${W(5)}・${W(0)}・${W(2)}</li>
+      <li>😖 <b>減三和音</b>（きゅうくつ）… 下も 上も せまい 3度。れい ${W(6)}・${W(1)}・${W(3)}</li>
     </ul></dd>
     <dt>${yomi('主和音','しゅわおん')}・${yomi('下属和音','かぞくわおん')}・${yomi('属和音','ぞくわおん')}</dt>
     <dd>Ⅰ・Ⅳ・Ⅴ の べつの よびかた。いまの 調では Ⅰ＝${t(0)}、Ⅳ＝${t(3)}、Ⅴ＝${t(4)}。</dd>
     <dt>${yomi('根音','こんおん')}</dt>
     <dd>ひとつとばしで つんだ ときの いちばん下の 音。Ⅵ なら 6ばんめ、Ⅱ なら 2ばんめの 音が 根音。</dd>${key.minor?`
     <dt>${yomi('和声的短音階','わせいてき たんおんかい')}</dt>
-    <dd>7ばんめを 半音上げた 短調の 音階。この アプリの 短調の Ⅴ・Ⅶ は この 音階から つくるよ。Ⅲ も この 音階で つくると ${yomi('増三和音','ぞうさんわおん')}（下も 上も ひろい 3度の、ふしぎな ひびき）に なるので、ふつうは 調号どおりの ${t(2)} を つかう。</dd>`:''}
+    <dd>7ばんめを 半音上げた 短調の 音階。この アプリの 短調の Ⅴ・Ⅶ は この 音階から つくるよ。Ⅲ も この 音階で つくると ${yomi('増三和音','ぞうさんわおん')}（下も 上も 広い 3度の、ふしぎな ひびき）に なるので、ふつうは 調号どおりの ${t(2)} を つかう。</dd>`:''}
   </dl></details>`;
 }
 
@@ -253,11 +263,11 @@ function famCard(key){
   const d0=state.deg, fl=DIA.flow(key,state.prog), f0=DIA.famOf(d0);
   let h=`<section class="card"><h2>👪 3つの なかま<small>おなじ 音が 2つ ある 和音は、にた はたらきを するよ</small></h2>`;
   h+=DIA.FAMS.map((F,f)=>`<div class="frow ${f===f0?'on':''}" style="--fc:${FAMC[f]};--fl:${FAML[f]}"><h3>${FAMN[f]}<small>${FAMW[f]}</small></h3>
-    <div class="fmem" role="group" aria-label="${FAMN[f]}">${F.ds.map(d=>`<button class="${d===d0?'on':''}" style="--c:${colOf(d)}" data-act="fdeg" data-v="${d}" aria-pressed="${d===d0}" aria-label="${ROM[d]} ${PA.namesT(DIA.tones(key,d))}">${ROM[d]}</button>`).join('')}</div>
+    <div class="fmem" role="group" aria-label="${FAMN[f]}">${F.ds.map(d=>`<button class="${d===d0?'on':''}" style="--c:${colOf(d)};--t:${tcolOf(d)}" data-act="fdeg" data-v="${d}" aria-pressed="${d===d0}" aria-label="${ROM[d]} ${PA.namesT(DIA.tones(key,d))}">${ROM[d]}</button>`).join('')}</div>
     <p class="note">${famNote(key,f)}</p></div>`).join('');
   h+=`<h2 style="margin-top:16px">🎧 ながれで 聴く<small>上の 色の 線＝なかま。タップすると その 和音が 鳴るよ</small></h2>`;
   h+=PA.seg('prog',[['basic','Ⅰ・Ⅳ・Ⅴ だけ'],['fam','なかまも つかう']],state.prog,'full');
-  h+=`<div class="seq" style="--n:${fl.length}">`+fl.map((c,i)=>`<button class="scard ${i===state.step?'on':''}" style="--c:${colOf(c.d)};--l:${lcolOf(c.d)};--fc:${FAMC[DIA.famOf(c.d)]}" data-act="pstep" data-v="${i}" aria-pressed="${i===state.step}" aria-label="${i+1}つめ ${ROM[c.d]}"><span class="num">${ROM[c.d]}</span><span class="nm"><span class="lh">${PA.nmH(c.lh[0])}</span>${stackNames(c.rh)}</span></button>`).join('')+`</div>`;
+  h+=`<div class="seq" style="--n:${fl.length}">`+fl.map((c,i)=>`<button class="scard ${i===state.step?'on':''}" style="--c:${colOf(c.d)};--t:${tcolOf(c.d)};--l:${lcolOf(c.d)};--fc:${FAMC[DIA.famOf(c.d)]}" data-act="pstep" data-v="${i}" aria-pressed="${i===state.step}" aria-label="${i+1}つめ ${ROM[c.d]}"><span class="num">${ROM[c.d]}</span><span class="nm"><span class="lh">${PA.nmH(c.lh[0])}</span>${stackNames(c.rh)}</span></button>`).join('')+`</div>`;
   h+=`<p class="flow">${state.prog==='fam'
     ?'おちつく（Ⅰ・Ⅵ）→ ひろがる（Ⅳ・Ⅱ）→ もどりたくなる（Ⅴ）→ おちつく（Ⅰ）。<b>Ⅵ・Ⅱ</b> を はさむと、おなじ ながれでも 色が ふえるよ。'
     :'おちつく（Ⅰ）→ ひろがる（Ⅳ）→ もどりたくなる（Ⅴ）→ おちつく（Ⅰ）。いつもの ながれ。'}</p>`;
@@ -305,9 +315,9 @@ function render(){
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}</span></div>
     <div class="chords" role="group" aria-label="7つの 和音">`+[0,1,2,3,4,5,6].map(k=>{
       const tk=DIA.tones(key,k), fe=feelOf(key,k);
-      return `<button class="cbtn ${k===d?'on':''}" style="--c:${colOf(k)};--l:${lcolOf(k)}" data-act="deg" data-v="${k}" aria-pressed="${k===d}" aria-label="${ROM[k]} ${PA.namesT(tk)} ${fe.w}"><span class="num">${ROM[k]}</span><span class="fe" aria-hidden="true">${fe.em}</span><span class="nm">${stackNames(tk)}</span></button>`;
+      return `<button class="cbtn ${k===d?'on':''}" style="--c:${colOf(k)};--t:${tcolOf(k)};--l:${lcolOf(k)}" data-act="deg" data-v="${k}" aria-pressed="${k===d}" aria-label="${ROM[k]} ${PA.namesT(tk)} ${fe.w}"><span class="num">${ROM[k]}</span><span class="fe" aria-hidden="true">${fe.em}</span><span class="nm">${stackNames(tk)}</span></button>`;
     }).join('')+`</div>
-    <p class="note legend">☀️ 明るい　☁️ くらい　💓 ドキドキ${key.minor?`　🌙 Ⅴ・Ⅶ は 7ばんめを 半音上げる（<a href="minor-why.html">なぜ？</a>）`:''}</p>
+    <p class="note legend">☀️ 明るい　🌧️ さびしい　😖 きゅうくつ${key.minor?`　🌙 Ⅴ・Ⅶ は 7ばんめを 半音上げる（<a href="minor-why.html">なぜ？</a>）`:''}</p>
     <section class="card hero" style="--c:${col}">
       <div class="hero-top"><span class="badge" style="--c:${col}">${ROM[d]}</span>
         <div style="min-width:0"><div class="hk">${PA.keyName(key)}の ${ROM[d]}</div><div class="hn">${namesW(t,'&nbsp;・ ')}</div><div class="hs">コードネーム ${PA.H(DIA.sym(t))}</div></div></div>

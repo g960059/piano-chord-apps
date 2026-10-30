@@ -33,7 +33,7 @@
 .sessrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .fixrow{display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap}
 .fixrow .chip{background:#e6e9fb;color:#24316f;font-size:14px}
-details.more>summary{flex-wrap:wrap;column-gap:8px;padding-block:6px}
+details.more>summary{flex-wrap:wrap;column-gap:8px;padding-top:6px;padding-bottom:6px}
 details.more>summary small{font-weight:400;color:var(--sub);font-size:13px}
 .optlabel{font-size:14px;color:var(--sub);font-weight:700;margin:6px 0 4px}
 .seg.grid4{display:grid;grid-template-columns:repeat(4,1fr);border-radius:18px}
@@ -107,7 +107,7 @@ const AFTER_END=10*6e4; // おわった 回の けっかを、読みなおして
 /* ===== 状態 ===== */
 // fixKey＝この 調だけ 出す（リンクの key・チェック表の ます）。peeked＝こたえる まえに「つくりかた」を 見た
 // fixUsed＝さいしょの 1もんだけ fixKey の とき（fixOnce）、もう その 調を 出した
-const Q={type:'chord',tier:'all',weak:true,peeked:false,fams:{V:true,V7:true,V9:false,DIM:false},fixKey:null,fixUsed:false,q:null,id:0,picked:new Set(),checked:false,result:null,lastOk:null,right:0,total:0,streak:0,chosen:null,sumShow:false,sessDoneId:null};
+const Q={type:'chord',tier:'all',weak:true,peeked:false,fams:{V:true,V7:true,V9:false,DIM:false},fixKey:null,fixUsed:false,q:null,id:0,picked:new Set(),checked:false,result:null,lastOk:null,right:0,total:0,streak:0,hint:0,chosen:null,sumShow:false,sessDoneId:null};
 let fixQid=0; // fixOnce の さいしょの 1もん（その 調）の もんだい番号。🔑 は この もんだいの あいだだけ 出す
 const isInt=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
 const saved=(d=>d&&typeof d==='object'&&!Array.isArray(d)?d:{})(PA.store.get('minor-quiz',{}));
@@ -122,11 +122,23 @@ const minorId=v=>{const p=KD.parse(v);return p&&p.minor?p.id:null;}; // m0〜m12
     FAM_KEYS.forEach(f=>{if(typeof d.fams[f]==='boolean')Q.fams[f]=d.fams[f];});
     if(!FAM_KEYS.some(f=>Q.fams[f])) Q.fams.V7=true;
   }
-  if(isInt(d.total,0,1e6)&&isInt(d.right,0,d.total)&&isInt(d.streak,0,d.right)){Q.total=d.total;Q.right=d.right;Q.streak=d.streak;}
+  if(isInt(d.total,0,1e6)&&isInt(d.right,0,d.total)&&isInt(d.streak,0,d.right)){Q.total=d.total;Q.right=d.right;Q.streak=d.streak;
+    if(isInt(d.hint,0,d.total-d.right)) Q.hint=d.hint;}
 })();
-// リンクの パラメータ（ゆるした 値だけ。この 1回に つかい、いまの 設定としても 保存する）
+// ふだんの 設定（保存する）。リンクの しゅるい・むずかしさ・和音は ov（その 1回だけ）に 入れて、ふだんの 設定は かえない
+const base={type:Q.type,tier:Q.tier,fams:Object.assign({},Q.fams)};
+const cleanOv=o=>{ // ov の 形を たしかめる（ゆるした 値だけ）
+  if(!o||typeof o!=='object') return null;
+  const r={};
+  if(TYPES.includes(o.type)) r.type=o.type;
+  if(TIER_IDS.includes(o.tier)) r.tier=o.tier;
+  if(o.fams&&typeof o.fams==='object'){const f={};FAM_KEYS.forEach(k=>{f[k]=o.fams[k]===true;});if(FAM_KEYS.some(k=>f[k])) r.fams=f;}
+  return Object.keys(r).length?r:null;
+};
+// リンクの パラメータ（ゆるした 値だけ。この 1回に つかい、ほぞんした 設定は かえない）
 const P=PA.params(), linkKey=minorId(P.key);
-(function(){
+// いったん Q に のせて、ふだんの 設定と ちがう ところだけ ov に とる（Q は あとの applyEff で かさねなおす）
+const linkOv=(function(){
   if(TYPES.includes(P.mode)) Q.type=P.mode;
   // key だけで mode の ない リンク（ホームの にがて ふくしゅう「3もんずつ」）：和音を おさえる で その 調を つづけて 出す
   else if(linkKey) Q.type='chord';
@@ -135,7 +147,21 @@ const P=PA.params(), linkKey=minorId(P.key);
     const fs=P.chord.split(',').map(s=>s.trim().toUpperCase()).filter(f=>FAM_KEYS.includes(f));
     if(fs.length) FAM_KEYS.forEach(f=>{Q.fams[f]=fs.includes(f);});
   }
+  const fd=FAM_KEYS.some(f=>Q.fams[f]!==base.fams[f]);
+  return cleanOv({type:Q.type!==base.type?Q.type:null,tier:Q.tier!==base.tier?Q.tier:null,fams:fd?Q.fams:null});
 })();
+let ov=null;
+// いまの 設定＝ふだんの 設定の 上に ov を かさねた もの
+const applyEff=()=>{Q.type=ov&&ov.type||base.type;Q.tier=ov&&ov.tier||base.tier;Q.fams=Object.assign({},ov&&ov.fams||base.fams);};
+// じぶんで かえた 設定：ふだんの 設定に のこし、その ことは もう リンクの 値を つかわない
+const setBase=(k,v)=>{base[k]=k==='fams'?Object.assign({},v):v; if(ov){delete ov[k]; if(!Object.keys(ov).length) ov=null;}};
+// リンクの 1回が おわった：ふだんの 設定に もどす。いまの 設定が かわったら true
+function endOv(){
+  if(!ov) return false;
+  const was=JSON.stringify([Q.type,Q.tier,Q.fams]); ov=null; applyEff();
+  if(JSON.stringify([Q.type,Q.tier,Q.fams])===was) return false;
+  deck.setOptions({tier:Q.tier}); return true;
+}
 // 📝 れんしゅうの 回：リンクに n が あれば はじめる（おなじ リンクの とちゅうなら つづき）
 let sess=(()=>{
   const n=PA.paramInt('n',1,20);
@@ -148,6 +174,9 @@ let sess=(()=>{
 const sessOn=()=>sess.active()||sess.finished();
 // リンクで 来た ひらきかた（この れきしの ページ）。読みなおしても おぼえている
 let fromLinkVisit=false; try{fromLinkVisit=!!(history.state&&history.state.mqLink);}catch(e){}
+// リンクの 値：リンクで 来たら その 値。なければ、つづきの 回か おなじ リンクの 読みなおしの ときだけ のこした 値
+ov=PA.fromLink()?linkOv:(sessOn()||fromLinkVisit?cleanOv(saved.ov):null);
+applyEff();
 // この 調だけ：リンクの key。なければ、つづきの 回か、おなじ リンクの 読みなおしで えらんでいた 調
 Q.fixKey=linkKey||(sessOn()||fromLinkVisit?minorId(saved.fixKey):null);
 // 記号の もんだいは 1つの 調に 1もん。和音も 1つだけなら 1もん。このときは fixKey を さいしょの 1もんだけ つかう
@@ -161,7 +190,7 @@ Q.fixUsed=!!Q.fixKey&&Q.fixKey===minorId(saved.fixKey)&&saved.fixUsed===true&&(!
 if(location.search){try{history.replaceState({mqLink:true},'',location.pathname+location.hash);}catch(e){}}
 Q.sumShow=sess.finished();
 // スコアと、まだ こたえていない もんだいも 保存する（「つくりかたを 見る」から もどったとき つづけられるように）
-const save=()=>PA.store.set('minor-quiz',{type:Q.type,tier:Q.tier,weak:Q.weak,fams:Q.fams,right:Q.right,total:Q.total,streak:Q.streak,fixKey:Q.fixKey,fixUsed:Q.fixUsed,
+const save=()=>PA.store.set('minor-quiz',{type:base.type,tier:base.tier,weak:Q.weak,fams:base.fams,ov:ov,right:Q.right,total:Q.total,streak:Q.streak,hint:Q.hint,fixKey:Q.fixKey,fixUsed:Q.fixUsed,
   q:Q.q?{keyIdx:Q.q.keyIdx,fam:Q.q.fam,type:Q.type}:null,fixQ:!!Q.q&&fixQid===Q.id,answered:Q.result!==null,peeked:Q.peeked,deck:deckState()});
 const openD={}; // ひらいている <details>（描きなおしても とじないように）
 
@@ -174,7 +203,7 @@ const hasBag=restoreDeck(saved.deck); // ひらきなおしても ふくろの �
 let lastQ=null; // ひらいたとき、まえに 出ていた もんだい（つづけて おなじ もんだいに しない）
 function newQuestion(){
   // けっかを 見ないで ほかの もんだいへ（せっていを かえた など）：おわった 回は しまう
-  if(sess.finished()) sess.clear();
+  if(sess.finished()){sess.clear(); endOv();} // 回が おわった：リンクの 設定も おしまい
   Q.sumShow=false;
   const prev=Q.q||lastQ, pid=prev?keyIdOf(prev):null;
   // さいしょの 1もんに こたえないまま かえた（しゅるい・和音）：つぎも その 調から
@@ -215,6 +244,7 @@ function scoreFirst(ok){
   const hint=ok&&Q.peeked;
   Q.result=ok; Q.total++;
   if(ok&&!hint){Q.right++;Q.streak++;}
+  else if(hint) Q.hint++;
   else if(!ok) Q.streak=0;
   deck.record(keyIdOf(Q.q),ok,hint?{hint:true}:undefined);
   const r=sess.active()?sess.record({ok,hint,label:qLabel(),key:keyIdOf(Q.q)}):null;
@@ -345,7 +375,8 @@ function chordView(key){
 const sessLast=()=>Q.sessDoneId===Q.id&&sess.finished()&&!Q.sumShow;
 // 上の 行：⭐ と、📝 きょうの 5もん（とちゅうなら すすみぐあい）
 function topHTML(){
-  const sc=`<div class="score">⭐ ${Q.right} / ${Q.total}　<span>れんぞく ${Q.streak}</span> <span class="stars">${'🌟'.repeat(Math.min(Q.streak,10))}</span></div>`;
+  // ヒントで できた もんだいは べつに 出す（まちがいに 見えないように）
+  const sc=`<div class="score">⭐ ${Q.hint?`じぶんで ${Q.right}・💡 ヒントで ${Q.hint} ／ ${Q.total} もん`:`${Q.right} / ${Q.total}`}　<span>れんぞく ${Q.streak}</span> <span class="stars">${'🌟'.repeat(Math.min(Q.streak,10))}</span></div>`;
   const ss=sess.active()?`<div class="sessrow">${sess.progressHTML()}<button class="btn small" data-act="sessstop">やめる</button></div>`
     :sessLast()?`<div class="sessrow">${sess.progressHTML()}</div>`
     :Q.sumShow?'':`<button class="btn small" data-act="sess5">📝 きょうの 5もん</button>`;
@@ -403,10 +434,10 @@ document.addEventListener('click',e=>{
   switch(a){
     case 'qtype': {
       if(Q.type===v||!TYPES.includes(v)) return;
-      PA.stopSound(); Q.type=v;
+      PA.stopSound(); Q.type=v; setBase('type',v);
       save(); newQuestion(); break; // おわった 回（けっかを 見ないで ほかへ）は newQuestion が しまう
     }
-    case 'qtier': if(Q.tier===v||!TIER_IDS.includes(v)) return; PA.stopSound(); Q.tier=v; Q.fixKey=null; deck.setOptions({tier:v}); save(); newQuestion(); break;
+    case 'qtier': if(Q.tier===v||!TIER_IDS.includes(v)) return; PA.stopSound(); Q.tier=v; setBase('tier',v); Q.fixKey=null; deck.setOptions({tier:v}); save(); newQuestion(); break;
     case 'qweak': {Q.weak=!Q.weak; const s=deckState(); deck.setOptions({weak:Q.weak}); restoreDeck(s); break;} // 今の もんだいも ふくろの のこりも そのまま。つぎの ふくろから
     case 'qunfix': {const once=fixOnce(); Q.fixKey=null; Q.fixUsed=false; if(Q.result!==null&&!once) newQuestion(); break;} // こたえる まえの もんだいは そのまま（fixOnce は つぎから もう ふつう）
     case 'keystats-reset': if(v!==QUIZ) return; deck.reset(); render(); return; // 2回 おす しくみ（data-confirm）は core
@@ -416,12 +447,12 @@ document.addEventListener('click',e=>{
       fresh(); PA.announce(`${PA.keyName(KEYS[KD.parse(id).idx])}${onceMode()?'から はじめて':'を'} 3もん れんしゅう`); return;
     }
     case 'sess5': sess=PA.session(QUIZ); sess.start(5); Q.fixUsed=false; fresh(); PA.announce('きょうの 5もん、はじめ！'); return;
-    case 'sessstop': sess.clear(); break;
+    case 'sessstop': sess.clear(); if(endOv()) newQuestion(); break; // リンクの 設定も おしまい（かわったら 新しい もんだい）
     case 'qsum': if(!sess.finished()) return; PA.stopSound(); Q.sumShow=true; render(); PA.scrollTop(); return;
     case 'session-again': {const n=sess.n()||5; sess.start(n); Q.fixUsed=false; fresh(); return;}
-    case 'session-free': sess.clear(); Q.fixKey=null; fresh(); return;
-    case 'qfam': if(!FAM[v]) return; if(Q.fams[v]&&FAM_KEYS.filter(f=>Q.fams[f]).length===1) return; PA.stopSound(); Q.fams[v]=!Q.fams[v]; save(); newQuestion(); break;
-    case 'qreset': Q.right=Q.total=Q.streak=0; break;
+    case 'session-free': sess.clear(); Q.fixKey=null; endOv(); fresh(); return; // ふだんの 設定に もどして
+    case 'qfam': if(!FAM[v]) return; if(Q.fams[v]&&FAM_KEYS.filter(f=>Q.fams[f]).length===1) return; PA.stopSound(); Q.fams[v]=!Q.fams[v]; setBase('fams',Q.fams); save(); newQuestion(); break;
+    case 'qreset': Q.right=Q.total=Q.streak=Q.hint=0; break;
     case 'qcheck': if(Q.checked||!Q.picked.size) return; checkChord(); render(); showFb(); return;
     case 'qclear': Q.picked=new Set(); break;
     case 'qtry': PA.chord([...Q.picked].sort((x,y)=>x-y)); return;

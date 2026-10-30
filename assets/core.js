@@ -63,6 +63,8 @@
  *     なら つづき。ちがえば 新しく はじめる（おわった 回を おなじ リンクで あけなおすと、はじめから）。
  *     sig＝リンクの しるし。わたさなければ PA.sessionSig(PA.params())（n いがいの key・chord・mode・level・tier を ならべた 文字）
  *     n を わたさない ときは、のこっている 回を そのまま よむだけ（12時間 たって いれば null と おなじ）
+ *     とちゅうの 回が ちがう sig で 上がきされる（宿題・ふくしゅうの リンク）ときは PA.store('sessionpause-'+quiz) に 1つ とっておき、
+ *     いまの 回を けした／おわって 10分 たった あとの PA.session(quiz) で もどす（その リンクを また ひらいても もどる）
  *     s.active() … n>0 で まだ おわっていない。s.finished() … n もん こたえた。s.count() … こたえた 数。s.n() … もんだいの 数
  *     s.record({ok, hint, label, key}) … 1もん きろく（label は ただの 文字。PA.nm で つくる）。active で なければ null。
  *       かえす：{count, n, finished}
@@ -273,7 +275,7 @@ PA.kbSVG=(lo,hi,marks=new Map(),opts={})=>{
   let tabM=drawn.find(m=>{const k=marks.get(m);return k&&k.focus;});
   if(tabM===undefined) tabM=drawn.find(m=>marks.get(m));
   if(tabM===undefined) tabM=drawn.includes(60)?60:drawn[0];
-  let s=`<svg viewBox="-2 0 ${TW+4} ${TH}" class="kb" style="min-width:${wh.length*36}px;max-width:${wh.length*56}px;margin-inline:auto" role="group" aria-label="けんばん">`;
+  let s=`<svg viewBox="-2 0 ${TW+4} ${TH}" class="kb" style="min-width:${wh.length*36}px;max-width:${wh.length*56}px;margin-left:auto;margin-right:auto" role="group" aria-label="けんばん">`;
   const attrs=(m,mk)=>`data-m="${m}" ${mk?'data-mk="1"':''} ${mk&&mk.focus?'data-focus="1"':''} tabindex="${m===tabM?0:-1}" role="button" aria-label="${PA.esc(keyLabel(m)+(mk&&mk.sr?'、'+mk.sr:''))}"`;
   wh.forEach(m=>{
     const x=X[m], mk=marks.get(m);
@@ -524,10 +526,11 @@ PA.openSettings=()=>{
     <div class="setrow"><label for="pa-sound">音を 鳴らす</label><select id="pa-sound"><option value="1">🔊 鳴らす</option><option value="0">🔇 鳴らさない</option></select></div>
     <p class="note">音の 高さは ふつうの ピアノと おなじです。ラ（A4）の 高さを 440〜443Hz から えらべます。教室の ピアノが 442Hz なら 442Hz に。<br>iPhone・iPad で音が出ないときは、消音（マナーモード）を解除してください。</p>
     <div class="setsec"><h3>💾 きろくの ひかえ</h3>
-      <p class="note">iPhone・iPad では、この サイトを 1週間 ほど ひらかないと、きろくが きえる ことが あります。ホーム画面に 追加するか、ときどき ファイルに 書きだして おくと あんしんです。</p>
+      <p class="note">iPhone・iPad では、この サイトを 1週間 ほど ひらかないと、きろくが きえる ことが あります。ホーム画面に 追加するか、ときどき ファイルに 書きだして おくと あんしんです。<br>LINE などの リンクは Safari で ひらくので、ホーム画面の アプリとは きろくが べつに なるよ。うつすときは 書きだし・読みこみ を つかってね。</p>
       <div class="row"><button class="btn small" data-sheet="export">💾 きろくを ファイルに 書きだす</button><button class="btn small" data-sheet="import">📂 ファイルから よみこむ</button></div>
       <input type="file" id="pa-import" accept=".json,application/json" class="pa-sr" tabindex="-1" aria-hidden="true">
       <p class="note" id="pa-backup-msg" role="status"></p>
+      <div id="pa-backup-text" hidden></div>
     </div>`;
   const el=sheet(h);
   el.querySelector('#pa-naming').value=S.naming; el.querySelector('#pa-pitch').value=String(S.pitchA); el.querySelector('#pa-sound').value=S.sound?'1':'0';
@@ -536,6 +539,7 @@ PA.openSettings=()=>{
     const b=e.target.closest('[data-sheet]'); if(!b) return;
     if(b.dataset.sheet==='export') exportRecords(el);
     if(b.dataset.sheet==='import') el.querySelector('#pa-import').click();
+    if(b.dataset.sheet==='copy') copyBackupText(el);
   };
   el.onchange=e=>{
     const t=e.target;
@@ -562,16 +566,59 @@ PA.checkBackup=o=>{
 };
 PA.backupData=()=>{const o={};PA.store.keys().forEach(k=>{try{const v=localStorage.getItem('pianoapps.'+k);if(v!=null)o['pianoapps.'+k]=v;}catch(e){}});return o;};
 const pad2=n=>(n<10?'0':'')+n;
+// ファイルに できない ブラウザ（iOS 12 の Safari など）：中身を 文字で 見せて、コピー できるように する
+function showBackupText(el,text){
+  const box=el.querySelector('#pa-backup-text'); if(!box) return false;
+  box.innerHTML=`<p class="note">この ブラウザでは ファイルに できないので、下の 文字を ぜんぶ コピーして、メモなどに はりつけて とっておいてね。</p>`
+    +`<textarea id="pa-backup-ta" readonly rows="5" aria-label="きろくの 中身" style="width:100%;font:16px/1.4 monospace;border:2px solid var(--line);border-radius:12px;padding:8px;background:var(--soft2);color:var(--ink)"></textarea>`
+    +`<div class="row" style="margin-top:6px"><button type="button" class="btn small" data-sheet="copy">📋 コピーする</button></div>`;
+  box.querySelector('#pa-backup-ta').value=text;
+  box.hidden=false;
+  return true;
+}
+function copyBackupText(el){
+  const ta=el.querySelector('#pa-backup-ta'), msg=el.querySelector('#pa-backup-msg'), say=t=>{if(msg) msg.textContent=t;};
+  if(!ta) return;
+  const done=()=>say('コピーしたよ。メモなどに はりつけてね'), manual=()=>say('コピー できなかったよ。文字を 長おしして「すべて選択」→「コピー」してね');
+  const legacy=()=>{
+    let ok=false;
+    try{ta.removeAttribute('readonly');ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);ok=document.execCommand('copy');}catch(e){ok=false;}
+    ta.setAttribute('readonly','');
+    if(ok) done(); else manual();
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(done,legacy);
+  else legacy();
+}
 function exportRecords(el){
   askPersist(); // きろくを だいじに する 人 → ブラウザに「消さないで」と おねがい
-  const msg=el.querySelector('#pa-backup-msg');
+  const msg=el.querySelector('#pa-backup-msg'), say=t=>{if(msg) msg.textContent=t;};
+  let text, name;
   try{
-    const d=new Date(), name='piano-kiroku-'+d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+'.json';
-    const blob=new Blob([JSON.stringify(PA.backupData(),null,1)],{type:'application/json'}), url=URL.createObjectURL(blob), a=document.createElement('a');
+    const d=new Date(); name='piano-kiroku-'+d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+'.json';
+    text=JSON.stringify(PA.backupData(),null,1);
+  }catch(e){say('書きだせなかったよ');return;}
+  const fallback=()=>{if(showBackupText(el,text)) say('');else say('書きだせなかったよ');};
+  // ホーム画面の アプリ：ダウンロードすると もどれない ことが あるので、できれば「共有」で ファイルを わたす
+  let standalone=false;
+  try{standalone=navigator.standalone===true||(!!window.matchMedia&&matchMedia('(display-mode: standalone)').matches);}catch(e){}
+  if(standalone&&typeof File==='function'&&navigator.share&&navigator.canShare){
+    let file=null;
+    try{file=new File([text],name,{type:'application/json'});}catch(e){}
+    let can=false; try{can=!!file&&navigator.canShare({files:[file]});}catch(e){}
+    if(can){
+      navigator.share({files:[file]}).then(()=>say('「'+name+'」を 書きだしたよ（「ファイルに 保存」を えらんだら「ファイル」アプリに あるよ）'),
+        err=>{if(err&&err.name==='AbortError') say('');else fallback();});
+      return;
+    }
+  }
+  const a=document.createElement('a');
+  if(!('download' in a)||typeof Blob!=='function'||!window.URL||!URL.createObjectURL){fallback();return;}
+  try{
+    const blob=new Blob([text],{type:'application/json'}), url=URL.createObjectURL(blob);
     a.href=url; a.download=name; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
     setTimeout(()=>URL.revokeObjectURL(url),60000);
-    if(msg) msg.textContent='「'+name+'」を 書きだしたよ（ダウンロード・「ファイル」アプリに あるよ）';
-  }catch(e){if(msg) msg.textContent='書きだせなかったよ';}
+    say('「'+name+'」を 書きだしたよ（ダウンロード・「ファイル」アプリに あるよ）');
+  }catch(e){fallback();}
 }
 function importRecords(file,el){
   const msg=el.querySelector('#pa-backup-msg'), say=t=>{if(msg) msg.textContent=t;};
@@ -882,7 +929,8 @@ document.addEventListener('keydown',e=>{
   const n=ks[Math.max(0,Math.min(ks.length-1,ks.indexOf(k)+dir))];
   rove(n); n.focus();
 });
-document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&&e.target.closest('.kb [data-m]');if(k) hitKey(k);}});
+// Pointer Events の ない ブラウザ（iOS 12 の Safari など）では、ふつうの タップ（click）で ひく
+document.addEventListener('click',e=>{if(e.detail===0||!window.PointerEvent){const k=e.target.closest&&e.target.closest('.kb [data-m]');if(k) hitKey(k);}});
 /* ===== ドッペルドミナントと 増六の和音（芸大和声の 考え方） =====
  * 長調・短調どちらでも、key（PA.majorKey / PA.minorKey）を わたすと、正しい つづりと 高さの 音を かえす。
  * 音：{letter, acc, midi, role(日本語の役わり), tag('lt'＝Ⅴへの導音、'low'＝下げた音、'b9'＝短9度、'raised'＝上げた音)}
@@ -1699,6 +1747,7 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
 })();
 /* ===== れんしゅうの 回（n もん）と けっかの カード（つかいかたは いちばん上） =====
  * きろく：PA.store('session-<quiz>')＝{n, done:[{ok, hint, label, key?}], startedAt}
+ *   ちがう sig の start で 上がきされた とちゅうの 回は PA.store('sessionpause-<quiz>') に とっておき、あとで もどす
  * じぶんで できた＝ok で hint で ない、ヒントで できた＝ok で hint、まちがえた＝ok で ない
  */
 PA.HINT_NOTE='こたえる まえに 見ても ×には ならないよ。「ヒントで できた」に なるよ';
@@ -1753,8 +1802,20 @@ PA.HINT_NOTE='こたえる まえに 見ても ×には ならないよ。「ヒ
     let d=cleanSession(PA.store.get(sk,null));
     const save=()=>PA.store.set(sk,d);
     if(d&&!(+now()-d.startedAt<HOURS12)){d=null;PA.store.set(sk,null);} // 12時間 たった 回は すてる（n が なくても）
+    // とちゅうの 回を ちがう リンク（宿題・ふくしゅう）で 上がきした ときは、'sessionpause-'+quiz に とっておく。
+    // いまの 回が ない（けした）か、おわって 10分 たったら、とっておいた 回に もどす（12時間 たったら すてる）
+    const pk='sessionpause-'+quiz;
+    let paused=cleanSession(PA.store.get(pk,null));
+    if(paused&&!(paused.done.length<paused.n&&+now()-paused.startedAt<HOURS12)){paused=null;PA.store.set(pk,null);}
+    if(paused&&(!d||(d.done.length>=d.n&&!(d.endedAt!=null&&+now()-d.endedAt<AFTER_END)))){d=paused;paused=null;save();PA.store.set(pk,null);}
     const s={
-      start(n){const N=clampN(n);if(!N){s.clear();return s;}d={n:N,done:[],startedAt:+now(),sig};save();return s;},
+      start(n){
+        const N=clampN(n);if(!N){s.clear();return s;}
+        const curActive=!!d&&d.done.length<d.n;
+        if(!curActive&&paused&&paused.n===N&&paused.sig===sig){d=paused;paused=null;save();PA.store.set(pk,null);return s;} // おなじ 回を また はじめる：とっておいた つづきから
+        if(curActive&&d.sig!==sig&&!paused){paused=d;PA.store.set(pk,paused);} // とちゅうの 回は きえない
+        d={n:N,done:[],startedAt:+now(),sig};save();return s;
+      },
       clear(){d=null;PA.store.set(sk,null);return s;},
       n(){return d?d.n:0;},
       count(){return d?d.done.length:0;},
@@ -1806,7 +1867,12 @@ PA.HINT_NOTE='こたえる まえに 見ても ×には ならないよ。「ヒ
     if(want){
       const same=!!d&&d.n===want&&d.sig===sig;
       const fresh=!!d&&(d.done.length<d.n||(d.endedAt!=null&&+now()-d.endedAt<AFTER_END));
-      if(!(same&&fresh)) s.start(want);
+      if(!(same&&fresh)){
+        if(paused&&paused.n===want&&paused.sig===sig){ // とっておいた 回の リンクを また ひらいた：その 回に もどし、いまの とちゅうの 回を とっておく
+          const cur=d; d=paused; save();
+          paused=cur&&cur.done.length<cur.n?cur:null; PA.store.set(pk,paused);
+        }else s.start(want);
+      }
     }
     return s;
   };

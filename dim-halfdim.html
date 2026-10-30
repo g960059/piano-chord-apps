@@ -41,13 +41,13 @@
 .side .st small{font-size:13px;font-weight:700}
 .side .sn{font-size:clamp(16px,4.6vw,19px);font-weight:800;line-height:1.35;margin-top:2px}
 .side .sy{font-size:13px;color:var(--sub);line-height:1.4}
-.side .btn{margin-top:6px;width:100%;padding-inline:6px;background:var(--card);border:2px solid var(--c);color:var(--c)}
+.side .btn{margin-top:6px;width:100%;padding-left:6px;padding-right:6px;background:var(--card);border:2px solid var(--c);color:var(--c)}
 .side.on .btn{background:var(--c);color:#fff}
 .msg{margin-top:10px}
 .msg b.big{font-size:19px;color:#b0307a}
 .cmpt{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0 4px;margin-top:8px}
 .cmpt th,.cmpt td{padding:6px 6px;text-align:center;vertical-align:middle;background:var(--soft2)}
-.cmpt thead th{background:none;font-size:14px;padding-block:0 2px}
+.cmpt thead th{background:none;font-size:14px;padding-top:0;padding-bottom:2px}
 .cmpt tbody th{text-align:left;font-size:13.5px;font-weight:700;color:var(--sub);line-height:1.35;border-radius:10px 0 0 10px;width:36%}
 .cmpt tbody td:last-child{border-radius:0 10px 10px 0}
 .cmpt td{font-size:clamp(17px,5vw,20px);font-weight:800;line-height:1.3}
@@ -70,7 +70,7 @@
 .shrow .chip.q-h{background:#fde3c2}
 .shrow .chip.q-d{background:#e6eafb}
 .ab{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-.ab .btn{font-size:16px;padding-inline:8px}
+.ab .btn{font-size:16px;padding-left:8px;padding-right:8px}
 .ab.one{grid-template-columns:1fr}
 .askline{margin:12px 0 0;font-weight:700}
 .fb{margin-top:12px}
@@ -404,7 +404,7 @@ function shapeCard(P){
     <div class="shrow"><b style="color:${SUN}">☀️ ${kn(P.maj.k)}</b><div class="chips">${chainHTML(P.maj,false)}</div></div>
     <div class="shrow"><b style="color:${NIGHT}">🌙 ${kn(P.min.k)}</b><div class="chips">${chainHTML(P.min,true)}</div></div>
     <div class="rule">半減七の 第7音を 半音下げると 減七。<br>減七の 第7音を 半音上げると 半減七。</div>
-    <p class="note">減七は 4つの 音が ぜんぶ おなじ 間かくで ならぶので、けんばんで いうと <b>3つの家族</b> しか ないよ（<a href="minor-family.html" data-go="family">🏠 Ⅴの家族</a>）。</p></details>`;
+    <p class="note">減七は 4つの 音が ぜんぶ おなじ 間かくで ならぶので、けんばんで いうと <b>3つの なかま</b> しか ないよ（<a href="minor-family.html" data-go="family">🏠 Ⅴの家族</a>）。</p></details>`;
 }
 // 聴きくらべの 2つ（A・B は 音の 名前（CDE）と まちがえやすいので、画面では ①・②）
 const AB_NM={A:'①',B:'②'};
@@ -425,7 +425,7 @@ function linksCard(P){
   // リストに ない 短調（変イ短調）は、おなじ けんばんの 短調で ひらく
   const m=state.minor?null:P.minK, via=m&&m.enh&&m.idx>=0?`<small class="via">${kn(PA.minorKey(m.idx))}で ひらくよ（おなじ けんばん）</small>`:'';
   return `<details class="card fold" data-d="links"><summary><h2>🔗 つながる アプリ<small>Ⅴの家族・異名同音の 読みかえ</small></h2></summary><div class="links">
-    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族 <small>減七の 3つの家族・Ⅰへの すすみかた</small>${via}</button>
+    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族 <small>減七の 3つの なかま・Ⅰへの すすみかた</small>${via}</button>
     <button class="btn" data-act="go" data-v="enharmonic">🔀 異名同音の 読みかえ <small>おなじ 減七が 4つの 短調の Ⅶ7 に なる</small>${via}</button>
   </div></details>`;
 }

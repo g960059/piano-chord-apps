@@ -42,8 +42,10 @@
 .lvdesc{font-size:14px;color:var(--sub);margin:6px 2px 0;line-height:1.45}
 .lvdesc b{color:var(--ink)}
 .rinfo{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin-top:8px;font-size:14px;color:var(--sub);font-weight:700}
+.soundhint{background:#fff4d6;color:#6e4c00;border-radius:12px;padding:4px 4px 4px 10px}
+.soundhint .btn{background:#fff;border:2px solid #ecc967}
 .sessrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:8px}
-.sessrow .btn{min-height:40px;padding-block:6px}
+.sessrow .btn{min-height:44px;padding-top:6px;padding-bottom:6px}
 .pinrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;font-size:14px;font-weight:700}
 /* こたえの ボタン */
 .echoices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0 0;scroll-margin-bottom:96px}
@@ -63,7 +65,7 @@
 .echoice.dim[disabled]{opacity:.55}
 @media (min-width:520px){.echoices{grid-template-columns:repeat(3,minmax(0,1fr))}.echoices.odd .echoice:last-child{grid-column:auto}}
 /* よこむきの スマホ：絵文字と 名前を 1行に（ふりがなの ぶん 高く ならないように。2だんで ⬇の バーの 上に おさまる） */
-@media (max-height:500px) and (orientation:landscape){.echoice{min-height:64px;padding-block:4px;flex-direction:row;flex-wrap:wrap;column-gap:6px;align-content:center}
+@media (max-height:500px) and (orientation:landscape){.echoice{min-height:64px;padding-top:4px;padding-bottom:4px;flex-direction:row;flex-wrap:wrap;column-gap:6px;align-content:center}
   .echoice .em{font-size:20px}.echoice .lb{flex-basis:100%}.qtitle{scroll-margin-top:56px}}
 .fb,.msg{scroll-margin-bottom:96px;scroll-margin-top:72px}
 .fb{margin-top:12px}
@@ -115,7 +117,7 @@
 /* おわりかたクイズ：4つの 和音の ならびを 👂 きいて／🎼 見て、おわりかた（終止）の 名前を 当てる。和音は PA.ending（core.js）から
  * 保存（'ending-quiz'）：mode（'ear'｜'see'）・level（1〜4）・tier（PA.keyDeck の むずかしさ）・weak・sc（モードごとの スコア）・openSet・
  *   いまの もんだい q {minor, keyIdx, pat（PA.ending.PATTERNS の id）}・ans（えらんだ こたえ）・hint・played・step・
- *   deck（調の ふくろの のこり）・cBag（こたえの ふくろの のこり）・lastCat・lastPat・pin・pinFrom（'link'＝リンクの key：つぎに ひらいても のこる。'pick'＝チェック表の ます：その 3もんの あいだだけ）
+ *   deck（調の ふくろの のこり）・cBag（こたえの ふくろの のこり）・lastCat・lastPat・pin・pinFrom（'link'＝n の ない リンクの key：つぎに ひらいても のこる。'pick'＝チェック表の ます・n の ある リンクの key：その 回の あいだだけ）
  * 調の きろくは PA.keyDeck（'keystats-ending-quiz'）。れんしゅうの 回（📝 きょうの 5もん・チェック表の 3もん・リンクの n）は PA.session
  * リンク：mode＝ear｜see、level＝1〜4、tier＝easy｜normal｜hard｜all、key＝M0〜M12・m0〜m12（その 調だけ。短調なら レベル4）、n＝1〜20（れんしゅうの 回）。
  *   よんだら アドレスから はずす（「もどる」の 読みなおしで また はじめないように） */
@@ -154,8 +156,8 @@ const FROM_LINK=Object.keys(LINK).length>0||LINK_N!=null;
 let sess=LINK_N?PA.session(QUIZ,{n:LINK_N}):PA.session(QUIZ);
 
 /* ===== 状態 ===== */
-// pin：この 調だけ 出す（リンクの key＝'link'、チェック表の ます＝'pick'）
-const Q={mode:'ear',level:1,tier:'easy',weak:true,openSet:false,sc:{ear:{right:0,total:0,streak:0},see:{right:0,total:0,streak:0}},
+// pin：この 調だけ 出す（n の ない リンクの key＝'link'、チェック表の ます・n の ある リンクの key＝'pick'＝その 回の あいだだけ）
+const Q={mode:'ear',level:1,tier:'easy',weak:true,openSet:false,sc:{ear:{right:0,hint:0,total:0,streak:0},see:{right:0,hint:0,total:0,streak:0}},
   q:null,qid:0,ans:null,hint:false,played:false,step:0,muteHint:false,fresh:false,recorded:false,playing:false,cmp:null,sum:false,pin:null,pinFrom:null};
 let deck=null, cBag=[], lastCat=null, lastPat=null;
 const restoreDeck=s=>deck.restore(s); // ひらきなおしても ふくろの つづきから。もどせたら true
@@ -177,19 +179,19 @@ function setPin(id,from){
   if(TIER_IDS.includes(d.tier)) Q.tier=d.tier;
   if(typeof d.weak==='boolean') Q.weak=d.weak;
   Q.openSet=d.openSet===true;
-  ['ear','see'].forEach(m=>{const s=d.sc&&d.sc[m];if(s&&isInt(s.total,0,1e6)&&isInt(s.right,0,s.total)&&isInt(s.streak,0,s.right)) Q.sc[m]={right:s.right,total:s.total,streak:s.streak};});
+  ['ear','see'].forEach(m=>{const s=d.sc&&d.sc[m];if(s&&isInt(s.total,0,1e6)&&isInt(s.right,0,s.total)&&isInt(s.streak,0,s.right)) Q.sc[m]={right:s.right,hint:isInt(s.hint,0,s.total-s.right)?s.hint:0,total:s.total,streak:s.streak};});
   // おわった 回：おわって すぐ（「もどる」で 読みなおした）なら けっかの カード。前に おわった 回は かたづける（pin を もどす まえに）
   if(sess.finished()){const st=sess.state(); if(st&&st.endedAt!=null&&Date.now()-st.endedAt<10*6e4) Q.sum=true; else sess.clear();}
   // リンクの せっていが あれば そちらを
   if(LINK.mode) Q.mode=LINK.mode;
   if(LINK.level) Q.level=LINK.level;
   if(LINK.tier) Q.tier=LINK.tier;
-  if(LINK.key) setPin(LINK.key,'link');
+  if(LINK.key) setPin(LINK.key,LINK_N?'pick':'link'); // n の ある リンクは その 回の あいだだけ
   else{
     const k=KD.parse(d.pin), from=d.pinFrom==='link'?'link':'pick', st=sess.state();
     if(k&&LV(Q.level).modes.includes(k.minor?'minor':'major')){
       if(from==='link'&&!FROM_LINK) setPin(k.id,'link'); // 前に ひらいた リンクの 調（ほかの リンクで きたら すてる）
-      else if(from==='pick'&&sess.n()&&st&&st.sig==='key='+k.id) setPin(k.id,'pick'); // チェック表の 3もんの とちゅう（か、おわって すぐ）
+      else if(from==='pick'&&sess.n()&&st&&st.sig.split('&').indexOf('key='+k.id)>=0) setPin(k.id,'pick'); // チェック表の 3もん・n の ある リンクの 回の とちゅう（か、おわって すぐ）
     }
   }
   deck=KD.create({quiz:QUIZ,tier:Q.tier,modes:LV(Q.level).modes,weak:Q.weak});
@@ -243,7 +245,7 @@ const qLabel=q=>`${PA.keyName(keyOfQ(q))}の ${T(catOf(q.pat,Q.level)).name}`; /
 function answer(v){
   const ok=v===catOf(Q.q.pat,Q.level), hint=ok&&Q.mode==='see'&&Q.hint, s=Q.sc[Q.mode];
   Q.ans=v; s.total++;
-  if(ok&&!hint){s.right++;s.streak++;} else if(!ok) s.streak=0;
+  if(ok&&!hint){s.right++;s.streak++;} else if(hint) s.hint=(s.hint||0)+1; else s.streak=0;
   if(!Q.recorded){
     Q.recorded=true; deck.record(keyIdOf(Q.q),ok,{hint});
     if(sess.active()) sess.record({ok,hint,label:qLabel(Q.q),key:keyIdOf(Q.q)});
@@ -381,11 +383,11 @@ function render(){
   const q=Q.q, key=keyOfQ(q), data=dataOf(q), L=LV(Q.level), s=Q.sc[Q.mode], labels=showLabels();
   let h=`<div class="stack">${PA.seg('qmode',[['ear','👂 きいて 当てる'],['see','🎼 見て 当てる']],Q.mode,'full')}
     <section class="card hero">${lvHTML()}
-      <div class="score">⭐ ${s.right} / ${s.total} もん せいかい <span class="note" style="margin:0">れんぞく ${s.streak}</span> <span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(s.streak,10))}</span></div>
+      <div class="score">⭐ ${s.right} / ${s.total} もん せいかい${s.hint?` <span class="note" style="margin:0">💡 ヒントで できた ${s.hint}</span>`:''} <span class="note" style="margin:0">れんぞく ${s.streak}</span> <span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(s.streak,10))}</span></div>
       ${sessHTML()}
       <div class="qtitle"><span class="qkey">${PA.keyName(key)}</span><span>の おわりかたは？</span></div>
       <p class="qsub">（${PA.sigLabel(key)}）${Q.mode==='ear'?'和音が 4つ 鳴るよ。さいごの ほうを よく 聴こう。なんかい 聴いても いいよ。':'がくふと けんばんを 見て 当てよう。'}</p>`;
-  if(Q.muteHint&&!PA.settings.sound) h+=`<div class="rinfo" role="status">🔇 音が オフだよ。⚙️ で オンに してね</div>`;
+  if(Q.muteHint&&!PA.settings.sound) h+=`<div class="rinfo soundhint" role="status">🔇 音が オフだよ <button type="button" class="btn small" data-pa="sound-on">🔊 音を 出す</button></div>`;
   if(Q.mode==='see'&&Q.hint&&!Q.ans) h+=`<div class="msg" role="status" style="margin-top:10px">💡 ヒント：ローマ数字を 出したよ。<b>さいごの 2つ</b>を 見よう。</div>`;
   // 見て 当てる：がくふ・けんばんを 先に、こたえは その下に（見てから えらぶ）
   const ans=`<div class="echoices ${L.choices.length%2?'odd':''}">${L.choices.map(choiceHTML).join('')}</div>`+(Q.ans?fbHTML(key,data):'');
@@ -464,7 +466,7 @@ document.addEventListener('click',e=>{
     }
     case 'qtier': if(Q.pin||Q.tier===v||!TIER_IDS.includes(v)) return; stop(); Q.tier=v; deck.setOptions({tier:v}); newQ(); break; // 調を 1つに きめている ときは 出さない
     case 'qweak': {Q.weak=!Q.weak; const s=deckState(); deck.setOptions({weak:Q.weak}); restoreDeck(s); break;} // 今の もんだいも ふくろの のこりも そのまま。つぎの ふくろから
-    case 'qreset': Q.sc[Q.mode]={right:0,total:0,streak:0}; break;
+    case 'qreset': Q.sc[Q.mode]={right:0,hint:0,total:0,streak:0}; break;
     case 'unpin': if(!Q.pin) return; stop(); setPin(null); newQ(); break;
     case 'keystats-reset': if(v!==QUIZ) return; deck.reset(); break; // 2回 おす たしかめは core
     case 'kd-pick': { // チェック表の ます：その 調を 3もん

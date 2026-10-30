@@ -1,9 +1,12 @@
 /* オフラインでも ひらけるように（サービスワーカー）
    ・ページ（HTML）は ネットが さき。3びょう まっても こなければ 保存して ある ページを 出す
      → 古い ページに とじこめない。?key=… つきの しゅくだいリンクも 同じ ページとして 出す
-   ・js・css・画像は 保存して ある ものを すぐ 出して、うらで 新しく しておく
+   ・js・css も ネットが さき（3びょうで 保存ぶん）。新しい ページと 古い core.js が まざって
+     うごかなく なるのを ふせぐ
+   ・画像などは 保存して ある ものを すぐ 出して、うらで 新しく しておく
+   ・インストールで とれなかった ファイルは 前の 保存ぶんから うつす（オフラインで こわれないように）
    ・VERSION と PRECACHE は tools/build-meta.mjs が 書きかえる（手で なおさない） */
-const VERSION='fb375e81bd';
+const VERSION='bd3883a4e5';
 const PRECACHE=[
   './',
   'accompaniment.html',
@@ -45,7 +48,9 @@ const PRECACHE=[
 const PREFIX='pca-';
 const CACHE=PREFIX+VERSION;
 const NAV_TIMEOUT=3000;
+const CODE_TIMEOUT=3000;
 const ASSET_RE=/\.(?:js|css|png|svg|webmanifest|json|jpe?g|webp|ico|woff2?)$/i;
+const CODE_RE=/\.(?:js|css|json|webmanifest)$/i; // ページと いっしょに 新しく ならないと こまる もの
 
 /* リダイレクトされた レスポンスは そのまま ページに つかえないので、中身だけ うつす */
 function clean(res){
@@ -59,14 +64,19 @@ function put(req,res){
   return clean(res).then(r=>caches.open(CACHE).then(c=>c.put(req,r))).catch(()=>{});
 }
 
+/* とれなかった ときは 前の バージョンの 保存ぶん（まだ けしていない）を あたらしい 保存場所へ うつす */
+function copyOld(c,url){
+  return caches.match(url,{ignoreSearch:true}).then(old=>old?c.put(url,old):undefined).catch(()=>{});
+}
+
 self.addEventListener('install',e=>{
   e.waitUntil(caches.open(CACHE).then(c=>Promise.all(PRECACHE.map(p=>{
     const url=new URL(p,self.registration.scope).href;
     // 1つ だめでも ほかは 保存する
     return fetch(new Request(url,{cache:'reload'})).then(res=>{
-      if(!okToKeep(res)) return;
+      if(!okToKeep(res)) return copyOld(c,url);
       return clean(res).then(r=>c.put(url,r));
-    }).catch(()=>{});
+    }).catch(()=>copyOld(c,url));
   }))).then(()=>self.skipWaiting()));
 });
 
@@ -110,6 +120,17 @@ function onPage(e){
   });
 }
 
+/* js・css：ネットが さき。おそい・つながらない ときだけ 保存ぶん */
+function onCode(e){
+  const req=e.request;
+  const net=fetchAndKeep(e,req);
+  const timer=new Promise(resolve=>setTimeout(()=>resolve('late'),CODE_TIMEOUT));
+  return Promise.race([net.catch(()=>null),timer]).then(r=>{
+    if(r&&r!=='late'&&r.ok) return r;
+    return caches.open(CACHE).then(c=>c.match(req)).catch(()=>null).then(hit=>hit||net);
+  });
+}
+
 function onAsset(e){
   const req=e.request;
   const hit=caches.open(CACHE).then(c=>c.match(req)).catch(()=>null);
@@ -128,5 +149,6 @@ self.addEventListener('fetch',e=>{
     e.respondWith(onPage(e));
     return;
   }
-  if(ASSET_RE.test(url.pathname)) e.respondWith(onAsset(e));
+  if(CODE_RE.test(url.pathname)) e.respondWith(onCode(e));
+  else if(ASSET_RE.test(url.pathname)) e.respondWith(onAsset(e));
 });

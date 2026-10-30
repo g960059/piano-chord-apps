@@ -52,7 +52,7 @@
 .actionbar[hidden]{display:none}
 .sessline{display:flex;justify-content:flex-end;margin-top:6px}
 .soundhint{background:#fff4d6;color:#6e4c00;border-radius:12px;padding:2px 4px 2px 10px}
-.soundhint .btn{min-height:40px;background:#fff;border:2px solid #ecc967}
+.soundhint .btn{min-height:44px;background:#fff;border:2px solid #ecc967}
 /* まちがえた とき：えらんだ 和音と せいかいを おなじ 高さで くらべる */
 .ab{margin-top:10px;padding:10px 12px;border-radius:14px;background:var(--soft2)}
 .ab p{margin:0 0 6px;font-size:14.5px;font-weight:700;color:var(--sub)}
@@ -158,7 +158,8 @@ body{display:flex;flex-direction:column;min-height:calc(100vh - env(safe-area-in
 .echoice:not([disabled]):active{transform:scale(.97)}
 .echoice .em{font-size:30px;line-height:1.1}
 .echoice .wd{font-size:20px}
-.echoice .lb{font-size:15px;font-weight:700;opacity:.85}
+.echoice .lb{font-size:15px;font-weight:700;color:var(--sub)}
+.echoice.right .lb,.echoice.wrong .lb{color:inherit}
 .echoices.many{gap:8px}
 .echoices.many .echoice{min-height:84px;padding:8px 4px;border-radius:16px}
 .echoices.many .echoice .em{font-size:24px}
@@ -182,7 +183,7 @@ body{display:flex;flex-direction:column;min-height:calc(100vh - env(safe-area-in
 .legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px}
 .cmp{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
 .cmp .btn{flex-direction:column;gap:0;color:var(--c);padding:6px 6px;font-size:15px;border-radius:16px;min-height:56px}
-.cmp .btn small{font-size:12.5px;font-weight:700;opacity:.8}
+.cmp .btn small{font-size:12.5px;font-weight:700;color:var(--sub)}
 .hints{margin:8px 0 0;padding:0;list-style:none;font-size:15px}
 .hints li{padding:5px 0;border-bottom:1px solid var(--line)}
 .hints li:last-child{border-bottom:none}
@@ -272,7 +273,7 @@ const RESOLVE={V7:{4:4,6:7,8:7,10:9},DIM:{6:7,8:7,10:9,12:11}};
 const KEYS=PA.MINOR_KEYS.map((_,i)=>PA.minorKey(i)); // 主音は ラ3〜ソ♯4
 // 重嬰（x）が 出る 調（嬰ト短調・嬰ニ短調）は つかわない
 const FAM_KEYS=KEYS.filter(k=>['V7','DIM'].every(f=>famTones(k,f).every(n=>Math.abs(n.acc)<=1))).map(k=>k.idx);
-const FAM_ABC=['Ａ','Ｂ','Ｃ'];
+const FAM_NO=['①','②','③']; // 減七の 3つの なかま（minor-family と おなじ よびかた）
 // 嬰ニ短調（重嬰が 出る）を つかわないので、ミ♭7 だけは 調なしで つくる（根音の 高さ 12こ ぜんぶが 出るように）
 const EB7=[2,-1];
 
@@ -407,7 +408,7 @@ const RUN_KEEP=12*3600e3; // とちゅうの チャレンジを のこす 時間
 // lvBest[lv]：れんしゅうで その レベルの さいこう れんぞく（CLEAR いじょうで ✓）、lvRun：いまの レベルの れんぞく
 // topOpen：上の せっていの カードを ひらいているか（はじめての ときだけ ひらいて 出す。2回めからは 1行に たたむ）
 // sessLv：📝 きょうの 5もんを はじめた ときの レベル（けっかの カードと リンクに つかう）、sessMix：とちゅうで レベルを かえた
-const state={mode:'free',level:1,q:null,answer:null,left:null,right:0,total:0,streak:0,resShown:false,qn:0,fresh:false,askedAt:0,
+const state={mode:'free',level:1,q:null,answer:null,left:null,right:0,hint:0,total:0,streak:0,resShown:false,qn:0,fresh:false,askedAt:0,
   hinted:false,lvBest:[0,0,0,0,0,0,0,0,0],lvRun:0,topOpen:true,sessLv:0,sessMix:false};
 /* 🏆 チャレンジ（1回ぶん）。ライフ 3つ・5もん れんぞく 正解で レベルアップ・まちがえたら 1つ前の レベルへ。
  *  phase：'intro'（はじめる 前）｜'connecting'（サーバーに つないでいる）｜'offline'（つながらなかった）｜'play'｜'result'
@@ -493,7 +494,8 @@ function load(){
   const d0=PA.store.get('ear',{}), d=isObj(d0)?d0:{};
   if(d.mode==='free'||d.mode==='ch'||d.mode==='rank') state.mode=d.mode;
   if(isInt(d.level,1,MAXLV)) state.level=d.level;
-  if(isInt(d.total,0,1e6)&&isInt(d.right,0,d.total)&&isInt(d.streak,0,d.right)){state.right=d.right;state.total=d.total;state.streak=d.streak;}
+  if(isInt(d.total,0,1e6)&&isInt(d.right,0,d.total)&&isInt(d.streak,0,d.right)){state.right=d.right;state.total=d.total;state.streak=d.streak;
+    if(isInt(d.hint,0,d.total-d.right)) state.hint=d.hint;}
   if(Array.isArray(d.lvBest)&&d.lvBest.length===MAXLV+1&&d.lvBest.every(x=>isInt(x,0,1e6))) state.lvBest=d.lvBest.slice();
   if(isInt(d.lvRun,0,1e6)){state.lvRun=d.lvRun;state.lvBest[state.level]=Math.max(state.lvBest[state.level],d.lvRun);}
   state.topOpen=d.seen!==true;
@@ -513,7 +515,7 @@ function load(){
   if(d.v===4) chRestore(c.run);
   if(state.mode==='ch') chShow();
 }
-const save=()=>PA.store.set('ear',{v:4,mode:state.mode,level:state.level,right:state.right,total:state.total,streak:state.streak,
+const save=()=>PA.store.set('ear',{v:4,mode:state.mode,level:state.level,right:state.right,hint:state.hint,total:state.total,streak:state.streak,
   lvBest:state.lvBest,lvRun:state.lvRun,seen:true,sessLv:state.sessLv,sessMix:state.sessMix,rkPeriod:rk.period,
   ch:{best:ch.best,run:chSaved()},
   q:state.mode==='free'?state.q:null,answer:state.mode==='free'?state.answer:null,resShown:state.mode==='free'&&state.resShown,hinted:state.hinted});
@@ -738,7 +740,7 @@ function setLevel(lv){
   state.level=lv; state.lvRun=0; state.q=null; state.answer=null; state.resShown=false; state.left=null; state.hinted=false; save();
 }
 load();
-// リンクで 来たとき：この せっていに する（いまの せっていとして ほぞんも する）
+// リンクで 来たとき：この せっていに する（いまの せっていとして ほぞんも する。ほかの クイズと おなじ）
 const LINK=readLink(PA.params());
 let sess=null;
 if(LINK.mode&&LINK.mode!==state.mode) setMode(LINK.mode);
@@ -753,6 +755,9 @@ if(!sess.n()){state.sessLv=0;state.sessMix=false;}
 else if(LINK.n&&sess.count()===0){state.sessLv=state.level;state.sessMix=false;}
 else if(!state.sessLv) state.sessLv=state.level;
 save();
+// リンクの せっていは つかい おわったので、アドレスから はずす（読みなおしで また レベルが もどったり、
+// 🎈 じゆうに れんしゅう の あとに 新しい 回が はじまったり しないように。とちゅうの 回は のこっているので つづきから）
+if(location.search){try{history.replaceState(history.state,'',location.pathname+location.hash);}catch(e){}}
 const sumView=()=>state.mode==='free'&&sess.finished()&&!state.q;
 const linkParams=lv=>({mode:'practice',level:lv||state.level});
 // 5もんを はじめる・やめる（はじめた ときの レベルを おぼえる）
@@ -816,7 +821,7 @@ function feedbackHTML(){
   const head=!ok?'🤔 おしい！':state.hinted?'💡 せいかい！「ヒントで できた」だよ。':'🎉 せいかい！';
   let h=`<div class="fb ${ok?'good':'bad'}${state.fresh?'':' still'}" role="status">${head} これは <b>${E.label}</b>（${E.word}）。音は <b>${PA.namesH(q.notes)}</b>`;
   h+=`<br><span class="sm">根音（和音の 土台の 音）は <b>${PA.nmH(q.root)}</b>・コードネーム <b>${symOf(q.root,q.type)}</b>${q.open?'・ひらいた 形':''}</span>`;
-  if(K) h+=`<br><span class="sm">${PA.keyName(K)}の ${q.type==='dom7'?'Ⅴ7':'減七'} だよ。${q.type==='dim7'?`<b>${FAM_ABC[mod(K.lt.midi,3)]}の家族</b>。`:''}</span>`;
+  if(K) h+=`<br><span class="sm">${PA.keyName(K)}の ${q.type==='dom7'?'Ⅴ7':'減七'} だよ。${q.type==='dim7'?`<b>${FAM_NO[mod(K.lt.midi,3)]}の なかま</b>。`:''}</span>`;
   h+=`</div>`;
   if(state.mode==='ch'){
     h+=chMsgHTML();
@@ -839,7 +844,7 @@ function feedbackHTML(){
   const lo=Math.min(48,mn-mod(mn,12)), hi=Math.max(84,mx+11-mod(mx,12));
   h+=`<div class="kbwrap"><div class="scroll" data-sk="kb">${PA.kbSVG(lo,hi,marks)}</div>
     <div class="legend"><span><i style="background:${E.color}"></i>この和音</span>${res?`<span><i style="border:3px solid #e8553d"></i>すすんだ先（Ⅰ）</span>`:''}<span>さわると 音が出るよ</span></div></div>`;
-  if(K) h+=`<button class="btn small" data-act="efam" style="width:100%;margin-top:10px">🏠 Ⅴの家族で ${q.type==='dim7'?'減七の 3つの家族':'Ⅴ7'}を 見る</button>`;
+  if(K) h+=`<button class="btn small" data-act="efam" style="width:100%;margin-top:10px">🏠 Ⅴの家族で ${q.type==='dim7'?'減七の 3つの なかま':'Ⅴ7'}を 見る</button>`;
   return h;
 }
 // たたんだ ときの 1行（「📝 れんしゅう・レベル3（明るい・さびしい・…）」）
@@ -971,8 +976,8 @@ function heroHTML(){
   if(sumView()){
     // 「せってい」と リンクは、5もんを はじめた ときの レベル（あとで レベルを かえても かわらない）
     const L=state.sessLv||state.level;
-    return sess.summaryHTML({title:'和音の 聴きわけ',page:'ear',params:linkParams(L),settings:`れんしゅう・レベル${L}（${lvWords(L)}）${state.sessMix?'・とちゅうで レベルを かえた':''}`})
-      .replace('data-act="session-again"','data-act="session-again" data-hot="next"'); // →キーで もういちど（下の ボタン列は 出さない）
+    // けっかの カードの ボタンには キー（→）を つけない（2かい おして 先生に 見せる まえに きえないように）
+    return sess.summaryHTML({title:'和音の 聴きわけ',page:'ear',params:linkParams(L),settings:`れんしゅう・レベル${L}（${lvWords(L)}）${state.sessMix?'・とちゅうで レベルを かえた':''}`});
   }
   if(state.mode==='rank') return rankHTML();
   const inCh=state.mode==='ch';
@@ -985,7 +990,7 @@ function heroHTML(){
     score=`<div class="score"><b>🏆 レベル${lv}</b> ${heartsHTML(st.lives,!!state.answer&&state.answer!==q.type)}`
       +`<span role="img" aria-label="${CLEAR}もん中 ${streak}もん れんぞく 正解">${dots(CLEAR,streak,'pdots')}</span></div>`;
   }
-  else score=`<div class="score"><b>⭐ ${state.right} / ${state.total}</b> <span class="sub">れんぞく ${state.streak}</span>${state.streak?`<span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(state.streak,10))}</span>`:''}</div>`;
+  else score=`<div class="score"><b>⭐ ${state.right} / ${state.total}</b>${state.hint?` <span class="sub" aria-label="ヒントで できた ${state.hint}もん">💡 ${state.hint}</span>`:''} <span class="sub">れんぞく ${state.streak}</span>${state.streak?`<span class="stars" aria-hidden="true">${'🌟'.repeat(Math.min(state.streak,10))}</span>`:''}</div>`;
   const R=replaysOf(lv,state.mode);
   let h=`<section class="card hero"><div class="qhead"><h2>👂 この和音は どれ？</h2>${score}</div>`;
   if(inCh&&ch.offline) h+=`<span class="offtag">${ch.offWhy==='time'?'⏰ 2時間を すぎたので ランキングなし':ch.offWhy==='busy'?'⏳ こみあっているので ランキングなしで あそんでいるよ':'📴 オフライン：ランキングなしで あそんでいるよ'}</span>`;
@@ -1153,7 +1158,8 @@ document.addEventListener('click',e=>{
       state.total++;
       if(!ok){state.streak=0;state.lvRun=0;}
       else if(!state.hinted){state.right++;state.streak++;state.lvRun++;if(state.lvRun>state.lvBest[q.lv]) state.lvBest[q.lv]=state.lvRun;}
-      // ヒントで できた：⭐ は ふえないが、れんぞくも そのまま
+      else state.hint++;
+      // ヒントで できた：⭐ は ふえないが、れんぞくも そのまま（💡 の 数に かぞえる）
       if(sess.active()) sess.record({ok,hint:ok&&state.hinted,label:`レベル${q.lv}　${T[q.type].word}（${T[q.type].label}）${PA.namesT(q.notes)}${ok?'':`　えらんだ：${T[v].word}`}`});
     }
     save(); state.fresh=true; render(); playEar();

@@ -35,7 +35,7 @@
 .panel .sub{font-size:15px;color:var(--sub);margin:0 0 6px}
 .stair{min-width:480px}
 .trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px;margin-top:10px}
-.trio .btn{padding-inline:4px;font-size:15px}
+.trio .btn{padding-left:4px;padding-right:4px;font-size:15px}
 .panel .msg{margin-top:12px}
 .msg b.lt{color:var(--red)}
 .rule a.btn{margin-top:10px;background:var(--card);color:#24316f}
@@ -58,7 +58,7 @@
 @media (min-width:1000px),(orientation:landscape) and (max-height:500px) and (min-width:600px){.duo{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media (min-width:1000px){
   .stair{min-width:0} /* 2れつでも かいだんが 横スクロールなしで おさまる */
-  .ab{max-width:600px;margin-inline:auto}
+  .ab{max-width:600px;margin-left:auto;margin-right:auto}
 }
 .more ul{margin:0;padding-left:1.3em}
 .more li{margin:6px 0}
@@ -234,7 +234,8 @@ function render(){
     }
   }
   h+=`</section>
-    ${PA.tryHTML({to:'minor-quiz',params:{mode:'mark'},sub:'いろいろな 短調で、7ばんめに つける 記号（♯・♮・<span class="ds">x</span>）を えらんでみよう',btn:'🎯 記号を えらぶ クイズ'})}
+    ${PA.tryHTML({to:'minor-quiz',params:{mode:'mark',key:PA.keyDeck.id(true,state.keyIdx),n:3},
+      sub:`${PA.keyName(key)}から はじめて、7ばんめに つける 記号（♯・♮・<span class="ds">x</span>）を えらんでみよう（3もん）`,btn:'🎯 記号を えらぶ クイズ（この 調から 3もん）'})}
     <details class="more"><summary>💡 この ページの 音について</summary><ul>
       <li>和音は、7ばんめの 音を 半音上げた 短音階で 作っているよ。</li>
       <li>ダブルシャープは、楽譜では「<span class="ds">x</span>」のような 形で 書くよ。この画面でも <span class="ds">x</span> で あらわしているよ。</li>

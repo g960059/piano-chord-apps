@@ -29,7 +29,7 @@
 <style>
 .toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .nw{white-space:nowrap}
-.mf{color:#c98500}
+.mf{color:#8f5a00} /* 字は こい オレンジ（印・わくは #c98500 / #f4a100） */
 .ink{color:var(--ink)}
 .hero{border-top:6px solid var(--c5)}
 .ivtop{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
@@ -182,8 +182,14 @@ const KB_LO=60, KB_HI=84; // まんなかの ド から 2オクターブ
 const L=l=>PA.nmH({letter:l,acc:0}); // ♯・♭の ない 文字の 名前（音名の せっていに あわせる）
 const MIFA=()=>`<b class="mf nw">${L(2)}・${L(3)}</b>`, SIDO=()=>`<b class="mf nw">${L(6)}・${L(0)}</b>`;
 const yomi=(w,y)=>`<ruby>${w}<rt>${y}</rt></ruby>`; // ふりがな
-const lab=i=>{const l=IV.label(i);return l[0]===l[1]?l[0]:`${l[0]}<small>（${l[1]}）</small>`;};
-const labT=i=>{const l=IV.label(i);return l[0]===l[1]?l[0]:`${l[0]}（${l[1]}）`;};
+// 名前：8度より 広い ときは「1オクターブと 広い3度（長10度）」の ように、本の 名前は 10度の まま
+const fullLabel=i=>{
+  if(!i.q||i.num<=8) return IV.label(i);
+  const Q=IV.QN[i.q], easy=i.sn===8?(i.q==='P'?'':Q[0]+' ')+i.oct+'オクターブ':`${i.oct}オクターブと ${Q[0]}${i.sn}度`;
+  return [easy,Q[1]+i.num+'度'];
+};
+const lab=i=>{const l=fullLabel(i);return l[0]===l[1]?l[0]:`${l[0]}<small>（${l[1]}）</small>`;};
+const labT=i=>{const l=fullLabel(i);return l[0]===l[1]?l[0]:`${l[0]}（${l[1]}）`;};
 const rnd=n=>Math.floor(Math.random()*n);
 
 /* ===== 状態 ===== */
@@ -402,7 +408,7 @@ function tipsHTML(){
   </ol></details>`;
 }
 function termsHTML(){
-  const i=curPair(), ex=i&&i.q?`いまの ${PA.nmH(i.lo)}→${PA.nmH(i.hi)} は ${IV.label(i)[1]}。`:'';
+  const i=curPair(), ex=i&&i.q?`いまの ${PA.nmH(i.lo)}→${PA.nmH(i.hi)} は ${fullLabel(i)[1]}。`:'';
   return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary><dl>
     <dt>${yomi('音程','おんてい')}</dt>
     <dd>2つの 音の へだたりの こと。この ページの「音の へだたり」。${ex}</dd>
@@ -457,6 +463,10 @@ let pickSrc=false;
 const srcOf=e=>{pickSrc=!!(e.target&&e.target.closest&&e.target.closest('[data-kbpick]'));};
 document.addEventListener('pointerdown',srcOf,true);
 document.addEventListener('keydown',srcOf,true);
+if(!window.PointerEvent){ // iOS 12 など：core は click で 鳴らすので、その 前の さわりはじめで しらべる
+  document.addEventListener('touchstart',srcOf,{capture:true,passive:true});
+  document.addEventListener('mousedown',srcOf,true);
+}
 PA.onKey=m=>{ // 音は core が 鳴らす
   if(!pickSrc) return;
   const key=curKey();

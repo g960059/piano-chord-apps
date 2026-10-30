@@ -106,7 +106,7 @@
 |---|---|
 | `chord-quiz.html` | `key`（その 調だけ）・`chord`（`I`・`IV`・`V`・`V7` を `,` で）・`mode`（`keys`＝けんばんで おさえる／`choice`＝4つから えらぶ）・`tier`・`keyset`（`major`・`minor`・`both`。この ページだけ）・`n` |
 | `minor-quiz.html` | `mode`（`chord`＝和音を おさえる／`mark`＝臨時記号を えらぶ）・`chord`（`V`・`V7`・`V9`・`DIM` を `,` で）・`tier`・`key`（短調 `m0`〜`m12`。`mark`（または `chord` が 1つ）の ときは さいしょの 1もんだけ、あとは `tier` の 調。`key` だけで `mode` が ない ときは `chord`）・`n` |
-| `chroma-quiz.html` | `mode`（`keys`＝けんばんで おさえる／`ear`＝耳で 聴きわける）・`level`（おさえる 1〜5／耳 1〜3）・`chord`（和音の id を `,` で）・`tier`・`key`・`n` |
+| `chroma-quiz.html` | `mode`（`keys`＝けんばんで おさえる／`ear`＝耳で 聴きわける）・`level`（おさえる 1〜5／耳 1〜3）・`chord`（和音の id を `,` で）・`tier`・`key`・`n`。`mode` が なくて `key`・`n`・`level`・`chord`・`tier` の どれかが あれば `keys`（ほぞんした こたえかたが `ear` でも けんばんに なる） |
 | `ending-quiz.html` | `mode`（`ear`＝聴いて／`see`＝がくふを 見て）・`level`（1〜4）・`tier`・`key`・`n` |
 | `ear.html` | `mode`（`practice`＝れんしゅう／`challenge`＝🏆 チャレンジ（ランキング））・`level`（1〜8）・`n`。`level`・`n` だけでも れんしゅうに なる。`challenge` の ときは `level`・`n` は つかわない（いつも レベル1から） |
 | `accompaniment.html` | `song`（曲の id。例 `mary`）・`key`（長調 `M0`〜`M12` だけ） |
