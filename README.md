@@ -40,6 +40,7 @@
 | | 異名同音の読みかえ | しくみ | `enharmonic.html` |
 | | 変化和音クイズ | クイズ | `chroma-quiz.html` |
 | 👂 耳をきたえる | 和音の聴きわけ（10種類・8レベル・🏆 チャレンジと 📊 ランキング） | 耳 | `ear.html` |
+| | ならびの聴きわけ（Ⅰ→Ⅳ→Ⅴ7→Ⅰ などのならびの「？」を当てる・いちばん下と上の音・5ステップ） | 耳 | `progression.html` |
 
 ## 🏆 ランキング（和音の聴きわけ）
 
@@ -108,6 +109,7 @@
 | `chroma-quiz.html` | `mode`（`keys`＝けんばんでおさえる／`ear`＝耳で聴きわける）・`level`（おさえる1〜5／耳1〜3）・`chord`（和音の id を `,` で）・`tier`・`key`・`n`。`mode` がなくて `key`・`n`・`level`・`chord`・`tier` のどれかがあれば `keys`（ほぞんしたこたえかたが `ear` でもけんばんになる） |
 | `ending-quiz.html` | `mode`（`ear`＝聴いて／`see`＝がくふを見て）・`level`（1〜4）・`tier`・`key`・`n` |
 | `ear.html` | `mode`（`practice`＝れんしゅう／`challenge`＝🏆 チャレンジ（ランキング））・`level`（1〜8）・`n`。`level`・`n` だけでもれんしゅうになる。`challenge` のときは `level`・`n` はつかわない（いつもレベル1から） |
+| `progression.html` | `step`（1〜5。1＝Ⅰ・Ⅳ・Ⅴ、2＝Ⅴ7・Ⅵ、3＝いちばん下の音、4＝いちばん上の音、5＝短調もまぜて）・`n`・`slow`（`1`＝🐢 ゆっくり鳴らす） |
 | `accompaniment.html` | `song`（曲の id。例 `mary`）・`key`（長調 `M0`〜`M12` だけ） |
 | `chord-build.html` | `key`・`chord`（`I`・`IV`・`V`・`V7`） |
 | `chord-table.html` | `key`・`chord`（`I`・`IV`・`V`・`V7`） |
