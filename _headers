@@ -1,0 +1,11 @@
+# 静的ファイル（ページ・assets/・sw.js など）に つける 安全用の ヘッダー（Cloudflare Workers の 静的ファイルの きまり）
+# - ページは Worker（src/worker.js）を 通らないので、ここで つける。中身は src/worker.js の SEC_HEADERS と そろえる。
+# - ほかの サイトの 中（iframe）に 入れさせない（設定の シートで 記録を 消させる などの いたずらを ふせぐ）。
+# - マイク（assets/mic.js）は つかうので Permissions-Policy で とめない。
+# - この ファイルは .assetsignore に 書かない（書くと つかわれなく なる）。
+/*
+  X-Frame-Options: DENY
+  Content-Security-Policy: frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), geolocation=(), payment=()

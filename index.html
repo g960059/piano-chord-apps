@@ -3,6 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- meta:start -->
+<meta name="description" content="ピアノを 習う人の ための、和音を「見て・聴いて・さわって」おぼえる 小さな アプリ集。Ⅰ・Ⅳ・Ⅴ7 から 短調・おわりかた・変化和音、伴奏づけ、聴きわけまで。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ピアノ和音アプリ">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="ピアノ和音アプリ">
+<meta property="og:description" content="ピアノを 習う人の ための、和音を「見て・聴いて・さわって」おぼえる 小さな アプリ集。Ⅰ・Ⅳ・Ⅴ7 から 短調・おわりかた・変化和音、伴奏づけ、聴きわけまで。">
+<meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/">
+<meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ピアノ和音アプリ">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -10,24 +28,78 @@
 <title>ピアノ和音アプリ</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
-.hello{display:flex;gap:12px;align-items:center}
-.hello .logo{flex:none;width:56px;height:56px;border-radius:16px;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:30px}
-.hello h2{margin:0;font-size:20px}
-.cat{display:flex;flex-direction:column;gap:8px}
-.cat-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;margin:8px 2px 0}
-.cat-head h2{margin:0;font-size:18px}
-.cat-head span{color:var(--sub);font-size:13px}
-.apps{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:10px}
-.appcard{display:flex;align-items:center;gap:12px;min-height:76px;padding:12px 14px;border-radius:18px;background:var(--card);text-decoration:none;
-  box-shadow:0 2px 0 #eadfce,0 6px 18px rgba(80,60,30,.06);border-left:6px solid var(--c)}
-.appcard:active{transform:scale(.99)}
-.appcard .ic{flex:none;width:48px;height:48px;border-radius:14px;background:var(--l);display:grid;place-items:center;font-size:26px}
-.appcard .tx{min-width:0;flex:1}
-.appcard b{display:block;font-size:17px;line-height:1.3}
-.appcard .d{display:block;color:var(--sub);font-size:13px;line-height:1.45;margin-top:2px}
-.appcard .ty{display:inline-block;font-size:12px;font-weight:800;padding:1px 8px;border-radius:999px;background:var(--l);color:var(--c);margin-bottom:2px}
-.appcard::after{content:"›";flex:none;color:var(--sub);font-size:24px}
-.cont{border-left-color:var(--ink)}
+/* 種類の 色は PA.APP_TYPES の dk（白い 字を のせて 4.5:1 いじょう）だけ。和音の 色（赤・緑・青・むらさき）とは わける */
+.home h2{margin:0;font-size:18px}
+.home h2 small{display:block;font-weight:400;color:var(--sub);font-size:13px;margin-top:2px}
+.site{margin:2px 4px 0;color:var(--sub);font-size:14px;line-height:1.6}
+/* はじめての 人 */
+.hero{border:3px solid var(--ink);text-align:center;padding:18px 16px}
+.hero .big{font-size:44px;line-height:1}
+.hero h2{font-size:22px;margin-top:6px}
+.hero .lead{color:var(--ink);font-size:16px;margin:6px 0 12px;word-break:keep-all;overflow-wrap:anywhere}
+.hero .btn{display:flex;width:100%;min-height:56px;font-size:18px}
+/* つづきから */
+.go{display:flex;align-items:center;gap:12px;min-height:72px;margin-top:8px;padding:10px 14px;border-radius:16px;background:var(--tc);color:#fff;text-decoration:none}
+.go .ic{flex:none;width:46px;height:46px;border-radius:14px;background:rgba(255,255,255,.92);display:grid;place-items:center;font-size:25px}
+.go .tx{flex:1;min-width:0}
+.go b{display:block;font-size:18px;line-height:1.3}
+.go .meta{display:block;font-size:13px;line-height:1.45;opacity:.95}
+.go::after{content:"›";flex:none;font-size:28px}
+.go2{display:flex;align-items:center;gap:8px;min-height:48px;margin-top:8px;padding:6px 12px;border-radius:14px;background:var(--soft2);color:var(--ink);text-decoration:none;font-size:15px}
+.go2 .tx{flex:1;min-width:0}
+.go2 small{color:var(--sub);font-size:13px}
+.go2::after{content:"›";flex:none;color:var(--sub);font-size:22px}
+/* にがて ふくしゅう */
+.weak ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+#view .weak li a{display:flex;margin:0;align-items:center;gap:10px;min-height:52px;padding:6px 12px;border-radius:14px;background:var(--soft2);color:var(--ink);text-decoration:none}
+.weak .tx{flex:1;min-width:0;line-height:1.35}
+.weak .tx b{display:block;font-size:16px}
+.weak .tx small{color:var(--sub);font-size:13px}
+.weak .wtag{flex:none;font-size:12px;font-weight:800;padding:2px 8px;border-radius:999px;border:2px solid #a3273a;color:#a3273a;background:#fff}
+.weak .wtag.l{border-color:#6e4c00;color:#6e4c00}
+.weak .w3{flex:none;font-weight:800;font-size:14px;white-space:nowrap}
+/* コース */
+.course-head{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;margin:6px 4px 0}
+.units{display:grid;gap:10px;align-items:start}
+@media (min-width:760px){.units{grid-template-columns:1fr 1fr}}
+details.unit{background:var(--card);border-radius:18px;box-shadow:0 2px 0 #eadfce,0 6px 18px rgba(80,60,30,.06);min-width:0}
+details.unit>summary{display:flex;align-items:center;gap:10px;min-height:56px;padding:8px 14px;cursor:pointer;list-style:none}
+details.unit>summary::-webkit-details-marker{display:none}
+details.unit>summary::after{content:"▾";flex:none;color:var(--sub);font-size:15px;transition:transform .15s}
+details.unit[open]>summary::after{transform:rotate(180deg)}
+.unit .ut{flex:1;min-width:0}
+.unit .ut b{display:block;font-size:16px;line-height:1.35}
+.unit .ut small{display:block;color:var(--sub);font-size:12.5px;line-height:1.4}
+.unit .prog{flex:none;text-align:right;font-size:12.5px;font-weight:700;color:var(--sub);white-space:nowrap}
+.unit .prog.done{color:var(--ok)}
+.unit .bar{display:block;width:64px;height:6px;margin:3px 0 0 auto;border-radius:3px;background:var(--soft);overflow:hidden}
+.unit .bar i{display:block;height:100%;background:var(--ok)}
+.unit.next{outline:3px solid var(--ink);outline-offset:-3px}
+.unit .nexttag{display:inline-block;margin-right:4px;font-size:11.5px;font-weight:800;padding:0 7px;border-radius:999px;background:var(--ink);color:#fff;vertical-align:2px}
+.alist{list-style:none;margin:0;padding:0 8px 8px;display:flex;flex-direction:column;gap:4px}
+#view li a.arow{display:flex;margin:0;align-items:center;gap:10px;min-height:56px;padding:6px 8px;border-radius:14px;color:var(--ink);text-decoration:none;border-left:5px solid var(--tc)}
+.arow:hover{background:var(--soft2)}
+.arow .ic{flex:none;width:38px;height:38px;border-radius:12px;background:var(--soft2);display:grid;place-items:center;font-size:21px}
+.arow .tx{flex:1;min-width:0;line-height:1.35}
+.arow .tx b{font-size:15.5px}
+.arow .d{display:block;color:var(--sub);font-size:12.5px;line-height:1.45}
+.ty{display:inline-block;font-size:11.5px;font-weight:800;padding:0 7px;border-radius:999px;background:var(--tc);color:#fff;margin-right:4px;vertical-align:1px;white-space:nowrap}
+.arow .st{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:12px;font-weight:700;color:var(--sub);white-space:nowrap}
+.arow .seen{color:var(--ok);font-size:16px}
+.arow .kd{color:var(--ok)}
+/* どうぐ */
+.tools{display:grid;gap:6px;margin-top:8px}
+.tool{display:flex;align-items:center;gap:10px;min-height:52px;padding:6px 12px;border-radius:14px;background:var(--soft2);color:var(--ink);text-decoration:none;border-left:5px solid var(--tc)}
+.tool .ic{flex:none;font-size:22px;line-height:1}
+.tool .tx{flex:1;min-width:0;line-height:1.35}
+.tool b{font-size:15px}
+.tool small{color:var(--sub);font-size:12.5px;margin-left:6px}
+@media (max-width:599px){.tool small.opt{display:none}} /* スマホは 1行に（耳の「まいにち すこしずつ」だけ のこす） */
+.tool::after{content:"›";flex:none;color:var(--sub);font-size:22px}
+@media (min-width:600px){.tools{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.foot{margin:4px 4px 0;font-size:13px;line-height:1.6}
+.foot>summary{cursor:pointer;font-weight:700;min-height:44px;display:flex;align-items:center}
+.foot p{margin:0 0 4px}
 </style>
 </head>
 <body>
@@ -35,52 +107,157 @@
 <main class="page wide" id="view"></main>
 <script src="assets/core.js"></script>
 <script>
-/* 入口：すべてのアプリを カテゴリごとに ならべる */
-const TYPES={learn:{label:'しくみ',c:'#3b4fa8',l:'#e6eafb'},quiz:{label:'クイズ',c:'#e8553d',l:'#fde5df'},play:{label:'れんしゅう',c:'#22a06b',l:'#daf3e6'},ref:{label:'いちらん',c:'#8a4fe0',l:'#ece2fb'},ear:{label:'耳',c:'#c98500',l:'#fff1cc'}};
-const CATS=[
-  {title:'🎹 長調・短調の Ⅰ・Ⅳ・Ⅴ・Ⅴ7',sub:'まずは ここから',apps:[
-    {id:'chord-build',ic:'🐸',title:'和音のしくみ',d:'音階の なんばんめから「ひとつとばし」で 和音を つくる',type:'learn'},
-    {id:'chord-quiz',ic:'🎯',title:'和音クイズ',d:'「ト長調のⅤ7は？」を けんばんで おさえる／えらぶ',type:'quiz'},
-    {id:'cadence',ic:'🎵',title:'カデンツ',d:'「おしまい」に なる 和音の ならび Ⅰ→Ⅳ→Ⅰ→Ⅴ7→Ⅰ を 聴いて、伴奏の形を 見る',type:'play'},
-    {id:'chord-table',ic:'📋',title:'和音いちらん表',d:'ぜんぶの調の Ⅰ・Ⅳ・Ⅴ・Ⅴ7。かくして れんしゅうも',type:'ref'}]},
-  {title:'🌙 短調と 臨時記号',sub:'Ⅴ・Ⅴ7・Ⅴ9・減七',apps:[
-    {id:'minor-why',ic:'❓',title:'なぜ 7ばんめを 上げるの？',d:'長調と 短調の「7ばんめ→主音」を くらべて 聴く',type:'learn'},
-    {id:'minor-signature',ic:'♮',title:'調号と 臨時記号',d:'調号に 書けない わけ。♯・♮・<span class="ds">x</span> の いちらん',type:'learn'},
-    {id:'minor-family',ic:'🏠',title:'Ⅴの家族',d:'Ⅴ→Ⅴ7→Ⅴ9→減七 と、Ⅰへの すすみかた',type:'learn'},
-    {id:'minor-quiz',ic:'🎯',title:'短調クイズ',d:'短調の Ⅴの家族を おさえる／臨時記号を えらぶ',type:'quiz'}]},
-  {title:'🏁 おわりかた（終止形）',sub:'曲の おわりの 6つの 形',apps:[
-    {id:'ending',ic:'🏁',title:'おわりかた',d:'完全終止・半終止・偽終止 など 6つの おわりかたを、聴いて・がくふで 見る',type:'learn'},
-    {id:'ending-quiz',ic:'🎯',title:'おわりかたクイズ',d:'4つの 和音を 聴いて／がくふを 見て、おわりかたの 名前を 当てる',type:'quiz'}]},
-  {title:'🌈 変化和音',sub:'調の 音を 半音 うごかす・よその 調から かりる 和音',apps:[
-    {id:'doppel',ic:'🔺',title:'Ⅱ7と ドッペルドミナント',d:'Ⅱ7 の 第3音を 上げると「Ⅴの ための Ⅴ7」に なる',type:'learn'},
-    {id:'secondary',ic:'🧭',title:'副属和音',d:'Ⅱ・Ⅲ・Ⅳ・Ⅵ を いっとき Ⅰ に みたてる「その和音の ための Ⅴ7」',type:'learn'},
-    {id:'aug6',ic:'↔️',title:'増六の和音',d:'イタリア・フランス・ドイツの6。外へ ひらいて Ⅴ へ',type:'learn'},
-    {id:'neapolitan',ic:'🌋',title:'ナポリの六',d:'2ばんめを 半音下げた ♭Ⅱ。いちばん下の 音と Ⅴ への すすみかた',type:'learn'},
-    {id:'borrowed',ic:'🎁',title:'準固有和音（借用和音）',d:'長調で、同じ主音の 短調から かりる Ⅳ・♭Ⅵ など',type:'learn'},
-    {id:'dim-halfdim',ic:'⚖️',title:'減七と 半減七',d:'にている ひびき。ちがうのは 第7音だけ',type:'learn'},
-    {id:'enharmonic',ic:'🔀',title:'異名同音の 読みかえ',d:'同じ けんばんでも、書き方と すすむ先で 役わりが かわる',type:'learn'},
-    {id:'chroma-quiz',ic:'🎯',title:'変化和音クイズ',d:'けんばんで おさえる／耳で 聴きわける',type:'quiz'}]},
-  {title:'🎼 つかってみる',sub:'曲に 和音を つける',apps:[
-    {id:'accompaniment',ic:'🎼',title:'伴奏づけ',d:'知っている曲の メロディーに Ⅰ・Ⅳ・Ⅴ7 を つける',type:'play'}]},
-  {title:'👂 耳を きたえる',sub:'聴いて パッと わかる',apps:[
-    {id:'ear',ic:'👂',title:'和音の 聴きわけ',d:'10しゅるいの 和音を 音で 当てる。8レベルと チャレンジ',type:'ear'},
-    {id:'waon',ic:'🏆',title:'和音ききわけ（ランキング）',d:'聴きわけの 単体アプリ。みんなと ランキングで きそおう',type:'ear',href:'https://waon-kikiwake.g960059.workers.dev/'}]}
-];
-const ALL=CATS.flatMap(c=>c.apps);
-function card(a,extra=''){
-  const t=TYPES[a.type];
-  return `<a class="appcard ${extra}" href="${a.href||a.id+'.html'}" style="--c:${t.c};--l:${t.l}"><span class="ic">${a.ic}</span><span class="tx"><span class="ty">${t.label}</span><b>${a.title}</b><span class="d">${a.d}</span></span></a>`;
+/* 入口：つづきから・にがて ふくしゅう・コース（PA.UNITS の じゅん）・どうぐ
+ *   目次は core の PA.UNITS・PA.APPS・PA.APP_TYPES（このページでは もたない）。app.title は ただの 文字、app.d は HTML
+ *   ひらいた アプリ：PA.store 'visited'（PA.mountBar が きろく）。まえからの 人は 'last'・'keystats-…' なども 見る
+ *   コースの ひらく／とじる：PA.store 'home-units'＝{unit の id: true/false}（じぶんで おした ときだけ ほぞん） */
+const T=PA.APP_TYPES, ESC=PA.esc;
+const TALLY_MODES={'minor-quiz':['minor']}; // 短調クイズは 短調だけ（12）。ほかは 長調・短調（24）
+const isObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
+const rec=k=>{const v=PA.store.get(k,null);return isObj(v)&&typeof v.app==='string'&&PA.app(v.app)?v:null;};
+const typeOf=a=>T[a.type]||T.learn;
+
+// ひらいた ことの ある アプリ（id の Set）
+function visitedSet(){
+  const out=new Set(), v=PA.store.get('visited',{});
+  if(isObj(v)) Object.keys(v).forEach(id=>{if(PA.app(id)) out.add(id);});
+  ['last','last-practice','last-learn'].forEach(k=>{const r=rec(k);if(r) out.add(r.app);});
+  // 'visited' が できる 前から つかっている 人：クイズの きろくや ページの 設定が あれば ひらいた ことが ある
+  PA.store.keys().forEach(k=>{const id=k.replace(/^(keystats|session)-/,'');if(PA.app(id)) out.add(id);});
+  return out;
 }
+// 「きょう」「きのう」「3日まえ」
+function when(t){
+  if(!(t>0)) return '';
+  const d0=new Date(); d0.setHours(0,0,0,0);
+  const days=Math.ceil((d0.getTime()-t)/864e5);
+  return days<=0?'きょう':days===1?'きのう':days<7?days+'日まえ':days<30?Math.floor(days/7)+'週間まえ':'しばらく まえ';
+}
+// その アプリで さいごに やった こと（わかれば）。ただの 文字
+function lastDone(app){
+  if(!/^(quiz|ear)$/.test(app.type)) return '';
+  let st=null; try{st=PA.session(app.id).state();}catch(e){}
+  if(st&&st.done.length<st.n) return `📝 きょうの ${st.n}もん　${st.done.length} / ${st.n} の とちゅう`;
+  if(st){const t=PA.sessionTally(st.done,st.n);return `📝 ${st.n}もん中 ${t.ok}もん できた`;}
+  if(app.type!=='quiz') return '';
+  const s=PA.keyDeck.stats(app.id); let best=null;
+  Object.keys(s).forEach(id=>{if(!best||(s[id].last||0)>(s[best].last||0)) best=id;});
+  const p=best&&PA.keyDeck.parse(best);
+  return p?'さいごの 調：'+PA.keyName(PA.keyOf(p.minor,p.idx)):'';
+}
+function goCard(app,t){
+  const ty=typeOf(app), meta=[ty.label,when(t),lastDone(app)].filter(Boolean).join('・');
+  return `<a class="go" href="${app.id}.html" style="--tc:${ty.dk}"><span class="ic" aria-hidden="true">${app.ic}</span><span class="tx"><b>${ESC(app.title)}</b><span class="meta">${ESC(meta)}</span></span></a>`;
+}
+
+/* ----- 上：はじめての 人／つづきから・にがて ふくしゅう ----- */
+// 'last…' が ない けれど ひらいた ことが ある 人：さいごに ひらいた アプリ（'visited' の 時こく）、なければ つぎの 単元の まだ ひらいて いない アプリ
+function fallbackRec(vis){
+  const v=PA.store.get('visited',{}); let best=null;
+  if(isObj(v)) Object.keys(v).forEach(id=>{const t=v[id];if(PA.app(id)&&typeof t==='number'&&t>0&&(!best||t>best.t)) best={app:id,t};});
+  if(best) return best;
+  const nx=PA.UNITS.find(u=>u.id===nextUnitId(vis))||PA.UNITS[0];
+  const id=nx&&(nx.apps.find(a=>PA.app(a)&&!vis.has(a))||nx.apps.find(a=>PA.app(a)));
+  return id?{app:id,t:0}:null;
+}
+function topHTML(vis){
+  const lp=rec('last-practice'), ll=rec('last-learn'), old=rec('last');
+  if(!vis.size&&!lp){
+    return `<section class="card hero" aria-labelledby="hero-h"><div class="big" aria-hidden="true">🐸</div>
+      <h2 id="hero-h">はじめての 和音</h2>
+      <p class="lead">ド・ミ・ソを 見て・聴いて・つくって みよう</p>
+      <a class="btn primary" href="chord-build.html">ここから はじめる ›</a></section>`;
+  }
+  const main=lp||ll||old||fallbackRec(vis);
+  let h='';
+  if(main){
+    const app=PA.app(main.app);
+    h+=`<section class="card" aria-labelledby="cont-h"><h2 id="cont-h">▶️ つづきから</h2>${goCard(app,main.t)}`;
+    if(ll&&main!==ll&&ll.app!==main.app){
+      const la=PA.app(ll.app);
+      h+=`<a class="go2" href="${la.id}.html"><span aria-hidden="true">📖</span><span class="tx">${ESC(la.title)} <small>（${typeOf(la).label}・${when(ll.t)}）</small></span></a>`;
+    }else if(!lp&&main.app){
+      const pr=PA.app(PA.app(main.app).practice||'');
+      if(pr) h+=`<a class="go2" href="${pr.id}.html"><span aria-hidden="true">${pr.ic}</span><span class="tx">${ESC(pr.title)}で れんしゅう <small>（${typeOf(pr).label}）</small></span></a>`;
+    }
+    h+=`</section>`;
+  }
+  // にがて ふくしゅう：クイズの ページだけ（key と n で その 調の 3もん）
+  const ws=PA.weakSummary(30).filter(w=>{const a=PA.app(w.quiz);return a&&a.type==='quiz';}).slice(0,3);
+  if(ws.length){
+    h+=`<section class="card weak" aria-labelledby="weak-h"><h2 id="weak-h">🔁 にがて ふくしゅう<small>まちがえやすい 調を 3もんずつ</small></h2><ul>`
+      +ws.map(w=>{
+        const a=PA.app(w.quiz), weak=w.mastery==='weak';
+        return `<li><a href="${ESC(PA.url(w.quiz,{key:w.id,n:3}))}"><span class="tx"><b>${ESC(w.name)}</b><small>${ESC(a.title)}</small></span>`
+          +`<span class="wtag${weak?'':' l'}">${weak?'にがて':'もうすこし'}</span><span class="w3">3もん ›</span></a></li>`;
+      }).join('')+`</ul></section>`;
+  }
+  return h;
+}
+
+/* ----- コース：単元ごとに 1まい ----- */
+function nextUnitId(vis){
+  const u=PA.UNITS.find(u=>u.apps.some(id=>!vis.has(id)));
+  return u?u.id:null;
+}
+function quizStat(id){
+  const t=PA.keyDeck.tally(id,{modes:TALLY_MODES[id]||['major','minor']});
+  return {good:t.good,total:t.total};
+}
+function appRow(app,vis){
+  const ty=typeOf(app), seen=vis.has(app.id);
+  let st='';
+  if(seen) st+=`<span class="seen" aria-hidden="true">✓</span><span class="pa-sr">ひらいた ことが ある</span>`;
+  if(app.type==='quiz'&&seen){const q=quizStat(app.id);st+=`<span class="kd">できた 調 ${q.good}／${q.total}</span>`;}
+  return `<li><a class="arow" href="${app.href?ESC(app.href):app.id+'.html'}" style="--tc:${ty.dk}"><span class="ic" aria-hidden="true">${app.ic}</span>`
+    +`<span class="tx"><span class="ty" style="--tc:${ty.dk}">${ty.label}</span><b>${ESC(app.title)}</b><span class="d">${app.d}</span></span>`
+    +(st?`<span class="st">${st}</span>`:'')+`</a></li>`;
+}
+function courseHTML(vis){
+  const saved=PA.store.get('home-units',{}), sv=isObj(saved)?saved:{};
+  const wide=!!(window.matchMedia&&matchMedia('(min-width:760px)').matches);
+  const nx=nextUnitId(vis);
+  const cards=PA.UNITS.map(u=>{
+    const apps=u.apps.map(PA.app).filter(Boolean), n=apps.filter(a=>vis.has(a.id)).length, done=n===apps.length;
+    const open=typeof sv[u.id]==='boolean'?sv[u.id]:(wide||u.id===nx);
+    const isNext=u.id===nx;
+    return `<details class="unit${isNext?' next':''}" data-d="unit-${u.id}" data-u="${u.id}"${open?' open':''}>`
+      +`<summary><span class="ut"><b>${isNext?'<span class="nexttag">つぎは ここ</span>':''}${ESC(u.title)}</b><small>${ESC(u.sub)}</small></span>`
+      +`<span class="prog${done?' done':''}">${done?'✓ ':''}${n} / ${apps.length} ひらいた<span class="bar" aria-hidden="true"><i style="width:${Math.round(n/Math.max(1,apps.length)*100)}%"></i></span></span></summary>`
+      +`<ul class="alist">${apps.map(a=>appRow(a,vis)).join('')}</ul></details>`;
+  }).join('');
+  return `<div class="course-head"><h2>🗺️ コース</h2></div><div class="units">${cards}</div>`;
+}
+
+/* ----- どうぐ・さいごの おしらせ ----- */
+function toolsHTML(){
+  const tool=(id,sub,keep)=>{const a=PA.app(id);if(!a) return '';const ty=typeOf(a);
+    return `<a class="tool" href="${a.id}.html" style="--tc:${ty.dk}"><span class="ic" aria-hidden="true">${a.ic}</span><span class="tx"><b>${ESC(a.title)}</b><small${keep?'':' class="opt"'}>${sub}</small></span></a>`;};
+  return `<section class="card" aria-labelledby="tools-h"><h2 id="tools-h">🧰 どうぐ<small>どの 単元の ときでも つかえる</small></h2><div class="tools">`
+    +tool('chord-table','ぜんぶの 調の 和音')+tool('accompaniment','曲に 和音を つける')+tool('ear','まいにち すこしずつ',true)
+    +`</div></section>`;
+}
+function footHTML(){
+  return `<details class="note foot" data-d="foot"><summary>ℹ️ つかいかたの メモ（⚙️ 設定・ホーム画面・きろくの ひかえ）</summary>
+    <p>⚙️（右上）：音の 名前（ドレミ／CDE／ハニホ）と 基準の 音（ラ＝440〜443Hz）。どの アプリも おなじ 設定です。</p>
+    <p>📱 ホーム画面に 追加すると、アプリのように ひらけて、ネットが なくても つかえます。</p>
+    <p>💾 きろくは この 端末の 中だけ。ときどき ⚙️ → 💾 で ファイルに ひかえて おこう。</p>
+    <p>🏆 ランキングは「和音の 聴きわけ」の 🏆 チャレンジで のせられるよ（なまえは ニックネームで）。</p></details>`;
+}
+
 function render(){
-  const last=PA.store.get('last',null), la=last&&ALL.find(a=>a.id===last.app);
-  let h=`<div class="stack">
-    <section class="card"><div class="hello"><span class="logo">🎹</span><div><h2>ピアノ和音アプリ</h2><p class="lead">Ⅰ・Ⅳ・Ⅴ・Ⅴ7、短調の Ⅴ・減七、伴奏づけを「見て・聴いて・さわって」おぼえよう</p></div></div></section>`;
-  if(la) h+=`<div class="cat"><div class="cat-head"><h2>▶️ つづきから</h2></div><div class="apps">${card(la,'cont')}</div></div>`; // 広い画面でも 1まいだけ 横に のびない
-  CATS.forEach(c=>{h+=`<div class="cat"><div class="cat-head"><h2>${c.title}</h2><span>${c.sub}</span></div><div class="apps">${c.apps.map(a=>card(a)).join('')}</div></div>`;});
-  h+=`<p class="note">右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と 基準の音（ラ＝440〜443Hz）を えらべます。どのアプリにも 同じ設定が つかわれます。<br>
-    スマホの ホーム画面に 追加すると、アプリのように すぐ ひらけます。</p></div>`;
+  const vis=visitedSet();
+  const h=`<div class="stack home">${topHTML(vis)}
+    <p class="site">Ⅰ・Ⅳ・Ⅴ から 7つの 和音、短調、おわりかた、変化和音、伴奏づけ、耳の れんしゅうまで。「見て・聴いて・さわって」おぼえよう。</p>
+    ${courseHTML(vis)}${toolsHTML()}${footHTML()}</div>`;
   PA.paint(document.getElementById('view'),h,'home');
 }
+// じぶんで ひらいた／とじた 単元だけ おぼえる
+document.getElementById('view').addEventListener('click',e=>{
+  const sm=e.target.closest&&e.target.closest('details.unit>summary'); if(!sm) return;
+  const d=sm.parentNode;
+  setTimeout(()=>{const s=PA.store.get('home-units',{}), sv=isObj(s)?s:{};sv[d.dataset.u]=d.open;PA.store.set('home-units',sv);},0);
+});
 PA.store.set('return-to',null);
 PA.mountBar({title:'ピアノ和音アプリ',back:'#'});
 document.querySelector('#appbar a.iconbtn').outerHTML='<span class="iconbtn" aria-hidden="true">🎹</span>';

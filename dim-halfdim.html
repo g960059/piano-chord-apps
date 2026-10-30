@@ -3,6 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- meta:start -->
+<meta name="description" content="にている ひびき。ちがうのは 第7音だけ">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ピアノ和音アプリ">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="減七と 半減七｜ピアノ和音アプリ">
+<meta property="og:description" content="にている ひびき。ちがうのは 第7音だけ">
+<meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/dim-halfdim.html">
+<meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ピアノ和音アプリ">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -23,13 +41,13 @@
 .side .st small{font-size:13px;font-weight:700}
 .side .sn{font-size:clamp(16px,4.6vw,19px);font-weight:800;line-height:1.35;margin-top:2px}
 .side .sy{font-size:13px;color:var(--sub);line-height:1.4}
-.side .btn{margin-top:6px;width:100%;padding-inline:6px;background:var(--card);border:2px solid var(--c);color:var(--c)}
+.side .btn{margin-top:6px;width:100%;padding-left:6px;padding-right:6px;background:var(--card);border:2px solid var(--c);color:var(--c)}
 .side.on .btn{background:var(--c);color:#fff}
 .msg{margin-top:10px}
 .msg b.big{font-size:19px;color:#b0307a}
 .cmpt{width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0 4px;margin-top:8px}
 .cmpt th,.cmpt td{padding:6px 6px;text-align:center;vertical-align:middle;background:var(--soft2)}
-.cmpt thead th{background:none;font-size:14px;padding-block:0 2px}
+.cmpt thead th{background:none;font-size:14px;padding-top:0;padding-bottom:2px}
 .cmpt tbody th{text-align:left;font-size:13.5px;font-weight:700;color:var(--sub);line-height:1.35;border-radius:10px 0 0 10px;width:36%}
 .cmpt tbody td:last-child{border-radius:0 10px 10px 0}
 .cmpt td{font-size:clamp(17px,5vw,20px);font-weight:800;line-height:1.3}
@@ -52,7 +70,7 @@
 .shrow .chip.q-h{background:#fde3c2}
 .shrow .chip.q-d{background:#e6eafb}
 .ab{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
-.ab .btn{font-size:16px;padding-inline:8px}
+.ab .btn{font-size:16px;padding-left:8px;padding-right:8px}
 .ab.one{grid-template-columns:1fr}
 .askline{margin:12px 0 0;font-weight:700}
 .fb{margin-top:12px}
@@ -70,6 +88,14 @@
 .terms dt:first-child{margin-top:2px}
 .terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
 .terms .yomi{font-weight:400;font-size:12px;color:var(--sub)}
+/* たたんだ カード（見たい ときに ひらく）。PA.paint が data-d で ひらいた ままに する */
+details.fold>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:10px;min-height:48px;margin:-4px 0}
+details.fold>summary::-webkit-details-marker{display:none}
+details.fold>summary h2{margin:0;flex:1;min-width:0}
+/* 「ひらく／とじる」は 見た目だけ（読み上げは 見出しと「ひらいている／とじている」だけに。古い Safari は 2つめを むしして 1つめを つかう） */
+details.fold>summary::after{content:"ひらく ▾";content:"ひらく ▾"/"";flex:none;font-size:13px;font-weight:700;color:var(--sub);padding:4px 10px;border-radius:999px;background:var(--soft2);white-space:nowrap}
+details.fold[open]>summary::after{content:"とじる ▴";content:"とじる ▴"/""}
+details.fold[open]>summary{margin-bottom:10px}
 </style>
 </head>
 <body>
@@ -93,6 +119,11 @@ const state={minor:saved.minor===true,keyIdx:0,view:'vii',side:'maj',play:null,r
 if(Number.isInteger(saved.keyIdx)&&saved.keyIdx>=0&&saved.keyIdx<PA.keyCount(state.minor)) state.keyIdx=saved.keyIdx;
 state.side=state.minor?'min':'maj';
 const save=()=>PA.store.set('dim-halfdim',{minor:state.minor,keyIdx:state.keyIdx});
+// 先生の リンク：key＝調（M0〜M12 長調、m0〜m12 短調）。ちがう 値は つかわない。いまの 設定にも する
+(()=>{
+  const k=PA.keyDeck.parse(PA.params().key); if(!k) return;
+  state.minor=k.minor; state.keyIdx=k.idx; state.side=k.minor?'min':'maj'; save();
+})();
 const curKey=()=>PA.keyOf(state.minor,state.keyIdx); // 長調の主音は ド4〜シ4、短調は ラ3〜ソ♯4
 
 /* ===== 調 ===== */
@@ -271,7 +302,7 @@ function staticMsg(P){
   const M=P.maj, N=P.min, lt=M.stack[0];
   let m=`${kn(M.k)}の Ⅶ7 は <b style="color:${SUN}">半減七</b>、${kn(N.k)}の Ⅶ7 は <b style="color:${NIGHT}">減七</b>。`;
   m+=`<br>導音から ひとつとばしに つんだ 下の 3つ（${namesW(M.stack.slice(0,3))}）は まったく おなじ 音。ちがうのは いちばん上の <b class="dn">第7音</b>だけで、おなじ 文字の ${q(M.six)}と${q(N.six)}。どちらも 音階の 6ばんめ（調号の とおりの 音）だよ。`;
-  m+=`<br>導音${q(lt)}は 7ばんめの 音。短調では 7ばんめを 半音上げて つくるので、長調と おなじ 音に なるよ。`;
+  m+=`<br>導音${q(lt)}（主音に すすみたがる 音）は 7ばんめの 音。短調では 7ばんめを 半音上げて つくるので、長調と おなじ 音に なるよ。`;
   return m;
 }
 // つくりかたの さいごの 文（設定で 音の 名前を かえても いまの 名前で 出るように、その つど つくる）
@@ -287,7 +318,7 @@ function enhNote(P){
 function heroCard(P){
   const A=state.anim;
   return `<section class="card hero">
-    <h2>⚖️ ちがうのは 第7音だけ<small>おなじ 主音${q(tonicOf(P.majK))}の 長調と 短調の Ⅶ7（どちらも Ⅴ9 の 根音を はぶいた 和音）</small></h2>
+    <h2>⚖️ ちがうのは 第7音だけ<small>おなじ 主音${q(tonicOf(P.majK))}の 長調と 短調の Ⅶ7（どちらも Ⅴ9 から 根音＝土台の 音を はぶいた 和音）</small></h2>
     <div class="pair2">${sideCard(P.maj,'☀️')}${sideCard(P.min,'🌙')}</div>
     <div class="msg">${A?A.msg():state.autoWait?'👆 どこかを タッチすると <b>つくりかた</b>が はじまるよ':state.done?doneMsg(P):staticMsg(P)}</div>
     ${enhNote(P)}
@@ -323,12 +354,12 @@ function tableCard(P){
     rows+=`<tr class="${d?'d':''}"><th>${same?rm:stripP(rm)}</th><td>${PA.nmH(a)}${sub(rm)}</td><td>${PA.nmH(b)}${sub(rn)}<span class="eq">${d?'ちがう！':'おなじ'}</span></td></tr>`;
   });
   const note=v9?`Ⅴ9 として 見ると、音階の 5ばんめ${q(M.root)}（根音）を はぶいた 形。ちがうのは <b class="dn">第9音</b>だけ（短調の ほうが 半音 ひくい）。`
-    :`下の 3つ（根音・第3音・第5音）は どちらも おなじ 減三和音。<b class="dn">第7音</b>だけ ちがうよ。`;
-  return `<section class="card"><h2>🔍 ひとつずつ くらべる<small>${kn(M.k)}と ${kn(N.k)}</small></h2>
+    :`下の 3つ（根音・第3音・第5音）は どちらも おなじ 減三和音（せまくて きゅうくつな 三和音）。<b class="dn">第7音</b>だけ ちがうよ。`;
+  return `<details class="card fold" data-d="table"><summary><h2>🔍 ひとつずつ くらべる<small>${kn(M.k)}と ${kn(N.k)}。Ⅶ7 として・Ⅴ9 として 見る</small></h2></summary>
     ${PA.seg('view',[['vii','Ⅶ7 として 見る'],['v9','Ⅴ9 として 見る']],state.view,'full')}
     <table class="cmpt"><thead><tr><th></th><th style="color:${SUN}">☀️ 長調</th><th style="color:${NIGHT}">🌙 短調</th></tr></thead><tbody>${rows}</tbody></table>
     <p class="note">${note}</p>
-    <p class="note">Ⅶ7 の 第7音 ＝ Ⅴ9 の 第9音 ＝ 音階の 6ばんめ。おなじ 音を、どこから 見るかで よびかたが かわるよ。</p></section>`;
+    <p class="note">Ⅶ7 の 第7音 ＝ Ⅴ9 の 第9音 ＝ 音階の 6ばんめ。おなじ 音を、どこから 見るかで よびかたが かわるよ。</p></details>`;
 }
 function staffCmpCard(P){
   const M=P.maj, N=P.min, L=PA.nm({letter:M.six.letter,acc:0});
@@ -368,33 +399,44 @@ function chainHTML(s,minor){
 }
 function shapeCard(P){
   const W=[6,1,3,5].map(L=>PA.nmH({letter:L,acc:0})).join(PA.settings.naming==='ja'?'・':'');
-  return `<section class="card"><h2>🧩 かたちで おぼえる<small>計算しないで、パッと わかるように</small></h2>
+  return `<details class="card fold" data-d="shape"><summary><h2>🧩 かたちで おぼえる<small>計算しないで、パッと わかるように</small></h2></summary>
     <p class="note" style="margin-top:0;color:var(--ink)">白鍵だけで ひとつとばしに 4つ つんだ 七の和音で、<b style="color:${SUN}">半減七</b>に なるのは「${W}」だけ。<b style="color:${NIGHT}">減七</b>は 白鍵だけでは できないよ。</p>
     <div class="shrow"><b style="color:${SUN}">☀️ ${kn(P.maj.k)}</b><div class="chips">${chainHTML(P.maj,false)}</div></div>
     <div class="shrow"><b style="color:${NIGHT}">🌙 ${kn(P.min.k)}</b><div class="chips">${chainHTML(P.min,true)}</div></div>
     <div class="rule">半減七の 第7音を 半音下げると 減七。<br>減七の 第7音を 半音上げると 半減七。</div>
-    <p class="note">減七は 4つの 音が ぜんぶ おなじ 間かくで ならぶので、けんばんで いうと <b>3つの家族</b> しか ないよ（<a href="minor-family.html" data-go="family">🏠 Ⅴの家族</a>）。</p></section>`;
+    <p class="note">減七は 4つの 音が ぜんぶ おなじ 間かくで ならぶので、けんばんで いうと <b>3つの なかま</b> しか ないよ（<a href="minor-family.html" data-go="family">🏠 Ⅴの家族</a>）。</p></details>`;
 }
+// 聴きくらべの 2つ（A・B は 音の 名前（CDE）と まちがえやすいので、画面では ①・②）
+const AB_NM={A:'①',B:'②'};
 function abCard(P){
   const ab=state.ab;
   let h=`<section class="card"><h2>👂 どっちが 減七？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>${kn(P.maj.k)}の 半減七と ${kn(P.min.k)}の 減七</small></h2>
     <p class="note" style="margin-top:0">減七は 4つの 音が おなじ 間かくで、<b>ぐっと くらく ドキドキ</b> する ひびき。半減七は すこし <b>やわらかい</b>。</p>`;
   if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext">🎲 もんだいを 出す</button></div></section>`;
-  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ A を きく</button><button class="btn" data-act="abplay" data-v="B">▶️ B を きく</button></div>`;
-  if(ab.answer==null) return h+`<p class="askline">減七は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">A が 減七</button><button class="btn night" data-act="qchoose" data-v="B">B が 減七</button></div></section>`;
+  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">▶️ ① を きく</button><button class="btn" data-act="abplay" data-v="B">▶️ ② を きく</button></div>`;
+  if(ab.answer==null) return h+`<p class="askline">減七は？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">① が 減七</button><button class="btn night" data-act="qchoose" data-v="B">② が 減七</button></div></section>`;
   const ok=ab.answer===ab.dim, other=ab.dim==='A'?'B':'A';
   return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！ もういちど 聴きくらべてみよう。'}
-      <b>${ab.dim}</b> が 減七（${namesD(P.min)}）、<b>${other}</b> が 半減七（${namesD(P.maj)}）。
+      <b>${AB_NM[ab.dim]}</b> が 減七（${namesD(P.min)}）、<b>${AB_NM[other]}</b> が 半減七（${namesD(P.maj)}）。
       <br>ちがうのは いちばん上の${q(P.maj.six)}と${q(P.min.six)}だけ。</div>
-    <div class="ab one"><button class="btn night" data-act="qnext">🎲 つぎの もんだい</button></div></section>`;
+    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">🎲 つぎの もんだい</button></div></section>`;
 }
 function linksCard(P){
   // リストに ない 短調（変イ短調）は、おなじ けんばんの 短調で ひらく
   const m=state.minor?null:P.minK, via=m&&m.enh&&m.idx>=0?`<small class="via">${kn(PA.minorKey(m.idx))}で ひらくよ（おなじ けんばん）</small>`:'';
-  return `<section class="card"><h2>🔗 つながる アプリ</h2><div class="links">
-    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族 <small>減七の 3つの家族・Ⅰへの すすみかた</small>${via}</button>
+  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながる アプリ<small>Ⅴの家族・異名同音の 読みかえ</small></h2></summary><div class="links">
+    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族 <small>減七の 3つの なかま・Ⅰへの すすみかた</small>${via}</button>
     <button class="btn" data-act="go" data-v="enharmonic">🔀 異名同音の 読みかえ <small>おなじ 減七が 4つの 短調の Ⅶ7 に なる</small>${via}</button>
-  </div></section>`;
+  </div></details>`;
+}
+// 「ためしてみる」：変化和音クイズで Ⅶ7（長調＝半減七・短調＝減七）を いまの 調で 5もん。
+// Ⅶ7 だけの レベルは ないので chord＝vii7 で えらぶ（レベル5「ぜんぶ」にも 入っている）
+function tryCard(){
+  const key=PA.keyDeck.id(state.minor,state.keyIdx);
+  return PA.tryHTML({to:'chroma-quiz',params:{key,mode:'keys',chord:'vii7',n:5},
+    sub:`${kn(curKey())}の Ⅶ7（${state.minor?'短調では 減七':'長調では 半減七'}）を けんばんで おさえてみよう。5もん。`,
+    btn:'🎯 5もん ためしてみる',
+    links:[{to:'chroma-quiz',params:{key,mode:'keys',level:5,n:5},label:'🎹 レベル5（ぜんぶの 和音）'},{to:'ear',params:{level:8},label:'👂 減七・半減七を 耳で 聴きわける（ぜんぶの 和音）'}]});
 }
 function moreHTML(P){
   const M=P.maj, N=P.min;
@@ -428,12 +470,12 @@ function render(){
   const key=curKey(), P=pairOf(key);
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}・${P.respell?`${kn(P.majK)}（おなじ けんばん）で ${kn(P.minK)}と`:`${kn(state.minor?P.majK:P.minK)}と`} くらべる</span></div>`;
-  h+=heroCard(P)+kbCard(P)+tableCard(P)+staffCmpCard(P)+resCard(P)+shapeCard(P)+abCard(P)+linksCard(P)+moreHTML(P)+termsHTML(P);
+  h+=heroCard(P)+kbCard(P)+tableCard(P)+staffCmpCard(P)+resCard(P)+abCard(P)+shapeCard(P)+tryCard()+linksCard(P)+moreHTML(P)+termsHTML(P);
   h+=`<p class="note">※ 音の 高さは ふつうの ピアノと おなじです。けんばんと「がくふで くらべる」は Ⅶ7 を 導音から ひとつとばしで つんだ 形、「Ⅰへ すすむ」は 4つの 声（左手 1つ・右手 3つ）の 形で 鳴らします。</p></div>`;
   PA.paint(document.getElementById('view'),h,'dh:'+state.minor+':'+state.keyIdx);
   PA.follow(document.getElementById('view')); // 光る鍵が 見えるように（見えて いれば 動かさない。鳴らしおわって もとの 形に もどったときも）
   const acts=(state.anim?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
-    `<button class="btn" data-act="cmp">🔊 くらべる</button><button class="btn primary" data-act="resolve">➡️ Ⅰへ</button>`;
+    `<button class="btn" data-act="cmp" data-hot="listen">🔊 くらべる</button><button class="btn primary" data-act="resolve">➡️ Ⅰへ</button>`;
   if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
 }
 

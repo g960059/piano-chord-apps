@@ -3,6 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- meta:start -->
+<meta name="description" content="完全終止・半終止・偽終止 など 6つの おわりかたを、聴いて・がくふで 見る">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ピアノ和音アプリ">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="おわりかた｜ピアノ和音アプリ">
+<meta property="og:description" content="完全終止・半終止・偽終止 など 6つの おわりかたを、聴いて・がくふで 見る">
+<meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/ending.html">
+<meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ピアノ和音アプリ">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -21,7 +39,7 @@
 .tpick button[disabled]{opacity:.45;cursor:default;border-style:dashed}
 @media (min-width:700px){.tpick{grid-template-columns:repeat(6,minmax(0,1fr))}}
 @media (max-width:359px){.tpick button{font-size:13px;letter-spacing:-.04em}}
-.varseg button{line-height:1.25;padding-block:6px;font-size:14px}
+.varseg button{line-height:1.25;padding-top:6px;padding-bottom:6px;font-size:14px}
 .varseg button small{display:block;font-weight:400;font-size:12px;color:var(--sub)}
 .seqlabel{margin:0 0 -4px;font-size:14px;color:var(--sub)}
 .seq{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
@@ -49,7 +67,7 @@
 .handblk:first-of-type{margin-top:0}
 .kbw{margin:0 auto}
 .staffw{margin:0 auto}
-.actionbar .btn{padding-inline:4px;gap:4px;overflow:hidden}
+.actionbar .btn{padding-left:4px;padding-right:4px;gap:4px;overflow:hidden}
 .actionbar .btn.nx{flex-grow:.6}
 .nw{white-space:nowrap}
 .msgs{display:grid;margin-top:10px}
@@ -57,7 +75,7 @@
 .lbl-n{display:none}
 @media (max-width:359px){
   .actionbar{gap:6px}
-  .actionbar .btn{font-size:14px;gap:2px;padding-inline:3px;letter-spacing:-.03em}
+  .actionbar .btn{font-size:14px;gap:2px;padding-left:3px;padding-right:3px;letter-spacing:-.03em}
   .lbl-w{display:none}.lbl-n{display:inline}
 }
 /* くらべて聴く */
@@ -169,7 +187,16 @@ function tipsHTML(key){
     <li>全終止は さらに 2つに わかれる。さいごの <b>いちばん上の 音が 主音</b>「${d(0)}」で、Ⅴ7 も Ⅰ も <b>いちばん下が 根音</b>なら 完全終止。どれかが ちがえば 不完全終止。</li>
     <li>左手（いちばん下の 音）も ヒント。${PA.keyName(key)}では Ⅴ → Ⅰ は ふつう「${d(4)} → ${d(0)}」（不完全終止の れい B は「${d(1)} → ${d(0)}」）、Ⅳ → Ⅰ は「${d(3)} → ${d(0)}」、Ⅴ7 → Ⅵ は「${d(4)} → ${d(5)}」。</li>
     <li>${key.minor?`<b>フリギア終止</b>は 短調だけ。Ⅳ の いちばん下が 6ばんめの 音「${d(5)}」で、そこから 半音 下の「${d(4)}」へ 下がって Ⅴ で とまる。`:'<b>フリギア終止</b>は 短調だけ。Ⅳ の いちばん下が 6ばんめの 音で、そこから 半音 下がって Ⅴ で とまる。'}</li>
-  </ul><p style="margin:10px 0 0"><a class="btn small" href="ending-quiz.html">🎯 おわりかたクイズで ためす</a></p></details>`;
+  </ul></details>`;
+}
+// おわりかたクイズへ：いまの 調で 3もん。いまの おわりかたが 出る レベル（短調は レベル4 だけ）
+const QUIZ_LV={perfect:3,imperfect:3,half:1,plagal:1,deceptive:2,phrygian:4};
+function tryCard(key){
+  const M=T(state.type), level=key.minor?4:QUIZ_LV[state.type], p={level,key:PA.keyDeck.id(state.minor,state.keyIdx),n:3};
+  return PA.tryHTML({to:'ending-quiz',params:Object.assign({mode:'ear'},p),
+    sub:`${PA.keyName(key)}で 3もん。${M.emoji} ${M.name}も 出る レベル${level}だよ。`,
+    btn:'👂 きいて 当てる 3もん',
+    links:[{to:'ending-quiz',params:Object.assign({mode:'see'},p),label:'🎼 見て 当てる 3もん'}]});
 }
 function termsHTML(key){
   const d=k=>PA.nmH(PA.at(key.scale,k));
@@ -233,15 +260,15 @@ function render(){
   const cols=data.map((c,i)=>({notes:c.rh,lh:c.lh,color:PA.COL[c.ch],accColor:'#d1495b',op:i===step?1:0.28,label:c.label,sub:c.inv?'てんかい':'',labelColor:PA.COL[c.ch]}));
   h+=`<section class="card"><h2>🎼 がくふ<small>いま ひいている和音が こい色。上が右手、下が左手</small></h2>
     <div class="scroll" data-sk="staff"><div class="staffw" style="min-width:${staffMinW(key)}px">${PA.staffSVG(key,cols,{grand:true,colW:66})}</div></div></section>`;
-  h+=cmpHTML(key)+tipsHTML(key)+termsHTML(key)+`</div>`;
+  h+=cmpHTML(key)+tryCard(key)+tipsHTML(key)+termsHTML(key)+`</div>`;
   const view=document.getElementById('view'), sig=state.minor+':'+state.keyIdx+':'+state.type+':'+state.variant;
   PA.paint(view,h,sig);
   // 和音が かわったら けんばんを その和音へ（見えていれば 動かさない）
   if(step!==lastStep||sig!==lastSig) PA.follow(view);
   lastStep=step; lastSig=sig;
   PA.paint(document.getElementById('actions'),
-    (state.playing?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn primary" data-act="cplay" aria-label="ながして聴く">▶️ <span class="lbl-w">ながして聴く</span><span class="lbl-n">ながす</span></button>`)+
-    `<button class="btn" data-act="again">🔊 もういちど</button><button class="btn nx" data-act="next" aria-label="つぎの和音">つぎ ➡</button>`,'bar');
+    (state.playing?`<button class="btn" data-act="stop" data-hot="listen">⏹ とめる</button>`:`<button class="btn primary" data-act="cplay" data-hot="listen" aria-label="ながして聴く">▶️ <span class="lbl-w">ながして聴く</span><span class="lbl-n">ながす</span></button>`)+
+    `<button class="btn" data-act="again">🔊 もういちど</button><button class="btn nx" data-act="next" data-hot="next" aria-label="つぎの和音">つぎ ➡</button>`,'bar');
 }
 
 /* ===== 音 ===== */

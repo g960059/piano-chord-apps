@@ -3,6 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- meta:start -->
+<meta name="description" content="Ⅴ→Ⅴ7→Ⅴ9→減七 と、Ⅰへの すすみかた">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ピアノ和音アプリ">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="Ⅴの家族｜ピアノ和音アプリ">
+<meta property="og:description" content="Ⅴ→Ⅴ7→Ⅴ9→減七 と、Ⅰへの すすみかた">
+<meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/minor-family.html">
+<meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ピアノ和音アプリ">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -60,6 +78,8 @@ const FAM={
   DIM:{label:'減七',ks:[6,8,10,12],title:'減七の和音（Ⅴ9 から 根音を はぶいた 形）'}
 };
 const FAM_KEYS=['V','V7','V9','DIM'];
+// 「3もん ためしてみる」で いっしょに 出す 和音（見ている 和音が さき。Ⅴ9 と 減七 は にた なかま）
+const TRY_PAIR={V:['V','V7'],V7:['V7','V'],V9:['V9','DIM'],DIM:['DIM','V9']};
 // 解決（上の声部をなめらかに）：根音はそのまま（Ⅰの第5音）、導音→主音、第5音→主音か第3音、第7音→第3音、第9音→第5音
 const RESOLVE={V:{4:4,6:7,8:9},V7:{4:4,6:7,8:7,10:9},V9:{4:4,6:7,8:7,10:9,12:11},DIM:{6:7,8:7,10:9,12:11}};
 const ROM=['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ'];
@@ -96,7 +116,7 @@ function famInfo(key,f){
     V:`Ⅴ は 音階の 5ばんめ「${PA.nmH(root)}」（根音）から ひとつとばしで 3つ。7ばんめを 上げるので、短調でも <b>明るい 長三和音</b> に なるよ。`,
     V7:`Ⅴ7 は Ⅴ に、もうひとつ とばして「${PA.nmH(sev)}」（第7音）を のせた 4つの音。`,
     V9:`Ⅴ9 は Ⅴ7 に、さらに「${PA.nmH(ninth)}」（第9音）を のせた 5つの音。第9音は 音階の 6ばんめ。<br><b>${PA.keyName(key.par)}</b>（おなじ主音の 長調）の Ⅴ9 では ここが「${PA.nmH(parNinth)}」に なる。短調の Ⅴ9 の ほうが 暗く、ドキッと する ひびき。`,
-    DIM:`Ⅴ9 から 根音「${PA.nmH(root)}」を はぶくと <b>${PA.namesH(t)}</b>。これが <b>減七の和音</b>。<br>となりどうしが ぜんぶ おなじ 間かく。だから 減七は 音の くみあわせで いうと <b>3つの家族</b> しか ないよ（下の「かたちで おぼえる」）。<br>いちばん下と いちばん上の はばが、ふつうの 7度より せまい（けんばんでは 6度と おなじ はば）ので「減七」と よぶよ。`
+    DIM:`Ⅴ9 から 根音「${PA.nmH(root)}」を はぶくと <b>${PA.namesH(t)}</b>。これが <b>減七の和音</b>。<br>となりどうしが ぜんぶ おなじ 間かく。だから 減七は 音の くみあわせで いうと <b>3つの なかま</b> しか ないよ（下の「かたちで おぼえる」）。<br>いちばん下と いちばん上の はばが、ふつうの 7度より せまい（けんばんでは 6度と おなじ はば）ので「減七」と よぶよ。`
   };
   return {t,line:lines[f]};
 }
@@ -149,12 +169,12 @@ function shapeChain(key){
 }
 const WHITE_TRIADS=[[0,'長'],[3,'長'],[4,'長'],[1,'短'],[2,'短'],[5,'短'],[6,'減']];
 const DIM_FAMS=[[[0,0],[2,-1],[4,-1],[5,0]],[[0,1],[2,0],[4,0],[6,-1]],[[1,0],[3,0],[5,-1],[6,0]]];
-const ABC=['Ａ','Ｂ','Ｃ'];
+const FAM_NO=['①','②','③']; // 減七の 3つの なかま（Ａ・Ｂ・Ｃ だと CDE の 音名と まぎらわしいので まる数字）
 function shapeCard(key,f){
   const rootL=PA.at(key.harm,4).letter;
   let h=`<h2>🧩 かたちで おぼえる<small>計算しないで、パッと わかるように</small></h2>`;
   if(f!=='DIM'){
-    h+=`<p class="note" style="margin-top:0;color:var(--ink)">白鍵だけの 和音は 7つ。これを まるごと おぼえて、あとは 臨時記号で かえる。<br><b style="color:#c98500">ミファ・シド を またぐと せまい 3度（短3度）</b>、またがなければ ひろい 3度（長3度）。</p>`;
+    h+=`<p class="note" style="margin-top:0;color:var(--ink)">白鍵だけの 和音は 7つ。これを まるごと おぼえて、あとは 臨時記号で かえる。<br><b style="color:#8f5a00">ミファ・シド を またぐと せまい 3度（短3度）</b>、またがなければ ひろい 3度（長3度）。</p>`;
     h+=['長','短','減'].map(q=>{
       const mine=WHITE_TRIADS.some(w=>w[1]===q&&w[0]===rootL);
       return `<div class="srow ${mine?'on':''}"><b>${q}</b><div class="chips" style="margin:0">${WHITE_TRIADS.filter(w=>w[1]===q).map(([L])=>{
@@ -165,12 +185,12 @@ function shapeCard(key,f){
     h+=`<p class="note">わくの ついた 和音が、この調の Ⅴ の もとの かたち。上の チップで、調号と 導音で どう かわるか 見てみよう。</p>`;
   }else{
     const fam=PA.mod(key.lt.midi,3);
-    h+=`<p class="note" style="margin-top:0;color:var(--ink)">減七の和音は、音の くみあわせで いうと <b>3つの家族</b> だけ。3つ おぼえれば、どの調の 減七も すぐ わかるよ。</p>`;
+    h+=`<p class="note" style="margin-top:0;color:var(--ink)">減七の和音は、音の くみあわせで いうと <b>3つの なかま</b>（①・②・③）だけ。3つ おぼえれば、どの調の 減七も すぐ わかるよ。</p>`;
     h+=DIM_FAMS.map((ns,i)=>{
       const keys=KEYS.filter(k=>PA.mod(k.lt.midi,3)===i).map(PA.keyName).join('・');
-      return `<div class="srow dfam ${i===fam?'on':''}"><b>${ABC[i]}の<br>家族</b><div style="min-width:0"><b class="n">${PA.namesH(ns.map(([l,a])=>({letter:l,acc:a})))}</b><p class="note">${keys}</p></div></div>`;
+      return `<div class="srow dfam ${i===fam?'on':''}"><b>${FAM_NO[i]}の<br>なかま</b><div style="min-width:0"><b class="n">${PA.namesH(ns.map(([l,a])=>({letter:l,acc:a})))}</b><p class="note">${keys}</p></div></div>`;
     }).join('');
-    h+=`<p class="note">${PA.keyName(key)}の 減七「${PA.namesH(famTones(key,'DIM'))}」は <b>${ABC[fam]}の家族</b>。書き方（♯・♭・<span class="ds">x</span>）は 調で かわるけれど、けんばんは おなじ。</p>`;
+    h+=`<p class="note">${PA.keyName(key)}の 減七「${PA.namesH(famTones(key,'DIM'))}」は <b>${FAM_NO[fam]}の なかま</b>。書き方（♯・♭・<span class="ds">x</span>）は 調で かわるけれど、けんばんは おなじ。</p>`;
   }
   return h;
 }
@@ -201,8 +221,8 @@ function termsHTML(key){
       <dd>和音から 根音を はぶいた 形の こと。「Ⅴ9 の 根音省略形」と 書いて あったら 減七の和音（Ⅶ7）、「Ⅴ7 の 根音省略形」なら Ⅶ（減三和音）の こと。どちらも Ⅴ の なかまだよ。</dd>
     <dt>${yomi('和声的短音階','わせいてき たんおんかい')}</dt>
       <dd>7ばんめを 半音 上げた 短音階。この ページの 和音は、ぜんぶ この 音階から つくるよ。</dd>
-    <dt>減七の 3つの家族</dt>
-      <dd>減七は 4つの 音が ぜんぶ おなじ 間かく。もう 1つ 上に つむと、いちばん下の 音の 1オクターブ上に もどって しまう。だから けんばんで 見ると 3種類（Ａ・Ｂ・Ｃの家族）だけ。${PA.keyName(key)}は <b>${ABC[fam]}の家族</b>。</dd>
+    <dt>減七の 3つの なかま</dt>
+      <dd>減七は 4つの 音が ぜんぶ おなじ 間かく。もう 1つ 上に つむと、いちばん下の 音の 1オクターブ上に もどって しまう。だから けんばんで 見ると 3種類（①・②・③の なかま）だけ。${PA.keyName(key)}は <b>${FAM_NO[fam]}の なかま</b>。</dd>
   </dl></details>`;
 }
 let lastActions='';
@@ -232,7 +252,7 @@ function render(){
     if(R) bassOf(key,f,'V').forEach(n=>marks.set(n.midi,{fill:'#c9d0f0',tc:'#24316f',label:PA.nm(n),sub:'左手',subColor:NIGHT}));
   }
   const kbCap=R&&state.res===2?'Ⅰ（おちついた 和音）・左手の ベースは 左の ほう（←）':R?`${FAM[f].label}${f==='DIM'?'':'・左手の ベースは 左の ほう（←）'}`:'赤＝導音。さわると 音が出るよ';
-  h+=`<section class="card"><h2>🎹 けんばん<small>${kbCap}　<span style="color:#c98500">オレンジの印＝ミファ・シド（白鍵どうしが となり）</span></small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(45,89,marks)}</div></section>`;
+  h+=`<section class="card"><h2>🎹 けんばん<small>${kbCap}　<span style="color:#8f5a00">オレンジの印＝ミファ・シド（白鍵どうしが となり）</span></small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(45,89,marks)}</div></section>`;
 
   // がくふ（Ⅴの家族 → Ⅰ の 解決）
   const arrows=[];
@@ -249,6 +269,11 @@ function render(){
     ${A?'':`<p class="note"><b style="color:${LT}">導音は 半音 上へ</b>（主音へ）、<b style="color:${NIGHT}">第7音・第9音は 下へ</b> すすむと、きれいに おわるよ。「Ⅰへ すすむ」では 左手の ベース（ヘ音記号の 音）も いっしょに 鳴らすよ。</p>`}</section>`;
 
   h+=`<section class="card">${shapeCard(key,f)}</section>`;
+  // いま 見ている 和音を じぶんで おさえてみる（短調クイズ：この 調で、この 和音と となりの 和音を まぜて 3もん。
+  // 1つの 和音だけだと 3もんとも おなじ もんだいに なるので、2つを かわりばんこに）
+  const pair=TRY_PAIR[f]||['V','V7'];
+  h+=PA.tryHTML({to:'minor-quiz',params:{mode:'chord',key:PA.keyDeck.id(true,state.keyIdx),chord:pair.join(','),n:3},
+    sub:`${PA.keyName(key)}の ${pair.map(x=>FAM[x].label).join('と ')}を、けんばんで じぶんで おさえてみよう（3もん）`,btn:'🎯 3もん ためしてみる'});
   h+=termsHTML(key);
   h+=`<p class="note">※ 和音は、7ばんめの 音を 半音上げた 短音階で 作っています。<span class="ds">x</span> は ダブルシャープの 楽譜での 書き方です。</p></div>`;
   PA.paint(document.getElementById('view'),h,state.keyIdx+':'+f);

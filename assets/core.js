@@ -14,10 +14,88 @@
  *   PA.onPageShow = ()=>render()                            … 「もどる」で bfcache から もどってきたとき
  *
  * 音楽：PA.majorKey(i) / PA.minorKey(i)、PA.at(scale,k)、PA.nm(note)、PA.nmH(note)、PA.namesH(notes)
+ *   PA.nm＝ただの 文字（aria-label・title・data-*・SVG の 中は こちら）。
+ *   PA.nmH／PA.namesH＝HTML（<span class="nw">ファ♯</span>：♯・♭ の 前で 行が かわらない）。HTML の 文の 中だけで つかう
  * 音  ：PA.playNote(midi,when,dur,vel)、PA.chord(midis,{when,dur,arp,vel})、PA.stopSound()
  * 図  ：PA.kbSVG(lo,hi,marks,opts)、PA.staffSVG(key,cols,opts)
+ *   kbSVG の marks の 1つに sr:'えらんだ・まちがい' を 入れると、読み上げで「ミ、えらんだ・まちがい」に なる
  * UI  ：PA.keyChip(key)、PA.openKeySheet({minor,idx,onPick,both})、PA.seg(act,opts,cur)
+ *   PA.esc(s) … HTML の 文字（& < > " '）を にがす。PA.announce(text) … 読み上げソフトに 知らせる（画面には 出ない）
  * 平均律・A4＝基準ピッチ（設定で 440〜443Hz）。生徒は絶対音感があるので、音の高さと表示は かならず そろえる。
+ *
+ * きろく：PA.store.get(k,d) / PA.store.set(k,v)（'pianoapps.'+k に JSON）、PA.store.keys() → 'pianoapps.' を とった 名前の 一覧
+ *
+ * ----- アプリの 目次（ホーム・つぎへの リンク・もどる に つかう） -----
+ *   PA.APP_TYPES … {learn,quiz,play,ref,ear}：{label, c(色), l(うすい色), dk(白い字を のせられる こい色)}
+ *   PA.UNITS … [{id, title, sub, apps:[app の id]}]（ホームに ならべる じゅん）
+ *   PA.APPS  … [{id, ic, title, d, type:'learn'|'quiz'|'play'|'ref'|'ear', unit, practice?(れんしゅうの ページの id), href?(外の ページ)}]
+ *     title は ただの 文字。d は HTML（<span class="ds">…</span> などが 入る）なので PA.esc を とおさずに そのまま 入れる
+ *   PA.app(id) → その アプリ（なければ null）
+ *
+ * ----- 上のバー・ページの いどう -----
+ *   PA.mountBar({title, app, back})
+ *     ・ほかの アプリから PA.go や ふつうの リンクで 来たときは、左上が「‹ 和音クイズへ」の ボタン（data-pa="back"）。
+ *       おすと、その ページから 来たばかりなら history.back()（れきしが ふえない）、ちがえば その ページへ。
+ *       ホームへ もどるときは まるい ‹（aria-label「ホームに もどる」）
+ *     ・PA.store の 'last'＝{app,title,t}（これまでどおり）、'last-practice'（type が quiz・play・ear）、'last-learn'（learn・ref）
+ *       'visited'＝{アプリの id: さいごに ひらいた 時刻}（ホームの ✓・「3 / 4 ひらいた」）
+ *     ・音が オフの ときは バーの 下に「🔇 音が オフに なっているよ ［🔊 音を 出す］」（おすと 音を オンにして PA.onSettings）
+ *   PA.go(page, params?) … ‹ で いまの アプリに もどれるように して page へ（params は PA.url と おなじ）
+ *   PA.updateSoundBar() … 音の オン・オフを かえた あと、バーの 下の「🔇 音が オフ」を 出す／けす（設定シートでは core が よぶ）
+ *
+ * ----- リンクの パラメータ（先生が 宿題の リンクを つくる。サーバーは つかわない） -----
+ *   PA.url(page, {k:v,…}) → 'page.html?k=v&…'（page に .html が なければ つける。null・undefined・''・false の 値は のせない）
+ *   PA.absUrl(rel) → https://… の ながい アドレス（いまの ページの 場所から）
+ *   PA.params() → location.search の {名前:文字}（名前は /^[a-z][a-z0-9-]{0,20}$/、値は 40文字まで。ちがう ものは すてる）
+ *   PA.parseParams(search) … PA.params と おなじ（'?a=1&b=2' の 文字を わたす）
+ *   PA.PARAM_KEYS＝['key','chord','mode','level','tier','n']（下の ことば）。PA.fromLink() → この どれかが リンクに あれば true
+ *   PA.paramInt(name, lo, hi) → 整数（lo〜hi の 外・ないときは null）
+ *   ことば（どの ページも おなじ 意味。その 1回だけ つかい、ほぞんした 設定は かえない）：
+ *     key＝調（keyDeck の id：M0〜M12 長調、m0〜m12 短調）、chord＝その ページの 和音の id、mode＝その ページの こたえかた、
+ *     level＝レベル（1から）、tier＝easy｜normal｜hard｜all、n＝れんしゅうの もんだいの 数（1〜20）
+ *   PA.shareHTML(page, params, label?) → リンクを おくる ボタン（data-pa="share" data-url="https://…"）。
+ *     おすと navigator.share、なければ コピー（navigator.clipboard、だめなら prompt）して「コピーしたよ」。クリックは core が あつかう
+ *
+ * ----- れんしゅうの 回（n もん）と けっかの カード -----
+ *   const s=PA.session(quiz, {n, sig?})  … PA.store('session-'+quiz)＝{n, done:[{ok, hint, label, key?}], startedAt, sig, endedAt?}
+ *     12時間 より 前に はじめた 回は、n が なくても すてる。
+ *     n（1〜20。文字でも よい）が あるとき：ほぞんした 回と n・sig が おなじで、とちゅう（または おわって 10分 いない＝「もどる」の 読みなおし）
+ *     なら つづき。ちがえば 新しく はじめる（おわった 回を おなじ リンクで あけなおすと、はじめから）。
+ *     sig＝リンクの しるし。わたさなければ PA.sessionSig(PA.params())（n いがいの key・chord・mode・level・tier を ならべた 文字）
+ *     n を わたさない ときは、のこっている 回を そのまま よむだけ（12時間 たって いれば null と おなじ）
+ *     とちゅうの 回が ちがう sig で 上がきされる（宿題・ふくしゅうの リンク）ときは PA.store('sessionpause-'+quiz) に 1つ とっておき、
+ *     いまの 回を けした／おわって 10分 たった あとの PA.session(quiz) で もどす（その リンクを また ひらいても もどる）
+ *     s.active() … n>0 で まだ おわっていない。s.finished() … n もん こたえた。s.count() … こたえた 数。s.n() … もんだいの 数
+ *     s.record({ok, hint, label, key}) … 1もん きろく（label は ただの 文字。PA.nm で つくる）。active で なければ null。
+ *       かえす：{count, n, finished}
+ *     s.progressHTML() … 「📝 きょうの 5もん　3 / 5」の 小さな チップ（active・finished で ないときは ''）
+ *     s.summaryHTML({title, page, params, settings}) … けっかの カード：「5もん中 4もん」と ほし、じぶんで できた・ヒントを 見て できた・
+ *       まちがえた の 数、まちがえた／ヒントを 見た もんだい、ひとこと、「👩‍🏫 先生に 見せる」（日づけ・ページ・せってい・けっか）、
+ *       おなじ れんしゅうの PA.shareHTML（params に n を たす）、ボタン data-act="session-again"（もういちど）・data-act="session-free"（じゆうに れんしゅう）。
+ *       settings（ただの 文字）が なければ params から つくる（key・tier・level・n）。2つの ボタンは ページで あつかう
+ *     s.start(n) / s.clear() / s.tally() → {n, done, self, hint, wrong, ok, stars(1〜3), msg}
+ *   PA.sessionTally(done, n) … tally と おなじ（ページの 外で つかう とき）。PA.sessionSig(params) … 上の sig
+ *   PA.paramsText(params) … 「調：ト長調・むずかしさ：…・レベル 2」（先生に 見せる「せってい」の 文。ただの 文字）
+ *   PA.HINT_NOTE … 「こたえる まえに 見ても ×には ならないよ。…」（ヒントの ボタンの 近くに 出す）
+ *
+ * ----- 学ぶ ページの「ためしてみる」カード -----
+ *   PA.tryHTML({to, params, title, sub, btn, links:[{to, params, label}]}) … 大きい ボタン 1つ（to の ページへ。色は to の type）と 小さな リンク
+ *
+ * ----- 2回 おす ボタン・キーボード -----
+ *   data-confirm="ほんとうに けす？" の ボタンは 2回 おす：1回めは 文字が かわって 赤い わく（.armed）、4秒 以内に もういちど おすと ふつうの click。
+ *     PA.paint で 描きなおしても（data-act＋data-v が おなじ ボタン）つづく
+ *   キーボード・ページめくりペダル（入力らん・ひらいた シート の 中、ctrl・alt・⌘・shift つき では うごかない）：
+ *     スペース → 見えている data-hot~="listen"、Enter → data-hot~="check"（どちらも フォーカスが ボタン・リンクの ときは そのボタン）、
+ *     → ／ PageDown → data-hot~="next"、← ／ PageUp → data-hot~="prev"（けんばんの 鍵に フォーカスが ある ときは 鍵の いどう）。
+ *     例：<button data-act="qplay" data-hot="listen">、<button data-act="qnext" data-hot="next">
+ *
+ * ----- 広い 画面 -----
+ *   <main class="page duo">…<div class="duo-grid"><div>…</div><div class="duo-side">…</div></div>（1000px 以上で 2れつ、右は ついてくる）
+ *
+ * きろくの ひかえ：⚙️ の シートで 'pianoapps.' の きろくを ファイルに 書きだす／よみこむ。
+ *   PA.backupData() → {'pianoapps.…': JSON の 文字}（書きだす 中身）、PA.checkBackup(obj) → よみこめる 中身なら その obj、ちがえば null
+ *   書きだす ボタンを おした とき（または ホーム画面の アプリの とき）だけ navigator.storage.persist() で「消さないで」と おねがい。
+ * https では sw.js を 登録する。
  */
 (function(){
 'use strict';
@@ -27,15 +105,19 @@ document.documentElement.lang='ja';
 /* ===== 保存（使えないブラウザでも こわれないように） ===== */
 PA.store={
   get(k,d){try{const v=localStorage.getItem('pianoapps.'+k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
-  set(k,v){try{localStorage.setItem('pianoapps.'+k,JSON.stringify(v));}catch(e){}}
+  set(k,v){try{localStorage.setItem('pianoapps.'+k,JSON.stringify(v));}catch(e){}},
+  // 'pianoapps.' の きろくの 名前（'pianoapps.' を とった もの）
+  keys(){const out=[];try{for(let i=0;i<localStorage.length;i++){const k=localStorage.key(i);if(k&&k.indexOf('pianoapps.')===0) out.push(k.slice(10));}}catch(e){}return out;}
 };
+PA.esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
 const S=PA.settings={naming:'solfa',sound:true,pitchA:440};
-(function(){
+const loadSettings=()=>{
   const d=PA.store.get('settings',{})||{};
   if(['solfa','en','ja'].includes(d.naming)) S.naming=d.naming;
   if(typeof d.sound==='boolean') S.sound=d.sound;
   if([440,441,442,443].includes(d.pitchA)) S.pitchA=d.pitchA;
-})();
+};
+loadSettings();
 PA.saveSettings=()=>PA.store.set('settings',S);
 
 /* ===== 音楽の基本 ===== */
@@ -102,7 +184,7 @@ PA.nm=n=>{
 // 𝄪 は 端末によって 出ないので、楽譜と同じ「x」の形で 出す。𝄫 も 出ない 端末が あるので ♭♭ で 出す
 PA.H=s=>String(s).replace(/𝄪/g,'<span class="ds">x</span>').replace(/𝄫/g,'<span class="df" style="letter-spacing:-.12em">♭♭</span>');
 PA.Svg=s=>String(s).replace(/𝄪/g,'<tspan font-family="Arial,Helvetica,sans-serif" font-weight="900">x</tspan>').replace(/𝄫/g,'<tspan letter-spacing="-1.5">♭♭</tspan>');
-PA.nmH=n=>PA.H(PA.nm(n));
+PA.nmH=n=>'<span class="nw">'+PA.H(PA.nm(n))+'</span>'; // ♯・♭ の 前で 行が かわらない（HTML の 文の 中だけ）
 PA.namesH=(ns,sep='・')=>ns.map(PA.nmH).join(sep);
 PA.namesT=(ns,sep='・')=>ns.map(PA.nm).join(sep);
 PA.keyName=k=>(k.a>0?'嬰':k.a<0?'変':'')+PA.LET_JA[k.l]+(k.minor?'短調':'長調');
@@ -172,7 +254,8 @@ PA.chord=(ms,o={})=>{
 PA.sleep=ms=>new Promise(r=>setTimeout(r,ms));
 
 /* ===== けんばん SVG =====
- * marks: Map midi -> {fill, label, tc(文字色), ring(わくの色), light(黒鍵を うすく), bubble(黒鍵ラベルの ふきだしの色), sub(下の小さな字), subColor, focus(最初に見せたい鍵)}
+ * marks: Map midi -> {fill, label, tc(文字色), ring(わくの色), light(黒鍵を うすく), bubble(黒鍵ラベルの ふきだしの色), sub(下の小さな字), subColor, focus(最初に見せたい鍵),
+ *   sr(読み上げで 鍵の 名前の あとに つける ことば。例 'えらんだ・まちがい' →「ミ、えらんだ・まちがい」)}
  * opts.mifa（ミファ・シドの目印。ふつうは表示）
  */
 // 読み上げ用の 鍵の名前（白鍵は そのまま、黒鍵は ♯と♭の 両方）
@@ -189,16 +272,18 @@ PA.kbSVG=(lo,hi,marks=new Map(),opts={})=>{
   const TW=wh.length*W, TH=TOP+H+24;
   // キーボードでも ひける：けんばん1つにつき Tab で 1か所（←→ で となりの鍵、Enter／スペースで ひく）
   const drawn=[];for(let m=lo;m<=hi;m++) if(!PA.BLACK.has(mod(m,12))||X[m-1]!==undefined) drawn.push(m);
-  const tabM=(drawn.find(m=>{const k=marks.get(m);return k&&k.focus;})??drawn.find(m=>marks.get(m))??(drawn.includes(60)?60:drawn[0]));
-  let s=`<svg viewBox="-2 0 ${TW+4} ${TH}" class="kb" style="min-width:${wh.length*36}px;max-width:${wh.length*56}px;margin-inline:auto" role="group" aria-label="けんばん">`;
-  const attrs=(m,mk)=>`data-m="${m}" ${mk?'data-mk="1"':''} ${mk&&mk.focus?'data-focus="1"':''} tabindex="${m===tabM?0:-1}" role="button" aria-label="${keyLabel(m)}"`;
+  let tabM=drawn.find(m=>{const k=marks.get(m);return k&&k.focus;});
+  if(tabM===undefined) tabM=drawn.find(m=>marks.get(m));
+  if(tabM===undefined) tabM=drawn.includes(60)?60:drawn[0];
+  let s=`<svg viewBox="-2 0 ${TW+4} ${TH}" class="kb" style="min-width:${wh.length*36}px;max-width:${wh.length*56}px;margin-left:auto;margin-right:auto" role="group" aria-label="けんばん">`;
+  const attrs=(m,mk)=>`data-m="${m}" ${mk?'data-mk="1"':''} ${mk&&mk.focus?'data-focus="1"':''} tabindex="${m===tabM?0:-1}" role="button" aria-label="${PA.esc(keyLabel(m)+(mk&&mk.sr?'、'+mk.sr:''))}"`;
   wh.forEach(m=>{
     const x=X[m], mk=marks.get(m);
     s+=`<rect ${attrs(m,mk)} class="key" x="${x}" y="${TOP}" width="${W}" height="${H}" rx="5" fill="${mk&&mk.fill?mk.fill:'#fff'}" stroke="#8d8278" stroke-width="1.2"/>`;
     if(mk&&mk.ring) s+=`<rect x="${x+3}" y="${TOP+3}" width="${W-6}" height="${H-6}" rx="5" fill="none" stroke="${mk.ring}" stroke-width="4" pointer-events="none"/>`;
     if(mk&&mk.label) s+=`<text x="${x+W/2}" y="${TOP+H-40}" text-anchor="middle" font-size="${String(mk.label).length>3?12:15}" font-weight="800" fill="${mk.tc||'#fff'}">${PA.Svg(mk.label)}</text>`;
-    if(mk&&mk.sub) s+=`<text x="${x+W/2}" y="${TOP+H+17}" text-anchor="middle" font-size="11" font-weight="700" fill="${mk.subColor||'#857c8f'}">${mk.sub}</text>`;
-    else if(m===60) s+=`<text x="${m===lo?x+2:x+W/2}" y="${TOP+H+17}" text-anchor="${m===lo?'start':'middle'}" font-size="12" fill="#a99f93">まんなかの${PA.nm({letter:0,acc:0})}</text>`;
+    if(mk&&mk.sub) s+=`<text x="${x+W/2}" y="${TOP+H+17}" text-anchor="middle" font-size="11" font-weight="700" fill="${mk.subColor||'#6f667a'}">${mk.sub}</text>`;
+    else if(m===60) s+=`<text x="${m===lo?x+2:x+W/2}" y="${TOP+H+17}" text-anchor="${m===lo?'start':'middle'}" font-size="12" fill="#756c60">まんなかの${PA.nm({letter:0,acc:0})}</text>`;
   });
   if(mifa) wh.forEach(m=>{const pc=mod(m,12);if((pc===4||pc===11)&&X[m+1]!==undefined) s+=`<rect x="${X[m]+W-3}" y="${TOP+H-30}" width="6" height="24" rx="3" fill="#f4a100" pointer-events="none"/>`;});
   for(let m=lo;m<=hi;m++){
@@ -213,7 +298,7 @@ PA.kbSVG=(lo,hi,marks=new Map(),opts={})=>{
       s+=`<rect x="${cx-21}" y="3" width="42" height="24" rx="12" fill="${mk.bubble||mk.fill||'#fff'}" stroke="${lc}" stroke-width="2" pointer-events="none"/>`;
       s+=`<text x="${cx}" y="20" text-anchor="middle" font-size="${String(mk.label).length>3?10.5:13}" font-weight="800" fill="${mk.tc||'#fff'}">${PA.Svg(mk.label)}</text>`;
     }
-    if(mk&&mk.sub) s+=`<text x="${x+BW/2}" y="${TOP+BH+14}" text-anchor="middle" font-size="11" font-weight="700" fill="${mk.subColor||'#857c8f'}">${mk.sub}</text>`;
+    if(mk&&mk.sub) s+=`<text x="${x+BW/2}" y="${TOP+BH+14}" text-anchor="middle" font-size="11" font-weight="700" fill="${mk.subColor||'#6f667a'}">${mk.sub}</text>`;
   }
   return s+'</svg>';
 };
@@ -327,18 +412,84 @@ PA.staffSVG=(key,cols,o={})=>{
   return svg+'</svg>';
 };
 
+/* ===== アプリの 目次（ホーム・もどる・つぎへの リンク） ===== */
+// c＝目じるしの 色、l＝うすい 色、dk＝白い 字を のせても 読める こい 色（4.5:1 いじょう）
+PA.APP_TYPES={
+  learn:{label:'しくみ',c:'#3b4fa8',l:'#e6eafb',dk:'#3b4fa8'},
+  quiz:{label:'クイズ',c:'#e8553d',l:'#fde5df',dk:'#c0392b'},
+  play:{label:'れんしゅう',c:'#22a06b',l:'#daf3e6',dk:'#15804f'},
+  ref:{label:'いちらん',c:'#8a4fe0',l:'#ece2fb',dk:'#7a3fd0'},
+  ear:{label:'耳',c:'#c98500',l:'#fff1cc',dk:'#8a5a00'}
+};
+PA.UNITS=[
+  {id:'u1',title:'🎹 はじめの 和音（Ⅰ・Ⅳ・Ⅴ・Ⅴ7）',sub:'まずは ここから',apps:['chord-build','chord-quiz','cadence','chord-table']},
+  {id:'u2',title:'🎼 曲に つけてみる',sub:'知っている 曲に 和音を つける',apps:['accompaniment']},
+  {id:'u3',title:'🧩 和音を もっと 知る',sub:'7つの 和音・和音の かたち・音の へだたり',apps:['diatonic','inversion','interval']},
+  {id:'u4',title:'🌙 短調と 臨時記号',sub:'Ⅴ・Ⅴ7・Ⅴ9・減七',apps:['minor-why','minor-signature','minor-family','minor-quiz']},
+  {id:'u5',title:'🏁 おわりかた',sub:'曲の おわりの 6つの 形',apps:['ending','ending-quiz']},
+  {id:'u6',title:'🌈 変化和音',sub:'調の 音を 半音 うごかす・よその 調から かりる 和音',apps:['doppel','secondary','aug6','neapolitan','borrowed','dim-halfdim','enharmonic','chroma-quiz']},
+  {id:'ear',title:'👂 耳を きたえる（毎日 すこしずつ）',sub:'聴いて パッと わかる',apps:['ear']}
+];
+PA.APPS=[
+  {id:'chord-build',ic:'🐸',title:'和音のしくみ',d:'音階の なんばんめから「ひとつとばし」で 和音を つくる',type:'learn',practice:'chord-quiz'},
+  {id:'chord-quiz',ic:'🎯',title:'和音クイズ',d:'「ト長調のⅤ7は？」を けんばんで おさえる／えらぶ',type:'quiz'},
+  {id:'cadence',ic:'🎵',title:'カデンツ',d:'「おしまい」に なる 和音の ならび Ⅰ→Ⅳ→Ⅰ→Ⅴ7→Ⅰ を 聴いて、伴奏の形を 見る',type:'play',practice:'chord-quiz'},
+  {id:'chord-table',ic:'📋',title:'和音いちらん表',d:'ぜんぶの調の Ⅰ・Ⅳ・Ⅴ・Ⅴ7。かくして れんしゅうも',type:'ref',practice:'chord-quiz'},
+  {id:'accompaniment',ic:'🎼',title:'伴奏づけ',d:'知っている曲の メロディーに Ⅰ・Ⅳ・Ⅴ7 を つける',type:'play'},
+  {id:'diatonic',ic:'🎨',title:'7つの 和音',d:'音階の 7つの 音から 1つずつ。Ⅱ・Ⅲ・Ⅵ・Ⅶ も なかまいり',type:'learn'},
+  {id:'inversion',ic:'🔄',title:'和音の かたち',d:'ドミソ・ミソド・ソドミ。いちばん下の 音で 名前が かわる',type:'learn'},
+  {id:'interval',ic:'📏',title:'音の へだたり',d:'ドから ミは 3度。文字を かぞえて、広い・せまいを 知る',type:'learn'},
+  {id:'minor-why',ic:'❓',title:'なぜ 7ばんめを 上げるの？',d:'長調と 短調の「7ばんめ→主音」を くらべて 聴く',type:'learn',practice:'minor-quiz'},
+  {id:'minor-signature',ic:'♮',title:'調号と 臨時記号',d:'調号に 書けない わけ。♯・♮・<span class="ds">x</span> の いちらん',type:'learn',practice:'minor-quiz'},
+  {id:'minor-family',ic:'🏠',title:'Ⅴの家族',d:'Ⅴ→Ⅴ7→Ⅴ9→減七 と、Ⅰへの すすみかた',type:'learn',practice:'minor-quiz'},
+  {id:'minor-quiz',ic:'🎯',title:'短調クイズ',d:'短調の Ⅴの家族を おさえる／臨時記号を えらぶ',type:'quiz'},
+  {id:'ending',ic:'🏁',title:'おわりかた',d:'完全終止・半終止・偽終止 など 6つの おわりかたを、聴いて・がくふで 見る',type:'learn',practice:'ending-quiz'},
+  {id:'ending-quiz',ic:'🎯',title:'おわりかたクイズ',d:'4つの 和音を 聴いて／がくふを 見て、おわりかたの 名前を 当てる',type:'quiz'},
+  {id:'doppel',ic:'🔺',title:'Ⅱ7と ドッペルドミナント',d:'Ⅱ7 の 第3音を 上げると「Ⅴの ための Ⅴ7」に なる',type:'learn',practice:'chroma-quiz'},
+  {id:'secondary',ic:'🧭',title:'副属和音',d:'Ⅱ・Ⅲ・Ⅳ・Ⅵ を いっとき Ⅰ に みたてる「その和音の ための Ⅴ7」',type:'learn',practice:'chroma-quiz'},
+  {id:'aug6',ic:'↔️',title:'増六の和音',d:'イタリア・フランス・ドイツの6。外へ ひらいて Ⅴ へ',type:'learn',practice:'chroma-quiz'},
+  {id:'neapolitan',ic:'🌋',title:'ナポリの六',d:'2ばんめを 半音下げた ♭Ⅱ。いちばん下の 音と Ⅴ への すすみかた',type:'learn',practice:'chroma-quiz'},
+  {id:'borrowed',ic:'🎁',title:'準固有和音（借用和音）',d:'長調で、同じ主音の 短調から かりる Ⅳ・♭Ⅵ など',type:'learn',practice:'chroma-quiz'},
+  {id:'dim-halfdim',ic:'⚖️',title:'減七と 半減七',d:'にている ひびき。ちがうのは 第7音だけ',type:'learn',practice:'chroma-quiz'},
+  {id:'enharmonic',ic:'🔀',title:'異名同音の 読みかえ',d:'同じ けんばんでも、書き方と すすむ先で 役わりが かわる',type:'learn',practice:'chroma-quiz'},
+  {id:'chroma-quiz',ic:'🎯',title:'変化和音クイズ',d:'けんばんで おさえる／耳で 聴きわける',type:'quiz'},
+  {id:'ear',ic:'👂',title:'和音の 聴きわけ',d:'10しゅるいの 和音を 音で 当てる。8レベルと チャレンジ',type:'ear'}
+];
+PA.UNITS.forEach(u=>u.apps.forEach(id=>{const a=PA.APPS.find(x=>x.id===id);if(a) a.unit=u.id;}));
+PA.app=id=>PA.APPS.find(a=>a.id===id)||null;
+
 /* ===== 画面のしくみ ===== */
 PA.seg=(act,opts,cur,cls='')=>`<div class="seg ${cls}" role="group">`+opts.map(([v,l])=>`<button class="${String(v)===String(cur)?'on':''}" data-act="${act}" data-v="${v}" aria-pressed="${String(v)===String(cur)}">${l}</button>`).join('')+`</div>`;
 PA.keyChip=key=>`<button class="keychip" data-pa="keysheet" aria-haspopup="dialog">${PA.keyName(key)}<small>${PA.sigLabel(key)}</small></button>`;
-let sheetEl=null;
+let sheetEl=null, sheetPrev=null;
+const isOpen=el=>!!el&&(el.open===true||(!!el.hasAttribute&&el.hasAttribute('open')));
 function sheet(html){
-  if(!sheetEl){sheetEl=document.createElement('dialog');sheetEl.className='sheet';document.body.appendChild(sheetEl);
-    sheetEl.addEventListener('click',e=>{if(e.target===sheetEl) sheetEl.close();});}
+  if(!sheetEl){
+    sheetEl=document.createElement('dialog');sheetEl.className='sheet';
+    // <dialog> が ない 古い ブラウザ（iOS 15.3 まで など）：open の 印だけで 出し入れする（.pa-fb＝画面いっぱいの うすい 幕）
+    if(typeof sheetEl.showModal!=='function'){
+      sheetEl.classList.add('pa-fb'); sheetEl.setAttribute('role','dialog'); sheetEl.setAttribute('aria-modal','true');
+      sheetEl.close=function(){
+        this.removeAttribute('open');
+        if(sheetPrev&&document.contains(sheetPrev)&&sheetPrev.focus) sheetPrev.focus({preventScroll:true});
+        sheetPrev=null;
+      };
+      sheetEl.addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='Esc'){e.preventDefault();sheetEl.close();}});
+    }
+    document.body.appendChild(sheetEl);
+    sheetEl.addEventListener('click',e=>{if(e.target===sheetEl) sheetEl.close();});
+  }
   sheetEl.innerHTML=`<div class="sheet-in">${html}</div>`;
-  if(!sheetEl.open){ if(sheetEl.showModal) sheetEl.showModal(); else sheetEl.setAttribute('open',''); }
+  if(!isOpen(sheetEl)){
+    if(!sheetEl.classList.contains('pa-fb')) sheetEl.showModal();
+    else{
+      sheetPrev=document.activeElement; sheetEl.setAttribute('open','');
+      const f=sheetEl.querySelector('button,select,input:not([tabindex="-1"]),[tabindex="0"]'); if(f) f.focus({preventScroll:true});
+    }
+  }
   return sheetEl;
 }
-PA.closeSheet=()=>{if(sheetEl&&sheetEl.open) sheetEl.close();};
+PA.closeSheet=()=>{if(isOpen(sheetEl)) sheetEl.close();};
 // 調をえらぶシート：minor（短調か）, idx（いま）, both（長調・短調を切りかえられる）, onPick(minor,idx)
 PA.openKeySheet=o=>{
   let minor=!!o.minor;
@@ -373,45 +524,317 @@ PA.openSettings=()=>{
     <div class="setrow"><label for="pa-naming">音の名前</label><select id="pa-naming"><option value="solfa">ドレミ</option><option value="en">CDE</option><option value="ja">ハニホ</option></select></div>
     <div class="setrow"><label for="pa-pitch">基準の音（ラ）</label><select id="pa-pitch"><option value="440">440Hz</option><option value="441">441Hz</option><option value="442">442Hz</option><option value="443">443Hz</option></select></div>
     <div class="setrow"><label for="pa-sound">音を 鳴らす</label><select id="pa-sound"><option value="1">🔊 鳴らす</option><option value="0">🔇 鳴らさない</option></select></div>
-    <p class="note">音の 高さは ふつうの ピアノと おなじです。ラ（A4）の 高さを 440〜443Hz から えらべます。教室の ピアノが 442Hz なら 442Hz に。<br>iPhone・iPad で音が出ないときは、消音（マナーモード）を解除してください。</p>`;
+    <p class="note">音の 高さは ふつうの ピアノと おなじです。ラ（A4）の 高さを 440〜443Hz から えらべます。教室の ピアノが 442Hz なら 442Hz に。<br>iPhone・iPad で音が出ないときは、消音（マナーモード）を解除してください。</p>
+    <div class="setsec"><h3>💾 きろくの ひかえ</h3>
+      <p class="note">iPhone・iPad では、この サイトを 1週間 ほど ひらかないと、きろくが きえる ことが あります。ホーム画面に 追加するか、ときどき ファイルに 書きだして おくと あんしんです。<br>LINE などの リンクは Safari で ひらくので、ホーム画面の アプリとは きろくが べつに なるよ。うつすときは 書きだし・読みこみ を つかってね。</p>
+      <div class="row"><button class="btn small" data-sheet="export">💾 きろくを ファイルに 書きだす</button><button class="btn small" data-sheet="import">📂 ファイルから よみこむ</button></div>
+      <input type="file" id="pa-import" accept=".json,application/json" class="pa-sr" tabindex="-1" aria-hidden="true">
+      <p class="note" id="pa-backup-msg" role="status"></p>
+      <div id="pa-backup-text" hidden></div>
+    </div>`;
   const el=sheet(h);
   el.querySelector('#pa-naming').value=S.naming; el.querySelector('#pa-pitch').value=String(S.pitchA); el.querySelector('#pa-sound').value=S.sound?'1':'0';
-  el.onclick=e=>{if(e.target===el||e.target.closest('[data-sheet="close"]')) el.close();};
+  el.onclick=e=>{
+    if(e.target===el||e.target.closest('[data-sheet="close"]')){el.close();return;}
+    const b=e.target.closest('[data-sheet]'); if(!b) return;
+    if(b.dataset.sheet==='export') exportRecords(el);
+    if(b.dataset.sheet==='import') el.querySelector('#pa-import').click();
+    if(b.dataset.sheet==='copy') copyBackupText(el);
+  };
   el.onchange=e=>{
     const t=e.target;
+    if(t.id==='pa-import'){importRecords(t.files&&t.files[0],el);t.value='';return;}
     if(t.id==='pa-naming') S.naming=t.value;
     if(t.id==='pa-pitch'){S.pitchA=+t.value;PA.playNote(69,0,1.6,0.25);}
     if(t.id==='pa-sound'){S.sound=t.value==='1';if(!S.sound)PA.stopSound();}
-    PA.saveSettings(); if(PA.onSettings) PA.onSettings();
+    PA.saveSettings(); updateSoundBar(); if(PA.onSettings) PA.onSettings();
   };
 };
+/* ----- きろくの ひかえ（'pianoapps.' の きろくを JSON ファイルに） ----- */
+// ファイルの 中身を たしかめる：{'pianoapps.…': JSON の 文字, …}。ちがえば null
+PA.checkBackup=o=>{
+  if(!o||typeof o!=='object'||Array.isArray(o)) return null;
+  const ks=Object.keys(o), out={};
+  if(!ks.length||ks.length>500) return null;
+  for(let i=0;i<ks.length;i++){
+    const k=ks[i], v=o[k];
+    if(k.indexOf('pianoapps.')!==0||k.length>80||typeof v!=='string'||v.length>200000) return null;
+    try{JSON.parse(v);}catch(e){return null;}
+    out[k]=v;
+  }
+  return out;
+};
+PA.backupData=()=>{const o={};PA.store.keys().forEach(k=>{try{const v=localStorage.getItem('pianoapps.'+k);if(v!=null)o['pianoapps.'+k]=v;}catch(e){}});return o;};
+const pad2=n=>(n<10?'0':'')+n;
+// ファイルに できない ブラウザ（iOS 12 の Safari など）：中身を 文字で 見せて、コピー できるように する
+function showBackupText(el,text){
+  const box=el.querySelector('#pa-backup-text'); if(!box) return false;
+  box.innerHTML=`<p class="note">この ブラウザでは ファイルに できないので、下の 文字を ぜんぶ コピーして、メモなどに はりつけて とっておいてね。</p>`
+    +`<textarea id="pa-backup-ta" readonly rows="5" aria-label="きろくの 中身" style="width:100%;font:16px/1.4 monospace;border:2px solid var(--line);border-radius:12px;padding:8px;background:var(--soft2);color:var(--ink)"></textarea>`
+    +`<div class="row" style="margin-top:6px"><button type="button" class="btn small" data-sheet="copy">📋 コピーする</button></div>`;
+  box.querySelector('#pa-backup-ta').value=text;
+  box.hidden=false;
+  return true;
+}
+function copyBackupText(el){
+  const ta=el.querySelector('#pa-backup-ta'), msg=el.querySelector('#pa-backup-msg'), say=t=>{if(msg) msg.textContent=t;};
+  if(!ta) return;
+  const done=()=>say('コピーしたよ。メモなどに はりつけてね'), manual=()=>say('コピー できなかったよ。文字を 長おしして「すべて選択」→「コピー」してね');
+  const legacy=()=>{
+    let ok=false;
+    try{ta.removeAttribute('readonly');ta.focus();ta.select();ta.setSelectionRange(0,ta.value.length);ok=document.execCommand('copy');}catch(e){ok=false;}
+    ta.setAttribute('readonly','');
+    if(ok) done(); else manual();
+  };
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(ta.value).then(done,legacy);
+  else legacy();
+}
+function exportRecords(el){
+  askPersist(); // きろくを だいじに する 人 → ブラウザに「消さないで」と おねがい
+  const msg=el.querySelector('#pa-backup-msg'), say=t=>{if(msg) msg.textContent=t;};
+  let text, name;
+  try{
+    const d=new Date(); name='piano-kiroku-'+d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+'.json';
+    text=JSON.stringify(PA.backupData(),null,1);
+  }catch(e){say('書きだせなかったよ');return;}
+  const fallback=()=>{if(showBackupText(el,text)) say('');else say('書きだせなかったよ');};
+  // ホーム画面の アプリ：ダウンロードすると もどれない ことが あるので、できれば「共有」で ファイルを わたす
+  let standalone=false;
+  try{standalone=navigator.standalone===true||(!!window.matchMedia&&matchMedia('(display-mode: standalone)').matches);}catch(e){}
+  if(standalone&&typeof File==='function'&&navigator.share&&navigator.canShare){
+    let file=null;
+    try{file=new File([text],name,{type:'application/json'});}catch(e){}
+    let can=false; try{can=!!file&&navigator.canShare({files:[file]});}catch(e){}
+    if(can){
+      navigator.share({files:[file]}).then(()=>say('「'+name+'」を 書きだしたよ（「ファイルに 保存」を えらんだら「ファイル」アプリに あるよ）'),
+        err=>{if(err&&err.name==='AbortError') say('');else fallback();});
+      return;
+    }
+  }
+  const a=document.createElement('a');
+  if(!('download' in a)||typeof Blob!=='function'||!window.URL||!URL.createObjectURL){fallback();return;}
+  try{
+    const blob=new Blob([text],{type:'application/json'}), url=URL.createObjectURL(blob);
+    a.href=url; a.download=name; a.rel='noopener'; document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),60000);
+    say('「'+name+'」を 書きだしたよ（ダウンロード・「ファイル」アプリに あるよ）');
+  }catch(e){fallback();}
+}
+function importRecords(file,el){
+  const msg=el.querySelector('#pa-backup-msg'), say=t=>{if(msg) msg.textContent=t;};
+  if(!file) return;
+  if(file.size>5e6){say('この ファイルは よみこめないよ（大きすぎる）');return;}
+  const r=new FileReader();
+  r.onload=()=>{
+    let data=null; try{data=PA.checkBackup(JSON.parse(String(r.result)));}catch(e){}
+    if(!data){say('この ファイルは よみこめないよ（ピアノ和音アプリの きろくでは ない みたい）');return;}
+    if(typeof confirm==='function'&&!confirm('いまの きろくを、ファイルの きろくで おきかえます。いまの きろくは きえます。よろしいですか？')) return;
+    try{
+      PA.store.keys().forEach(k=>localStorage.removeItem('pianoapps.'+k));
+      Object.keys(data).forEach(k=>localStorage.setItem(k,data[k]));
+    }catch(e){say('ほぞん できなかったよ');return;}
+    location.reload();
+  };
+  r.onerror=()=>say('よみこめなかったよ');
+  r.readAsText(file);
+}
+/* ----- 読み上げソフトに 知らせる（画面には 出ない） ----- */
+let liveEl=null;
+PA.announce=t=>{
+  try{
+    if(!liveEl){liveEl=document.createElement('div');liveEl.className='pa-sr';liveEl.setAttribute('aria-live','polite');document.body.appendChild(liveEl);}
+    liveEl.textContent=''; setTimeout(()=>{liveEl.textContent=String(t);},60);
+  }catch(e){}
+};
+/* ----- 音が オフの ときの おしらせ（上のバーの 下） ----- */
+function updateSoundBar(){
+  const bar=document.getElementById('appbar'); if(!bar||!bar.parentNode) return;
+  let sb=document.getElementById('pa-soundoff');
+  if(S.sound){if(sb) sb.hidden=true;return;}
+  if(!sb){
+    sb=document.createElement('div'); sb.id='pa-soundoff'; sb.className='soundoff';
+    sb.innerHTML='<span role="status">🔇 音が オフに なっているよ</span><button type="button" class="btn small" data-pa="sound-on">🔊 音を 出す</button>';
+    bar.parentNode.insertBefore(sb,bar.nextSibling);
+  }
+  sb.hidden=false;
+}
+PA.updateSoundBar=updateSoundBar;
 // 上のバー（もどる・題名・設定）。app はホームの「つづき」に使う名前
-// ほかのアプリから PA.go() で 来たときは、‹ で そのアプリに もどる（1時間以内・ホームを ひらくと リセット）
+// ほかのアプリから PA.go() や ページの中の リンクで 来たときは、「‹ 和音クイズへ」で そのアプリに もどる（1時間以内・ホームを ひらくと リセット）
 PA.mountBar=o=>{
   const bar=document.getElementById('appbar');
   PA.currentApp=o.app||null;
   const r=PA.store.get('return-to',null);
-  let back=o.back||'index.html', label='ホームに もどる';
-  if(!o.back&&r&&typeof r.app==='string'&&/^[a-z-]+$/.test(r.app)&&r.app!==o.app&&Date.now()-r.t<36e5){back=r.app+'.html';label='まえの アプリに もどる';}
-  bar.innerHTML=`<a class="iconbtn" href="${back}" aria-label="${label}">‹</a><h1>${o.title}</h1><button class="iconbtn" data-pa="settings" aria-label="せってい">⚙️</button>`;
+  let backEl=`<a class="iconbtn" href="${o.back||'index.html'}" aria-label="ホームに もどる">‹</a>`;
+  if(!o.back&&r&&typeof r.app==='string'&&/^[a-z0-9-]+$/.test(r.app)&&r.app!==o.app&&Date.now()-r.t<36e5){
+    const prev=PA.app(r.app), name=prev?prev.title:'まえの アプリ';
+    backEl=`<a class="backpill" href="${r.app}.html" data-pa="back" aria-label="${PA.esc(name)}に もどる"><span class="bp-ar" aria-hidden="true">‹</span><span class="bp-tx">${PA.esc(name)}</span>へ</a>`;
+  }
+  bar.innerHTML=`${backEl}<h1>${o.title}</h1><button class="iconbtn" data-pa="settings" aria-label="せってい">⚙️</button>`;
   document.title=o.title;
-  if(o.app) PA.store.set('last',{app:o.app,title:o.title,t:Date.now()});
+  if(o.app){
+    const t=Date.now(), a=PA.app(o.app);
+    PA.store.set('last',{app:o.app,title:o.title,t});
+    if(a) PA.store.set(/^(quiz|play|ear)$/.test(a.type)?'last-practice':'last-learn',{app:a.id,title:a.title,t});
+    // 'visited'＝{アプリの id: さいごに ひらいた 時刻}（ホームの ✓ と「3 / 4 ひらいた」）
+    if(a){const v=PA.store.get('visited',{}), vv=v&&typeof v==='object'&&!Array.isArray(v)?v:{};vv[a.id]=t;PA.store.set('visited',vv);}
+  }
+  updateSoundBar();
 };
-PA.go=page=>{if(PA.currentApp) PA.store.set('return-to',{app:PA.currentApp,t:Date.now()}); location.href=page;};
+PA.go=(page,params)=>{if(PA.currentApp) PA.store.set('return-to',{app:PA.currentApp,t:Date.now()}); location.href=params?PA.url(page,params):page;};
+/* ----- リンクの パラメータ ----- */
+PA.url=(page,obj)=>{
+  let p=String(page||'index.html');
+  if(!/[?#\/.]/.test(p)) p+='.html';
+  const q=[];
+  if(obj&&typeof obj==='object') Object.keys(obj).forEach(k=>{const v=obj[k];if(v==null||v===''||v===false) return;q.push(encodeURIComponent(k)+'='+encodeURIComponent(String(v)));});
+  return q.length?p+(p.indexOf('?')>=0?'&':'?')+q.join('&'):p;
+};
+const PARAM_RE=/^[a-z][a-z0-9-]{0,20}$/;
+PA.PARAM_KEYS=['key','chord','mode','level','tier','n'];
+const hasOwn=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
+PA.parseParams=search=>{
+  const out={};
+  String(search||'').replace(/^\?/,'').split('&').forEach(pair=>{
+    if(!pair) return;
+    const i=pair.indexOf('='); let k,v;
+    try{k=decodeURIComponent((i<0?pair:pair.slice(0,i)).replace(/\+/g,' '));v=i<0?'':decodeURIComponent(pair.slice(i+1).replace(/\+/g,' '));}catch(e){return;}
+    if(!PARAM_RE.test(k)||v.length>40||hasOwn(out,k)) return; // おなじ 名前は さいしょの 1つ
+    out[k]=v;
+  });
+  return out;
+};
+PA.params=()=>PA.parseParams(location.search);
+PA.fromLink=()=>{const p=PA.params();return PA.PARAM_KEYS.some(k=>hasOwn(p,k));};
+PA.paramInt=(name,lo,hi)=>{const v=PA.params()[name];if(v==null||!/^-?\d{1,6}$/.test(v)) return null;const n=+v;return n>=lo&&n<=hi?n:null;};
+PA.absUrl=rel=>{try{return new URL(rel,location.href).href;}catch(e){return rel;}};
+PA.shareHTML=(page,params,label)=>`<button type="button" class="btn small pa-share" data-pa="share" data-url="${PA.esc(PA.absUrl(PA.url(page,params)))}">${label||'🔗 リンクを おくる'}</button>`;
+const flash=(b,t)=>{
+  if(b.dataset.orig==null) b.dataset.orig=b.innerHTML;
+  b.textContent=t; PA.announce(t);
+  clearTimeout(b._paFlash); b._paFlash=setTimeout(()=>{if(b.dataset.orig!=null){b.innerHTML=b.dataset.orig;delete b.dataset.orig;}},2200);
+};
+function shareLink(b){
+  const url=b.dataset.url; if(!url) return;
+  const ask=()=>{try{window.prompt('この リンクを コピーしてね',url);}catch(e){}};
+  if(navigator.share){navigator.share({title:document.title,url}).catch(()=>{});return;}
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(()=>flash(b,'✅ コピーしたよ'),ask);
+  else ask();
+}
 document.addEventListener('click',e=>{
-  // ページの中の ふつうの リンクで ほかの アプリへ 行くときも、‹ で ここに もどれるように
-  const a=e.target.closest&&e.target.closest('#view a[href$=".html"]');
-  if(a&&PA.currentApp&&!/(^|\/)index\.html$/.test(a.getAttribute('href'))) PA.store.set('return-to',{app:PA.currentApp,t:Date.now()});
-  const b=e.target.closest('[data-pa]'); if(!b) return;
-  if(b.dataset.pa==='settings') PA.openSettings();
-  if(b.dataset.pa==='keysheet'&&PA.onKeySheet) PA.onKeySheet();
+  // ページの中の ふつうの リンクで ほかの アプリへ 行くときも、‹ で ここに もどれるように（?… つきの リンクも）
+  const a=e.target.closest&&e.target.closest('#view a[href]');
+  if(a&&PA.currentApp){
+    const h=(a.getAttribute('href')||'').split(/[?#]/)[0];
+    if(/\.html$/.test(h)&&!/^[a-z][a-z0-9+.-]*:/i.test(h)&&!/(^|\/)index\.html$/.test(h)) PA.store.set('return-to',{app:PA.currentApp,t:Date.now()});
+  }
+  const b=e.target.closest&&e.target.closest('[data-pa]'); if(!b) return;
+  const p=b.dataset.pa;
+  if(p==='settings') PA.openSettings();
+  if(p==='keysheet'&&PA.onKeySheet) PA.onKeySheet();
+  if(p==='share') shareLink(b);
+  if(p==='sound-on'){
+    const had=document.activeElement===b;
+    S.sound=true; PA.saveSettings(); PA.audio(); PA.playNote(72,0,0.6,0.2); updateSoundBar(); PA.announce('音が 出るように なったよ');
+    if(had){const st=document.querySelector('[data-pa="settings"]');if(st) st.focus({preventScroll:true});}
+    if(PA.onSettings) PA.onSettings();
+  }
+  if(p==='back'){
+    // その ページから 来たばかりなら history.back()（れきしが ふえない・スクロールも もどる）
+    const h=(b.getAttribute('href')||'').split(/[?#]/)[0];
+    let ref=null; try{ref=document.referrer?new URL(document.referrer):null;}catch(err){}
+    if(h&&ref&&ref.origin===location.origin&&(ref.pathname===h||ref.pathname.slice(-(h.length+1))==='/'+h)&&history.length>1){e.preventDefault();history.back();}
+  }
 });
-// 「もどる」で 前の画面から そのまま もどってきたとき（bfcache）。ホームでは「まえの アプリ」を わすれる
+// 「もどる」で 前の画面から そのまま もどってきたとき（bfcache）。ホームでは「まえの アプリ」を わすれる。ほかの ページで かえた 設定も よみなおす
 window.addEventListener('pageshow',e=>{
   if(!e.persisted) return;
+  loadSettings(); updateSoundBar();
   if(!PA.currentApp) PA.store.set('return-to',null);
   if(PA.onPageShow) PA.onPageShow();
 });
+
+/* ===== 2回 おす ボタン（data-confirm）：1回めは 文字が かわって 赤い わく、4秒 以内に もういちどで ふつうの click ===== */
+let armed=null; // {sig, t, timer}
+const confirmSig=b=>(b.dataset.act||b.dataset.pa||b.id||'')+'|'+(b.dataset.v||'');
+const unArm=()=>{
+  if(armed){clearTimeout(armed.timer);armed=null;}
+  document.querySelectorAll('.armed').forEach(b=>{b.classList.remove('armed');if(b.dataset.armHtml!=null){b.innerHTML=b.dataset.armHtml;delete b.dataset.armHtml;}});
+};
+const showArm=b=>{if(b.classList.contains('armed')) return;b.dataset.armHtml=b.innerHTML;b.textContent=b.dataset.confirm;b.classList.add('armed');};
+document.addEventListener('click',e=>{
+  const b=e.target.closest&&e.target.closest('[data-confirm]'); if(!b||b.disabled) return;
+  const sig=confirmSig(b);
+  if(armed&&armed.sig===sig&&Date.now()-armed.t<4000){unArm();return;} // 2回め：そのまま ページへ
+  e.preventDefault(); e.stopImmediatePropagation();
+  unArm();
+  armed={sig,t:Date.now(),timer:setTimeout(unArm,4000)};
+  showArm(b); PA.announce(b.dataset.confirm);
+},true);
+// ほかへ フォーカスが うつったら もとに もどす（描きなおしで ボタンが 入れかわった ときは そのまま）
+document.addEventListener('focusout',e=>{
+  const b=e.target; if(!armed||!b||!b.classList||!b.classList.contains('armed')) return;
+  setTimeout(()=>{if(armed&&document.contains(b)&&document.activeElement!==b) unArm();},0);
+},true);
+const reArm=el=>{
+  if(!armed) return;
+  if(Date.now()-armed.t>=4000){unArm();return;}
+  el.querySelectorAll('[data-confirm]').forEach(b=>{if(confirmSig(b)===armed.sig) showArm(b);});
+};
+
+/* ===== キーボード・ページめくりペダル（data-hot） ===== */
+// マウス・指で おした ボタンに フォーカスが のこっていても、スペースは「聴く」に つかう（Tab で えらんだ ときは その ボタン）
+let kbNav=false;
+document.addEventListener('pointerdown',()=>{kbNav=false;},true);
+document.addEventListener('keydown',e=>{if(e.key==='Tab') kbNav=true;},true);
+const shown=el=>!!(el.offsetWidth||el.offsetHeight||el.getClientRects().length)&&!el.closest('[hidden],[inert]');
+const hotBtn=name=>{
+  const els=document.querySelectorAll(`[data-hot~="${name}"]`);
+  for(let i=0;i<els.length;i++){const b=els[i];if(!b.disabled&&b.getAttribute('aria-disabled')!=='true'&&shown(b)) return b;}
+  return null;
+};
+const HOT={' ':'listen',Spacebar:'listen',Enter:'check',ArrowRight:'next',PageDown:'next',ArrowLeft:'prev',PageUp:'prev'};
+const ACTIVE_SEL='button,a[href],summary,[role="button"],[role="link"],[role="tab"],[role="checkbox"],[role="radio"],[role="switch"],[role="option"]';
+document.addEventListener('keydown',e=>{
+  if(e.defaultPrevented||e.ctrlKey||e.metaKey||e.altKey||e.shiftKey||e.isComposing||e.repeat) return;
+  const name=HOT[e.key]; if(!name) return;
+  const t=e.target&&e.target.nodeType===1?e.target:null;
+  if(document.querySelector('dialog[open]')) return;
+  if(t){
+    if(t.closest('input,select,textarea,[contenteditable=""],[contenteditable="true"],dialog,[role="dialog"]')) return;
+    if(t.closest('.kb [data-m]')) return; // けんばんの 鍵に フォーカス：スペース・Enter は その 鍵を ひく、←→ は 鍵の いどう
+    const act=t.closest(ACTIVE_SEL);
+    if(name==='check'&&act) return;
+    if(name==='listen'&&act&&kbNav) return;
+    if((name==='next'||name==='prev')&&t.closest('[role="slider"],[role="tablist"],[role="radiogroup"],[role="listbox"],[role="menu"]')) return;
+  }
+  const b=hotBtn(name); if(!b) return;
+  e.preventDefault();
+  if(t&&t!==document.body&&t.blur&&name==='listen') t.blur(); // フォーカスの ボタンが スペースで おされないように
+  b.click();
+});
+
+/* ===== 学ぶ ページの「ためしてみる」カード ===== */
+PA.tryHTML=(o={})=>{
+  const app=PA.app(o.to), T=PA.APP_TYPES[app?app.type:'quiz']||PA.APP_TYPES.quiz;
+  const title=o.title||(app?`「${app.title}」で ためしてみよう`:'ためしてみよう');
+  const more=(o.links||[]).filter(l=>l&&l.to).map(l=>`<a class="btn small" href="${PA.esc(PA.url(l.to,l.params))}">${l.label||PA.esc((PA.app(l.to)||{}).title||l.to)}</a>`).join('');
+  return `<section class="card try-card" style="--tc:${T.dk};--tl:${T.l}"><h2>${title}</h2>${o.sub?`<p class="lead">${o.sub}</p>`:''}`
+    +`<a class="btn try-go" href="${PA.esc(PA.url(o.to||'index',o.params))}">${o.btn||'🎯 ためしてみる'}</a>`
+    +(more?`<div class="row try-more">${more}</div>`:'')+`</section>`;
+};
+
+/* ===== 古い 端末・ホーム画面の アプリ：sw.js（https だけ）と、きろくを 消されにくく する おねがい ===== */
+function askPersist(){try{if(navigator.storage&&navigator.storage.persist&&!PA.store.get('persist-asked',false)){PA.store.set('persist-asked',true);navigator.storage.persist().catch(()=>{});}}catch(e){}}
+(function(){
+  const go=()=>{
+    try{if('serviceWorker' in navigator&&location.protocol==='https:') navigator.serviceWorker.register('sw.js').catch(()=>{});}catch(e){}
+    // ホーム画面の アプリの ときだけ ここで おねがい（ブラウザでは 書きだす ボタンを おした とき。Firefox は たずねる 画面が 出るので）
+    let standalone=false; try{standalone=navigator.standalone===true||(!!window.matchMedia&&matchMedia('(display-mode: standalone)').matches);}catch(e){}
+    if(standalone) askPersist();
+  };
+  if(document.readyState==='complete') setTimeout(go,0); else window.addEventListener('load',go);
+})();
 
 /* 描きかえ：横スクロール（data-sk の名前ごと）・ひらいた <details>・フォーカスを たもつ。sig が かわったら 横スクロールは 最初の位置に
  * 下のボタンバーも PA.paint(document.getElementById('actions'),html,'bar') で 描くと、押したボタンが 入れかわっても フォーカスが のこる */
@@ -429,6 +852,7 @@ PA.paint=(el,html,sig)=>{
   if(openD.size) el.querySelectorAll('details').forEach((d,i)=>{if(!d.open&&openD.has(dKey(d,i))) d.open=true;});
   el.querySelectorAll('[data-sk]').forEach(b=>{ if(keep[b.dataset.sk]!=null) b.scrollLeft=keep[b.dataset.sk]; else PA.placeScroll(b); });
   lastSigs.set(el,sig);
+  reArm(el); // 2回 おす ボタンの 1回めの あとに 描きなおしても、赤い わくの まま
   if(!inEl||(document.activeElement!==document.body&&document.contains(ae))) return;
   const focus=n=>{if(n){n.focus({preventScroll:true});return true;}return false;};
   if(km!=null){ // けんばんの 鍵（キーボードで ひいた）
@@ -440,7 +864,7 @@ PA.paint=(el,html,sig)=>{
   if(fp&&focus(el.querySelector(`[data-pa="${CSS.escape(fp)}"]`))) return;
   if(!fa) return;
   const ok=':not([disabled])';
-  const tryq=a=>{for(const r of [el,document]){const n=r.querySelector(`[data-act="${a}"][data-v="${CSS.escape(fv??'')}"]${ok}`)||r.querySelector(`[data-act="${a}"]${ok}`);if(n) return n;}return null;};
+  const tryq=a=>{for(const r of [el,document]){const n=r.querySelector(`[data-act="${a}"][data-v="${CSS.escape(fv==null?'':fv)}"]${ok}`)||r.querySelector(`[data-act="${a}"]${ok}`);if(n) return n;}return null;};
   if(focus(tryq(fa))) return;
   for(const a of FOCUS_NEXT[fa]||[]) if(focus(tryq(a))) return;
   focus(document.querySelector(`#actions .btn.primary${ok}`)||document.querySelector(`#actions button${ok}`));
@@ -505,7 +929,8 @@ document.addEventListener('keydown',e=>{
   const n=ks[Math.max(0,Math.min(ks.length-1,ks.indexOf(k)+dir))];
   rove(n); n.focus();
 });
-document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&&e.target.closest('.kb [data-m]');if(k) hitKey(k);}});
+// Pointer Events の ない ブラウザ（iOS 12 の Safari など）では、ふつうの タップ（click）で ひく
+document.addEventListener('click',e=>{if(e.detail===0||!window.PointerEvent){const k=e.target.closest&&e.target.closest('.kb [data-m]');if(k) hitKey(k);}});
 /* ===== ドッペルドミナントと 増六の和音（芸大和声の 考え方） =====
  * 長調・短調どちらでも、key（PA.majorKey / PA.minorKey）を わたすと、正しい つづりと 高さの 音を かえす。
  * 音：{letter, acc, midi, role(日本語の役わり), tag('lt'＝Ⅴへの導音、'low'＝下げた音、'b9'＝短9度、'raised'＝上げた音)}
@@ -1041,11 +1466,27 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
  *     新しい ふくろの 1つめは、いま 出した 調に しない。filter({minor,idx,id})＝true の 調だけ ほしいときは、
  *     ふくろの 中から つぎに 合う 調を とる（合わない 調は ふくろに のこる）。
  *     weak：まちがいの 多い 調は、新しい ふくろに 1〜2こ よぶんに 入れる（となりどうしに ならないように）
- *   deck.record(id, ok) … 答えを きろく（PA.store('keystats-<quiz>') に {id:{right, wrong, last(さいごに 答えた 時刻 ms)}}）
+ *   deck.record(id, ok, {hint}) … 答えを きろく（PA.store('keystats-<quiz>') に
+ *     {id:{right, wrong, hint, last(さいごに 答えた 時刻 ms), recent(さいごの 8回：'o'＝じぶんで できた、'x'＝まちがい、'h'＝ヒントを 見て できた)}}）
+ *     ok＝true で hint＝true（こたえる まえに「つくりかた」を 見た）は ×に しない：right も wrong も ふえず、hint と recent の 'h' だけ。
+ *     recent の ない 古い きろくに はじめて きろくする ときは、それまでの ようすから recent を つくる（できた→'ooo'、にがて→'xx'、ほか→''）
  *   deck.stats() / deck.reset()（きろくを けす）/ deck.setOptions({tier, modes, weak})（えらべる 調が かわれば ふくろを つくりなおす。かわらなければ のこりは そのまま）
  *   deck.state() → {bag, last}（ほぞん用）/ deck.restore(state) → true（ふくろを その まま もどす。形が ちがえば false）
+ * PA.keyDeck.mastery(s)：'none'（まだ）・'good'（right≧3 で recent の さいご 3つが ぜんぶ 'o'）・'weak'（さいご 3つの うち 'x' が 2つ いじょう）・'learning'
+ *   （recent が ない 古い きろくは まえの きまり：right≧3 で wrong×4≦right なら good、wrong≧right なら weak）
+ * PA.keyDeck.extraCopies(s)：にがて用に ふくろへ よぶんに 入れる 数（さいご 3つの 'x' の 数、2まで。古い きろくは まえの きまり）
+ * PA.keyDeck.weakList(quiz) → にがてな じゅんの id（weak → 'x' の ある learning）
+ * PA.keyDeck.tally(quiz, {modes, merge=true}) → {total, good, learning, weak, none}（チェック表と おなじ 数えかた。「できた 調 3 ／ 24」に つかう）
+ * PA.keyDeck.mergeStats([s1, s2]) → 2つの きろくを あわせた もの（recent は 1回ごとの 時刻が ないので、last の 古い 調から つなぐ だいたいの じゅん）
+ * PA.weakSummary(limit=5) → ぜんぶの クイズの にがてな 調 [{quiz, title(アプリの 名前), id, name(PA.keyName), mastery}]（ホーム用）
  * PA.keyDeck.tierSeg(act, cur) … 4つの むずかしさの ボタン（PA.seg）
- * PA.keyDeck.checkTableHTML(quiz, {modes}) … 24調 チェック表（けすボタン data-act="keystats-reset" data-v=quiz は ページで あつかう）
+ * PA.keyDeck.checkTableHTML(quiz, {modes, title, note, merge=true, pickable, confirm}) … チェック表
+ *   merge：おなじ 音の 調（嬰ヘ長調・変ト長調、嬰ニ短調・変ホ短調）を 1つの ますに（きろくは 2つを あわせる）→ 長調 12・短調 12・ぜんぶで 24。
+ *     ますの <li> は data-key＝さいしょの id、data-ids＝"M6 M12"（まとめた とき）、data-mastery
+ *   title：なければ 長調・短調 両方は「📋 24調 チェック表」、1つなら「📋 長調 チェック表」「📋 短調 チェック表」
+ *   pickable：ますが ボタン（data-act="kd-pick" data-v=id、aria-label「ト長調 を 3もん れんしゅう …」）。ページで その 調の 3もんを はじめる
+ *   けすボタン data-act="keystats-reset" data-v=quiz（data-confirm つき＝2回 おす。confirm:false で なし）は ページで あつかう。
+ *     core の 2回 おす しくみが あるので、ページで もういちど たずねない（Q.kdArm・window.confirm は いらない）
  */
 (function(){
   const D=PA.keyDeck={};
@@ -1088,23 +1529,60 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
     Object.keys(raw).forEach(k=>{
       const p=D.parse(k), v=raw[k];
       if(!p||p.id!==k||!v||typeof v!=='object'||Array.isArray(v)) return;
-      const s={right:cnt(v.right),wrong:cnt(v.wrong),last:Number.isFinite(v.last)&&v.last>0?v.last:0};
-      if(s.right||s.wrong) out[k]=s;
+      const s={right:cnt(v.right),wrong:cnt(v.wrong),hint:cnt(v.hint),last:Number.isFinite(v.last)&&v.last>0?v.last:0};
+      const rc=recOf(v); if(rc) s.recent=rc;
+      if(s.right||s.wrong||s.hint) out[k]=s;
     });
     return out;
   };
+  // recent：さいごの 8回（'o' じぶんで できた・'x' まちがい・'h' ヒントで できた）。ないときは ''
+  const recOf=s=>s&&typeof s.recent==='string'?s.recent.replace(/[^oxh]/g,'').slice(-8):'';
+  const xIn3=rc=>(rc.slice(-3).match(/x/g)||[]).length;
   D.stats=quiz=>clean(PA.store.get(qkey(quiz),null));
   D.reset=quiz=>PA.store.set(qkey(quiz),{});
-  // ようす：'none'（まだ）、'weak'（にがて）、'learning'（れんしゅう中）、'good'（できた）
+  // recent の ない 古い きろくの きまり
+  const oldMastery=(r,w)=>r>=3&&w*4<=r?'good':w>0&&w>=r?'weak':'learning';
+  // ようす：'none'（まだ）、'weak'（にがて）、'learning'（れんしゅう中）、'good'（できた）。さいごの 3回で きめる
   D.mastery=s=>{
-    const r=s?cnt(s.right):0, w=s?cnt(s.wrong):0;
-    if(!r&&!w) return 'none';
-    if(r>=3&&w*4<=r) return 'good';
-    if(w>0&&w>=r) return 'weak';
+    const r=s?cnt(s.right):0, w=s?cnt(s.wrong):0, h=s?cnt(s.hint):0, rc=recOf(s);
+    if(!r&&!w&&!h) return 'none';
+    if(!rc) return oldMastery(r,w);
+    if(r>=3&&rc.slice(-3)==='ooo') return 'good';
+    if(xIn3(rc)>=2) return 'weak';
     return 'learning';
   };
-  // よぶんに 入れる 数（0〜2）：まちがい − せいかい÷3
-  D.extraCopies=s=>s?Math.max(0,Math.min(2,cnt(s.wrong)-Math.floor(cnt(s.right)/3))):0;
+  // よぶんに 入れる 数（0〜2）：さいご 3回の まちがいの 数。古い きろくは まちがい − せいかい÷3
+  D.extraCopies=s=>{
+    if(!s) return 0;
+    const rc=recOf(s);
+    if(rc) return Math.min(2,xIn3(rc));
+    return Math.max(0,Math.min(2,cnt(s.wrong)-Math.floor(cnt(s.right)/3)));
+  };
+  // 2つの きろくを あわせる（おなじ 音の 調を 1つの ますに する とき）。
+  // recent は 1回ごとの 時刻が ないので、さいごに こたえた 時刻（last）が 古い 調から じゅんに つなぐ（だいたいの じゅん）
+  const merge=list=>{
+    const ss=list.filter(Boolean); if(!ss.length) return undefined;
+    const out={right:0,wrong:0,hint:0,last:0}; let oldData=false;
+    ss.forEach(s=>{out.right+=cnt(s.right);out.wrong+=cnt(s.wrong);out.hint+=cnt(s.hint);out.last=Math.max(out.last,s.last||0);if(!recOf(s)&&(cnt(s.right)||cnt(s.wrong))) oldData=true;});
+    if(!oldData){const rc=ss.slice().sort((a,b)=>(a.last||0)-(b.last||0)).map(recOf).join('').slice(-8);if(rc) out.recent=rc;}
+    return out;
+  };
+  D.mergeStats=merge;
+  // にがてな じゅん：weak → 'x' の ある learning（さいご 3回の 'x' が 多い → まちがいが 多い → 時刻が 古い）
+  const weakOf=st=>Object.keys(st).map(id=>{const s=st[id], rc=recOf(s);return {id,s,m:D.mastery(s),x3:rc?xIn3(rc):0,hasX:rc?rc.indexOf('x')>=0:cnt(s.wrong)>0};})
+    .filter(o=>o.m==='weak'||(o.m==='learning'&&o.hasX))
+    .sort((a,b)=>(a.m==='weak'?0:1)-(b.m==='weak'?0:1)||b.x3-a.x3||cnt(b.s.wrong)-cnt(a.s.wrong)||(a.s.last||0)-(b.s.last||0)||(a.id<b.id?-1:1));
+  D.weakList=quiz=>weakOf(D.stats(quiz)).map(o=>o.id);
+  PA.weakSummary=(limit=5)=>{
+    const all=[];
+    (typeof PA.store.keys==='function'?PA.store.keys():[]).forEach(k=>{
+      const r=/^keystats-(.+)$/.exec(k); if(!r||!QUIZ_RE.test(r[1])) return;
+      const quiz=r[1], app=PA.app?PA.app(quiz):null;
+      weakOf(D.stats(quiz)).forEach(o=>{const p=D.parse(o.id);all.push({quiz,title:app?app.title:quiz,id:o.id,name:PA.keyName(PA.keyOf(p.minor,p.idx)),mastery:o.m,_o:o});});
+    });
+    all.sort((a,b)=>(a.mastery==='weak'?0:1)-(b.mastery==='weak'?0:1)||b._o.x3-a._o.x3||(b._o.s.last||0)-(a._o.s.last||0));
+    return all.slice(0,Math.max(0,limit)).map(x=>({quiz:x.quiz,title:x.title,id:x.id,name:x.name,mastery:x.mastery}));
+  };
 
   D.create=(o={})=>{
     const sk=qkey(o.quiz), rng=typeof o.rng==='function'?o.rng:Math.random, now=typeof o.now==='function'?o.now:Date.now;
@@ -1168,10 +1646,16 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
         if(i<0){i=bag.findIndex(ok);if(i<0){refill();i=bag.findIndex(ok);}} // 合う 調が 1つだけ（いま 出した 調）のとき
         return i<0?null:take(i);
       },
-      record(id,ok){
+      // opt.hint＝true（こたえる まえに 見た）で ok なら「ヒントで できた」（×に しない・せいかいにも かぞえない）
+      record(id,ok,opt){
         const p=D.parse(id); if(!p||p.id!==id) return null;
-        const st=D.stats(o.quiz), s=st[id]||{right:0,wrong:0,last:0};
-        if(ok) s.right=Math.min(1e6,s.right+1); else s.wrong=Math.min(1e6,s.wrong+1);
+        const st=D.stats(o.quiz), s=st[id]||{right:0,wrong:0,hint:0,last:0};
+        let rc=recOf(s);
+        if(!rc&&(s.right||s.wrong)) rc={good:'ooo',weak:'xx'}[oldMastery(s.right,s.wrong)]||''; // 古い きろくの ようすを ひきつぐ
+        if(ok&&opt&&opt.hint){s.hint=Math.min(1e6,cnt(s.hint)+1);rc+='h';}
+        else if(ok){s.right=Math.min(1e6,s.right+1);rc+='o';}
+        else{s.wrong=Math.min(1e6,s.wrong+1);rc+='x';}
+        s.recent=rc.slice(-8);
         const t=+now(); s.last=Number.isFinite(t)&&t>0?t:0;
         st[id]=s; PA.store.set(sk,st);
         return {...s};
@@ -1199,35 +1683,198 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
   const shortName=k=>(k.a>0?'嬰':k.a<0?'変':'')+PA.LET_JA[k.l];
   const sigShort=k=>!k.n?'なし':(k.type>0?'♯':'♭')+k.n;
   const num=n=>n>999?'999+':String(n);
+  // おなじ 音の 調（主音の 高さが おなじ）を まとめた ます：[[k], [k], …, [嬰ヘ, 変ト]]（調号の じゅん）
+  const cellsOf=(minor,mg)=>{
+    const ks=ALL.filter(k=>k.minor===minor).sort(bySig);
+    if(!mg) return ks.map(k=>[k]);
+    const by=new Map(), out=[];
+    ks.forEach(k=>{const t=PA.keyOf(k.minor,k.idx).tpc;if(by.has(t)) by.get(t).push(k);else{const g=[k];by.set(t,g);out.push(g);}});
+    return out;
+  };
+  // チェック表と おなじ 数えかた（merge：おなじ 音の 調は 1つ）→ {total, good, learning, weak, none}
+  D.tally=(quiz,o={})=>{
+    const st=D.stats(quiz), modes=normModes(o.modes), mg=o.merge!==false, out={total:0,good:0,learning:0,weak:0,none:0};
+    [false,true].forEach(minor=>{
+      if(!modes.includes(minor?'minor':'major')) return;
+      cellsOf(minor,mg).forEach(g=>{const s=g.length>1?merge(g.map(x=>st[x.id])):st[g[0].id];out.total++;out[D.mastery(s)]++;});
+    });
+    return out;
+  };
   D.checkTableHTML=(quiz,o={})=>{
-    const st=D.stats(quiz), modes=normModes(o.modes);
+    const st=D.stats(quiz), modes=normModes(o.modes), mg=o.merge!==false, pick=!!o.pickable;
     let good=0,total=0;
-    const cell=k=>{
-      const s=st[k.id]||{right:0,wrong:0}, m=D.mastery(s), L=LOOK[m], key=PA.keyOf(k.minor,k.idx);
+    const cell=g=>{
+      const k=g[0], s=g.length>1?merge(g.map(x=>st[x.id])):st[k.id], z=s||{right:0,wrong:0,hint:0}, m=D.mastery(s), L=LOOK[m];
+      const keys=g.map(x=>PA.keyOf(x.minor,x.idx)), hn=cnt(z.hint);
       total++; if(m==='good') good++;
-      return `<li data-key="${k.id}" data-mastery="${m}" style="position:relative;min-width:0;padding:5px 2px 4px;border-radius:12px;border:2px solid ${L.bd};background:${L.bg};color:${L.fg};text-align:center;line-height:1.25">`
-        +`<span style="${SR}">${PA.keyName(key)}（${PA.sigLabel(key)}）：${L.text}。せいかい ${s.right}、まちがい ${s.wrong}</span>`
-        +`<span aria-hidden="true" style="display:block">`
+      const sr=`${keys.map(PA.keyName).join('・')}（${keys.map(PA.sigLabel).join('・')}）：${L.text}。じぶんで できた ${cnt(z.right)}、まちがい ${cnt(z.wrong)}${hn?`、ヒントで できた ${hn}`:''}`;
+      const name=g.length>1
+        ?`<b style="display:block;font-size:13px;line-height:1.15;color:var(--ink);white-space:nowrap">${keys.map(shortName).join('<br>')}</b>`
+        :`<b style="display:block;font-size:15px;color:var(--ink);white-space:nowrap">${shortName(keys[0])}</b>`;
+      const look=`<span aria-hidden="true" style="display:block">`
         +(L.mark?`<span style="position:absolute;top:1px;right:4px;font-size:10px;font-weight:800">${L.mark}</span>`:'')
-        +`<b style="display:block;font-size:15px;color:var(--ink);white-space:nowrap">${shortName(key)}</b>`
-        +`<span style="display:block;font-size:11px;color:var(--sub)">${sigShort(k)}</span>`
-        +`<span style="display:flex;flex-wrap:wrap;justify-content:center;gap:0 4px;font-size:12px;font-weight:700"><span style="color:${s.right?'var(--ok)':'var(--sub)'}">✓${num(s.right)}</span><span style="color:${s.wrong?'var(--ng)':'var(--sub)'}">✗${num(s.wrong)}</span></span>`
-        +`</span></li>`;
+        +name
+        +`<span style="display:block;font-size:11px;color:var(--sub)">${g.map(sigShort).join('/')}</span>`
+        +`<span style="display:flex;flex-wrap:wrap;justify-content:center;gap:0 4px;font-size:12px;font-weight:700"><span style="color:${z.right?'#0f6b44':'var(--sub)'}">✓${num(cnt(z.right))}</span><span style="color:${z.wrong?'#a3273a':'var(--sub)'}">✗${num(cnt(z.wrong))}</span>${hn?`<span style="color:#6e4c00">💡${num(hn)}</span>`:''}</span>`
+        +`</span>`;
+      const box=`position:relative;min-width:0;border-radius:12px;border:2px solid ${L.bd};background:${L.bg};color:${L.fg};text-align:center;line-height:1.25`;
+      const ids=g.length>1?` data-ids="${g.map(x=>x.id).join(' ')}"`:'';
+      if(pick) return `<li data-key="${k.id}" data-mastery="${m}"${ids} style="min-width:0;display:flex">`
+        +`<button type="button" class="kd-cell" data-act="kd-pick" data-v="${k.id}" aria-label="${PA.esc(keys.map(PA.keyName).join('・'))} を 3もん れんしゅう（${PA.esc(sr.slice(sr.indexOf('：')+1))}）" style="${box};width:100%;min-height:56px;padding:5px 2px 4px;font:inherit">${look}</button></li>`;
+      return `<li data-key="${k.id}" data-mastery="${m}"${ids} style="${box};padding:5px 2px 4px">`
+        +`<span style="${SR}">${sr}</span>`+look+`</li>`;
     };
-    const group=(minor,title)=>{
-      const ks=ALL.filter(k=>k.minor===minor).sort(bySig);
-      return `<h3 style="margin:10px 0 6px;font-size:15px">${title}</h3>`
-        +`<ul role="list" aria-label="${minor?'短調':'長調'}" style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:4px">${ks.map(cell).join('')}</ul>`;
-    };
+    const group=(minor,title)=>`<h3 style="margin:10px 0 6px;font-size:15px">${title}</h3>`
+      +`<ul role="list" aria-label="${minor?'短調':'長調'}" style="list-style:none;margin:0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(54px,1fr));gap:4px">${cellsOf(minor,mg).map(cell).join('')}</ul>`;
+    const both=modes.length>1;
     let body='';
     if(modes.includes('major')) body+=group(false,'☀️ 長調');
     if(modes.includes('minor')) body+=group(true,'🌙 短調');
     const legend=['good','learning','weak','none'].map(m=>`<span class="chip" style="background:${LOOK[m].bg};color:${LOOK[m].fg};border:1px solid ${LOOK[m].bd}">${LOOK[m].mark?LOOK[m].mark+' ':''}${LOOK[m].text}</span>`).join('');
-    return `<section class="card kd-check" data-quiz="${quiz}"><h2>📋 24調 チェック表<small>できた 調：${good} ／ ${total}　（左から 調号の 少ない じゅん）</small></h2>`
+    const title=o.title||(both?'📋 24調 チェック表':modes[0]==='major'?'📋 長調 チェック表':'📋 短調 チェック表');
+    const pairs=[modes.includes('major')?'嬰ヘ長調と 変ト長調':'',modes.includes('minor')?'嬰ニ短調と 変ホ短調':''].filter(Boolean).join('、');
+    const note=o.note!=null?o.note
+      :`◎ は さいごの 3回 つづけて じぶんで できた 調です。こたえる まえに ヒントを 見た ときは 💡（×には ならない）。`
+        +`${pairs}は おなじ 音の 調で、書きかたが ちがうだけ${mg?'なので、1つの ますに まとめています':'です'}。`
+        +(pick?'ますを おすと、その 調を 3もん れんしゅう できます。':'');
+    const conf=o.confirm===false?'':' data-confirm="ほんとうに けす？（もういちど おす）"';
+    return `<section class="card kd-check" data-quiz="${quiz}"><h2>${title}<small>できた 調：${good} ／ ${total}　（左から 調号の 少ない じゅん）</small></h2>`
       +`<div class="chips" style="margin-bottom:2px">${legend}</div>`
       +body
-      +`<p class="note">◎ は 3回 いじょう せいかいして、まちがいが 少ない 調です。嬰ヘ長調と 変ト長調、嬰ニ短調と 変ホ短調は おなじ 音の 調で、書きかたが ちがうだけです。</p>`
-      +`<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn small" data-act="keystats-reset" data-v="${quiz}">🗑 きろくを けす</button></div></section>`;
+      +`<p class="note">${note}</p>`
+      +`<div class="row" style="justify-content:flex-end;margin-top:8px"><button class="btn small" data-act="keystats-reset" data-v="${quiz}"${conf}>🗑 きろくを けす</button></div></section>`;
+  };
+})();
+/* ===== れんしゅうの 回（n もん）と けっかの カード（つかいかたは いちばん上） =====
+ * きろく：PA.store('session-<quiz>')＝{n, done:[{ok, hint, label, key?}], startedAt}
+ *   ちがう sig の start で 上がきされた とちゅうの 回は PA.store('sessionpause-<quiz>') に とっておき、あとで もどす
+ * じぶんで できた＝ok で hint で ない、ヒントで できた＝ok で hint、まちがえた＝ok で ない
+ */
+PA.HINT_NOTE='こたえる まえに 見ても ×には ならないよ。「ヒントで できた」に なるよ';
+(function(){
+  const QUIZ_RE=/^[a-z0-9][a-z0-9-]{0,40}$/, HOURS12=12*36e5;
+  const clampN=v=>{const n=parseInt(v,10);return n>=1?Math.min(20,n):0;};
+  const cleanEntry=e=>{
+    if(!e||typeof e!=='object') return null;
+    const out={ok:e.ok===true,hint:e.hint===true&&e.ok===true,label:typeof e.label==='string'?e.label.slice(0,80):''};
+    if(typeof e.key==='string'&&e.key.length<=20) out.key=e.key;
+    return out;
+  };
+  const cleanSession=r=>{
+    if(!r||typeof r!=='object'||Array.isArray(r)) return null;
+    const n=clampN(r.n); if(!n||!Array.isArray(r.done)) return null;
+    const out={n,done:r.done.slice(0,100).map(cleanEntry).filter(Boolean).slice(0,n),startedAt:Number.isFinite(r.startedAt)?r.startedAt:0,sig:typeof r.sig==='string'?r.sig.slice(0,300):''};
+    if(Number.isFinite(r.endedAt)) out.endedAt=r.endedAt;
+    return out;
+  };
+  // リンクの しるし：n いがいの PARAM_KEYS（key・chord・mode・level・tier）を ならべた 文字。ちがう 宿題の リンクなら 新しい 回
+  const sigOf=p=>(PA.PARAM_KEYS||[]).filter(k=>k!=='n'&&p&&p[k]!=null&&p[k]!=='').map(k=>k+'='+p[k]).join('&');
+  PA.sessionSig=sigOf;
+  const AFTER_END=10*6e4; // おわってから 10分 までは けっかの カードを また 出す（「もどる」で 読みなおした とき）
+  // けっかの 数・ほし・ひとこと
+  PA.sessionTally=(done,n)=>{
+    const d=Array.isArray(done)?done:[], N=clampN(n)||d.length;
+    const self=d.filter(e=>e.ok&&!e.hint).length, hint=d.filter(e=>e.ok&&e.hint).length, wrong=d.filter(e=>!e.ok).length;
+    const pt=N?(self+hint*0.5)/N:0, stars=pt>=0.9?3:pt>=0.6?2:1;
+    let msg;
+    if(N&&self===N) msg='ぜんぶ じぶんで できたね！ すごい！';
+    else if(N&&wrong===0) msg='ぜんぶ できたね！ つぎは ヒントを 見ないで やってみよう';
+    else if(pt>=0.6) msg='よく できたね。まちがえた ところを もういちど 見てみよう';
+    else msg='さいごまで がんばったね。まちがえた もんだいを もういちど やってみよう';
+    return {n:N,done:d.length,self,hint,wrong,ok:self+hint,stars,msg};
+  };
+  const WD='日月火水木金土';
+  const dateText=t=>{const d=new Date(t);return `${d.getFullYear()}年${d.getMonth()+1}月${d.getDate()}日（${WD[d.getDay()]}） ${d.getHours()}:${(d.getMinutes()<10?'0':'')+d.getMinutes()}`;};
+  // params から「せってい」の ことば（key・tier・level・n）
+  PA.paramsText=p=>{
+    const out=[]; p=p||{};
+    const D=PA.keyDeck, k=p.key&&D?D.parse(p.key):null;
+    if(k) out.push('調：'+PA.keyName(PA.keyOf(k.minor,k.idx)));
+    const t=p.tier&&D?D.TIERS.find(x=>x.id===p.tier):null;
+    if(t) out.push('むずかしさ：'+t.name+'（調号 '+t.min+'〜'+t.max+'）');
+    if(/^\d{1,2}$/.test(String(p.level||''))) out.push('レベル '+p.level);
+    return out.join('・');
+  };
+  PA.session=(quiz,o={})=>{
+    if(typeof quiz!=='string'||!QUIZ_RE.test(quiz)) throw new TypeError('PA.session: quiz は 英小文字・数字・- の 名前に');
+    const sk='session-'+quiz, now=typeof o.now==='function'?o.now:Date.now;
+    const sig=typeof o.sig==='string'?o.sig.slice(0,300):sigOf(PA.params?PA.params():{});
+    let d=cleanSession(PA.store.get(sk,null));
+    const save=()=>PA.store.set(sk,d);
+    if(d&&!(+now()-d.startedAt<HOURS12)){d=null;PA.store.set(sk,null);} // 12時間 たった 回は すてる（n が なくても）
+    // とちゅうの 回を ちがう リンク（宿題・ふくしゅう）で 上がきした ときは、'sessionpause-'+quiz に とっておく。
+    // いまの 回が ない（けした）か、おわって 10分 たったら、とっておいた 回に もどす（12時間 たったら すてる）
+    const pk='sessionpause-'+quiz;
+    let paused=cleanSession(PA.store.get(pk,null));
+    if(paused&&!(paused.done.length<paused.n&&+now()-paused.startedAt<HOURS12)){paused=null;PA.store.set(pk,null);}
+    if(paused&&(!d||(d.done.length>=d.n&&!(d.endedAt!=null&&+now()-d.endedAt<AFTER_END)))){d=paused;paused=null;save();PA.store.set(pk,null);}
+    const s={
+      start(n){
+        const N=clampN(n);if(!N){s.clear();return s;}
+        const curActive=!!d&&d.done.length<d.n;
+        if(!curActive&&paused&&paused.n===N&&paused.sig===sig){d=paused;paused=null;save();PA.store.set(pk,null);return s;} // おなじ 回を また はじめる：とっておいた つづきから
+        if(curActive&&d.sig!==sig&&!paused){paused=d;PA.store.set(pk,paused);} // とちゅうの 回は きえない
+        d={n:N,done:[],startedAt:+now(),sig};save();return s;
+      },
+      clear(){d=null;PA.store.set(sk,null);return s;},
+      n(){return d?d.n:0;},
+      count(){return d?d.done.length:0;},
+      active(){return !!d&&d.done.length<d.n;},
+      finished(){return !!d&&d.done.length>=d.n;},
+      state(){return d?{n:d.n,done:d.done.map(e=>Object.assign({},e)),startedAt:d.startedAt,sig:d.sig,endedAt:d.endedAt}:null;},
+      record(e){
+        if(!s.active()) return null;
+        const x=cleanEntry(e||{}); if(!x) return null;
+        d.done.push(x); if(d.done.length>=d.n) d.endedAt=+now(); save();
+        return {count:d.done.length,n:d.n,finished:d.done.length>=d.n};
+      },
+      tally(){return PA.sessionTally(d?d.done:[],d?d.n:0);},
+      progressHTML(){
+        if(!d) return '';
+        return `<span class="chip pa-sess" aria-label="きょうの ${d.n}もんの うち ${d.done.length}もん おわり">📝 きょうの ${d.n}もん　${d.done.length} / ${d.n}</span>`;
+      },
+      summaryHTML(p={}){
+        if(!d) return '';
+        const T=s.tally(), app=PA.app?PA.app(quiz):null, title=p.title||(app?app.title:quiz), page=p.page||(app?app.id:quiz);
+        const params=Object.assign({},p.params||{},{n:d.n});
+        const stars='★★★'.slice(0,T.stars)+'☆☆☆'.slice(0,3-T.stars);
+        const nm=t=>PA.H(PA.esc(t));
+        const miss=d.done.filter(e=>!e.ok||e.hint);
+        const list=miss.length?`<div class="sess-miss"><h3>もういちど 見ておきたい もんだい</h3><ul>`
+          +miss.map(e=>`<li><span class="sess-tag ${e.ok?'h':'x'}">${e.ok?'💡 ヒント':'✗ まちがい'}</span> ${nm(e.label||'（もんだい）')}</li>`).join('')+`</ul></div>`:'';
+        const set=p.settings!=null?PA.esc(p.settings):PA.esc(PA.paramsText(p.params||{}));
+        return `<section class="card sess-card" aria-labelledby="sess-h">`
+          +`<h2 id="sess-h">🎉 ${d.n}もん おわり！</h2>`
+          +`<p class="sess-big"><b>${d.n}もん中 ${T.ok}もん</b> <span class="sess-stars" role="img" aria-label="ほし 3つの うち ${T.stars}つ">${stars}</span></p>`
+          +`<p class="sess-msg">${T.msg}</p>`
+          +`<div class="sess-counts">`
+          +`<div class="sc-self"><b>${T.self}</b><span>じぶんで できた</span></div>`
+          +`<div class="sc-hint"><b>${T.hint}</b><span>ヒントを 見て できた</span></div>`
+          +`<div class="sc-wrong"><b>${T.wrong}</b><span>まちがえた</span></div></div>`
+          +list
+          +`<div class="sess-teacher"><h3>👩‍🏫 先生に 見せる</h3><dl>`
+          +`<dt>日づけ</dt><dd>${dateText(+now())}</dd>`
+          +`<dt>れんしゅう</dt><dd>${PA.esc(title)}</dd>`
+          +(set?`<dt>せってい</dt><dd>${set}</dd>`:'')
+          +`<dt>けっか</dt><dd>${d.n}もん中 ${T.ok}もん（じぶんで ${T.self}・ヒント ${T.hint}・まちがい ${T.wrong}）${stars}</dd></dl>`
+          +`<div class="row">${PA.shareHTML(page,params,'🔗 おなじ れんしゅうの リンク')}</div></div>`
+          +`<div class="row sess-btns"><button type="button" class="btn primary" data-act="session-again">🔁 もういちど</button><button type="button" class="btn" data-act="session-free">🎈 じゆうに れんしゅう</button></div>`
+          +`</section>`;
+      }
+    };
+    // n が あるとき：n・リンクが おなじで、とちゅう（または おわって 10分 いない）なら つづき。ちがえば 新しく はじめる
+    const want=clampN(o.n);
+    if(want){
+      const same=!!d&&d.n===want&&d.sig===sig;
+      const fresh=!!d&&(d.done.length<d.n||(d.endedAt!=null&&+now()-d.endedAt<AFTER_END));
+      if(!(same&&fresh)){
+        if(paused&&paused.n===want&&paused.sig===sig){ // とっておいた 回の リンクを また ひらいた：その 回に もどし、いまの とちゅうの 回を とっておく
+          const cur=d; d=paused; save();
+          paused=cur&&cur.done.length<cur.n?cur:null; PA.store.set(pk,paused);
+        }else s.start(want);
+      }
+    }
+    return s;
   };
 })();
 /* ===== おわりかた（終止形）：6つの 終止の 和音の ならび =====
@@ -1326,15 +1973,16 @@ document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&
   // さいごの 2つの 和音で 名前が きまる わけ（だから ○○終止、の まえの ところ）
   E.why=(key,typeId,variant)=>{
     const d=E.build(key,typeId,variant); if(!d) return '';
-    const a=d[2], b=d[3], arrow=`<b>${E.labelText(a)} → ${E.labelText(b)}</b>`, top=b.rh[b.rh.length-1], nm=PA.nmH;
-    if(typeId==='perfect') return `さいごが ${arrow} で、いちばん上が 主音「${nm(top)}」`;
+    // q：「音名」を まるごと 行が かわらない ように（♯・♭ の 前でも）
+    const a=d[2], b=d[3], arrow=`<b>${E.labelText(a)} → ${E.labelText(b)}</b>`, top=b.rh[b.rh.length-1], q=n=>`<span class="nw">「${PA.H(PA.nm(n))}」</span>`;
+    if(typeId==='perfect') return `さいごが ${arrow} で、いちばん上が 主音${q(top)}`;
     if(typeId==='imperfect') return variant==='B'
-      ?`さいごが ${arrow}。でも Ⅴ7 の いちばん下が 根音では なく「${nm(a.lh[0])}」`
-      :`さいごが ${arrow}。でも いちばん上が 主音では なく「${nm(top)}」`;
+      ?`さいごが ${arrow}。でも Ⅴ7 の いちばん下が 根音では なく${q(a.lh[0])}`
+      :`さいごが ${arrow}。でも いちばん上が 主音では なく${q(top)}`;
     if(typeId==='half') return `さいごが ${arrow}。Ⅴ で とまる`;
     if(typeId==='plagal') return `さいごが ${arrow}`;
     if(typeId==='deceptive') return `さいごが ${arrow}。Ⅰ の かわりに Ⅵ`;
-    if(typeId==='phrygian') return `短調で、さいごが ${arrow}。いちばん下が「${nm(a.lh[0])}」から「${nm(b.lh[0])}」へ 半音 下がる`;
+    if(typeId==='phrygian') return `短調で、さいごが ${arrow}。いちばん下が${q(a.lh[0])}から${q(b.lh[0])}へ 半音 下がる`;
     return '';
   };
 })();

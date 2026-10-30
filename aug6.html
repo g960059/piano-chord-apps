@@ -3,6 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- meta:start -->
+<meta name="description" content="イタリア・フランス・ドイツの6。外へ ひらいて Ⅴ へ">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ピアノ和音アプリ">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="増六の和音｜ピアノ和音アプリ">
+<meta property="og:description" content="イタリア・フランス・ドイツの6。外へ ひらいて Ⅴ へ">
+<meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/aug6.html">
+<meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ピアノ和音アプリ">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -22,6 +40,7 @@
 .roles{margin-top:10px}
 .roles .chip{font-weight:400;font-size:13.5px}
 .roles .chip b{font-size:15px}
+.rcap{margin:6px 0 0;font-size:13px}
 .pair{margin-top:8px;border-radius:14px;background:var(--soft2);padding:8px 12px;font-size:15px;line-height:1.5}
 .nw{white-space:nowrap}
 .lo{color:#2f7ee8}
@@ -31,7 +50,7 @@
 .pseg small{display:block;font-weight:400;font-size:12px;color:var(--sub)}
 .cmprow{display:flex;gap:10px;align-items:center;padding:8px 10px;border-radius:14px;background:var(--soft2);margin-top:8px}
 .cmprow.on{background:var(--card);outline:3px solid var(--c)}
-.cmprow .btn{flex:none;width:128px;padding-inline:6px;color:var(--c);background:var(--card);border:2px solid var(--c)}
+.cmprow .btn{flex:none;width:128px;padding-left:6px;padding-right:6px;color:var(--c);background:var(--card);border:2px solid var(--c)}
 .cmprow .tx{min-width:0;font-size:14px;line-height:1.45}
 .cmprow .tx b{font-size:15.5px}
 .more .row{margin-top:10px}
@@ -182,7 +201,7 @@ function marksOf(notes,o={}){
 function staticMsg(key,t){
   const a=aug(key,t), T=TYPES[t], low=a[0], up=a[a.length-1], V=C.aug6ToV(key,t)[0];
   let m=`${PA.keyName(key)}の <b>${T.name}</b> は、${T.from}${T.root?'（根音も のこす）':'の 根音を はぶき'}、第5音を 半音下げて <b>いちばん下</b>に おいた 和音 → <b class="big">${namesC(a)}</b>`;
-  m+=`<br>いちばん下${q(low)}と いちばん上${q(up)}が <b>増6度</b>。だから「増六の和音」。この2つは <b>外へ ひらいて</b> Ⅴ の 根音${q(V)}の オクターブへ すすむよ。`;
+  m+=`<br>いちばん下${q(low)}と いちばん上${q(up)}が <b>増6度</b>（ふつうの 6度より ひろい はば）。だから「増六の和音」。この2つは <b>外へ ひらいて</b> Ⅴ の 根音${q(V)}の オクターブへ すすむよ。`;
   return m;
 }
 function heroCard(key,t){
@@ -195,6 +214,7 @@ function heroCard(key,t){
       <div class="hs">もとの 和音：${T.from}（${src}）　<span class="lo nw">青＝下げた 第5音</span>・<span class="up nw">赤＝Ⅴへの 導音</span></div></div></div>
     <div class="hn">${cur.length?namesC(cur):'…'}</div>
     ${A?'':`<div class="chips roles">${a.map(n=>`<span class="chip"><b class="${n.tag==='low'?'lo':n.tag==='lt'?'up':''}">${PA.nmH(n)}</b> ${n.role}</span>`).join('')}</div>
+    <p class="note rcap">根音＝${T.from} の もとの 音${T.root?'':'（この 和音では はぶく）'}。そこから ひとつとばしに 第3音・第5音・第7音${t==='ger'?'・第9音':''}。<span class="up">導音</span>＝Ⅴ の 根音へ のぼりたがる 音。</p>
     <div class="pair">↕️ ${q(low)}と ${q(up)} ＝ <b>増6度</b>。${q(low)}は 半音下へ、${q(up)}は 半音上へ。</div>`}
     <div class="msg" style="margin-top:10px">${A?A.msg:state.autoWait?'👆 どこかを タッチすると <b>つくりかた</b>が はじまるよ':(state.msg||staticMsg(key,t))}</div>
   </section>`;
@@ -213,7 +233,7 @@ function staffCard(key,t){
   const A=state.anim;
   if(A) return `<section class="card"><h2>🎼 がくふ<small>${A.staffCap||''}</small></h2>${staff(key,A.cols.map(c=>({color:AUG,...c})),A.arrows,{sk:'staff'})}</section>`;
   const st=stagesOf(key,t,state.gerPath), a=st[0].notes, nx=st[1].notes, low=a[0], up=a[a.length-1];
-  const cols=st.map((s,i)=>({notes:s.notes,color:s.color,label:s.label,op:state.res>0&&i!==state.res?.45:1}));
+  const cols=st.map((s,i)=>({notes:s.notes,color:s.color,label:s.label,op:state.res>0&&i!==state.res?0.45:1}));
   const arrows=[{c1:0,n1:low,c2:1,n2:nx[0],color:LOW,text:'半音↓'},{c1:0,n1:up,c2:1,n2:nx[nx.length-1],color:LT,text:'半音↑'}];
   if(t==='ger'&&state.gerPath==='direct') arrows.push({c1:0,n1:a[2],c2:1,n2:nx[2],color:PAR,text:'平行5度',dash:'5 4'});
   let h=`<section class="card"><h2>🎼 がくふ ── Ⅴ へ すすむ<small>${st.map(s=>s.id==='aug'?TYPES[t].name:s.id==='i64'?I64H:'Ⅴ').join(' → ')}</small></h2>`;
@@ -294,11 +314,16 @@ function termsHTML(key,t){
     <li><b>ナポリの和音</b>（♭Ⅱ） … Ⅱ の 根音を 半音下げた 長三和音。${PA.keyName(key)}では ${b.bII}。</li>
   </ul></details>`;
 }
+// 変化和音クイズへ：いまの 調で、🎹 おさえる レベル3（増六 3しゅるい）を 5もん。👂 聴きわけは レベル2（増六）
+function tryCard(key){
+  return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',level:3,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
+    sub:`${PA.keyName(key)}で、イタリア・フランス・ドイツの6を けんばんで おさえてみよう（5もん）。`,btn:'🎯 けんばんで 5もん',
+    links:[{to:'chroma-quiz',params:{mode:'ear',level:2,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:'👂 耳で 聴きわける'}]});
+}
 function linksCard(){
   return `<section class="card"><h2>🔗 つながる アプリ</h2><div class="links">
     <button class="btn" data-act="go" data-v="doppel">🔺 Ⅱ7と ドッペルドミナント <small>増六の もとに なる 和音</small></button>
     <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族 <small>Ⅴ9 の 根音を はぶくと 減七</small></button>
-    <button class="btn" data-act="go" data-v="chroma-quiz">🎯 ドッペル・増六クイズ</button>
   </div></section>`;
 }
 
@@ -326,6 +351,7 @@ function render(){
   h+=`<section class="card"><h2>🎹 けんばん<small>${cap}　さわると 音が出るよ</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(lo,hi,mk)}</div></section>`;
   h+=staffCard(key,t);
   h+=compareCard(key);
+  h+=tryCard(key);
   if(t==='ger') h+=bIIDetails(key);
   if(!key.minor) h+=borrowDetails(key,t);
   h+=tipsHTML(key);
@@ -335,7 +361,7 @@ function render(){
   PA.paint(document.getElementById('view'),h,state.minor+':'+state.keyIdx+':'+t);
   if(state.anim) PA.follow(document.getElementById('view')); // つくりかたで 音の高さが かわっても 鍵が 見えるように
   const acts=(A?`<button class="btn" data-act="stop">⏹ とめる</button>`:`<button class="btn night" data-act="build">🐸 つくりかた</button>`)+
-    `<button class="btn" data-act="play">🔊 いっしょに</button><button class="btn primary" data-act="resolve">➡️ Ⅴへ</button>`;
+    `<button class="btn" data-act="play" data-hot="listen">🔊 いっしょに</button><button class="btn primary" data-act="resolve">➡️ Ⅴへ</button>`;
   if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
 }
 
@@ -483,7 +509,6 @@ document.addEventListener('click',e=>{
       PA.store.set('minor-family',{keyIdx:mi>=0?mi:Number.isInteger(mf.keyIdx)?mf.keyIdx:0,fam:'DIM'});
       PA.go('minor-family.html');
     }
-    else if(v==='chroma-quiz') PA.go('chroma-quiz.html');
   }
 });
 render();

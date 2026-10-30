@@ -3,6 +3,24 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- meta:start -->
+<meta name="description" content="調号に 書けない わけ。♯・♮・ダブル♯ の いちらん">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ピアノ和音アプリ">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="調号と 臨時記号｜ピアノ和音アプリ">
+<meta property="og:description" content="調号に 書けない わけ。♯・♮・ダブル♯ の いちらん">
+<meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/minor-signature.html">
+<meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ピアノ和音アプリ">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -44,8 +62,6 @@
 .hidebar .btn{justify-self:start}
 #demo{scroll-margin-top:calc(68px + env(safe-area-inset-top,0px))}
 #done{scroll-margin-bottom:90px}
-.links{display:grid;gap:8px}
-.links .btn{justify-content:flex-start}
 @media (min-width:560px){
   .khead,.krow{grid-template-columns:minmax(0,1.2fr) minmax(0,.8fr) minmax(0,1.4fr)}
   .kname b{font-size:16px}
@@ -169,10 +185,9 @@ function render(){
     <details class="more" style="margin-top:12px"><summary>💡 ${PA.nmH({letter:2,acc:1})} や ${PA.nmH({letter:3,acc:2})} は どこを ひくの？</summary>
       <p class="note" style="margin-top:0">${PA.nmH({letter:2,acc:1})} は ${PA.nmH({letter:3,acc:0})}の けんばん、${PA.nmH({letter:3,acc:2})} は ${PA.nmH({letter:4,acc:0})}の けんばんで ひくよ。でも 7ばんめは 主音の すぐ下の 線・間の まま なので、名前は かえずに 記号を つけて 書く（音階では ${PA.nmH({letter:0,acc:0})}〜${PA.nmH({letter:6,acc:0})}を 1回ずつ 使う）。</p></details>
   </section>
-  <section class="card"><h2>🔗 つぎは</h2><div class="links">
-    <a class="btn" href="minor-why.html">❓ なぜ 7ばんめを 上げるの？</a>
-    <a class="btn" href="minor-quiz.html">🎯 短調クイズ（臨時記号を えらぶ）</a>
-  </div></section>
+  ${PA.tryHTML({to:'minor-quiz',params:{mode:'mark',key:PA.keyDeck.id(true,state.keyIdx),n:3},
+    sub:`${PA.keyName(key)}から はじめて、7ばんめに つける 記号を えらんでみよう（3もん）`,btn:'🎯 記号を えらぶ クイズ（この 調から 3もん）',
+    links:[{to:'minor-why',label:'❓ なぜ 7ばんめを 上げるの？'}]})}
   ${termsHTML(key)}</div>`;
   PA.paint(document.getElementById('view'),h,String(state.keyIdx));
   PA.paint(document.getElementById('actions'),
