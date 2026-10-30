@@ -212,13 +212,17 @@ function answer(v){
 /* ===== 音 ===== */
 let token=0, playAt=0;
 const freshPlay=()=>Date.now()-playAt<600; // 2どおしの2回めで ⏹ をおしてすぐとまらないように
-function stop(){token++;Q.playing=null;Q.cur=-1;PA.stopSound();PA.lockVoice(null);}
+function stop(){token++;Q.playing=null;Q.cur=-1;alt=false;PA.stopSound();PA.lockVoice(null);}
 const SF=()=>Q.slow?1.5:1;
 // 鳴っている和音だけを目立たせる（描きなおさない：フォーカスやひらいたところがそのまま）。i＝-1 でもとにもどす
+// alt＝画面とちがうならび（ためし・選んだほう）を鳴らしている：がくふは目立たせない。こたえたあとはカードも（名前や音がちがうので）
+let alt=false;
+const curCard=()=>alt&&Q.ans?-1:Q.cur, curStaff=()=>alt?-1:Q.cur;
 function setCur(i){
   Q.cur=i;
-  document.querySelectorAll('#view .scard').forEach((el,j)=>el.classList.toggle('on',j===i));
-  document.querySelectorAll('#view .staffw g[data-col]').forEach(g=>g.setAttribute('opacity',i<0||+g.dataset.col===i?1:0.35));
+  const ci=curCard(), si=curStaff();
+  document.querySelectorAll('#view .scard').forEach((el,j)=>el.classList.toggle('on',j===ci));
+  document.querySelectorAll('#view .staffw g[data-col]').forEach(g=>g.setAttribute('opacity',si<0||+g.dataset.col===si?1:0.35));
 }
 // ならびのはじめ：とちゅうでピアノの録音が読めても音色がかわらないように、はじめの音色でさいごまで（stop でとく）
 function begin(what){stop(); Q.playing=what; playAt=Date.now(); PA.lockVoice(PA.voice()); return token;}
@@ -226,6 +230,7 @@ function finish(my){if(my!==token) return; Q.playing=null; Q.cur=-1; PA.lockVoic
 // ならびをながす。what＝鳴らしているもの（'q'｜'try:…'｜'mine'｜'right'）。カードは鳴っている和音を目立たせる
 async function playSeq(data,what){
   const my=begin(what), sf=SF();
+  alt=what!=='q'&&what!=='right';
   Q.cur=0; render(); // ボタンを「⏹ とめる」に（描きなおすのは、はじめとおわりだけ）
   for(let i=0;i<data.length;i++){
     const last=i===data.length-1;
@@ -290,7 +295,7 @@ function cardsHTML(data,reveal){
     const form=reveal&&c.inv?P.BASS_ROLES[P.roleOf(c)].form:'';
     const nm=reveal?`<span class="nm"><span class="lh">${N(c.lh[0])}</span>${c.rh.map(n=>`<span>${N(n)}</span>`).join('')}</span>`:'';
     const al=`${i+1}つめ${ask&&hideName?'「？」':hideName?'':c.label}${hideBass?'。いちばん下は？':''}${form?'（'+form+'）':''}`;
-    return `<div class="scw"><button class="scard ${ask?'ask':''} ${hideName&&!ask?'hid':''} ${i===Q.cur?'on':''}" style="--c:${cc};--l:${ll};--t:${tc}" data-act="pcard" data-v="${i}" aria-label="${al}。タップで鳴らす">`
+    return `<div class="scw"><button class="scard ${ask?'ask':''} ${hideName&&!ask?'hid':''} ${i===curCard()?'on':''}" style="--c:${cc};--l:${ll};--t:${tc}" data-act="pcard" data-v="${i}" aria-label="${al}。タップで鳴らす">`
       +`<span class="num">${ask&&hideName?'？':hideName?'♪':c.label}</span>${hideBass?'<span class="inv">下は？</span>':form?`<span class="inv fm">${form}</span>`:''}${nm}</button></div>`;
   }).join('')+`</div>`;
 }
@@ -343,7 +348,7 @@ function staffHTML(data){
   const q=Q.q, key=keyOfQ();
   const cols=data.map((c,i)=>{
     const ask=q.type!=='top'&&i===q.i;
-    return {notes:c.rh,lh:c.lh,color:PA.COL[c.ch],accColor:'#d1495b',op:Q.cur<0||i===Q.cur?1:0.35,label:c.label,
+    return {notes:c.rh,lh:c.lh,color:PA.COL[c.ch],accColor:'#d1495b',op:curStaff()<0||i===curStaff()?1:0.35,label:c.label,
       sub:c.inv?P.BASS_ROLES[P.roleOf(c)].form:'',labelColor:PA.COL[c.ch],hl:ask?'#fff3c4':null,lhRing:ask&&q.type==='bass'?'#c98500':null};
   });
   const arrows=q.type==='top'?data.slice(1).map((c,i)=>({c1:i,i1:2,c2:i+1,i2:2,color:'#3b4fa8'})):[];
@@ -356,7 +361,7 @@ const linkParams=step=>({step,slow:Q.slow?1:null});
 function settingsHTML(){
   return `<details class="more" id="psetd" ${Q.openSet?'open':''}><summary><span class="sumtx">🎛 せってい・先生へ<small>ステップ${Q.step}${Q.slow?'・🐢 ゆっくり':''}</small></span></summary>
     <div class="opt"><div class="row">${PA.shareHTML(QUIZ,Object.assign(linkParams(Q.step),{n:5}),'👩‍🏫 れんしゅうをおくる')}</div><small>リンクをひらくと、いまのせってい（${PA.esc(settingsText(Q.step))}）で5もんできるよ</small></div>
-    <div class="opt"><div class="row"><button class="btn small" data-act="preset" data-confirm="もういちどおすと、0にもどすよ">ステップ${Q.step}のきろくを0にもどす</button></div></div>
+    <div class="opt"><div class="row"><button class="btn small" data-act="preset" data-v="${Q.step}" data-confirm="もういちどおすと、0にもどすよ">ステップ${Q.step}のきろくを0にもどす</button></div></div>
   </details>`;
 }
 function tipsHTML(){
@@ -452,7 +457,7 @@ document.addEventListener('click',e=>{
   switch(a){
     case 'pstep': {const n=+v; if(!isInt(n,1,5)||n===Q.step) return; stop(); setStep(n); newQ(); break;}
     case 'pslow': Q.slow=!Q.slow; break;
-    case 'preset': Q.rec[Q.step]=newRec(); break; // 2回おすたしかめは core
+    case 'preset': if(+v!==Q.step) return; Q.rec[Q.step]=newRec(); break; // 2回おすたしかめは core（data-v でステップごと）
     case 'sess5': stop(); sess=PA.session(QUIZ,{sig:sigOf(Q.step)}); sess.start(5); Q.mixAt=0; Q.sum=false; goNext(); return;
     case 'session-again': {if(!sess.n()) return; stop(); const n=sess.n(), st=sessStepOf(); if(st) Q.step=st;
       sess=PA.session(QUIZ,{sig:sigOf(Q.step)}); sess.start(n); Q.mixAt=0; Q.sum=false; goNext(); return;}
