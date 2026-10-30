@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- meta:start -->
-<meta name="description" content="「ト長調のⅤ7は？」を けんばんで おさえる／えらぶ">
+<meta name="description" content="「ト長調のⅤ7は？」をけんばんでおさえる／えらぶ">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ピアノ和音アプリ">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="和音クイズ｜ピアノ和音アプリ">
-<meta property="og:description" content="「ト長調のⅤ7は？」を けんばんで おさえる／えらぶ">
+<meta property="og:description" content="「ト長調のⅤ7は？」をけんばんでおさえる／えらぶ">
 <meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/chord-quiz.html">
 <meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -86,26 +86,26 @@
 <script src="assets/core.js"></script>
 <script src="assets/mic.js"></script>
 <script>
-/* 和音クイズ：「ト長調の Ⅴ7 は？」を けんばんで おさえる／4つから えらぶ／🎤 ピアノで ひいて こたえる
- * リンクの パラメータ（先生の しゅくだい。わからない 値は すてる）：
- *   key＝調（M0〜M12 長調・m0〜m12 短調。その 調だけ）、chord＝I,IV,V,V7（カンマで いくつでも）、mode＝keys｜choice、
- *   tier＝easy｜normal｜hard｜all、keyset＝major｜minor｜both（この ページだけ）、n＝れんしゅうの もんだいの 数（1〜20） */
-// <cq-logic>（test/chord-quiz.test.mjs で ここだけ 切りだして たしかめる。DOM は つかわない）
+/* 和音クイズ：「ト長調のⅤ7は？」をけんばんでおさえる／4つからえらぶ／🎤 ピアノでひいてこたえる
+ * リンクのパラメータ（先生のしゅくだい。わからない値はすてる）：
+ *   key＝調（M0〜M12長調・m0〜m12短調。その調だけ）、chord＝I,IV,V,V7（カンマでいくつでも）、mode＝keys｜choice、
+ *   tier＝easy｜normal｜hard｜all、keyset＝major｜minor｜both（このページだけ）、n＝れんしゅうのもんだいの数（1〜20） */
+// <cq-logic>（test/chord-quiz.test.mjs でここだけ切りだしてたしかめる。DOM はつかわない）
 const CHORDS={I:{deg:0,n:3,label:'Ⅰ'},IV:{deg:3,n:3,label:'Ⅳ'},V:{deg:4,n:3,label:'Ⅴ'},V7:{deg:4,n:4,label:'Ⅴ7'}};
 const CHORD_IDS=Object.keys(CHORDS);
 const QUIZ='chord-quiz', KD=PA.keyDeck;
 const TIER_IDS=KD.TIERS.map(t=>t.id);
 const KEYSETS=[['major','長調'],['minor','短調'],['both','りょうほう']];
 const TYPES=['keys','choice'];
-// はじめて ひらいた人（きろくが ない）：長調・やさしい（調号 0〜1）・Ⅰ Ⅳ Ⅴ・けんばんで こたえる
+// はじめてひらいた人（きろくがない）：長調・やさしい（調号0〜1）・ⅠⅣⅤ・けんばんでこたえる
 const FIRST={type:'keys',tier:'easy',keyset:'major',chords:{I:true,IV:true,V:true,V7:false}};
 const chordTones=(key,ch)=>{const c=CHORDS[ch];return Array.from({length:c.n},(_,j)=>PA.at(key.scale,c.deg+2*j));};
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
-// まちがえやすい 答え：ほかの和音・♯♭を わすれた・7ばんめを 上げわすれた・となりどうし・ひとつずれ
+// まちがえやすい答え：ほかの和音・♯♭をわすれた・7ばんめを上げわすれた・となりどうし・ひとつずれ
 function makeChoices(q){
   const key=PA.keyOf(q.minor,q.keyIdx,60), c=CHORDS[q.chord], t=chordTones(key,q.chord);
   const sig=a=>a.map(n=>n.letter+':'+n.acc).join(',');
-  // kind＝どんな まちがいか（こたえの メッセージで つかう）。おなじ音の くみあわせなら 前のほう（ほかの和音 → 上げわすれ → 調号）を のこす
+  // kind＝どんなまちがいか（こたえのメッセージでつかう）。おなじ音のくみあわせなら前のほう（ほかの和音 → 上げわすれ → 調号）をのこす
   const cands=[];
   CHORD_IDS.forEach(ch=>{if(ch!==q.chord) cands.push({notes:chordTones(key,ch),kind:'chord',ch});});
   if(t.some(n=>n.raised)) cands.push({notes:t.map(n=>n.raised?{letter:n.letter,acc:key.sig[n.letter]}:n),kind:'raise'});
@@ -119,7 +119,7 @@ function makeChoices(q){
   out.push({notes:t,ok:true});
   return shuffle(out);
 }
-// リンクの パラメータ → せってい（その 1回 つかう）。きまった 値だけ とる
+// リンクのパラメータ → せってい（その1回つかう）。きまった値だけとる
 function linkSettings(p){
   const o={}, has=k=>!!p&&Object.prototype.hasOwnProperty.call(p,k)&&typeof p[k]==='string';
   if(has('mode')&&TYPES.includes(p.mode)) o.type=p.mode;
@@ -133,15 +133,15 @@ function linkSettings(p){
   if(has('n')&&/^\d{1,2}$/.test(p.n)&&+p.n>=1&&+p.n<=20) o.n=+p.n;
   return o;
 }
-// リンクの しるし（おなじ しゅくだいなら つづきから）。keyset も 入れる
+// リンクのしるし（おなじしゅくだいならつづきから）。keyset も入れる
 const linkSig=o=>[o.key?'key='+o.key:'',o.chords?'chord='+CHORD_IDS.filter(x=>o.chords[x]).join(','):'',o.type?'mode='+o.type:'',o.tier?'tier='+o.tier:'',o.keyset?'keyset='+o.keyset:''].filter(Boolean).join('&');
-// おなじ 音の 調（嬰ヘ長調と 変ト長調 など）は いっしょに 出す
+// おなじ音の調（嬰ヘ長調と変ト長調など）はいっしょに出す
 function sameKeyIds(id){
   const k=KD.parse(id); if(!k) return [];
   const tpc=PA.keyOf(k.minor,k.idx).tpc;
   return KD.ids({tier:'all',modes:[k.minor?'minor':'major']}).filter(x=>{const p=KD.parse(x);return PA.keyOf(p.minor,p.idx).tpc===tpc;});
 }
-// ⭐の 数えかた（1もんめの 答えだけ）：ヒントや「つくりかた」を 見て できた ときは「じぶんで」には かぞえず hinted に（×では ない）。れんぞくも そのまま
+// ⭐の数えかた（1もんめの答えだけ）：ヒントや「つくりかた」を見てできたときは「じぶんで」にはかぞえず hinted に（×ではない）。れんぞくもそのまま
 function scoreAnswer(s,ok,hinted){
   s.total++;
   if(ok&&!hinted){s.right++;s.streak++;}
@@ -149,17 +149,17 @@ function scoreAnswer(s,ok,hinted){
   else s.streak=0;
   return s;
 }
-// ⭐の 行（ただの 文字）：ヒントで できた ものが あれば べつに 出す（まちがいに 見えないように）
+// ⭐の行（ただの文字）：ヒントでできたものがあればべつに出す（まちがいに見えないように）
 function scoreText(s){
   const h=s.hinted||0;
-  return h?`⭐ じぶんで ${s.right}・💡 ヒントで ${h} ／ ${s.total}もん`:`⭐ ${s.right} / ${s.total} もん せいかい`;
+  return h?`⭐ じぶんで${s.right}・💡 ヒントで${h}／${s.total}もん`:`⭐ ${s.right} / ${s.total}もんせいかい`;
 }
 // </cq-logic>
 const ROM=['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ'];
-// まえの「調号の数（〜つまで）」＝ 0〜N の 調 → 出る 調が いちばん 近い むずかしさ（ちがう 調の 数が 少ない もの）。
-// まえの きほん（1つまで）は「やさしい」と おなじ 調なので、そのまま やさしい に（いきなり むずかしく しない）
+// まえの「調号の数（〜つまで）」＝0〜N の調 → 出る調がいちばん近いむずかしさ（ちがう調の数が少ないもの）。
+// まえのきほん（1つまで）は「やさしい」とおなじ調なので、そのままやさしいに（いきなりむずかしくしない）
 const LEVEL_TIER=new Map([[0,'easy'],[1,'easy'],[2,'easy'],[3,'normal'],[4,'all'],[7,'all']]);
-const LO=60, HI=88; // けんばん：ド4〜ミ6（主音は ド4〜シ4 なので Ⅴ7 まで ぜんぶ入る）
+const LO=60, HI=88; // けんばん：ド4〜ミ6（主音はド4〜シ4なのでⅤ7までぜんぶ入る）
 const keyOfQ=q=>PA.keyOf(q.minor,q.keyIdx,60);
 const keyIdOf=q=>KD.id(q.minor,q.keyIdx);
 const modesOf=ks=>ks==='both'?['major','minor']:[ks];
@@ -170,22 +170,22 @@ const nameOf=(m,key)=>PA.nm(PA.spellMidi(m,key));
 const degColor=d=>d===0?PA.COL.I:d===3?PA.COL.IV:d===4?PA.COL.V:'#9b8f83';
 const keyNameOfId=id=>{const p=KD.parse(id);return p?PA.keyName(PA.keyOf(p.minor,p.idx)):'';};
 
-/* ===== 状態（せってい・スコアは 保存する） =====
- * peeked＝こたえる まえに「つくりかたを 見る」を おした。hint＝💡ヒントの 段（0〜2）。どちらかで できたら「ヒントで できた」
- * only＝この 調だけ（id。チェック表の ます→onlyBy 'pick'、リンクの key→'link'）。view＝'quiz'｜'summary'（れんしゅうの 回の けっか）
- * hinted＝ヒントを 見て できた 数（right には 入れない。×でも ない）
- * BASE＝生徒が じぶんで えらんだ せってい（ほぞんする）。RUN＝リンクの せってい（その 1回だけ。BASE は かえない）
- *   RUN＝{type,tier,keyset,chords,key,sig,id}。sig＝リンクで はじめた 回の しるし、id＝この れきしの ページ（history.state.cqLink）
- *   RUN は「もどる」の 読みなおし（おなじ れきしの ページ）と、その リンクの 回の つづきの ときだけ つかう */
+/* ===== 状態（せってい・スコアは保存する） =====
+ * peeked＝こたえるまえに「つくりかたを見る」をおした。hint＝💡ヒントの段（0〜2）。どちらかでできたら「ヒントでできた」
+ * only＝この調だけ（id。チェック表のます→onlyBy 'pick'、リンクの key→'link'）。view＝'quiz'｜'summary'（れんしゅうの回のけっか）
+ * hinted＝ヒントを見てできた数（right には入れない。×でもない）
+ * BASE＝生徒がじぶんでえらんだせってい（ほぞんする）。RUN＝リンクのせってい（その1回だけ。BASE はかえない）
+ *   RUN＝{type,tier,keyset,chords,key,sig,id}。sig＝リンクではじめた回のしるし、id＝このれきしのページ（history.state.cqLink）
+ *   RUN は「もどる」の読みなおし（おなじれきしのページ）と、そのリンクの回のつづきのときだけつかう */
 const Q={type:'keys',tier:'all',weak:true,keyset:'major',chords:{I:true,IV:true,V:true,V7:true},right:0,total:0,hinted:0,streak:0,openSet:false,
   q:null,qid:0,picked:new Set(),checked:false,result:null,recorded:false,lastOk:null,hint:0,peeked:false,wasHint:false,byMic:false,choices:null,chosen:null,
   only:null,onlyBy:null,view:'quiz'};
 const LINK=linkSettings(PA.params());
 const isInt=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
-let deck=null, deckOne=null, sess=null, lastQ=null; // lastQ＝ひらいたとき、まえに 出ていた もんだい（つづけて おなじ もんだいに しない）
+let deck=null, deckOne=null, sess=null, lastQ=null; // lastQ＝ひらいたとき、まえに出ていたもんだい（つづけておなじもんだいにしない）
 let BASE=null, RUN=null;
 const settingsOf=o=>({type:o.type,tier:o.tier,keyset:o.keyset,chords:Object.assign({},o.chords)});
-// ほぞんした RUN を たしかめて よむ（形が ちがえば null）
+// ほぞんした RUN をたしかめてよむ（形がちがえば null）
 function readRun(r){
   if(!r||typeof r!=='object'||!TYPES.includes(r.type)||!TIER_IDS.includes(r.tier)||!KEYSETS.some(([v])=>v===r.keyset)) return null;
   if(!r.chords||typeof r.chords!=='object'||typeof r.id!=='string'||typeof r.sig!=='string') return null;
@@ -196,7 +196,7 @@ function readRun(r){
 }
 const validQ=q=>!!q&&typeof q==='object'&&typeof q.minor==='boolean'&&isInt(q.keyIdx,0,PA.keyCount(q.minor)-1)&&Object.prototype.hasOwnProperty.call(CHORDS,q.chord);
 
-/* ===== 🎤 マイク（assets/mic.js）。phase：off・intro（はじめての 説明）・wait（じゅんび中）・on（きいている）・error ===== */
+/* ===== 🎤 マイク（assets/mic.js）。phase：off・intro（はじめての説明）・wait（じゅんび中）・on（きいている）・error ===== */
 const MIC_OK=!!(PA.mic&&PA.mic.supported());
 const MIC={phase:'off',err:'',verdict:null,L:null,qid:-1,lstate:'idle',quietUntil:0,needReset:false};
 function stopMic(){
@@ -206,7 +206,7 @@ function stopMic(){
 
 (function load(){
   const raw=PA.store.get('chord-quiz',{}), d=raw&&typeof raw==='object'&&!Array.isArray(raw)?raw:{};
-  if(!Object.keys(d).length) Object.assign(Q,{type:FIRST.type,tier:FIRST.tier,keyset:FIRST.keyset,chords:Object.assign({},FIRST.chords)}); // はじめての人は やさしく
+  if(!Object.keys(d).length) Object.assign(Q,{type:FIRST.type,tier:FIRST.tier,keyset:FIRST.keyset,chords:Object.assign({},FIRST.chords)}); // はじめての人はやさしく
   else{
     if(TYPES.includes(d.type)) Q.type=d.type;
     if(TIER_IDS.includes(d.tier)) Q.tier=d.tier;
@@ -224,52 +224,52 @@ function stopMic(){
   }
   Q.openSet=d.openSet===true;
   BASE=settingsOf(Q);
-  // れんしゅうの 回：リンクに n が あれば その 回（おなじ リンクの とちゅうなら つづき）。なければ のこっている 回を よむ
+  // れんしゅうの回：リンクに n があればその回（おなじリンクのとちゅうならつづき）。なければのこっている回をよむ
   sess=LINK.n?PA.session(QUIZ,{n:LINK.n,sig:linkSig(LINK)}):PA.session(QUIZ);
   let st=sess.state();
-  if(sess.finished()){ // おわった 回：おわって すぐ（「もどる」の 読みなおし）か リンクの n の ときだけ けっかを 出す
+  if(sess.finished()){ // おわった回：おわってすぐ（「もどる」の読みなおし）かリンクの n のときだけけっかを出す
     const recent=!!st&&st.endedAt!=null&&Date.now()-st.endedAt<10*6e4;
     if(recent||LINK.n) Q.view='summary';
     else{sess.clear();st=null;}
   }
-  // リンクの せってい（その 1回だけ。BASE は かえない）
+  // リンクのせってい（その1回だけ。BASE はかえない）
   let histId=null; try{histId=history.state&&history.state.cqLink||null;}catch(e){}
   if(Object.keys(LINK).length){
     RUN={type:LINK.type||BASE.type,tier:LINK.tier||BASE.tier,keyset:LINK.keyset||BASE.keyset,chords:Object.assign({},LINK.chords||BASE.chords),
       key:LINK.key||null,sig:LINK.n?linkSig(LINK):'',id:String(Date.now())};
   }else{
     const R=readRun(d.run);
-    // おなじ れきしの ページの 読みなおし（「つくりかたを 見る」から もどった など）か、その リンクで はじめた 回の つづき
+    // おなじれきしのページの読みなおし（「つくりかたを見る」からもどったなど）か、そのリンクではじめた回のつづき
     if(R&&((histId&&histId===R.id)||(R.sig&&st&&st.sig===R.sig))) RUN=R;
   }
-  // リンクの パラメータは 1回だけ つかう：アドレスから けす（読みなおしても リンクで もとに もどさない）
+  // リンクのパラメータは1回だけつかう：アドレスからけす（読みなおしてもリンクでもとにもどさない）
   if(location.search){try{history.replaceState({cqLink:RUN&&Object.keys(LINK).length?RUN.id:histId},'',PA.url(QUIZ)+location.hash);}catch(e){}}
   if(RUN){
     Object.assign(Q,{type:RUN.type,tier:RUN.tier,keyset:RUN.keyset,chords:Object.assign({},RUN.chords)});
     if(RUN.key){Q.only=RUN.key;Q.onlyBy='link';}
   }
-  // チェック表の 3もんの つづき
+  // チェック表の3もんのつづき
   if(!Q.only&&!Object.keys(LINK).length&&d.onlyBy==='pick'&&typeof d.only==='string'&&KD.parse(d.only)&&st&&st.sig==='pick='+KD.parse(d.only).id){
     Q.only=KD.parse(d.only).id;Q.onlyBy='pick';
   }
   deck=KD.create({quiz:QUIZ,tier:Q.tier,modes:modesOf(Q.keyset),weak:Q.weak});
-  deckOne=KD.create({quiz:QUIZ,tier:'all',modes:CHECK_MODES,weak:false}); // 「この 調だけ」の ときに つかう（むずかしさ・長調／短調に かかわらず）
-  const hasBag=deck.restore(d.deck); // ひらきなおしても ふくろの つづきから（24調を じゅんばんに まわす）
-  // まだ こたえていない もんだいは そのまま つづける（「つくりかたを見る」から もどったとき など）
+  deckOne=KD.create({quiz:QUIZ,tier:'all',modes:CHECK_MODES,weak:false}); // 「この調だけ」のときにつかう（むずかしさ・長調／短調にかかわらず）
+  const hasBag=deck.restore(d.deck); // ひらきなおしてもふくろのつづきから（24調をじゅんばんにまわす）
+  // まだこたえていないもんだいはそのままつづける（「つくりかたを見る」からもどったときなど）
   const q=d.q;
   if(validQ(q)){
     const s={minor:q.minor,keyIdx:q.keyIdx,chord:q.chord};
     if(!d.answered&&inPool(s)){
       startQuestion(s);
-      if(!hasBag&&!Q.only) deck.draw(x=>x.id===keyIdOf(s)); // ふくろの きろくが ないときも、この 調は「出た」ことに
-      if(d.scored===true&&Q.total>0) Q.result=false; // もう かぞえてある もんだい（1回目が × で「もういちど」の とちゅう。まえの きまりで 見たら × に した ものも）
-      Q.recorded=d.recorded===true; // チェック表に もう 入れた もんだい（2回 かぞえない）
+      if(!hasBag&&!Q.only) deck.draw(x=>x.id===keyIdOf(s)); // ふくろのきろくがないときも、この調は「出た」ことに
+      if(d.scored===true&&Q.total>0) Q.result=false; // もうかぞえてあるもんだい（1回目が × で「もういちど」のとちゅう。まえのきまりで見たら × にしたものも）
+      Q.recorded=d.recorded===true; // チェック表にもう入れたもんだい（2回かぞえない）
       Q.peeked=d.peeked===true;
       if(isInt(d.hint,0,2)) Q.hint=d.hint;
     }else lastQ=s;
   }
 })();
-// せっていは BASE を ほぞん。リンクの 回（RUN）の あいだに かえた ものは RUN だけに 入れる
+// せっていは BASE をほぞん。リンクの回（RUN）のあいだにかえたものは RUN だけに入れる
 function save(){
   if(RUN){Object.assign(RUN,settingsOf(Q));RUN.key=Q.onlyBy==='link'?Q.only:null;}
   else BASE=settingsOf(Q);
@@ -279,43 +279,43 @@ function save(){
 }
 function isDone(){return Q.type==='keys'?Q.checked:Q.chosen!=null;}
 
-/* ===== もんだい（調は PA.keyDeck の ふくろから。和音は えらんだ 中から） ===== */
+/* ===== もんだい（調は PA.keyDeck のふくろから。和音はえらんだ中から） ===== */
 const chordsOn=()=>CHORD_IDS.filter(k=>Q.chords[k]);
 function inPool(q){return (Q.only?sameKeyIds(Q.only):deck.ids).includes(keyIdOf(q))&&!!Q.chords[q.chord];}
 function startQuestion(q){
-  stopMic(); // もんだいが かわったら マイクは とめる
+  stopMic(); // もんだいがかわったらマイクはとめる
   Object.assign(Q,{q,qid:Q.qid+1,picked:new Set(),checked:false,result:null,recorded:false,lastOk:null,hint:0,peeked:false,wasHint:false,byMic:false,chosen:null});
   Q.choices=makeChoices(q);
 }
 function newQuestion(){
   const prev=Q.q||lastQ, pid=prev?keyIdOf(prev):null;
   let k;
-  if(Q.only){ // この 調だけ（おなじ 音の 2つの 書きかたは かわりばんこ）
+  if(Q.only){ // この調だけ（おなじ音の2つの書きかたはかわりばんこ）
     const ids=sameKeyIds(Q.only);
     k=deckOne.draw(x=>ids.includes(x.id)&&x.id!==pid)||deckOne.draw(x=>ids.includes(x.id));
   }else{
-    // まえと ちがう 調を とる（まえの 調は ふくろに のこる）。ふつうは deck が つづけて 同じ 調を 出さない
+    // まえとちがう調をとる（まえの調はふくろにのこる）。ふつうは deck がつづけて同じ調を出さない
     k=deck.draw(x=>x.id!==pid)||deck.draw();
   }
   k=k||{minor:false,idx:0};
   let chs=chordsOn(); if(!chs.length) chs=['I'];
-  if(prev&&k.minor===prev.minor&&k.idx===prev.keyIdx&&chs.length>1) chs=chs.filter(c=>c!==prev.chord); // 調が おなじなら 和音を かえる
+  if(prev&&k.minor===prev.minor&&k.idx===prev.keyIdx&&chs.length>1) chs=chs.filter(c=>c!==prev.chord); // 調がおなじなら和音をかえる
   lastQ=null;
   startQuestion({minor:k.minor,keyIdx:k.idx,chord:chs[Math.floor(Math.random()*chs.length)]});
 }
-// 1もんめの 答え：⭐・チェック表・れんしゅうの 回に きろく（1もんに 1回だけ）
+// 1もんめの答え：⭐・チェック表・れんしゅうの回にきろく（1もんに1回だけ）
 function answered(ok){
   const hinted=Q.peeked||Q.hint>=1;
   Q.result=ok; Q.wasHint=ok&&hinted;
   scoreAnswer(Q,ok,hinted);
   if(!Q.recorded&&Q.q){Q.recorded=true;deck.record(keyIdOf(Q.q),ok,ok&&hinted?{hint:true}:undefined);}
-  if(sess&&sess.active()) sess.record({ok,hint:ok&&hinted,label:`${PA.keyName(keyOfQ(Q.q))}の ${CHORDS[Q.q.chord].label}`,key:keyIdOf(Q.q)});
+  if(sess&&sess.active()) sess.record({ok,hint:ok&&hinted,label:`${PA.keyName(keyOfQ(Q.q))}の${CHORDS[Q.q.chord].label}`,key:keyIdOf(Q.q)});
 }
 function okMsg(key,c,t){
-  return `🎉 ${Q.byMic?'🎤 ピアノで ':''}せいかい！ ${PA.keyName(key)}の ${c.label} は <b>${PA.namesH(t)}</b>`
-    +(Q.wasHint?`<br><small>💡 ヒントを 見て できたね。つぎは 見ないで やってみよう</small>`:'');
+  return `🎉 ${Q.byMic?'🎤 ピアノで ':''}せいかい！${PA.keyName(key)}の${c.label}は<b>${PA.namesH(t)}</b>`
+    +(Q.wasHint?`<br><small>💡 ヒントを見てできたね。つぎは見ないでやってみよう</small>`:'');
 }
-// おさえた音を ピッチクラスで くらべる（どの オクターブでも OK）
+// おさえた音をピッチクラスでくらべる（どのオクターブでも OK）
 function gradeKeys(t){
   const ans=new Set(t.map(n=>PA.mod(n.midi,12))), pk=new Set([...Q.picked].map(m=>PA.mod(m,12)));
   const extra=[...pk].filter(p=>!ans.has(p)), missing=t.filter(n=>!pk.has(PA.mod(n.midi,12)));
@@ -324,15 +324,15 @@ function gradeKeys(t){
 function checkKeys(){
   const t=chordTones(keyOfQ(Q.q),Q.q.chord), ok=gradeKeys(t).ok;
   Q.checked=true; Q.lastOk=ok;
-  if(Q.result===null) answered(ok); // スコアは 1回目だけ
+  if(Q.result===null) answered(ok); // スコアは1回目だけ
   if(ok) PA.chord(t.map(n=>n.midi));
 }
-// こたえの メッセージは 毎回 いまの 音名で つくる（⚙️で 音名を かえても そろう）
+// こたえのメッセージは毎回いまの音名でつくる（⚙️で音名をかえてもそろう）
 function fbHTML(key,c,t){
   if(Q.type==='choice'){
     if(Q.chosen==null) return '';
     const pick=Q.choices[Q.chosen];
-    return pick.ok?okMsg(key,c,t):`🤔 おしい！ こたえは <b>${PA.namesH(t)}</b><br>`+choiceHint(key,c,t,pick);
+    return pick.ok?okMsg(key,c,t):`🤔 おしい！こたえは<b>${PA.namesH(t)}</b><br>`+choiceHint(key,c,t,pick);
   }
   if(!Q.checked) return '';
   const g=gradeKeys(t);
@@ -342,39 +342,39 @@ function fbHTML(key,c,t){
     const from=n.raised?{letter:n.letter,acc:key.sig[n.letter]}:{letter:n.letter,acc:0};
     const fpc=PA.mod(PA.NAT[from.letter]+from.acc,12);
     if((n.raised||n.acc!==0)&&g.extra.includes(fpc))
-      hints.push(n.raised?`「${PA.nmH(from)}」は 短調の ${c.label} なので 半音上げて「${PA.nmH(n)}」だよ。`:`「${PA.nmH(from)}」は 調号で「${PA.nmH(n)}」に なるよ。がくふの 調号を 見てみよう。`);
+      hints.push(n.raised?`「${PA.nmH(from)}」は短調の${c.label}なので半音上げて「${PA.nmH(n)}」だよ。`:`「${PA.nmH(from)}」は調号で「${PA.nmH(n)}」になるよ。がくふの調号を見てみよう。`);
   });
-  if(g.count!==c.n) hints.push(`${c.label} は <b>${c.n}つ</b>の音だよ（いま ${g.count}つ）。`);
-  return `🤔 おしい！ こたえは <b>${PA.namesH(t)}</b><br>`+(hints.length?hints.join('<br>'):`音階の <b>${c.deg+1}ばんめ</b> から、ひとつとばしで かさねてみよう。`);
+  if(g.count!==c.n) hints.push(`${c.label}は<b>${c.n}つ</b>の音だよ（いま${g.count}つ）。`);
+  return `🤔 おしい！こたえは<b>${PA.namesH(t)}</b><br>`+(hints.length?hints.join('<br>'):`音階の<b>${c.deg+1}ばんめ</b>から、ひとつとばしでかさねてみよう。`);
 }
-// えらんだ まちがいに あわせた ヒント
+// えらんだまちがいにあわせたヒント
 function choiceHint(key,c,t,pick){
-  const base=`${c.label} は 音階の <b>${c.deg+1}ばんめ</b> から、ひとつとばしで かさねるよ。`;
-  const raiseTxt=()=>{const n=t.find(x=>x.raised);return `短調の ${c.label} は 7ばんめ「${PA.nmH({letter:n.letter,acc:key.sig[n.letter]})}」を 半音上げて「${PA.nmH(n)}」に するよ。`;};
+  const base=`${c.label}は音階の<b>${c.deg+1}ばんめ</b>から、ひとつとばしでかさねるよ。`;
+  const raiseTxt=()=>{const n=t.find(x=>x.raised);return `短調の${c.label}は7ばんめ「${PA.nmH({letter:n.letter,acc:key.sig[n.letter]})}」を半音上げて「${PA.nmH(n)}」にするよ。`;};
   switch(pick.kind){
-    case 'chord': return `それは <b>${CHORDS[pick.ch].label}</b> の 音だよ。${base}`;
+    case 'chord': return `それは<b>${CHORDS[pick.ch].label}</b>の音だよ。${base}`;
     case 'raise': return raiseTxt();
     case 'sig': {
       const s=t.filter(n=>!n.raised&&n.acc!==0).map(n=>`「${PA.nmH({letter:n.letter,acc:0})}」は「${PA.nmH(n)}」`);
       const r=t.some(n=>n.raised&&n.acc!==0)?raiseTxt():'';
-      return (s.length?`調号を 見てみよう。${PA.keyName(key)}では${s.join('、')}に なるよ。`:'')+r||base;
+      return (s.length?`調号を見てみよう。${PA.keyName(key)}では${s.join('、')}になるよ。`:'')+r||base;
     }
-    case 'step': return `となりどうしでは なく、<b>ひとつとばし</b>で かさねよう。${base}`;
-    case 'shift': return `はじまりの音が ずれているよ。${c.deg+1}ばんめの「${PA.nmH(t[0])}」から はじめよう。`;
+    case 'step': return `となりどうしではなく、<b>ひとつとばし</b>でかさねよう。${base}`;
+    case 'shift': return `はじまりの音がずれているよ。${c.deg+1}ばんめの「${PA.nmH(t[0])}」からはじめよう。`;
     default: return base;
   }
 }
 function choose(i){
   const ok=!!Q.choices[i].ok;
   Q.chosen=i; Q.lastOk=ok;
-  if(Q.result===null) answered(ok); // スコアは 1回目だけ
+  if(Q.result===null) answered(ok); // スコアは1回目だけ
   PA.chord(chordTones(keyOfQ(Q.q),Q.q.chord).map(n=>n.midi));
 }
 
-/* ===== 🎤 ピアノで ひいて こたえる ===== */
+/* ===== 🎤 ピアノでひいてこたえる ===== */
 const micTargets=()=>chordTones(keyOfQ(Q.q),Q.q.chord).map(n=>PA.mod(n.midi,12));
-const micStatus=()=>MIC.phase==='wait'?'マイクを じゅんびしているよ…':MIC.lstate==='listen'?'きいているよ…':MIC.verdict?'もういちど ひいてね…':'ひいてね…';
-function startMic(){ // タップの 中で よぶ（iOS は タップの 中で ないと 音の しくみが うごかない）
+const micStatus=()=>MIC.phase==='wait'?'マイクをじゅんびしているよ…':MIC.lstate==='listen'?'きいているよ…':MIC.verdict?'もういちどひいてね…':'ひいてね…';
+function startMic(){ // タップの中でよぶ（iOS はタップの中でないと音のしくみがうごかない）
   if(!MIC_OK||Q.view!=='quiz'||Q.type!=='keys'||Q.checked) return;
   stopMic();
   PA.store.set('mic-intro',true);
@@ -386,7 +386,7 @@ function startMic(){ // タップの 中で よぶ（iOS は タップの 中で
       if(MIC.qid!==Q.qid||!MIC.L||(MIC.phase!=='on'&&MIC.phase!=='wait')) return;
       const bar=document.getElementById('micbar');
       if(bar) bar.style.width=Math.max(0,Math.min(100,(f.level+70)/60*100)).toFixed(0)+'%';
-      // 画面の けんばんの 音が 鳴っている あいだは きかない（おわったら 新しく ひいた 音だけ）
+      // 画面のけんばんの音が鳴っているあいだはきかない（おわったら新しくひいた音だけ）
       if(Date.now()<MIC.quietUntil){MIC.needReset=true;return;}
       if(MIC.needReset){MIC.needReset=false;MIC.L.reset();}
       MIC.L.feed(f);
@@ -397,47 +397,47 @@ function startMic(){ // タップの 中で よぶ（iOS は タップの 中で
 }
 function onMicVerdict(v){
   if(MIC.qid!==Q.qid||Q.view!=='quiz'||Q.type!=='keys'||Q.checked) return;
-  if(v.ok){ // けんばんで ただしく おさえたのと おなじ
+  if(v.ok){ // けんばんでただしくおさえたのとおなじ
     stopMic();
     Q.picked=new Set(chordTones(keyOfQ(Q.q),Q.q.chord).map(n=>n.midi)); Q.byMic=true;
     checkKeys(); save(); render(); showFeedback();
     return;
   }
-  MIC.verdict={missing:v.missing.slice(),extra:v.extra.slice()}; // ×には しない（マイクの ききまちがいも あるので）。もういちど ひける
+  MIC.verdict={missing:v.missing.slice(),extra:v.extra.slice()}; // ×にはしない（マイクのききまちがいもあるので）。もういちどひける
   render();
 }
-// きこえなかった 音・よぶんな 音（こたえの 音は その つづりで、よぶんな 音は 調の つづりで）
+// きこえなかった音・よぶんな音（こたえの音はそのつづりで、よぶんな音は調のつづりで）
 function micMissHTML(key,t){
   const v=MIC.verdict; if(!v) return '';
   const nmPc=pc=>{const n=t.find(x=>PA.mod(x.midi,12)===pc);return PA.nmH(n||PA.spellMidi(60+pc,key));};
   const q=a=>a.map(pc=>`「${nmPc(pc)}」`).join('');
   const out=[];
-  if(v.missing.length) out.push(`${q(v.missing)}が きこえないよ。`);
-  if(v.extra.length) out.push(`${q(v.extra)}も 鳴っているみたい。`);
-  if(!out.length) out.push('よく きこえなかったよ。');
-  return `<p class="micv" role="alert">🤔 ${out.join('')}もういちど ひいてみてね。</p>`;
+  if(v.missing.length) out.push(`${q(v.missing)}がきこえないよ。`);
+  if(v.extra.length) out.push(`${q(v.extra)}も鳴っているみたい。`);
+  if(!out.length) out.push('よくきこえなかったよ。');
+  return `<p class="micv" role="alert">🤔 ${out.join('')}もういちどひいてみてね。</p>`;
 }
 function micHTML(key,t){
   if(!MIC_OK||Q.type!=='keys'||Q.checked) return '';
-  if(MIC.phase==='intro') return `<div class="micbox" role="group" aria-labelledby="mic-h"><p id="mic-h" class="mict">🎤 マイクで ピアノの 音を きいて しらべるよ。音は この 端末の 中だけで しらべて、どこにも おくらないよ。</p>
-    <p class="note">録音は しないよ。「マイクを つかっても いい？」と きかれたら「許可」を おしてね。しずかな 部屋で、端末を ピアノの 近く（譜面台など）に おくと よく きこえるよ。</p>
+  if(MIC.phase==='intro') return `<div class="micbox" role="group" aria-labelledby="mic-h"><p id="mic-h" class="mict">🎤 マイクでピアノの音をきいてしらべるよ。音はこの端末の中だけでしらべて、どこにもおくらないよ。</p>
+    <p class="note">録音はしないよ。「マイクをつかってもいい？」ときかれたら「許可」をおしてね。しずかな部屋で、端末をピアノの近く（譜面台など）におくとよくきこえるよ。</p>
     <div class="row"><button class="btn primary small" data-act="micstart">🎤 はじめる</button><button class="btn small" data-act="micoff">やめる</button></div></div>`;
   const on=MIC.phase==='on'||MIC.phase==='wait';
-  let h=`<div class="row microw"><button class="btn small mic" data-act="mic" aria-pressed="${on}">🎤 ピアノで ひいて こたえる</button></div>`;
+  let h=`<div class="row microw"><button class="btn small mic" data-act="mic" aria-pressed="${on}">🎤 ピアノでひいてこたえる</button></div>`;
   if(MIC.phase==='error') h+=`<p class="msg" role="alert" style="margin-top:8px">${PA.esc(MIC.err)}</p>`;
   if(on) h+=`<div class="micbox"><div class="micmeter" aria-hidden="true"><i id="micbar"></i></div><p id="micst" class="mict" role="status">${micStatus()}</p>${micMissHTML(key,t)}
-    <div class="row"><button class="btn small" data-act="micoff">🎹 けんばんで こたえる</button></div></div>`;
+    <div class="row"><button class="btn small" data-act="micoff">🎹 けんばんでこたえる</button></div></div>`;
   return h;
 }
 
-/* ===== 音階のかいだん（和音のしくみ と同じ図。rootHint＝いちばん下の音の ヒント） ===== */
+/* ===== 音階のかいだん（和音のしくみと同じ図。rootHint＝いちばん下の音のヒント） ===== */
 function ladderSVG(key,o){
   const CW=58,G=5,CH=50,R=7,X0=8,BASE=220,N=14;
   const W=X0*2+N*(CW+G)-G, H=BASE+30, tones=o.tones||[], skips=o.skips||[];
   let s=`<svg viewBox="0 0 ${W} ${H}" class="ladder" role="img" aria-label="音階のかいだん">`;
   const dx=X0+7*(CW+G)-G/2, dTop=BASE-CH-7*R-56;
   s+=`<line x1="${dx}" y1="${dTop}" x2="${dx}" y2="${BASE+6}" stroke="#d9cfc2" stroke-width="1.5" stroke-dasharray="4 4"/>`;
-  s+=`<text x="${dx+6}" y="${dTop+12}" font-size="13" fill="#a99f93">ここから 1オクターブ上 →</text>`;
+  s+=`<text x="${dx+6}" y="${dTop+12}" font-size="13" fill="#a99f93">ここから1オクターブ上 →</text>`;
   const pos=k=>({x:X0+k*(CW+G),y:BASE-CH-k*R});
   for(let k=0;k<N-1;k++){ // となりどうし（半音）の目印
     if(PA.at(key.scale,k+1).midi-PA.at(key.scale,k).midi===1){const p=pos(k);s+=`<rect x="${p.x+CW+G/2-2.5}" y="${p.y+CH-22}" width="5" height="20" rx="2.5" fill="#f4a100"/>`;}
@@ -459,30 +459,30 @@ function ladderSVG(key,o){
   }
   return s+'</svg>';
 }
-// スマホ（375px）で かいだんを 横スクロールするとき、見せたい音（和音 or いちばん下の音）が まん中に くるように
+// スマホ（375px）でかいだんを横スクロールするとき、見せたい音（和音 or いちばん下の音）がまん中にくるように
 function ladderStart(kCenter){
   const W=8*2+14*63-5, cx=8+kCenter*63+29;
   return Math.max(0,Math.round((cx/W-0.26)*100))+'%';
 }
 
-/* ===== けんばんの 印（sr＝読み上げで 鍵の 名前の あとに つける ことば） ===== */
+/* ===== けんばんの印（sr＝読み上げで鍵の名前のあとにつけることば） ===== */
 function kbMarks(key,t,col,done){
   const marks=new Map(), set=(m,o)=>marks.set(m,Object.assign(marks.get(m)||{},o));
-  if(Q.hint>=1||done) for(let m=LO;m<=HI;m++){ // 音階の なんばんめ
+  if(Q.hint>=1||done) for(let m=LO;m<=HI;m++){ // 音階のなんばんめ
     const i=key.scale.findIndex(s=>PA.mod(s.midi,12)===PA.mod(m,12));
     if(i>=0) set(m,{sub:ROM[i],subColor:degColor(i)});
   }
-  if(Q.type==='choice'){ t.forEach(n=>set(n.midi,{fill:col,tc:'#fff',label:PA.nm(n),focus:true,sr:'こたえの 音'})); return marks; }
+  if(Q.type==='choice'){ t.forEach(n=>set(n.midi,{fill:col,tc:'#fff',label:PA.nm(n),focus:true,sr:'こたえの音'})); return marks; }
   if(!Q.checked){
     Q.picked.forEach(m=>set(m,{fill:isBlack(m)?'#e9a800':'#ffd66b',tc:'#3a3245',label:nameOf(m,key),sr:'えらんだ'}));
-    if(Q.hint>=2){ // いちばん下の音：どの オクターブで おさえていても OK
+    if(Q.hint>=2){ // いちばん下の音：どのオクターブでおさえていても OK
       const rpc=PA.mod(t[0].midi,12), hit=[...Q.picked].filter(m=>PA.mod(m,12)===rpc);
-      if(hit.length) hit.forEach(m=>set(m,{ring:'#f4a100',sr:'えらんだ・いちばん下の 音'})); else set(t[0].midi,{ring:'#f4a100',tc:col,label:'ここ?',sr:'ヒント・いちばん下の 音'});
+      if(hit.length) hit.forEach(m=>set(m,{ring:'#f4a100',sr:'えらんだ・いちばん下の音'})); else set(t[0].midi,{ring:'#f4a100',tc:col,label:'ここ?',sr:'ヒント・いちばん下の音'});
     }
   }else{
     const ans=new Set(t.map(n=>PA.mod(n.midi,12))), pk=new Set([...Q.picked].map(m=>PA.mod(m,12)));
     Q.picked.forEach(m=>{const ok=ans.has(PA.mod(m,12));set(m,{fill:ok?'#22a06b':'#d1495b',tc:'#fff',label:(ok?'○':'×')+nameOf(m,key),focus:true,sr:ok?'えらんだ・せいかい':'えらんだ・まちがい'});});
-    t.forEach(n=>{if(!pk.has(PA.mod(n.midi,12))) set(n.midi,{fill:isBlack(n.midi)?undefined:'#fff',ring:col,tc:col,label:PA.nm(n),focus:true,sr:'たりない 音'});});
+    t.forEach(n=>{if(!pk.has(PA.mod(n.midi,12))) set(n.midi,{fill:isBlack(n.midi)?undefined:'#fff',ring:col,tc:col,label:PA.nm(n),focus:true,sr:'たりない音'});});
   }
   return marks;
 }
@@ -490,55 +490,55 @@ function kbMarks(key,t,col,done){
 /* ===== 画面 ===== */
 const tierOf=()=>KD.TIERS.find(t=>t.id===Q.tier)||KD.TIERS[3];
 const chordLabels=()=>chordsOn().map(k=>CHORDS[k].label).join(' ');
-// いまの れんしゅう（ただの 文字）：「長調・調号0〜1・Ⅰ Ⅳ Ⅴ」／「ト長調だけ・Ⅰ Ⅳ Ⅴ」
+// いまのれんしゅう（ただの文字）：「長調・調号0〜1・ⅠⅣⅤ」／「ト長調だけ・ⅠⅣⅤ」
 function nowText(){
   if(Q.only) return `${keyNameOfId(Q.only)}だけ・${chordLabels()}`;
-  const tr=tierOf(), ks={major:'長調',minor:'短調',both:'長調と 短調'}[Q.keyset];
+  const tr=tierOf(), ks={major:'長調',minor:'短調',both:'長調と短調'}[Q.keyset];
   return `${ks}・調号${tr.min}〜${tr.max}・${chordLabels()}`;
 }
-// 先生に 見せる「せってい」（ただの 文字）
+// 先生に見せる「せってい」（ただの文字）
 function settingsText(){
   const tr=tierOf(), ks=KEYSETS.find(([v])=>v===Q.keyset)[1];
-  return (Q.only?`調：${keyNameOfId(Q.only)}だけ`:`調：${ks}・むずかしさ：${tr.name}（調号 ${tr.min}〜${tr.max}）`)
-    +`・和音：${chordLabels()}・${Q.type==='keys'?'けんばんで おさえる':'4つから えらぶ'}`;
+  return (Q.only?`調：${keyNameOfId(Q.only)}だけ`:`調：${ks}・むずかしさ：${tr.name}（調号${tr.min}〜${tr.max}）`)
+    +`・和音：${chordLabels()}・${Q.type==='keys'?'けんばんでおさえる':'4つからえらぶ'}`;
 }
-// リンクに のせる いまの せってい（PA.url が からの 値を すてる）
+// リンクにのせるいまのせってい（PA.url がからの値をすてる）
 function shareParams(){
   return {key:Q.only||null,tier:Q.only?null:Q.tier,keyset:Q.only?null:Q.keyset,chord:chordsOn().join(','),mode:Q.type};
 }
 function settingsHTML(){
   const tr=tierOf(), ks=KEYSETS.find(([v])=>v===Q.keyset)[1];
-  const only=Q.only?`<div class="msg onlynote">いまは <b>${PA.esc(keyNameOfId(Q.only))}だけ</b> 出しているよ（${Q.onlyBy==='pick'?'チェック表から':'リンクから'}）。<button class="btn small" data-act="qonlyoff">ふつうの れんしゅうに もどす</button></div>`:'';
-  return `<details class="more" id="qsetd" ${Q.openSet?'open':''}><summary><span class="sumtx">🎛 もんだいの えらびかた<small>${Q.only?PA.esc(keyNameOfId(Q.only))+'だけ':`${ks}・${tr.emoji} ${tr.name}（調号 ${tr.min}〜${tr.max}）`}・${chordLabels()}${Q.weak?'・📈':''}</small></span></summary>
+  const only=Q.only?`<div class="msg onlynote">いまは<b>${PA.esc(keyNameOfId(Q.only))}だけ</b>出しているよ（${Q.onlyBy==='pick'?'チェック表から':'リンクから'}）。<button class="btn small" data-act="qonlyoff">ふつうのれんしゅうにもどす</button></div>`:'';
+  return `<details class="more" id="qsetd" ${Q.openSet?'open':''}><summary><span class="sumtx">🎛 もんだいのえらびかた<small>${Q.only?PA.esc(keyNameOfId(Q.only))+'だけ':`${ks}・${tr.emoji} ${tr.name}（調号${tr.min}〜${tr.max}）`}・${chordLabels()}${Q.weak?'・📈':''}</small></span></summary>
     ${only}
     <div class="opt"><span class="lab">調</span>${PA.seg('qkeyset',KEYSETS,Q.keyset,'full')}</div>
     <div class="opt"><span class="lab">むずかしさ（調号の数）</span>${KD.tierSeg('qtier',Q.tier)}</div>
-    <div class="opt"><div class="tog one" role="group"><button class="${Q.weak?'on':''}" style="--c:#c9542e;--l:#fde5df" data-act="qweak" aria-pressed="${Q.weak}">${Q.weak?'✅':'⬜'} 📈 にがてな調を 多めに</button></div><small>まちがえた 調が すこし 多く 出るよ</small></div>
-    <div class="opt"><span class="lab">和音（タップで 入れる・はずす）</span><div class="tog" role="group">${CHORD_IDS.map(k=>`<button class="${Q.chords[k]?'on':''}" style="--c:${PA.COL[k]};--l:${PA.LCOL[k]}" data-act="qchord" data-v="${k}" aria-pressed="${!!Q.chords[k]}">${Q.chords[k]?'✅':'⬜'} ${CHORDS[k].label}</button>`).join('')}</div></div>
-    <div class="opt"><span class="lab">先生へ</span><div class="row">${PA.shareHTML('chord-quiz',Object.assign(shareParams(),{n:5}),'👩‍🏫 この れんしゅうを おくる')}</div><small>この せっていで「5もん」の リンクを おくれるよ</small></div>
-    <div class="opt"><button class="btn small" data-act="qreset">スコアを 0 に もどす</button></div>
+    <div class="opt"><div class="tog one" role="group"><button class="${Q.weak?'on':''}" style="--c:#c9542e;--l:#fde5df" data-act="qweak" aria-pressed="${Q.weak}">${Q.weak?'✅':'⬜'} 📈 にがてな調を多めに</button></div><small>まちがえた調がすこし多く出るよ</small></div>
+    <div class="opt"><span class="lab">和音（タップで入れる・はずす）</span><div class="tog" role="group">${CHORD_IDS.map(k=>`<button class="${Q.chords[k]?'on':''}" style="--c:${PA.COL[k]};--l:${PA.LCOL[k]}" data-act="qchord" data-v="${k}" aria-pressed="${!!Q.chords[k]}">${Q.chords[k]?'✅':'⬜'} ${CHORDS[k].label}</button>`).join('')}</div></div>
+    <div class="opt"><span class="lab">先生へ</span><div class="row">${PA.shareHTML('chord-quiz',Object.assign(shareParams(),{n:5}),'👩‍🏫 このれんしゅうをおくる')}</div><small>このせっていで「5もん」のリンクをおくれるよ</small></div>
+    <div class="opt"><button class="btn small" data-act="qreset">スコアを0にもどす</button></div>
   </details>`;
 }
 function tipsHTML(){
   const li=[
-    `<b>ローマ数字 ＝ 音階の なんばんめ</b>。Ⅰは1ばんめ、Ⅳは4ばんめ、Ⅴは5ばんめの音から はじまる。`,
-    `そこから <b>ひとつとばし</b>で 3つ かさねる。<b>Ⅴ7</b> は もうひとつ とばして <b>4つ</b>。`,
-    `<b>♯・♭は 調号の音だけ</b>。がくふの 調号を 見て、どの音に つくか たしかめよう。`,
-    `<b>短調の Ⅴ・Ⅴ7</b> は、7ばんめの音を <b>半音上げる</b>。`,
-    `けんばんで こたえるときは、<b>どの オクターブで おさえても OK</b>。`
+    `<b>ローマ数字＝音階のなんばんめ</b>。Ⅰは1ばんめ、Ⅳは4ばんめ、Ⅴは5ばんめの音からはじまる。`,
+    `そこから<b>ひとつとばし</b>で3つかさねる。<b>Ⅴ7</b>はもうひとつとばして<b>4つ</b>。`,
+    `<b>♯・♭は調号の音だけ</b>。がくふの調号を見て、どの音につくかたしかめよう。`,
+    `<b>短調のⅤ・Ⅴ7</b>は、7ばんめの音を<b>半音上げる</b>。`,
+    `けんばんでこたえるときは、<b>どのオクターブでおさえても OK</b>。`
   ];
-  return `<details class="more tips"><summary>💡 とき方の コツ</summary><ol>${li.map(x=>`<li>${x}</li>`).join('')}</ol></details>`;
+  return `<details class="more tips"><summary>💡 とき方のコツ</summary><ol>${li.map(x=>`<li>${x}</li>`).join('')}</ol></details>`;
 }
-// 24調 チェック表（たたんでおく）。ますを おすと その 調を 3もん
+// 24調チェック表（たたんでおく）。ますをおすとその調を3もん
 function checkHTML(){
   const T=KD.tally(QUIZ,{modes:CHECK_MODES});
-  const table=KD.checkTableHTML(QUIZ,{modes:CHECK_MODES,pickable:true,title:'👆 ますを おすと、その 調を 3もん'});
-  const off=Q.keyset==='both'?'':`<p class="note" style="margin:6px 0 0">${Q.keyset==='major'?'🌙 短調':'☀️ 長調'}は、🎛 もんだいの えらびかたで 調を「${Q.keyset==='major'?'短調':'長調'}」か「りょうほう」に すると 出るよ。</p>`;
-  return `<details class="more" id="kdcheck"><summary><span class="sumtx">📋 24調 チェック表<small>できた 調 ${T.good} ／ ${T.total}・にがてな 調が わかるよ</small></span></summary>${off}${table}</details>`;
+  const table=KD.checkTableHTML(QUIZ,{modes:CHECK_MODES,pickable:true,title:'👆 ますをおすと、その調を3もん'});
+  const off=Q.keyset==='both'?'':`<p class="note" style="margin:6px 0 0">${Q.keyset==='major'?'🌙 短調':'☀️ 長調'}は、🎛 もんだいのえらびかたで調を「${Q.keyset==='major'?'短調':'長調'}」か「りょうほう」にすると出るよ。</p>`;
+  return `<details class="more" id="kdcheck"><summary><span class="sumtx">📋 24調チェック表<small>できた調${T.good}／${T.total}・にがてな調がわかるよ</small></span></summary>${off}${table}</details>`;
 }
 function sessHead(){
   if(sess&&sess.active()) return sess.progressHTML();
-  return `<button class="btn small" data-act="sess5">📝 きょうの 5もん</button>`;
+  return `<button class="btn small" data-act="sess5">📝 きょうの5もん</button>`;
 }
 let lastActions=null;
 function renderSummary(){
@@ -552,36 +552,36 @@ function render(){
   Q.view='quiz';
   if((MIC.phase==='on'||MIC.phase==='wait')&&(Q.type!=='keys'||Q.checked||MIC.qid!==Q.qid)) stopMic();
   const q=Q.q, key=keyOfQ(q), c=CHORDS[q.chord], col=PA.COL[q.chord], t=chordTones(key,q.chord), done=isDone();
-  let h=`<div class="stack">${PA.seg('qtype',[['keys','🎹 けんばんで おさえる'],['choice','✋ 4つから えらぶ']],Q.type,'full')}
+  let h=`<div class="stack">${PA.seg('qtype',[['keys','🎹 けんばんでおさえる'],['choice','✋ 4つからえらぶ']],Q.type,'full')}
     <section class="card hero" style="--c:${col}">
-      <div class="score">${scoreText(Q)} <span>れんぞく ${Q.streak}</span> ${'🌟'.repeat(Math.min(Q.streak,10))}${sessHead()}</div>
+      <div class="score">${scoreText(Q)} <span>れんぞく${Q.streak}</span> ${'🌟'.repeat(Math.min(Q.streak,10))}${sessHead()}</div>
       <div class="qwrap"><div class="qtext">
         <div class="qtitle"><span class="qkey">${PA.keyName(key)}</span><span>の</span><span class="badge sm" style="--c:${col}">${c.label}</span><span>は？</span></div>
         <div class="qsub">${PA.sigLabel(key)}・${c.n}つの音</div></div>
         <div class="qstaff">${PA.staffSVG(key,[{notes:done?t:[],color:col,ltColor:'#d1495b',accColor:'#d1495b'}],{maxScale:1.3})}</div>
       </div>
-      <div class="qnow"><span>いまの れんしゅう：<b>${PA.esc(nowText())}</b></span><button class="btn small" data-act="qsetopen" aria-controls="qsetd" aria-expanded="${Q.openSet?'true':'false'}" aria-label="れんしゅうの せっていを かえる">かえる</button></div>
+      <div class="qnow"><span>いまのれんしゅう：<b>${PA.esc(nowText())}</b></span><button class="btn small" data-act="qsetopen" aria-controls="qsetd" aria-expanded="${Q.openSet?'true':'false'}" aria-label="れんしゅうのせっていをかえる">かえる</button></div>
     </section>`;
   const msg=fbHTML(key,c,t);
   const fb=msg?`<div class="fb ${Q.lastOk?'good':'bad'}" id="fb" role="status">${msg}</div>`
-    :Q.hint>=1?`<div class="msg" role="status">💡 ヒント${Q.hint}：${Q.hint===1?`${PA.keyName(key)}の 音階を 出したよ。${c.label} は <b>${c.deg+1}ばんめ</b> の音から。`:`いちばん下の音は <b>「${PA.nmH(t[0])}」</b>。そこから ひとつとばし！`}</div>`:'';
+    :Q.hint>=1?`<div class="msg" role="status">💡 ヒント${Q.hint}：${Q.hint===1?`${PA.keyName(key)}の音階を出したよ。${c.label}は<b>${c.deg+1}ばんめ</b>の音から。`:`いちばん下の音は<b>「${PA.nmH(t[0])}」</b>。そこからひとつとばし！`}</div>`:'';
   const explain=`<div class="row center"><button class="btn small" data-act="qexplain">🐸 つくりかたを見る</button></div>`+(done||Q.result!==null?'':`<p class="qsub" style="text-align:center;margin:0">💡 ${PA.esc(PA.HINT_NOTE)}</p>`);
   const kb=`<div class="scroll" data-sk="kb">${PA.kbSVG(LO,HI,kbMarks(key,t,col,done))}</div>`;
   if(Q.type==='keys'){
     const names=[...Q.picked].sort((a,b)=>a-b).map(m=>PA.H(nameOf(m,key)));
-    h+=`<section class="card"><h2>🎹 けんばんで おさえよう<small>${Q.checked?'緑の○＝あたり・赤の×＝ちがう音・わくだけ＝たりない音':`<b>${c.n}つ</b>の音を タップ・どの オクターブでも OK`}</small></h2>
-      ${kb}<div class="picked">おさえた音： <b>${names.length?names.join('・'):'まだ なし'}</b>${Q.checked?'':'<small>もういちど タップすると けせるよ</small>'}</div>${micHTML(key,t)}</section>${fb}${explain}`;
+    h+=`<section class="card"><h2>🎹 けんばんでおさえよう<small>${Q.checked?'緑の○＝あたり・赤の×＝ちがう音・わくだけ＝たりない音':`<b>${c.n}つ</b>の音をタップ・どのオクターブでも OK`}</small></h2>
+      ${kb}<div class="picked">おさえた音：<b>${names.length?names.join('・'):'まだなし'}</b>${Q.checked?'':'<small>もういちどタップするとけせるよ</small>'}</div>${micHTML(key,t)}</section>${fb}${explain}`;
   }else{
-    h+=`<section class="card"><h2>✋ どれかな？<small>${c.n}つの音の くみあわせを えらぼう</small></h2><div class="choices">`+Q.choices.map((ch,i)=>{
+    h+=`<section class="card"><h2>✋ どれかな？<small>${c.n}つの音のくみあわせをえらぼう</small></h2><div class="choices">`+Q.choices.map((ch,i)=>{
       let cls='';
       if(Q.chosen!=null){if(ch.ok)cls='right';else if(i===Q.chosen)cls='wrong';}
       return `<button class="choice ${cls}" data-act="qchoose" data-v="${i}" ${Q.chosen!=null?'disabled':''}>${cls==='right'?'⭕ ':cls==='wrong'?'❌ ':''}${PA.namesH(ch.notes)}</button>`;
     }).join('')+`</div></section>${fb}${explain}`;
-    if(done) h+=`<section class="card"><h2>🎹 こたえの けんばん<small>下の ローマ数字は 音階の なんばんめ</small></h2>${kb}</section>`;
+    if(done) h+=`<section class="card"><h2>🎹 こたえのけんばん<small>下のローマ数字は音階のなんばんめ</small></h2>${kb}</section>`;
   }
   if(Q.hint>=1||done){
     const lad=done?{tones:t.map(n=>n.k),skips:skipsOf(q.chord),color:col}:{tones:[],color:col,rootHint:Q.hint>=2?c.deg:null};
-    h+=`<section class="card"><h2>🪜 音階のかいだん<small>下のローマ数字は「音階の なんばんめ」。オレンジの印＝となりどうし（半音）</small></h2><div class="scroll" data-sk="ladder" data-start="${ladderStart(done?c.deg+c.n-1:c.deg)}">${ladderSVG(key,lad)}</div></section>`;
+    h+=`<section class="card"><h2>🪜 音階のかいだん<small>下のローマ数字は「音階のなんばんめ」。オレンジの印＝となりどうし（半音）</small></h2><div class="scroll" data-sk="ladder" data-start="${ladderStart(done?c.deg+c.n-1:c.deg)}">${ladderSVG(key,lad)}</div></section>`;
   }
   h+=settingsHTML()+checkHTML()+tipsHTML()+`</div>`;
   PA.paint(document.getElementById('view'),h,Q.qid+':'+Q.type+':'+(done?1:0));
@@ -589,29 +589,29 @@ function render(){
 }
 function renderActions(done){
   const hint=`<button class="btn" data-act="qhint" ${Q.hint>=2?'disabled':''}>💡 ${Q.hint?'ヒント2':'ヒント'}</button>`;
-  const next=sess&&sess.finished()?'🎉 けっかを 見る':null;
+  const next=sess&&sess.finished()?'🎉 けっかを見る':null;
   let a;
   if(Q.type==='keys'&&!Q.checked) a=`<button class="btn ok" data-act="qcheck" data-hot="check" ${Q.picked.size?'':'disabled'}>✅ こたえあわせ</button><button class="btn" data-act="qclear" ${Q.picked.size?'':'disabled'}>🧽 けす</button>${hint}`;
   else if(Q.type==='choice'&&!done) a=hint;
   else if(Q.type==='keys'&&!Q.lastOk) a=`<button class="btn primary" data-act="qnext" data-hot="next">${next||'➡️ つぎへ'}</button><button class="btn" data-act="qretry">🔁 もういちど</button><button class="btn" data-act="qplay" data-hot="listen">🔊 こたえを聴く</button>`;
-  else a=`<button class="btn primary" data-act="qnext" data-hot="next">${next||'➡️ つぎの もんだい'}</button><button class="btn" data-act="qplay" data-hot="listen">🔊 こたえを聴く</button>`;
+  else a=`<button class="btn primary" data-act="qnext" data-hot="next">${next||'➡️ つぎのもんだい'}</button><button class="btn" data-act="qplay" data-hot="listen">🔊 こたえを聴く</button>`;
   if(a!==lastActions){PA.paint(document.getElementById('actions'),a,'bar');lastActions=a;}
 }
 function showFeedback(){
   const el=document.getElementById('fb');
   if(el&&el.scrollIntoView) el.scrollIntoView({block:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});
 }
-// 「この 調だけ」を やめる（その 回の れんしゅうも おわり）
+// 「この調だけ」をやめる（その回のれんしゅうもおわり）
 function clearOnly(){
   if(!Q.only) return;
   Q.only=null; Q.onlyBy=null;
   if(sess&&sess.active()) sess.clear();
 }
-// せっていが かわって 今の もんだいが 出ない ものに なったら、つぎの もんだいへ
+// せっていがかわって今のもんだいが出ないものになったら、つぎのもんだいへ
 function ensureQuestion(){if(!Q.q||isDone()||!inPool(Q.q)) newQuestion();}
-// れんしゅうの 回を はじめる とき：もう かぞえた もんだい（×のあと「もういちど」の とちゅう）は 回に 入らないので 新しい もんだいに
+// れんしゅうの回をはじめるとき：もうかぞえたもんだい（×のあと「もういちど」のとちゅう）は回に入らないので新しいもんだいに
 function freshQuestion(){if(Q.result!==null) newQuestion(); else ensureQuestion();}
-// リンクの せってい（RUN）を おわりにして、生徒が じぶんで えらんだ せってい（BASE）に もどす
+// リンクのせってい（RUN）をおわりにして、生徒がじぶんでえらんだせってい（BASE）にもどす
 function endRun(){
   if(!RUN) return;
   RUN=null;
@@ -623,11 +623,11 @@ function endRun(){
 
 /* ===== 操作 ===== */
 PA.mountBar({title:'和音クイズ',app:'chord-quiz'});
-PA.onPageShow=()=>{PA.stopSound();stopMic();location.reload();}; // 「もどる」で もどったら 読みなおす（べつの ページで すすめた きろくを 古い きろくで 上書きしない）
+PA.onPageShow=()=>{PA.stopSound();stopMic();location.reload();}; // 「もどる」でもどったら読みなおす（べつのページですすめたきろくを古いきろくで上書きしない）
 PA.onSettings=render;
-PA.onKey=m=>{ // 音は core が 鳴らす
+PA.onKey=m=>{ // 音は core が鳴らす
   if(Q.view!=='quiz'||Q.type!=='keys'||Q.checked) return;
-  if(MIC.phase==='on'||MIC.phase==='wait') MIC.quietUntil=Date.now()+1500; // 画面の けんばんの 音を マイクが ひろわないように
+  if(MIC.phase==='on'||MIC.phase==='wait') MIC.quietUntil=Date.now()+1500; // 画面のけんばんの音をマイクがひろわないように
   Q.picked.has(m)?Q.picked.delete(m):Q.picked.add(m); render();
 };
 const quizMidis=()=>chordTones(keyOfQ(Q.q),Q.q.chord).map(n=>n.midi);
@@ -638,9 +638,9 @@ document.addEventListener('click',e=>{
     case 'qtype': if(Q.type===v||!TYPES.includes(v)) return; Q.type=v; newQuestion(); break;
     case 'qtier': if(Q.tier===v||!TIER_IDS.includes(v)) return; Q.tier=v; clearOnly(); deck.setOptions({tier:v}); newQuestion(); break;
     case 'qkeyset': if(Q.keyset===v||!KEYSETS.some(([x])=>x===v)) return; Q.keyset=v; clearOnly(); deck.setOptions({modes:modesOf(v)}); newQuestion(); break;
-    case 'qweak': Q.weak=!Q.weak; deck.setOptions({weak:Q.weak}); break; // えらべる 調は かわらないので ふくろの のこりは そのまま。つぎの ふくろから
+    case 'qweak': Q.weak=!Q.weak; deck.setOptions({weak:Q.weak}); break; // えらべる調はかわらないのでふくろののこりはそのまま。つぎのふくろから
     case 'qchord': if(!Object.prototype.hasOwnProperty.call(CHORDS,v)) return; Q.chords[v]=!Q.chords[v]; if(!Object.values(Q.chords).some(x=>x)) Q.chords[v]=true; newQuestion(); break;
-    case 'qonlyoff': clearOnly(); endRun(); newQuestion(); break; // ふつうの れんしゅう＝じぶんの せってい
+    case 'qonlyoff': clearOnly(); endRun(); newQuestion(); break; // ふつうのれんしゅう＝じぶんのせってい
     case 'qsetopen': {
       Q.openSet=true; save(); render();
       const d=document.getElementById('qsetd'); if(!d) return;
@@ -649,24 +649,24 @@ document.addEventListener('click',e=>{
       const s=d.querySelector('summary'); if(s&&s.focus) s.focus({preventScroll:true});
       return;
     }
-    case 'keystats-reset': if(v!==QUIZ) return; deck.reset(); deckOne.reset(); break; // core の 2回 おす しくみで たしかめてある
-    case 'kd-pick': { // チェック表の ます：その 調を 3もん
+    case 'keystats-reset': if(v!==QUIZ) return; deck.reset(); deckOne.reset(); break; // core の2回おすしくみでたしかめてある
+    case 'kd-pick': { // チェック表のます：その調を3もん
       const k=KD.parse(v); if(!k||k.id!==v) return;
       Q.only=k.id; Q.onlyBy='pick'; Q.view='quiz';
       sess=PA.session(QUIZ,{sig:'pick='+k.id}); sess.start(3);
-      if(RUN) RUN.sig=sess.state().sig; // リンクの せってい（こたえかた・和音）の まま。つづきも おなじ せっていで
+      if(RUN) RUN.sig=sess.state().sig; // リンクのせってい（こたえかた・和音）のまま。つづきもおなじせっていで
       PA.stopSound(); newQuestion(); save(); render();
       const d=document.getElementById('kdcheck'); if(d) d.open=false;
       PA.scrollTop(); return;
     }
-    case 'sess5': // きょうの 5もん（いまの せっていで。チェック表の「この 調だけ」は やめる）
+    case 'sess5': // きょうの5もん（いまのせっていで。チェック表の「この調だけ」はやめる）
       if(Q.onlyBy==='pick'){Q.only=null;Q.onlyBy=null;}
       sess=PA.session(QUIZ,{sig:linkSig({key:Q.only,chords:Q.chords,type:Q.type,tier:Q.tier,keyset:Q.keyset})}); sess.start(5);
-      if(RUN) RUN.sig=sess.state().sig; // リンクの せっていの まま はじめた 回：ホームから ひらいても この せっていで つづき
+      if(RUN) RUN.sig=sess.state().sig; // リンクのせっていのままはじめた回：ホームからひらいてもこのせっていでつづき
       freshQuestion(); break;
     case 'session-again': if(!sess) return; sess.start(sess.n()); Q.view='quiz'; freshQuestion(); save(); render(); PA.scrollTop(); return;
     case 'session-free':
-      // じゆうに れんしゅう：リンクの せっていも「この 調だけ」も やめて、じぶんの せっていに もどる
+      // じゆうにれんしゅう：リンクのせっていも「この調だけ」もやめて、じぶんのせっていにもどる
       if(sess) sess.clear();
       endRun();
       Q.only=null; Q.onlyBy=null;
@@ -677,20 +677,20 @@ document.addEventListener('click',e=>{
     case 'qhint': Q.hint=Math.min(2,Q.hint+1); break;
     case 'qnext':
       PA.stopSound(); newQuestion();
-      if(sess&&sess.finished()) Q.view='summary'; // n もん おわった：けっかの カード
+      if(sess&&sess.finished()) Q.view='summary'; // n もんおわった：けっかのカード
       save(); render(); PA.scrollTop(); return;
     case 'qretry': Q.picked=new Set(); Q.checked=false; break;
     case 'qplay': PA.chord(quizMidis()); return;
     case 'qchoose': if(Q.chosen!=null) return; choose(+v); save(); render(); showFeedback(); return;
     case 'qexplain': {
-      if(!isDone()&&Q.result===null) Q.peeked=true; // こたえる まえに 見た：できたら「ヒントで できた」（×には しない）
+      if(!isDone()&&Q.result===null) Q.peeked=true; // こたえるまえに見た：できたら「ヒントでできた」（×にはしない）
       stopMic(); save();
       const cb=PA.store.get('chord-build',{})||{};
       PA.store.set('chord-build',{minor:Q.q.minor,keyIdx:Q.q.keyIdx,chord:Q.q.chord,speed:cb.speed==='slow'?'slow':'normal'});
       PA.store.set('chord-build-auto',true);
       PA.go('chord-build.html'); return;
     }
-    case 'mic': // 🎤 の オン・オフ（はじめては 説明を 出す）
+    case 'mic': // 🎤 のオン・オフ（はじめては説明を出す）
       if(MIC.phase==='on'||MIC.phase==='wait'){stopMic();break;}
       if(!PA.store.get('mic-intro',false)){stopMic();MIC.phase='intro';MIC.qid=Q.qid;break;}
       startMic(); return;
@@ -705,7 +705,7 @@ document.addEventListener('toggle',e=>{
   const b=document.querySelector('[data-act="qsetopen"]'); if(b) b.setAttribute('aria-expanded',e.target.open?'true':'false');
   if(Q.openSet!==e.target.open){Q.openSet=e.target.open;save();}
 },true);
-// 画面を はなれたら マイクを とめる
+// 画面をはなれたらマイクをとめる
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&(MIC.phase==='on'||MIC.phase==='wait')){stopMic();render();}});
 window.addEventListener('pagehide',()=>{stopMic();});
 if(!Q.q) newQuestion();

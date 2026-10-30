@@ -1,4 +1,4 @@
-// 準固有和音・減七と 半減七・異名同音の 読みかえ（学ぶ ページ）の 文と リンクの きまり
+// 準固有和音・減七と半減七・異名同音の読みかえ（学ぶページ）の文とリンクのきまり
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -10,16 +10,16 @@ const dir=path.join(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=f=>fs.readFileSync(path.join(dir,f),'utf8');
 const PAGES=['borrowed.html','dim-halfdim.html','enharmonic.html'];
 
-test('家族・聴きくらべの よびかたに A・B・C を つかわない（CDE の 音の 名前と まちがえる）',()=>{
+test('家族・聴きくらべのよびかたに A・B・C をつかわない（CDE の音の名前とまちがえる）',()=>{
   for(const f of PAGES){
-    const s=read(f).replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm,''); // コメントは のぞく（画面の 文だけ）
+    const s=read(f).replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm,''); // コメントはのぞく（画面の文だけ）
     assert.ok(!/[ＡＢＣ]の家族/.test(s),f+'：Ａ・Ｂ・Ｃの家族');
-    assert.ok(!/[AB] を きく|[AB] が /.test(s),f+'：A／B の ボタン');
-    assert.ok(!/芸大/.test(s),f+'：画面の 文に 芸大');
+    assert.ok(!/[AB] をきく|[AB] が /.test(s),f+'：A／B のボタン');
+    assert.ok(!/芸大/.test(s),f+'：画面の文に芸大');
   }
 });
 
-test('どの ページにも「ためしてみる」（変化和音クイズ・n=5）と、聴く ボタンの data-hot',()=>{
+test('どのページにも「ためしてみる」（変化和音クイズ・n=5）と、聴くボタンの data-hot',()=>{
   for(const f of PAGES){
     const s=read(f);
     assert.match(s,/PA\.tryHTML\(\{to:'chroma-quiz',params:\{key,mode:'keys',[^}]*n:5\}/,f);
@@ -28,7 +28,7 @@ test('どの ページにも「ためしてみる」（変化和音クイズ・n
   }
 });
 
-test('リンクの key は keyDeck の id だけ（ほかは すてる）',()=>{
+test('リンクの key は keyDeck の id だけ（ほかはすてる）',()=>{
   const PA=loadPA();
   assert.deepEqual({...PA.keyDeck.parse('M7')},{minor:false,idx:7,id:'M7'});
   assert.deepEqual({...PA.keyDeck.parse('m3')},{minor:true,idx:3,id:'m3'});

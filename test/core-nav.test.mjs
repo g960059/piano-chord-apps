@@ -1,4 +1,4 @@
-// アプリの 目次・リンクの パラメータ・ひかえ・音名の HTML・けんばんの 読み上げ などの テスト：node --test test/
+// アプリの目次・リンクのパラメータ・ひかえ・音名の HTML・けんばんの読み上げなどのテスト：node --test test/
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -18,7 +18,7 @@ test('目次：PA.UNITS・PA.APPS・PA.app',()=>{
   eq(PA.UNITS[5].apps,['doppel','secondary','aug6','neapolitan','borrowed','dim-halfdim','enharmonic','chroma-quiz']);
   eq(PA.UNITS[6].apps,['ear']);
   const ids=PA.UNITS.flatMap(u=>u.apps);
-  assert.equal(new Set(ids).size,ids.length,'おなじ アプリは 1回だけ');
+  assert.equal(new Set(ids).size,ids.length,'おなじアプリは1回だけ');
   eq(PA.APPS.map(a=>a.id).sort(),[...ids].sort());
   PA.APPS.forEach(a=>{
     assert.ok(['learn','quiz','play','ref','ear'].includes(a.type),a.id);
@@ -27,7 +27,7 @@ test('目次：PA.UNITS・PA.APPS・PA.app',()=>{
     if(a.practice){assert.ok(PA.app(a.practice),a.id+' → '+a.practice);assert.ok(['quiz','play','ear'].includes(PA.app(a.practice).type));}
     assert.ok(PA.APP_TYPES[a.type].dk);
   });
-  // いまある ページは ファイルが ある（diatonic・inversion・interval は べつの 人が 書いている）
+  // いまあるページはファイルがある（diatonic・inversion・interval はべつの人が書いている）
   PA.APPS.filter(a=>!['diatonic','inversion','interval'].includes(a.id)).forEach(a=>assert.ok(fs.existsSync(path.join(root,a.id+'.html')),a.id));
   assert.equal(PA.app('chord-build').practice,'chord-quiz');
   assert.equal(PA.app('minor-family').practice,'minor-quiz');
@@ -44,8 +44,8 @@ test('PA.url・PA.parseParams・PA.params・PA.fromLink・PA.paramInt',()=>{
   assert.equal(PA.url('a.html?x=1',{n:2}),'a.html?x=1&n=2');
   eq(PA.parseParams('?key=M1&n=5&tier=easy'),{key:'M1',n:'5',tier:'easy'});
   eq(PA.parseParams('mode=a%20b%26c&Bad=1&9x=2&ok-1=3&key=M2'),{mode:'a b&c','ok-1':'3',key:'M2'});
-  eq(PA.parseParams('?key=M1&key=M2'),{key:'M1'},'さいしょの 1つ');
-  eq(PA.parseParams('?chord='+'x'.repeat(41)+'&n=3'),{n:'3'},'40文字 より 長い 値は すてる');
+  eq(PA.parseParams('?key=M1&key=M2'),{key:'M1'},'さいしょの1つ');
+  eq(PA.parseParams('?chord='+'x'.repeat(41)+'&n=3'),{n:'3'},'40文字より長い値はすてる');
   eq(PA.parseParams('?key=%E0%A4%A&n=1&flag'),{n:'1',flag:''},'こわれた %');
   eq(PA.parseParams(''),{}); eq(PA.parseParams(undefined),{});
   eq(PA.parseParams('?constructor=1&__proto__=2'),{constructor:'1'});
@@ -61,18 +61,18 @@ test('PA.url・PA.parseParams・PA.params・PA.fromLink・PA.paramInt',()=>{
 test('PA.shareHTML・PA.tryHTML',()=>{
   const PA=loadPA();
   const s=PA.shareHTML('chord-quiz',{key:'M1',n:5});
-  assert.match(s,/^<button type="button" class="btn small pa-share" data-pa="share" data-url="https:\/\/example\.test\/apps\/chord-quiz\.html\?key=M1&amp;n=5">🔗 リンクを おくる<\/button>$/);
+  assert.match(s,/^<button type="button" class="btn small pa-share" data-pa="share" data-url="https:\/\/example\.test\/apps\/chord-quiz\.html\?key=M1&amp;n=5">🔗 リンクをおくる<\/button>$/);
   assert.ok(PA.shareHTML('ear',null,'おくる').includes('>おくる<'));
-  const t=PA.tryHTML({to:'chord-quiz',params:{key:'M1',n:3},sub:'ト長調で 3もん',links:[{to:'ear',label:'👂 耳で'},{to:'chord-table'}]});
+  const t=PA.tryHTML({to:'chord-quiz',params:{key:'M1',n:3},sub:'ト長調で3もん',links:[{to:'ear',label:'👂 耳で'},{to:'chord-table'}]});
   assert.ok(t.includes('class="card try-card"')&&t.includes('--tc:#c0392b'));
   assert.ok(t.includes('<a class="btn try-go" href="chord-quiz.html?key=M1&amp;n=3">🎯 ためしてみる</a>'));
-  assert.ok(t.includes('「和音クイズ」で ためしてみよう')&&t.includes('ト長調で 3もん'));
+  assert.ok(t.includes('「和音クイズ」でためしてみよう')&&t.includes('ト長調で3もん'));
   assert.ok(t.includes('href="ear.html">👂 耳で</a>')&&t.includes('href="chord-table.html">和音いちらん表</a>'));
   const t2=PA.tryHTML({to:'cadence',title:'ひいてみよう',btn:'🎹 ひく'});
   assert.ok(t2.includes('<h2>ひいてみよう</h2>')&&t2.includes('🎹 ひく')&&t2.includes('--tc:#15804f')&&!t2.includes('try-more'));
 });
 
-test('きろくの ひかえ：checkBackup・backupData',()=>{
+test('きろくのひかえ：checkBackup・backupData',()=>{
   const mem=new Map(), PA=loadPA(undefined,{storage:mem});
   PA.store.set('settings',{naming:'en'}); PA.store.set('keystats-chord-quiz',{M0:{right:1,wrong:0}});
   mem.set('other.thing','1');
@@ -83,20 +83,20 @@ test('きろくの ひかえ：checkBackup・backupData',()=>{
   for(const bad of [null,[],'x',5,{},{'other':'1'},{'pianoapps.a':5},{'pianoapps.a':'{bad json'},{'pianoapps.a':'1','x.b':'2'}]) assert.equal(PA.checkBackup(bad),null,JSON.stringify(bad));
 });
 
-test('音名の HTML：PA.nmH は <span class="nw">、PA.nm は ただの 文字',()=>{
+test('音名の HTML：PA.nmH は<span class="nw">、PA.nm はただの文字',()=>{
   const PA=loadPA();
   assert.equal(PA.nmH({letter:3,acc:1}),'<span class="nw">ファ♯</span>');
   assert.equal(PA.nm({letter:3,acc:1}),'ファ♯');
   assert.equal(PA.namesH([{letter:0,acc:0},{letter:6,acc:-1}]),'<span class="nw">ド</span>・<span class="nw">シ♭</span>');
   assert.equal(PA.nmH({letter:3,acc:2}),'<span class="nw">ファ<span class="ds">x</span></span>');
-  // core の 中で nmH・namesH を 属性（aria-label・title・data-*）や SVG の 中に つかって いない
+  // core の中で nmH・namesH を属性（aria-label・title・data-*）や SVG の中につかっていない
   const src=fs.readFileSync(path.join(root,'assets','core.js'),'utf8');
   assert.ok(!/(aria-label|title|data-[a-z-]+)="[^"]*\$\{[^}]*(nmH|namesH)/.test(src));
-  // おわりかたの 説明：「音名」ごと 行が かわらない
+  // おわりかたの説明：「音名」ごと行がかわらない
   assert.ok(PA.ending.why(PA.keyOf(false,1,60),'perfect').includes('<span class="nw">「ソ」</span>'));
 });
 
-test('けんばん：sr で 読み上げの ことばを たす。まんなかの ド の 字は こい 色',()=>{
+test('けんばん：sr で読み上げのことばをたす。まんなかのドの字はこい色',()=>{
   const PA=loadPA();
   const s=PA.kbSVG(60,64,new Map([[64,{fill:'#d1495b',label:'ミ',sr:'えらんだ・まちがい'}],[62,{fill:'#fff',sr:'"<x>"'}]]));
   assert.ok(s.includes('aria-label="ミ、えらんだ・まちがい"'));
@@ -106,14 +106,14 @@ test('けんばん：sr で 読み上げの ことばを たす。まんなか�
   assert.ok(!s.includes('#a99f93'));
 });
 
-test('古い 端末：core.js に ?. と ?? が ない',()=>{
+test('古い端末：core.js に ?. と ?? がない',()=>{
   const src=fs.readFileSync(path.join(root,'assets','core.js'),'utf8').replace(/\/\*[\s\S]*?\*\//g,'').replace(/\/\/.*$/gm,'');
   assert.ok(!/\?\.(?!\d)/.test(src),'?.');
   assert.ok(!/\?\?/.test(src),'??');
-  assert.equal(loadPA().HINT_NOTE.includes('×には ならない'),true);
+  assert.equal(loadPA().HINT_NOTE.includes('×にはならない'),true);
 });
 
-test('コントラスト：小さな 字の 色（WCAG AA 4.5:1）',()=>{
+test('コントラスト：小さな字の色（WCAG AA 4.5:1）',()=>{
   const css=fs.readFileSync(path.join(root,'assets','app.css'),'utf8');
   const v=n=>{const m=new RegExp('--'+n+':(#[0-9a-f]{6})','i').exec(css);return m[1];};
   const lum=h=>{const c=[1,3,5].map(i=>parseInt(h.slice(i,i+2),16)/255).map(x=>x<=0.03928?x/12.92:Math.pow((x+0.055)/1.055,2.4));return 0.2126*c[0]+0.7152*c[1]+0.0722*c[2];};

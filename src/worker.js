@@ -1,22 +1,22 @@
-/* ピアノ和音アプリ：Worker（和音の 聴きわけ の ランキング API ＋ 静的ファイル）
+/* ピアノ和音アプリ：Worker（和音の聴きわけのランキング API ＋静的ファイル）
  *
  *   POST   /api/run                    チャレンジの開始 → { runId, seed }
  *   POST   /api/score                  結果を送る（サーバーで assets/ear-game.js の simulate で採点し直す）
- *   GET    /api/ranking?period=&player= 上位 50 人と自分
+ *   GET    /api/ranking?period=&player= 上位50人と自分
  *   先生用（Authorization: Bearer <ADMIN_KEY>。くわしくは docs/RANKING-ADMIN.md）
- *   GET    /api/admin/scores?period=all|week[&name=]  上位 50 人（または 名前で さがす）を 端末ID つきで
- *   DELETE /api/admin/scores/:playerId[?block=1]      その人の 記録を 消す（block=1 なら もう のせない）
- *   DELETE /api/admin/blocks/:playerId                「もう のせない」を とりけす
+ *   GET    /api/admin/scores?period=all|week[&name=]  上位50人（または名前でさがす）を端末ID つきで
+ *   DELETE /api/admin/scores/:playerId[?block=1]      その人の記録を消す（block=1ならもうのせない）
+ *   DELETE /api/admin/blocks/:playerId                「もうのせない」をとりけす
  *
- * scheduled（毎日 1:05 日本時間）で 古い run・塩・週の 記録を そうじする。
+ * scheduled（毎日1:05日本時間）で古い run・塩・週の記録をそうじする。
  *
- * もとは 和音ききわけ（g960059/waon-kikiwake）の src/worker.js。API・D1（waon-ranking）・採点は おなじ なので、
- * いままでの ランキングが そのまま つづく。
+ * もとは和音ききわけ（g960059/waon-kikiwake）の src/worker.js。API・D1（waon-ranking）・採点はおなじなので、
+ * いままでのランキングがそのままつづく。
  *
- * /api/* いがいは wrangler.jsonc の assets（リポジトリの いちばん上。.assetsignore で のぞいた ものは 公開しない）。
- * ファイルが あれば Worker を とおらずに そのまま 出る。ないときだけ ここへ 来て env.ASSETS に まかせる（404）。
- * D1 はかならず bind() で値をわたす（文字列をつなげて SQL を作らない）。 */
-// ゲームの きまりは 画面（ear.html）と おなじ ファイル。export の ない ふつうの script なので、読みこむと globalThis.EarGame が できる
+ * /api/* いがいは wrangler.jsonc の assets（リポジトリのいちばん上。.assetsignore でのぞいたものは公開しない）。
+ * ファイルがあれば Worker をとおらずにそのまま出る。ないときだけここへ来て env.ASSETS にまかせる（404）。
+ * D1はかならず bind() で値をわたす（文字列をつなげて SQL を作らない）。 */
+// ゲームのきまりは画面（ear.html）とおなじファイル。export のないふつうの script なので、読みこむと globalThis.EarGame ができる
 import '../assets/ear-game.js';
 
 const EG = globalThis.EarGame;
@@ -25,45 +25,45 @@ const { simulate, isTypeId, CHALLENGE } = EG;
 
 /* ===== きまり ===== */
 export const LIMITS = Object.freeze({
-  runTtlMs: CHALLENGE.runTtlMs,       // run は 2時間まで
-  runsPerHour: 30,                    // 1つの IP から 1時間に作れる run
-  maxBodyBytes: 16 * 1024,            // /api/score の本文（600問 × 8文字でも 6KB ほど）
+  runTtlMs: CHALLENGE.runTtlMs,       // run は2時間まで
+  runsPerHour: 30,                    // 1つの IP から1時間に作れる run
+  maxBodyBytes: 16 * 1024,            // /api/score の本文（600問 × 8文字でも6KB ほど）
   maxAnswers: CHALLENGE.maxAnswers,   // 600
   minMsPerAnswer: CHALLENGE.minMsPerAnswer, // 800
   nameMax: EG.NAME_MAX,
   topN: 50,
   runKeepMs: 24 * 60 * 60 * 1000,     // そうじ：1日より古い run（と ip_players・admin_fail）は消す
-  rankWritesPerDay: 30,               // 1つの IP から 1日に ランキングを 書きかえられる回数（こえたら 採点だけ）
-  newPlayersPerDay: 8,                // 1つの IP から 1日に ランキングに のせられる 端末ID の数
-  adminKeyMin: 24,                    // これより 短い ADMIN_KEY は 「ない」と 同じ（404）
-  adminFailsPerHour: 10,              // 先生用キーの まちがいは 1時間に 10回まで（IP ごと）
+  rankWritesPerDay: 30,               // 1つの IP から1日にランキングを書きかえられる回数（こえたら採点だけ）
+  newPlayersPerDay: 8,                // 1つの IP から1日にランキングにのせられる端末ID の数
+  adminKeyMin: 24,                    // これより短い ADMIN_KEY は「ない」と同じ（404）
+  adminFailsPerHour: 10,              // 先生用キーのまちがいは1時間に10回まで（IP ごと）
 });
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 export const isUuid = v => typeof v === 'string' && UUID_RE.test(v);
 
-/* ===== 日付（日本時間）・名前のチェック（assets/ear-game.js。画面と おなじ きまり） ===== */
+/* ===== 日付（日本時間）・名前のチェック（assets/ear-game.js。画面とおなじきまり） ===== */
 export const jstDay = (now = Date.now()) => EG.jstDay(now);
 // 日本時間の ISO 週（月曜はじまり）。例：'2026-W44'
 export const isoWeekJST = (now = Date.now()) => EG.weekId(now);
 export const normalizeName = raw => EG.normalizeName(raw);
-/* → { ok: true, name } または { ok: false, error } */
+/* → { ok: true, name }または { ok: false, error } */
 export const checkName = raw => EG.checkName(raw);
 
 /* ===== 本文のチェック ===== */
-/* → { ok: true, value: {runId, playerId, name, answers, elapsedMs} } または { ok: false, error } */
+/* → { ok: true, value: {runId, playerId, name, answers, elapsedMs} }または { ok: false, error } */
 export function checkScoreBody(body) {
-  if (!body || typeof body !== 'object' || Array.isArray(body)) return { ok: false, error: '送る データの 形が ちがうよ' };
+  if (!body || typeof body !== 'object' || Array.isArray(body)) return { ok: false, error: '送るデータの形がちがうよ' };
   const { runId, playerId, name, answers, elapsedMs } = body;
-  if (!isUuid(runId)) return { ok: false, error: 'チャレンジの 番号が ちがうよ' };
-  if (!isUuid(playerId)) return { ok: false, error: '端末の 番号が ちがうよ' };
-  if (!Array.isArray(answers) || answers.length < 1) return { ok: false, error: '答えが ないよ' };
-  if (answers.length > LIMITS.maxAnswers) return { ok: false, error: '答えが 多すぎるよ' };
-  if (!answers.every(isTypeId)) return { ok: false, error: '答えの 中に 知らない 和音が あるよ' };
-  // 上限は 見ない：画面を 2時間 いじょう ひらいていても run の 時間ぎれ（410）を かえせるように。
-  // 大きすぎる 値は submitScore で サーバーの 時計（run を 作ってからの 時間）に おさえる。
+  if (!isUuid(runId)) return { ok: false, error: 'チャレンジの番号がちがうよ' };
+  if (!isUuid(playerId)) return { ok: false, error: '端末の番号がちがうよ' };
+  if (!Array.isArray(answers) || answers.length < 1) return { ok: false, error: '答えがないよ' };
+  if (answers.length > LIMITS.maxAnswers) return { ok: false, error: '答えが多すぎるよ' };
+  if (!answers.every(isTypeId)) return { ok: false, error: '答えの中に知らない和音があるよ' };
+  // 上限は見ない：画面を2時間いじょうひらいていても run の時間ぎれ（410）をかえせるように。
+  // 大きすぎる値は submitScore でサーバーの時計（run を作ってからの時間）におさえる。
   if (typeof elapsedMs !== 'number' || !Number.isFinite(elapsedMs) || elapsedMs < 0) {
-    return { ok: false, error: 'かかった 時間が おかしいよ' };
+    return { ok: false, error: 'かかった時間がおかしいよ' };
   }
   const nm = checkName(name);
   if (!nm.ok) return nm;
@@ -76,7 +76,7 @@ const toHex = buf => [...new Uint8Array(buf)].map(b => b.toString(16).padStart(2
 export async function sha256Hex(s) {
   return toHex(await crypto.subtle.digest('SHA-256', enc.encode(s)));
 }
-// 長さや中身で時間が変わらない比較（両方を SHA-256 にしてから 32バイトを全部くらべる）
+// 長さや中身で時間が変わらない比較（両方を SHA-256にしてから32バイトを全部くらべる）
 export async function safeEqual(a, b) {
   const [x, y] = await Promise.all([a, b].map(s => crypto.subtle.digest('SHA-256', enc.encode(String(s)))));
   const ux = new Uint8Array(x), uy = new Uint8Array(y);
@@ -84,7 +84,7 @@ export async function safeEqual(a, b) {
   for (let i = 0; i < ux.length; i++) diff |= ux[i] ^ uy[i];
   return diff === 0;
 }
-// IPv6 は /64 にまとめる（同じ回線の中で番号を変えても同じに数える）
+// IPv6は /64にまとめる（同じ回線の中で番号を変えても同じに数える）
 export function ipKey(ip) {
   ip = String(ip || '').trim().toLowerCase();
   if (!ip.includes(':')) return ip || 'unknown';
@@ -96,14 +96,14 @@ export function ipKey(ip) {
   return full.slice(0, 4).map(x => x.replace(/^0+(?=.)/, '')).join(':') + '::/64';
 }
 
-// 安全用の ヘッダー：ここの ものは Worker が かえす 応答（/api/*・見つからない ページ）だけに つく。
-// ページ・assets/ などの 静的ファイルは Worker を 通らないので、リポジトリの いちばん上の _headers で おなじ ものを つける（両方 そろえて なおす）
+// 安全用のヘッダー：ここのものは Worker がかえす応答（/api/*・見つからないページ）だけにつく。
+// ページ・assets/ などの静的ファイルは Worker を通らないので、リポジトリのいちばん上の _headers でおなじものをつける（両方そろえてなおす）
 const SEC_HEADERS = {
   'X-Content-Type-Options': 'nosniff',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
   'X-Frame-Options': 'DENY',
   'Content-Security-Policy': "frame-ancestors 'none'; base-uri 'self'; object-src 'none'; form-action 'self'",
-  // マイク（assets/mic.js）は ページで つかうので ここでも _headers でも とめない
+  // マイク（assets/mic.js）はページでつかうのでここでも _headers でもとめない
   'Permissions-Policy': 'camera=(), geolocation=(), payment=()',
 };
 function json(data, status = 200, extra = {}) {
@@ -113,7 +113,7 @@ function json(data, status = 200, extra = {}) {
   });
 }
 const err = (status, message, extra) => json({ error: message }, status, extra);
-const methodNotAllowed = allow => err(405, 'その 方法では つかえないよ', { Allow: allow });
+const methodNotAllowed = allow => err(405, 'その方法ではつかえないよ', { Allow: allow });
 
 // ほかのサイトからの POST・DELETE は受けつけない（Origin があるときだけ見る）
 function sameOrigin(request) {
@@ -122,7 +122,7 @@ function sameOrigin(request) {
   try { return new URL(origin).host === new URL(request.url).host; } catch { return false; }
 }
 
-// 本文を すこしずつ 読み、max バイトを こえたら そこで やめる（Content-Length が ない chunked でも 全部は 読まない）
+// 本文をすこしずつ読み、max バイトをこえたらそこでやめる（Content-Length がない chunked でも全部は読まない）
 async function readBodyCapped(request, max) {
   if (!request.body) return new Uint8Array(0);
   const reader = request.body.getReader();
@@ -132,7 +132,7 @@ async function readBodyCapped(request, max) {
     const { done, value } = await reader.read();
     if (done) break;
     n += value.byteLength;
-    if (n > max) { try { await reader.cancel(); } catch { /* もう とじている */ } return null; }
+    if (n > max) { try { await reader.cancel(); } catch { /* もうとじている */ } return null; }
     chunks.push(value);
   }
   const out = new Uint8Array(n);
@@ -142,13 +142,13 @@ async function readBodyCapped(request, max) {
 }
 async function readJson(request) {
   const ct = request.headers.get('Content-Type') || '';
-  if (!/^application\/json\b/i.test(ct)) return { error: [415, 'JSON で 送ってね'] };
+  if (!/^application\/json\b/i.test(ct)) return { error: [415, 'JSON で送ってね'] };
   const len = Number(request.headers.get('Content-Length') || 0);
-  if (len > LIMITS.maxBodyBytes) return { error: [413, 'データが 大きすぎるよ'] };
+  if (len > LIMITS.maxBodyBytes) return { error: [413, 'データが大きすぎるよ'] };
   const buf = await readBodyCapped(request, LIMITS.maxBodyBytes);
-  if (!buf) return { error: [413, 'データが 大きすぎるよ'] };
+  if (!buf) return { error: [413, 'データが大きすぎるよ'] };
   try { return { body: JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(buf)) }; }
-  catch { return { error: [400, 'JSON の 形が ちがうよ'] }; }
+  catch { return { error: [400, 'JSON の形がちがうよ'] }; }
 }
 
 /* ===== IP のハッシュ（日ごとの塩） ===== */
@@ -158,8 +158,8 @@ async function dailySalt(env, day) {
   const row = await env.DB.prepare('SELECT salt FROM salts WHERE day = ?1').bind(day).first();
   return row ? row.salt : fresh;
 }
-/* → { today, yesterday }。日本時間の 0時〜1時は、きのうの 塩が のこって いれば きのうの ハッシュも 出す
- * （「1時間に 30回」が 0時で 数えなおしに ならないように）。それ以外は yesterday = today。 */
+/* → { today, yesterday }。日本時間の0時〜1時は、きのうの塩がのこっていればきのうのハッシュも出す
+ * （「1時間に30回」が0時で数えなおしにならないように）。それ以外は yesterday = today。 */
 async function ipHashes(env, request, now) {
   const day = jstDay(now), ip = ipKey(request.headers.get('CF-Connecting-IP'));
   const today = await sha256Hex(`${await dailySalt(env, day)}|${day}|${ip}`);
@@ -169,8 +169,8 @@ async function ipHashes(env, request, now) {
   return { today, yesterday: y ? await sha256Hex(`${y.salt}|${hourAgo}|${ip}`) : today };
 }
 
-/* ===== そうじ（run を 作るたびと、毎日の scheduled） =====
- * 塩は 日本時間 1時を すぎたら きのうの 分を 消す（のこると IP を 総当たりで もどせて しまう）。 */
+/* ===== そうじ（run を作るたびと、毎日の scheduled） =====
+ * 塩は日本時間1時をすぎたらきのうの分を消す（のこると IP を総当たりでもどせてしまう）。 */
 async function cleanup(env, now, withScores = false) {
   const stmts = [
     env.DB.prepare('DELETE FROM runs WHERE created_at < ?1').bind(now - LIMITS.runKeepMs),
@@ -178,7 +178,7 @@ async function cleanup(env, now, withScores = false) {
     env.DB.prepare('DELETE FROM ip_players WHERE created_at < ?1').bind(now - LIMITS.runKeepMs),
     env.DB.prepare('DELETE FROM admin_fail WHERE at < ?1').bind(now - LIMITS.runKeepMs),
   ];
-  // 「今週」と「先週」いがいの 週の 記録は もう 見せないので 消す
+  // 「今週」と「先週」いがいの週の記録はもう見せないので消す
   if (withScores) {
     stmts.push(env.DB.prepare("DELETE FROM scores WHERE period <> 'all' AND period <> ?1 AND period <> ?2")
       .bind(isoWeekJST(now), isoWeekJST(now - 7 * 86400000)));
@@ -190,10 +190,10 @@ async function cleanup(env, now, withScores = false) {
 // 並び：マスター → 到達レベル → 正解数 → 先に記録 →（最後の念のため）player_id
 const ORDER = 'mastered DESC, level DESC, correct DESC, at ASC, player_id ASC';
 const BETTER = `(mastered > ?2 OR (mastered = ?2 AND (level > ?3 OR (level = ?3 AND (correct > ?4 OR (correct = ?4 AND (at < ?5 OR (at = ?5 AND player_id < ?6))))))))`;
-// 公開の ランキングには 時刻（at）を 出さない（いつ あそんだかは 見せない。並びは ORDER・BETTER の SQL の 中だけで つかう）
+// 公開のランキングには時刻（at）を出さない（いつあそんだかは見せない。並びは ORDER・BETTER の SQL の中だけでつかう）
 const rowOut = (r, rank) => ({ rank, name: r.name, level: r.level, mastered: !!r.mastered, correct: r.correct, total: r.total });
 
-// → { entry: 公開用の 行（rowOut）, at: 記録した 時刻（サーバーの 中だけで つかう） } または null
+// → { entry: 公開用の行（rowOut）, at: 記録した時刻（サーバーの中だけでつかう） }または null
 async function playerRecord(env, period, playerId) {
   const r = await env.DB.prepare('SELECT player_id, name, level, mastered, correct, total, at FROM scores WHERE player_id = ?1 AND period = ?2')
     .bind(playerId, period).first();
@@ -225,31 +225,31 @@ function upsertBest(env, period, playerId, name, res, at) {
 
 /* ===== API ===== */
 async function createRun(request, env, ctx) {
-  if (!sameOrigin(request)) return err(403, 'ほかの サイトからは つかえないよ');
+  if (!sameOrigin(request)) return err(403, 'ほかのサイトからはつかえないよ');
   const now = Date.now();
   const { today, yesterday } = await ipHashes(env, request, now);
   const runId = crypto.randomUUID();
   const seed = crypto.getRandomValues(new Uint32Array(1))[0];
-  // 数えるのと 入れるのを 1つの 文で（同時に たくさん 来ても 30回を こえない）
+  // 数えるのと入れるのを1つの文で（同時にたくさん来ても30回をこえない）
   const ins = await env.DB.prepare(
     `INSERT INTO runs (id, seed, created_at, ip_hash, used)
      SELECT ?1, ?2, ?3, ?4, 0
      WHERE (SELECT COUNT(*) FROM runs WHERE ip_hash IN (?4, ?5) AND created_at > ?6) < ?7`,
   ).bind(runId, seed, now, today, yesterday, now - 3600000, LIMITS.runsPerHour).run();
   if (!ins.meta || ins.meta.changes !== 1) {
-    return err(429, 'チャレンジが 多すぎるよ。すこし 休んでから また やってね', { 'Retry-After': '600' });
+    return err(429, 'チャレンジが多すぎるよ。すこし休んでからまたやってね', { 'Retry-After': '600' });
   }
   const job = cleanup(env, now).catch(e => console.error('cleanup', e && e.message));
   if (ctx && ctx.waitUntil) ctx.waitUntil(job); else await job;
   return json({ runId, seed });
 }
 
-/* ランキングに のせて よいか（だめでも 採点した 結果は かえす）
- * - 先生が「もう のせない」に した 端末ID は のせない
- * - 1つの IP から 1日に 送った run が rankWritesPerDay を こえたら のせない
- * - 1つの IP から 1日に のせられる 端末ID は newPlayersPerDay 人まで
- *   （数えるのと 席を とるのを 1つの 文で。同時に たくさんの 端末ID で 送られても こえない）
- * 席が とれたら true。席は 記録を 書く 前に とる（書けなかったら run は もどるが 席は のこるので、送りなおせば のる） */
+/* ランキングにのせてよいか（だめでも採点した結果はかえす）
+ * - 先生が「もうのせない」にした端末ID はのせない
+ * - 1つの IP から1日に送った run が rankWritesPerDay をこえたらのせない
+ * - 1つの IP から1日にのせられる端末ID は newPlayersPerDay 人まで
+ *   （数えるのと席をとるのを1つの文で。同時にたくさんの端末ID で送られてもこえない）
+ * 席がとれたら true。席は記録を書く前にとる（書けなかったら run はもどるが席はのこるので、送りなおせばのる） */
 async function mayRank(env, ipHash, playerId, now) {
   const blocked = await env.DB.prepare('SELECT 1 AS b FROM blocked_players WHERE player_id = ?1').bind(playerId).first();
   if (blocked) return false;
@@ -261,13 +261,13 @@ async function mayRank(env, ipHash, playerId, now) {
      SELECT ?1, ?2, ?3
      WHERE (SELECT COUNT(*) FROM ip_players WHERE ip_hash = ?1) < ?4`,
   ).bind(ipHash, playerId, now, LIMITS.newPlayersPerDay).run();
-  // 新しく とれた、または もう 席が ある
+  // 新しくとれた、またはもう席がある
   const mine = await env.DB.prepare('SELECT 1 AS m FROM ip_players WHERE ip_hash = ?1 AND player_id = ?2').bind(ipHash, playerId).first();
   return !!mine;
 }
 
 async function submitScore(request, env) {
-  if (!sameOrigin(request)) return err(403, 'ほかの サイトからは つかえないよ');
+  if (!sameOrigin(request)) return err(403, 'ほかのサイトからはつかえないよ');
   const parsed = await readJson(request);
   if (parsed.error) return err(...parsed.error);
   const chk = checkScoreBody(parsed.body);
@@ -276,24 +276,24 @@ async function submitScore(request, env) {
 
   const now = Date.now();
   const run = await env.DB.prepare('SELECT seed, created_at, used, ip_hash FROM runs WHERE id = ?1').bind(runId).first();
-  if (!run) return err(404, 'その チャレンジは 見つからないよ');
-  if (run.used) return err(409, 'この チャレンジは もう 送ってあるよ');
-  if (now - run.created_at > LIMITS.runTtlMs) return err(410, '時間が たちすぎたよ（2時間まで）。もういちど チャレンジしてね');
+  if (!run) return err(404, 'そのチャレンジは見つからないよ');
+  if (run.used) return err(409, 'このチャレンジはもう送ってあるよ');
+  if (now - run.created_at > LIMITS.runTtlMs) return err(410, '時間がたちすぎたよ（2時間まで）。もういちどチャレンジしてね');
   const minMs = answers.length * LIMITS.minMsPerAnswer;
   const took = Math.min(now - run.created_at, elapsedMs);
   if (took < minMs) {
-    // run は 使わずに のこるので、すこし まって もういちど 送れば とおる
-    return err(400, 'ちょっと はやすぎたみたい。すこし まってから もういちど おしてね',
+    // run は使わずにのこるので、すこしまってもういちど送ればとおる
+    return err(400, 'ちょっとはやすぎたみたい。すこしまってからもういちどおしてね',
       { 'Retry-After': String(Math.max(1, Math.ceil((minMs - took) / 1000))) });
   }
 
-  // サーバーで 採点し直す（送られてきた レベルや 点数は つかわない）
+  // サーバーで採点し直す（送られてきたレベルや点数はつかわない）
   const res = simulate(Number(run.seed), answers);
 
-  // 1回だけ：まだ 使っていない run だけを「使った」にする（同時に2回 送られても 1回しか 通らない）
+  // 1回だけ：まだ使っていない run だけを「使った」にする（同時に2回送られても1回しか通らない）
   const claim = await env.DB.prepare('UPDATE runs SET used = 1 WHERE id = ?1 AND used = 0 AND created_at >= ?2')
     .bind(runId, now - LIMITS.runTtlMs).run();
-  if (!claim.meta || claim.meta.changes !== 1) return err(409, 'この チャレンジは もう 送ってあるよ');
+  if (!claim.meta || claim.meta.changes !== 1) return err(409, 'このチャレンジはもう送ってあるよ');
 
   const week = isoWeekJST(now);
   let ranked;
@@ -306,7 +306,7 @@ async function submitScore(request, env) {
       ]);
     }
   } catch (e) {
-    // 記録できなかったら「使った」を もどす（画面は もういちど 送れる）
+    // 記録できなかったら「使った」をもどす（画面はもういちど送れる）
     await env.DB.prepare('UPDATE runs SET used = 0 WHERE id = ?1').bind(runId).run().catch(() => {});
     throw e;
   }
@@ -327,7 +327,7 @@ async function getRanking(url, env) {
   const p = url.searchParams.get('period') || 'all';
   if (p !== 'all' && p !== 'week') return err(400, 'period は all か week だよ');
   const player = url.searchParams.get('player') || '';
-  if (player && !isUuid(player)) return err(400, '端末の 番号が ちがうよ');
+  if (player && !isUuid(player)) return err(400, '端末の番号がちがうよ');
   const week = isoWeekJST();
   const period = p === 'all' ? 'all' : week;
   const { results = [] } = await env.DB.prepare(
@@ -344,8 +344,8 @@ async function getRanking(url, env) {
 }
 
 /* ===== 先生用 =====
- * キーが ない・短い（24文字 未満）ときは 404（あることも 見せない）。
- * まちがいは IP ごとに 1時間 10回まで（こえたら 429）。 */
+ * キーがない・短い（24文字未満）ときは404（あることも見せない）。
+ * まちがいは IP ごとに1時間10回まで（こえたら429）。 */
 let warnedShortKey = false;
 async function adminAuth(request, env) {
   const key = env.ADMIN_KEY;
@@ -360,17 +360,17 @@ async function adminAuth(request, env) {
   const { today } = await ipHashes(env, request, now);
   const fails = await env.DB.prepare('SELECT COUNT(*) AS n FROM admin_fail WHERE ip_hash = ?1 AND at > ?2')
     .bind(today, now - 3600000).first();
-  if ((fails ? fails.n : 0) >= LIMITS.adminFailsPerHour) return err(429, 'まちがいが 多すぎるよ。1時間 まってね', { 'Retry-After': '3600' });
+  if ((fails ? fails.n : 0) >= LIMITS.adminFailsPerHour) return err(429, 'まちがいが多すぎるよ。1時間まってね', { 'Retry-After': '3600' });
   const m = (request.headers.get('Authorization') || '').match(/^Bearer\s+(.+)$/i);
   const ok = await safeEqual(m ? m[1].trim() : '', key);
   if (!m || !ok) {
     await env.DB.prepare('INSERT INTO admin_fail (ip_hash, at) VALUES (?1, ?2)').bind(today, now).run();
-    return err(401, 'キーが ちがうよ', { 'WWW-Authenticate': 'Bearer' });
+    return err(401, 'キーがちがうよ', { 'WWW-Authenticate': 'Bearer' });
   }
   return null;
 }
 
-// 上位 50 人、または 名前に name を ふくむ 人（「ぜんぶ」と「今週」の 両方から）を 端末ID つきで
+// 上位50人、または名前に name をふくむ人（「ぜんぶ」と「今週」の両方から）を端末ID つきで
 async function adminList(request, url, env) {
   const denied = await adminAuth(request, env);
   if (denied) return denied;
@@ -400,7 +400,7 @@ async function adminList(request, url, env) {
 async function adminDelete(request, url, env, playerId) {
   const denied = await adminAuth(request, env);
   if (denied) return denied;
-  if (!isUuid(playerId)) return err(400, '端末の 番号が ちがうよ');
+  if (!isUuid(playerId)) return err(400, '端末の番号がちがうよ');
   const id = playerId.toLowerCase();
   const block = url.searchParams.get('block') === '1';
   const stmts = [env.DB.prepare('DELETE FROM scores WHERE player_id = ?1').bind(id)];
@@ -412,7 +412,7 @@ async function adminDelete(request, url, env, playerId) {
 async function adminUnblock(request, env, playerId) {
   const denied = await adminAuth(request, env);
   if (denied) return denied;
-  if (!isUuid(playerId)) return err(400, '端末の 番号が ちがうよ');
+  if (!isUuid(playerId)) return err(400, '端末の番号がちがうよ');
   const r = await env.DB.prepare('DELETE FROM blocked_players WHERE player_id = ?1').bind(playerId.toLowerCase()).run();
   return json({ unblocked: (r.meta && r.meta.changes) || 0 });
 }
@@ -421,8 +421,8 @@ export async function handleApi(request, env, ctx) {
   const url = new URL(request.url);
   const path = url.pathname.replace(/\/+$/, '');
   const method = request.method;
-  // データベースが ない（ブランチの Preview など）：ランキングは おやすみ。501 なので 画面は「オフライン」で あそべる
-  if (!env || !env.DB) return err(501, 'ここでは ランキングは つかえないよ');
+  // データベースがない（ブランチの Preview など）：ランキングはおやすみ。501なので画面は「オフライン」であそべる
+  if (!env || !env.DB) return err(501, 'ここではランキングはつかえないよ');
   if (path === '/api/run') return method === 'POST' ? createRun(request, env, ctx) : methodNotAllowed('POST');
   if (path === '/api/score') return method === 'POST' ? submitScore(request, env) : methodNotAllowed('POST');
   if (path === '/api/ranking') return method === 'GET' ? getRanking(url, env) : methodNotAllowed('GET');
@@ -431,7 +431,7 @@ export async function handleApi(request, env, ctx) {
   if (adm) {
     if (method !== 'DELETE') return methodNotAllowed('DELETE');
     let id;
-    try { id = decodeURIComponent(adm[2]); } catch { return err(400, '端末の 番号が ちがうよ'); }
+    try { id = decodeURIComponent(adm[2]); } catch { return err(400, '端末の番号がちがうよ'); }
     return adm[1] === 'scores' ? adminDelete(request, url, env, id) : adminUnblock(request, env, id);
   }
   return err(404, '見つからないよ');
@@ -453,12 +453,12 @@ export default {
         return await handleApi(request, env, ctx);
       } catch (e) {
         console.error('api error', e && e.stack || e);
-        return err(500, 'サーバーで こまったことが おきたよ。あとで もういちど ためしてね');
+        return err(500, 'サーバーでこまったことがおきたよ。あとでもういちどためしてね');
       }
     }
     return serveAsset(request, env);
   },
-  // 毎日の そうじ（wrangler.jsonc の triggers.crons）
+  // 毎日のそうじ（wrangler.jsonc の triggers.crons）
   async scheduled(controller, env, ctx) {
     if (!env || !env.DB) return;
     const job = cleanup(env, (controller && controller.scheduledTime) || Date.now(), true);

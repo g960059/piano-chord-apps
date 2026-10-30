@@ -1,4 +1,4 @@
-// ホーム（index.html）が つかう きろく：PA.mountBar が 'visited' に ひらいた アプリを のこす
+// ホーム（index.html）がつかうきろく：PA.mountBar が 'visited' にひらいたアプリをのこす
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -7,7 +7,7 @@ import {fileURLToPath} from 'node:url';
 import {loadPA} from './_load.mjs';
 
 const root=path.join(path.dirname(fileURLToPath(import.meta.url)),'..');
-// 上のバーの 入れものだけ ある ふりを する
+// 上のバーの入れものだけあるふりをする
 const src='document.getElementById=function(){return {innerHTML:"",parentNode:null};};\n'+fs.readFileSync(path.join(root,'assets','core.js'),'utf8');
 
 test('PA.mountBar：visited・last-practice・last-learn',()=>{
@@ -20,20 +20,20 @@ test('PA.mountBar：visited・last-practice・last-learn',()=>{
   assert.ok(v['chord-quiz']>0);
   assert.equal(PA.store.get('last-practice',null).app,'chord-quiz');
   assert.equal(PA.store.get('last-learn',null).app,'chord-build');
-  // 目次に ない 名前・app の ない バーは のこさない
+  // 目次にない名前・app のないバーはのこさない
   PA.mountBar({title:'?',app:'nope'});
   PA.mountBar({title:'ホーム',back:'#'});
   assert.deepEqual(Object.keys(PA.store.get('visited',null)).sort(),['chord-build','chord-quiz']);
-  // こわれた きろくでも だいじょうぶ
+  // こわれたきろくでもだいじょうぶ
   PA.store.set('visited',[1,2]);
   PA.mountBar({title:'カデンツ',app:'cadence'});
   assert.deepEqual(Object.keys(PA.store.get('visited',null)),['cadence']);
 });
 
-test('index.html：目次は core の PA.UNITS・PA.APPS を つかう',()=>{
+test('index.html：目次は core の PA.UNITS・PA.APPS をつかう',()=>{
   const h=fs.readFileSync(path.join(root,'index.html'),'utf8');
-  assert.ok(!/const (CATS|TYPES)\s*=/.test(h),'ページの 中に 目次を もたない');
+  assert.ok(!/const (CATS|TYPES)\s*=/.test(h),'ページの中に目次をもたない');
   assert.match(h,/PA\.UNITS/); assert.match(h,/PA\.APP_TYPES/); assert.match(h,/PA\.weakSummary/);
-  assert.ok(!/\?\.|\?\?/.test(h.replace(/<style>[\s\S]*?<\/style>/,'')),'iOS 12 で うごかない ?. ?? を つかわない');
-  assert.ok(!/waon-kikiwake/.test(h),'外の ランキングの カードは もう ない');
+  assert.ok(!/\?\.|\?\?/.test(h.replace(/<style>[\s\S]*?<\/style>/,'')),'iOS 12でうごかない ?. ?? をつかわない');
+  assert.ok(!/waon-kikiwake/.test(h),'外のランキングのカードはもうない');
 });

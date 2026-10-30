@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- meta:start -->
-<meta name="description" content="ぜんぶの調の Ⅰ・Ⅳ・Ⅴ・Ⅴ7。かくして れんしゅうも">
+<meta name="description" content="ぜんぶの調のⅠ・Ⅳ・Ⅴ・Ⅴ7。かくしてれんしゅうも">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ピアノ和音アプリ">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="和音いちらん表｜ピアノ和音アプリ">
-<meta property="og:description" content="ぜんぶの調の Ⅰ・Ⅳ・Ⅴ・Ⅴ7。かくして れんしゅうも">
+<meta property="og:description" content="ぜんぶの調のⅠ・Ⅳ・Ⅴ・Ⅴ7。かくしてれんしゅうも">
 <meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/chord-table.html">
 <meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -27,13 +27,13 @@
 <title>和音いちらん表</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
-/* スマホ：調ごとに 1まい（上に調の名前、下に Ⅰ・Ⅳ・Ⅴ・Ⅴ7 の 4マス）。広い画面：左に調の名前 */
+/* スマホ：調ごとに1まい（上に調の名前、下にⅠ・Ⅳ・Ⅴ・Ⅴ7の4マス）。広い画面：左に調の名前 */
 .list{display:flex;flex-direction:column;gap:8px}
 .colhead,.krow{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}
 .colhead{position:sticky;top:calc(env(safe-area-inset-top,0px) + 56px);z-index:5;background:var(--bg);padding:6px 6px 4px}
 .colhead span{display:flex;align-items:center;justify-content:center;min-height:34px;border-radius:10px;background:var(--l);color:var(--d,var(--c));font-size:20px;font-weight:800;line-height:1}
 .colhead .k0{display:none}
-@media (max-height:500px) and (orientation:landscape){.colhead{top:calc(env(safe-area-inset-top,0px) + 46px)}} /* 横にした スマホは 上のバーが うすい */
+@media (max-height:500px) and (orientation:landscape){.colhead{top:calc(env(safe-area-inset-top,0px) + 46px)}} /* 横にしたスマホは上のバーがうすい */
 .krow{background:var(--card);border-radius:16px;padding:6px;box-shadow:0 2px 0 #eadfce,0 6px 18px rgba(80,60,30,.06)}
 .khead{grid-column:1/-1;display:flex;align-items:center;gap:8px;min-height:44px;padding:4px 8px;border-radius:10px;background:var(--soft2);text-align:left;line-height:1.25}
 .khead b{font-size:17px}
@@ -42,7 +42,7 @@
 .khead .go::after{content:" ›";font-size:18px}
 .cell{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:64px;padding:6px 2px;border-radius:12px;
   background:var(--l);color:var(--d,var(--c));border:2px solid transparent;font-weight:800;font-size:15px;line-height:1.3;text-align:center;min-width:0}
-/* 音の名前は 1つずつ たてに かさねる（いちばん低い音が 下＝楽譜と おなじ）。和音の とちゅうで 改行しない */
+/* 音の名前は1つずつたてにかさねる（いちばん低い音が下＝楽譜とおなじ）。和音のとちゅうで改行しない */
 .cell .ns{display:flex;flex-direction:column-reverse;align-items:center;line-height:1.2}
 .cell .ns>span{display:block;white-space:nowrap}
 .cell .ns>span>i{display:none}
@@ -53,12 +53,12 @@
 .toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .count{font-weight:700;font-size:15px}
 .actionbar .btn.wide{flex-grow:1.4}
-/* スマホでは「🐸 つくりかた」だけ（えらんだ マスは わくで わかる）。広い画面では「Ⅴ7 の」も 出す */
+/* スマホでは「🐸 つくりかた」だけ（えらんだマスはわくでわかる）。広い画面では「Ⅴ7の」も出す */
 .lbl-w{display:none}
 @media (min-width:420px){.lbl-w{display:inline}}
 .more ul{margin:0;padding-left:1.3em}
 .more li{margin:6px 0}
-/* 📖 ことばメモ（くわしく 知りたい人むけ。ふだんは とじておく） */
+/* 📖 ことばメモ（くわしく知りたい人むけ。ふだんはとじておく） */
 .terms dl{margin:0}
 .terms dt{font-weight:800;margin:12px 0 2px}
 .terms dt:first-child{margin-top:2px}
@@ -83,27 +83,27 @@
 <div class="actionbar" id="actions"></div>
 <script src="assets/core.js"></script>
 <script>
-/* 和音いちらん表：ぜんぶの調の Ⅰ・Ⅳ・Ⅴ・Ⅴ7。「かくして れんしゅう」では「？」をタップして こたえを たしかめる */
+/* 和音いちらん表：ぜんぶの調のⅠ・Ⅳ・Ⅴ・Ⅴ7。「かくしてれんしゅう」では「？」をタップしてこたえをたしかめる */
 const CHORDS={I:{deg:0,n:3,label:'Ⅰ'},IV:{deg:3,n:3,label:'Ⅳ'},V:{deg:4,n:3,label:'Ⅴ'},V7:{deg:4,n:4,label:'Ⅴ7'}};
 const CH=Object.keys(CHORDS);
-// 文字に つかう こい色（PA.COL の うすい 地の 上でも 読みやすい こさ）。わくや 地の 色は PA.COL のまま
+// 文字につかうこい色（PA.COL のうすい地の上でも読みやすいこさ）。わくや地の色は PA.COL のまま
 const DK={I:'#b8361f',IV:'#127048',V:'#1c5bb8',V7:'#6a32c0'};
 const colVars=ch=>`--c:${PA.COL[ch]};--l:${PA.LCOL[ch]};--d:${DK[ch]}`;
 const saved=PA.store.get('chord-table',{})||{};
-// ひらいた マスも おぼえておく（ほかのページへ 行って もどっても つづきから）
+// ひらいたマスもおぼえておく（ほかのページへ行ってもどってもつづきから）
 const okId=id=>typeof id==='string'&&/^[01]-(\d|1[0-2])-(I|IV|V|V7)$/.test(id);
-// えらんだ マス（{minor,i,ch}）も おぼえる。「和音のしくみ」から ‹ で もどっても えらんだまま
+// えらんだマス（{minor,i,ch}）もおぼえる。「和音のしくみ」から ‹ でもどってもえらんだまま
 const okSel=s=>!!s&&typeof s==='object'&&typeof s.minor==='boolean'&&Number.isInteger(s.i)&&s.i>=0&&s.i<PA.keyCount(s.minor)&&CH.includes(s.ch);
 const state={minor:!!saved.minor,hide:!!saved.hide,revealed:new Set((Array.isArray(saved.revealed)?saved.revealed:[]).filter(okId)),
   sel:okSel(saved.sel)?{minor:saved.sel.minor,i:saved.sel.i,ch:saved.sel.ch}:null};
 const save=()=>PA.store.set('chord-table',{minor:state.minor,hide:state.hide,revealed:[...state.revealed],sel:state.sel});
-// 「和音のしくみ」へ 行くとき、もどってきたら その マスまで スクロールする しるし（この タブの あいだだけ）
+// 「和音のしくみ」へ行くとき、もどってきたらそのマスまでスクロールするしるし（このタブのあいだだけ）
 const BACK_KEY='pianoapps.chord-table-back';
 const ss={get(){try{return JSON.parse(sessionStorage.getItem(BACK_KEY));}catch(e){return null;}},set(v){try{sessionStorage.setItem(BACK_KEY,JSON.stringify(v));}catch(e){}},
   clear(){try{sessionStorage.removeItem(BACK_KEY);}catch(e){}}};
-// リンクの key（M0〜M12・m0〜m12）と chord（I・IV・V・V7）：その 調の 表を 出して、chord が あれば その マスを えらぶ。ほかの 値は すてる。
-// 「もどる」で 来たときは つかわない（あとから えらんだ マスを そのままに）。
-// 「和音のしくみ」の ‹ は history.back() か、key の ない chord-table.html へ 行くので、URL に key が あれば いつも ほんとうの リンク
+// リンクの key（M0〜M12・m0〜m12）と chord（I・IV・V・V7）：その調の表を出して、chord があればそのマスをえらぶ。ほかの値はすてる。
+// 「もどる」で来たときはつかわない（あとからえらんだマスをそのままに）。
+// 「和音のしくみ」の ‹ は history.back() か、key のない chord-table.html へ行くので、URL に key があればいつもほんとうのリンク
 const linkSel=(function(){
   let back=false;
   try{const ne=performance.getEntriesByType&&performance.getEntriesByType('navigation')[0];back=ne?ne.type==='back_forward':!!(performance.navigation&&performance.navigation.type===2);}catch(e){}
@@ -112,13 +112,13 @@ const linkSel=(function(){
   if(!k) return null;
   const ch=CH.includes(p.chord)?p.chord:null;
   state.minor=k.minor;
-  // chord が ない（または まちがい）ときは その 調の Ⅰ を えらぶ（前の べつの 調の マスは のこさない）。🙈 かくす ときは えらばない
+  // chord がない（またはまちがい）ときはその調のⅠをえらぶ（前のべつの調のマスはのこさない）。🙈 かくすときはえらばない
   if(!state.hide) state.sel={minor:k.minor,i:k.idx,ch:ch||'I'};
   else if(state.sel&&(state.sel.minor!==k.minor||state.sel.i!==k.idx)) state.sel=null;
   save();
   return {i:k.idx,ch};
 })();
-const keyAt=(minor,i)=>PA.keyOf(minor,i,60); // 主音は ド4〜シ4（「和音のしくみ」と おなじ高さ）
+const keyAt=(minor,i)=>PA.keyOf(minor,i,60); // 主音はド4〜シ4（「和音のしくみ」とおなじ高さ）
 const chordTones=(key,ch)=>{const c=CHORDS[ch];return Array.from({length:c.n},(_,j)=>PA.at(key.scale,c.deg+2*j));};
 function chordSymT(t){
   const r=PA.LET_EN[t[0].letter]+PA.ACC[t[0].acc];
@@ -126,86 +126,86 @@ function chordSymT(t){
   return r+((t[1].midi-t[0].midi)===3?'m':'');
 }
 const chordSym=t=>PA.H(chordSymT(t));
-// 音の名前は 名前の とちゅうで 改行しないように 1つずつ まとめる
+// 音の名前は名前のとちゅうで改行しないように1つずつまとめる
 const namesCell=t=>t.map((n,j)=>`<span>${PA.nmH(n)}${j<t.length-1?'<i>・</i>':''}</span>`).join('');
 const cellId=(minor,i,ch)=>`${minor?1:0}-${i}-${ch}`;
 const total=()=>PA.keyCount(state.minor)*CH.length;
 const openedCount=()=>{let n=0;state.revealed.forEach(id=>{if(id.startsWith((state.minor?1:0)+'-'))n++;});return n;};
 
-/* 📖 ことばメモ：本や 楽譜で 見かける 名前を やさしく。れいは えらんだ マスの 調（なければ いちばん上の 調）。かくして れんしゅう中は れいを 出さない */
+/* 📖 ことばメモ：本や楽譜で見かける名前をやさしく。れいはえらんだマスの調（なければいちばん上の調）。かくしてれんしゅう中はれいを出さない */
 const yomi=(w,y)=>`<ruby>${w}<rt>${y}</rt></ruby>`; // ふりがな
 function termsHTML(minor,sel,hide){
   const i=sel&&sel.minor===minor?sel.i:0, k=keyAt(minor,i);
   const ex=CH.map(ch=>`${CHORDS[ch].label} <b class="nw">${chordSym(chordTones(k,ch))}</b>`).join('・');
   const si={letter:6,acc:0}, sif={letter:6,acc:-1};
-  const br=n=>PA.settings.naming==='en'?PA.LET_SOLFA[n.letter]+PA.ACC[n.acc]:PA.nmH(n); // en のときは ドレミで そえる（B（B）に ならないように）
+  const br=n=>PA.settings.naming==='en'?PA.LET_SOLFA[n.letter]+PA.ACC[n.acc]:PA.nmH(n); // en のときはドレミでそえる（B（B）にならないように）
   const c7=[{letter:0,acc:0},{letter:2,acc:0},{letter:4,acc:0},{letter:6,acc:-1}].map(br).join('・');
-  return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や 楽譜で 見かける 名前）</summary><dl>
-    <dt>${yomi('主要三和音','しゅよう さんわおん')}</dt>
-    <dd>Ⅰ・Ⅳ・Ⅴ の 3つを まとめた よびかた。いちばん よく つかう 和音で、3つ あわせると 音階の 7つの音が ぜんぶ 出てくる。</dd>
-    <dt>${yomi('主和音','しゅわおん')}・${yomi('下属和音','かぞくわおん')}・${yomi('属和音','ぞくわおん')}・${yomi('属七の和音','ぞくしちの わおん')}</dt>
-    <dd>Ⅰ・Ⅳ・Ⅴ・Ⅴ7 の べつの よびかた（じゅんばんに）。</dd>
+  return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や楽譜で見かける名前）</summary><dl>
+    <dt>${yomi('主要三和音','しゅようさんわおん')}</dt>
+    <dd>Ⅰ・Ⅳ・Ⅴの3つをまとめたよびかた。いちばんよくつかう和音で、3つあわせると音階の7つの音がぜんぶ出てくる。</dd>
+    <dt>${yomi('主和音','しゅわおん')}・${yomi('下属和音','かぞくわおん')}・${yomi('属和音','ぞくわおん')}・${yomi('属七の和音','ぞくしちのわおん')}</dt>
+    <dd>Ⅰ・Ⅳ・Ⅴ・Ⅴ7のべつのよびかた（じゅんばんに）。</dd>
     <dt>コードネーム</dt>
-    <dd>いちばん下の音（根音）の 英語の 名前（C D E F G A B）と、ひびきの しるし。<ul>
-      <li><b>C</b>（文字だけ）… 明るい ひびきの 和音（メジャー）</li>
-      <li><b>Cm</b> … さびしい ひびきの 和音（マイナー）</li>
-      <li><b>C7</b> … ひとつとばしで もう1つ 音を のせた 4つの音の 和音（<span class="nw">${c7}</span>）。Ⅴ7 と おなじ かたち。</li>
+    <dd>いちばん下の音（根音）の英語の名前（C D E F G A B）と、ひびきのしるし。<ul>
+      <li><b>C</b>（文字だけ）… 明るいひびきの和音（メジャー）</li>
+      <li><b>Cm</b> … さびしいひびきの和音（マイナー）</li>
+      <li><b>C7</b> … ひとつとばしでもう1つ音をのせた4つの音の和音（<span class="nw">${c7}</span>）。Ⅴ7とおなじかたち。</li>
     </ul></dd>
-    <dt>ローマ数字 と コードネーム の ちがい</dt>
-    <dd>ローマ数字（Ⅰ・Ⅳ・Ⅴ）は <b>調の 中で なんばんめ か</b>、コードネームは <b>音 そのもの</b>。おなじ G でも ハ長調では Ⅴ、ト長調では Ⅰ。<ul>
-      <li>長調の Ⅰ・Ⅳ・Ⅴ は どれも メジャー（明るい ひびき）。</li>
-      <li>短調の Ⅰ・Ⅳ は マイナー（m）。Ⅴ は 7ばんめの音を 半音上げるので メジャー。</li>
+    <dt>ローマ数字とコードネームのちがい</dt>
+    <dd>ローマ数字（Ⅰ・Ⅳ・Ⅴ）は<b>調の中でなんばんめか</b>、コードネームは<b>音そのもの</b>。おなじ G でもハ長調ではⅤ、ト長調ではⅠ。<ul>
+      <li>長調のⅠ・Ⅳ・Ⅴはどれもメジャー（明るいひびき）。</li>
+      <li>短調のⅠ・Ⅳはマイナー（m）。Ⅴは7ばんめの音を半音上げるのでメジャー。</li>
       ${hide?'':`<li>れい：${PA.keyName(k)} → ${ex}</li>`}
-      ${hide?'':`<li>調の 名前の よこの ${PA.keyEn(k)} なども、その調の Ⅰ の コードネームと おなじ 書きかた。</li>`}
+      ${hide?'':`<li>調の名前のよこの${PA.keyEn(k)}なども、その調のⅠのコードネームとおなじ書きかた。</li>`}
     </ul></dd>
-    <dt>ドイツ語の 音の名前</dt>
-    <dd>クラシックの 本では ドイツ語の 名前も 出てくる。英語の <b>B</b>（${br(si)}）を <b>H</b>（ハー）、<b>B♭</b>（${br(sif)}）を <b>B</b>（ベー）と よぶので 気をつけよう。</dd>
+    <dt>ドイツ語の音の名前</dt>
+    <dd>クラシックの本ではドイツ語の名前も出てくる。英語の<b>B</b>（${br(si)}）を<b>H</b>（ハー）、<b>B♭</b>（${br(sif)}）を<b>B</b>（ベー）とよぶので気をつけよう。</dd>
   </dl></details>`;
 }
-/* 🎯 和音クイズで 5もん。えらんだ マスが あれば その 調で（なければ 調は クイズの せっていの まま） */
+/* 🎯 和音クイズで5もん。えらんだマスがあればその調で（なければ調はクイズのせっていのまま） */
 function tryHTML(minor,sel){
   const k=sel&&sel.minor===minor?keyAt(minor,sel.i):null;
   return PA.tryHTML({to:'chord-quiz',params:{key:k?PA.keyDeck.id(minor,sel.i):null,n:5},
-    title:k?`<span class="nw">${PA.keyName(k)}の</span> 和音を クイズで ためそう`:'和音クイズで ためしてみよう',
-    sub:k?`${PA.keyName(k)}の 和音を 5もん。表を 見ないで こたえられるかな？`:'表の 和音を 5もん。マスを えらぶと その 調で れんしゅう できるよ。',
-    btn:'🎯 5もん ためす'});
+    title:k?`<span class="nw">${PA.keyName(k)}の</span>和音をクイズでためそう`:'和音クイズでためしてみよう',
+    sub:k?`${PA.keyName(k)}の和音を5もん。表を見ないでこたえられるかな？`:'表の和音を5もん。マスをえらぶとその調でれんしゅうできるよ。',
+    btn:'🎯 5もんためす'});
 }
 function render(){
   const minor=state.minor, n=PA.keyCount(minor), flatFrom=minor?PA.MINOR_FLAT_FROM:PA.MAJOR_FLAT_FROM, sel=state.sel;
   let h=`<div class="stack">
     ${PA.seg('mode',[['0','☀️ 長調'],['1','🌙 短調']],minor?'1':'0','full')}
     <div class="msg">${state.hide
-      ?'🙈「？」をタップすると こたえが出るよ。言えたら タップして たしかめよう！'
-      :'マスをタップすると 音が出るよ。えらんだ マスの 作り方は <b>🐸 つくりかた</b> で 見られるよ。調の名前をタップすると その調の「和音のしくみ」へ。'}</div>`;
-  if(state.hide) h+=`<div class="toprow"><span class="count">ひらいた マス：${openedCount()} / ${total()}</span></div>`;
-  h+=`<div class="list" role="list" aria-label="${minor?'短調':'長調'}の いちらん表">
+      ?'🙈「？」をタップするとこたえが出るよ。言えたらタップしてたしかめよう！'
+      :'マスをタップすると音が出るよ。えらんだマスの作り方は<b>🐸 つくりかた</b>で見られるよ。調の名前をタップするとその調の「和音のしくみ」へ。'}</div>`;
+  if(state.hide) h+=`<div class="toprow"><span class="count">ひらいたマス：${openedCount()} / ${total()}</span></div>`;
+  h+=`<div class="list" role="list" aria-label="${minor?'短調':'長調'}のいちらん表">
     <div class="colhead" aria-hidden="true"><span class="k0">調</span>${CH.map(k=>`<span style="${colVars(k)}">${CHORDS[k].label}</span>`).join('')}</div>`;
   for(let i=0;i<n;i++){
     if(i===0) h+=`<div class="sep">調号なし・♯の調</div>`;
     if(i===flatFrom) h+=`<div class="sep">♭の調</div>`;
     const k=keyAt(minor,i);
     const kin=`<b>${PA.keyName(k)}</b><span class="ks">${PA.keyEn(k)}・${PA.sigLabel(k)}</span>`;
-    // かくして れんしゅう中は 調の名前を おしても ほかのページへ 行かない（まちがって さわっても だいじょうぶ）
+    // かくしてれんしゅう中は調の名前をおしてもほかのページへ行かない（まちがってさわってもだいじょうぶ）
     h+=`<div class="krow" role="listitem">${state.hide
       ?`<div class="khead">${kin}</div>`
-      :`<button class="khead" data-act="tkey" data-v="${i}" aria-label="${PA.keyName(k)}を 和音のしくみで ひらく">${kin}<span class="go">しくみ</span></button>`}`;
+      :`<button class="khead" data-act="tkey" data-v="${i}" aria-label="${PA.keyName(k)}を和音のしくみでひらく">${kin}<span class="go">しくみ</span></button>`}`;
     CH.forEach(ch=>{
       const id=cellId(minor,i,ch), t=chordTones(k,ch);
-      if(state.hide&&!state.revealed.has(id)) h+=`<button class="cell hid" data-act="cell" data-v="${i}|${ch}" aria-label="${PA.keyName(k)}の ${CHORDS[ch].label}（かくれている）">？</button>`;
+      if(state.hide&&!state.revealed.has(id)) h+=`<button class="cell hid" data-act="cell" data-v="${i}|${ch}" aria-label="${PA.keyName(k)}の${CHORDS[ch].label}（かくれている）">？</button>`;
       else{
         const on=!state.hide&&sel&&sel.minor===minor&&sel.i===i&&sel.ch===ch;
-        h+=`<button class="cell${on?' sel':''}" style="${colVars(ch)}" data-act="cell" data-v="${i}|${ch}" aria-pressed="${!!on}" aria-label="${PA.keyName(k)}の ${CHORDS[ch].label}：${PA.namesT(t,'、')}（${chordSymT(t)}）"><span class="ns">${namesCell(t)}</span><small>${chordSym(t)}</small></button>`;
+        h+=`<button class="cell${on?' sel':''}" style="${colVars(ch)}" data-act="cell" data-v="${i}|${ch}" aria-pressed="${!!on}" aria-label="${PA.keyName(k)}の${CHORDS[ch].label}：${PA.namesT(t,'、')}（${chordSymT(t)}）"><span class="ns">${namesCell(t)}</span><small>${chordSym(t)}</small></button>`;
       }
     });
     h+=`</div>`;
   }
   h+=`</div>
-    <details class="more"><summary>💡 表の 見かた</summary><ul>
-      <li><b>Ⅰ・Ⅳ・Ⅴ</b> は、音階の <b>1・4・5ばんめ</b> の音から <b>ひとつとばし</b>で 3つ かさねた和音。</li>
-      <li><b>Ⅴ7</b> は、Ⅴ に もうひとつ とばして のせた <b>4つの音</b>。</li>
-      <li>マスの下の 小さな字は <b>コードネーム</b>（Am の m は さびしいひびきの「マイナー」）。</li>
-      <li>🌙 <b>短調の Ⅴ・Ⅴ7</b> は、7ばんめの音を <b>半音上げる</b>。だから 短調でも Ⅴ は 明るいひびき。</li>
-      <li>🙈 <b>かくして れんしゅう</b>：「？」の 和音を 先に 声に出して 言ってから タップ。音と 名前で たしかめよう。</li>
+    <details class="more"><summary>💡 表の見かた</summary><ul>
+      <li><b>Ⅰ・Ⅳ・Ⅴ</b>は、音階の<b>1・4・5ばんめ</b>の音から<b>ひとつとばし</b>で3つかさねた和音。</li>
+      <li><b>Ⅴ7</b>は、Ⅴにもうひとつとばしてのせた<b>4つの音</b>。</li>
+      <li>マスの下の小さな字は<b>コードネーム</b>（Am の m はさびしいひびきの「マイナー」）。</li>
+      <li>🌙 <b>短調のⅤ・Ⅴ7</b>は、7ばんめの音を<b>半音上げる</b>。だから短調でもⅤは明るいひびき。</li>
+      <li>🙈 <b>かくしてれんしゅう</b>：「？」の和音を先に声に出して言ってからタップ。音と名前でたしかめよう。</li>
     </ul></details>
     ${termsHTML(minor,sel,state.hide)}
     ${tryHTML(minor,sel)}
@@ -213,17 +213,17 @@ function render(){
   PA.paint(document.getElementById('view'),h,'table:'+minor);
   const hasSel=!!(sel&&sel.minor===minor);
   PA.paint(document.getElementById('actions'),state.hide
-    ?`<button class="btn" data-act="thide">👀 ぜんぶ見せる</button><button class="btn primary wide" data-act="treset">🔄 もういちど かくす</button>`
-    :`<button class="btn primary wide" data-act="thide">🙈 かくして れんしゅう</button><button class="btn night" data-act="tbuild" ${hasSel?'':'disabled'} aria-label="${hasSel?PA.keyName(keyAt(sel.minor,sel.i))+'の '+CHORDS[sel.ch].label+'の ':''}つくりかたを見る">🐸 ${hasSel?`<span class="lbl-w">${CHORDS[sel.ch].label} の </span>`:''}つくりかた</button>`,'bar');
+    ?`<button class="btn" data-act="thide">👀 ぜんぶ見せる</button><button class="btn primary wide" data-act="treset">🔄 もういちどかくす</button>`
+    :`<button class="btn primary wide" data-act="thide">🙈 かくしてれんしゅう</button><button class="btn night" data-act="tbuild" ${hasSel?'':'disabled'} aria-label="${hasSel?PA.keyName(keyAt(sel.minor,sel.i))+'の'+CHORDS[sel.ch].label+'の ':''}つくりかたを見る">🐸 ${hasSel?`<span class="lbl-w">${CHORDS[sel.ch].label}の</span>`:''}つくりかた</button>`,'bar');
 }
 
-/* ほかのページを ひらく：「和音のしくみ」の 状態を 先に 書いておく */
+/* ほかのページをひらく：「和音のしくみ」の状態を先に書いておく */
 function openBuild(minor,i,ch,auto){
   const cb=PA.store.get('chord-build',{})||{};
   PA.store.set('chord-build',{minor,keyIdx:i,chord:ch,speed:cb.speed==='slow'?'slow':'normal'});
   PA.store.set('chord-build-auto',!!auto);
   ss.set({minor,i,ch});
-  PA.go('chord-build.html'); // ‹ で この表に もどれる
+  PA.go('chord-build.html'); // ‹ でこの表にもどれる
 }
 
 /* ===== 操作 ===== */
@@ -248,13 +248,13 @@ document.addEventListener('click',e=>{
   }
   else if(a==='tbuild'){const s=state.sel;if(s) openBuild(s.minor,s.i,s.ch,true);}
 });
-// 「もどる」で 画面が そのまま もどってきたとき（bfcache）は スクロールも そのままなので しるしだけ けす
+// 「もどる」で画面がそのままもどってきたとき（bfcache）はスクロールもそのままなのでしるしだけけす
 PA.onPageShow=()=>ss.clear();
 render();
-// 「和音のしくみ」から もどってきたら、ひらいていた マスを まん中に
+// 「和音のしくみ」からもどってきたら、ひらいていたマスをまん中に
 (function(){
   const b=ss.get(); ss.clear();
-  if(linkSel){ // リンクで 来た：その 調の 行（chord が あれば その マス）を まん中に
+  if(linkSel){ // リンクで来た：その調の行（chord があればそのマス）をまん中に
     const c=document.querySelector(`[data-act="cell"][data-v="${linkSel.i}|${linkSel.ch||'I'}"]`);
     if(c&&c.scrollIntoView) c.scrollIntoView({block:'center'});
     return;

@@ -16,9 +16,9 @@ const SRC=fs.readFileSync(path.join(dir,'..','assets','ear-game.js'),'utf8');
 const {TYPE_IDS,LEVELS,MAX_LEVEL,CHALLENGE,mulberry32,voiceSeed,nextType,remember,newChallenge,applyAnswer,simulate,createRun,
   scoreKey,rankLevel,compareResults,checkName,normalizeName,weekId,jstDay,makeNickname,NICK_ADJ,NICK_ANIMAL,isTypeId}=EG;
 
-/* ===== ear.html の 画面の しくみ（「ここから test/ear.test.mjs も よむ」〜「ここまで」） ===== */
+/* ===== ear.html の 画面の しくみ（「ここから test/ear.test.mjs もよむ」〜「ここまで」） ===== */
 const html=fs.readFileSync(path.join(dir,'..','ear.html'),'utf8');
-const A=html.indexOf('/* ===== ここから test/ear.test.mjs も よむ'), B=html.indexOf('/* ===== ここまで ===== */');
+const A=html.indexOf('/* ===== ここから test/ear.test.mjs もよむ'), B=html.indexOf('/* ===== ここまで ===== */');
 const PA=loadPA();
 const E=vm.runInContext(html.slice(A,B)+';({T,ORDER,LEVELS,MAXLV,makeQ,makeQOf,validQ,replaysOf})',vm.createContext({PA}));
 const J=x=>JSON.parse(JSON.stringify(x));
