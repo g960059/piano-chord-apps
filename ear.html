@@ -464,7 +464,8 @@ function chRestore(c){
   if(!ok||c.startedAt>Date.now()+6e4||Date.now()-c.startedAt>RUN_KEEP) return;
   if(c.phase==='result'&&!c.answers.length) return;
   const rb=rebuildRun(c.seed,c.answers);
-  Object.assign(ch,{voice:c.voice==='piano'?'piano':'synth',runId:c.offline?null:c.runId,seed:c.seed, // 音色のない前の版の記録は合成の音だったoffline:c.offline,offWhy:c.offline?(c.offWhy==='time'||c.offWhy==='busy'?c.offWhy:'net'):'',startedAt:c.startedAt,
+  // 音色のない前の版の記録は、合成の音で鳴らしていた
+  Object.assign(ch,{voice:c.voice==='piano'?'piano':'synth',runId:c.offline?null:c.runId,seed:c.seed,offline:c.offline,offWhy:c.offline?(c.offWhy==='time'||c.offWhy==='busy'?c.offWhy:'net'):'',startedAt:c.startedAt,
     run:rb.run,vrng:rb.vrng,heard:false,event:null,capped:false,q:null,answer:null,left:null,resShown:false,
     newBest:c.newBest===true,endedEarly:c.endedEarly===true,sending:false,sendError:null,submitted:null,closed:null});
   const st=rb.run.state;
@@ -527,12 +528,18 @@ function newEar(){
 }
 // チャレンジがピアノではじまったのに、まだ録音が読めていない（とちゅうでページをひらきなおした）：読めるのをまってから鳴らす。
 // 読めなければ、このチャレンジはさいごまで合成の音にする（あとから読めてもかえない）
+// まっているあいだは「もういちどきく」をうけつけない（回数だけへって鳴らないことがないように）。鳴らすのは、さいごにたのんだ音だけ
+let chWait=null;
+const chWaiting=()=>!!chWait;
 function chVoiceThen(fn){
   if(state.mode!=='ch'||ch.phase!=='play'||ch.voice!=='piano'||PA.pianoReady()){fn();return;}
-  const q=state.q, g=PA.soundGen();
+  const first=!chWait;
+  chWait={fn,q:state.q,g:PA.soundGen()};
+  if(!first) return;
   PA.loadPiano().then(ok=>{
+    const w=chWait; chWait=null;
     if(!ok){ch.voice='synth';save();render();}
-    if(state.q===q&&state.mode==='ch'&&PA.soundGen()===g) fn(); // そのあいだに音をとめた・つぎへすすんだときは鳴らさない
+    if(w&&state.q===w.q&&state.mode==='ch'&&PA.soundGen()===w.g) w.fn(); // そのあいだに音をとめた・つぎへすすんだときは鳴らさない
   });
 }
 function playEar(arp=false){
@@ -1106,7 +1113,7 @@ document.addEventListener('click',e=>{
   else if(a==='chstart'){if(state.mode!=='ch'||ch.phase==='play'||ch.phase==='connecting'||unsent()) return;chConnect();}
   else if(a==='choff'){if(state.mode!=='ch'||ch.phase!=='offline') return;chBegin(null,randomSeed(),true);}
   else if(a==='chhear'){
-    if(state.mode!=='ch'||ch.phase!=='play'||!state.q||ch.heard) return;
+    if(state.mode!=='ch'||ch.phase!=='play'||!state.q||ch.heard||chWaiting()) return;
     if(!PA.settings.sound){PA.announce('音がオフだよ');return;} // 鳴らないのに「きいた」にしない
     ch.heard=true; state.askedAt=Date.now(); save(); render(); playEar(!!LEVELS[state.q.lv].arp);
     reveal(document.querySelector('#view .echoices'),document.querySelector('#view .hero'));
@@ -1149,7 +1156,7 @@ document.addEventListener('click',e=>{
     ask();
   }
   else if(a==='eplay'||a==='earp'){
-    if(!state.q||waitHear()) return;
+    if(!state.q||waitHear()||chWaiting()) return;
     // 「つぎ」の2どおしで、その場所に出たボタンがおされて回数がへらないように
     if(!state.answer&&Date.now()-(state.askedAt||0)<600) return;
     // 音がオフのときは鳴らないので、のこりの回数はへらさない（「🔇 音がオフだよ」はいつも出ている）
