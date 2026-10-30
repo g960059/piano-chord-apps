@@ -197,14 +197,16 @@ PA.sigLabel=k=>{const s=PA.sigInfo(k);return s.letters.length?(s.type>0?'♯':'�
  * ピアノの録音（assets/piano/）を鳴らす。録音がまだ読めていない・読めないとき、
  * または せってい で「シンプルな音」をえらんだときは、合成の音（三角波＋サイン波）。
  * 録音：Salamander Grand Piano V3（Yamaha C5、Alexander Holm、CC BY 3.0）を Tone.js が公開している版（3半音おき・30こ）。
- *       tools/trim-piano.mjs で、はじめの5.3秒だけに切っている（音はもとのまま）。
+ *       tools/trim-piano.mjs で、はじめの6.3秒だけに切っている（音はもとのまま）。
  * 高さ：いちばん近い録音を再生速度でずらす。録音のピアノ全体のずれ（PIANO.cents）を直して、A4＝基準ピッチの平均律にそろえる。
  *       （高い音・低い音の少しのずれは、ほんとうのピアノと同じにのこす） */
-let actx=null,master=null;
+let actx=null,master=null,soundGen=0;
 const voices=new Set();
+// PA.stopSound のたびにふえる。あとで鳴らす予定の音（録音を読みおわってから鳴らす音など）は、ふえていたら鳴らさない
+PA.soundGen=()=>soundGen;
 const PIANO=PA.PIANO={
   base:(()=>{try{return new URL('piano/',document.currentScript.src).href;}catch(e){return 'assets/piano/';}})(),
-  keep:5,     // 鳴りはじめから何秒まで使うか（いちばん長い音3秒＋はなしたあとの余韻。それより長い音は自然に小さくなる）
+  keep:6,     // 鳴りはじめから何秒まで使うか（伴奏づけのおそいテンポの長い音＝約5.2秒まで。それより長い音は自然に小さくなる）
   cents:3.6,  // 録音のピアノ全体の高さのずれ（ド3〜ド6の、A4＝440Hz の平均律からのずれの中央値。聴き比べページではかった）
   gain:0.86,  // ド4の最初の1秒の大きさを、合成の音にそろえる
   notes:[]
@@ -240,7 +242,7 @@ PA.loadPiano=()=>{
     .catch(()=>{pianoLoading=null;pianoFailAt=Date.now();return false;});
   return pianoLoading;
 };
-// いま鳴らす音色：'piano'｜'synth'。lockVoice＝チャレンジのとちゅうで音色がかわらないようにとめる（null で とく）
+// いま鳴らす音色：'piano'｜'synth'。lockVoice＝チャレンジの画面で、はじめた時の音色にとめる（null で とく）
 let voiceLock=null;
 PA.voice=()=>{const v=voiceLock||S.voice;return v==='piano'&&pianoBufs?'piano':'synth';};
 PA.lockVoice=v=>{voiceLock=v==='piano'||v==='synth'?v:null;if(voiceLock==='piano') PA.loadPiano();return voiceLock;};
@@ -261,14 +263,16 @@ PA.audio=()=>{
 PA.audioRunning=()=>!!(actx&&actx.state==='running');
 ['pointerup','touchend','click','keydown'].forEach(t=>document.addEventListener(t,()=>{if(S.sound)PA.audio();},{capture:true,passive:true}));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&actx&&actx.state!=='running'&&actx.state!=='closed')actx.resume().catch(()=>{});});
-// ページをひらいたら、さわる前に録音を読んでおく（さいしょの音からピアノになるように）
-if(typeof window.addEventListener==='function') window.addEventListener('load',()=>{if(S.sound&&wantPiano()) PA.loadPiano();});
+// ページをひらいたら、さわる前に録音を読んでおく（さいしょの音からピアノになるように）。音を鳴らさないページ（<body data-nosound>）では読まない
+if(typeof window.addEventListener==='function') window.addEventListener('load',()=>{if(S.sound&&wantPiano()&&!(document.body&&document.body.hasAttribute&&document.body.hasAttribute('data-nosound'))) PA.loadPiano();});
 const pianoNote=(ac,midi,t,dur,vel)=>{
   const s=PA.pianoNearest(pianoBufs,midi), src=ac.createBufferSource(), g=ac.createGain(), a=vel/0.22*PIANO.gain;
   src.buffer=s.buf; src.playbackRate.value=PA.pianoRate(midi,s.midi,S.pitchA);
   g.gain.setValueAtTime(a,t);
-  g.gain.setValueAtTime(a,t+dur); g.gain.setTargetAtTime(0.0001,t+dur,0.09); // 鍵盤をはなす（ダンパー）
-  src.connect(g); g.connect(master); src.start(t); src.stop(t+dur+0.7);
+  // 鍵盤をはなす（ダンパー）。合成の音と同じく、dur でほぼ消えているようにする（つぎの和音とかさならない）
+  const off=Math.max(t+0.05,t+dur-0.15);
+  g.gain.setValueAtTime(a,off); g.gain.setTargetAtTime(0.0001,off,0.05);
+  src.connect(g); g.connect(master); src.start(t); src.stop(t+dur+0.3);
   const voice={os:[src],g,t0:t}; voices.add(voice);
   src.onended=()=>{try{src.disconnect();g.disconnect();}catch(e){}voices.delete(voice);};
 };
@@ -297,6 +301,7 @@ PA.playNote=(midi,when=0,dur=1.6,vel=0.22)=>{
   });
 };
 PA.stopSound=()=>{
+  soundGen++;
   if(actx){
     const t=actx.currentTime;
     voices.forEach(v=>{try{
@@ -613,7 +618,13 @@ PA.openSettings=()=>{
     if(t.id==='pa-naming') S.naming=t.value;
     if(t.id==='pa-pitch'){S.pitchA=+t.value;PA.playNote(69,0,1.6,0.25);}
     if(t.id==='pa-sound'){S.sound=t.value==='1';if(!S.sound)PA.stopSound();}
-    if(t.id==='pa-voice'){S.voice=t.value;PA.stopSound();if(S.voice==='piano') PA.loadPiano().then(()=>PA.playNote(60,0,1.6,0.25)); else PA.playNote(60,0,1.6,0.25);}
+    if(t.id==='pa-voice'){
+      S.voice=t.value;PA.stopSound();
+      // ためしの音。録音を読むあいだに、とじた・音をとめた・音色をかえたときは鳴らさない
+      const g=soundGen;
+      if(S.voice==='piano') PA.loadPiano().then(()=>{if(g===soundGen&&isOpen(el)&&S.voice==='piano') PA.playNote(60,0,1.6,0.25);});
+      else PA.playNote(60,0,1.6,0.25);
+    }
     PA.saveSettings(); updateSoundBar(); if(PA.onSettings) PA.onSettings();
   };
 };

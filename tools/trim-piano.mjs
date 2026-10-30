@@ -4,13 +4,13 @@
 // - もとの音：Salamander Grand Piano V3（Yamaha C5、Alexander Holm、CC BY 3.0）を Tone.js が公開している版
 //   https://tonejs.github.io/audio/salamander/ の A0.mp3〜C8.mp3（3半音おき・30こ）
 // - 音はつくりなおさない（-c copy：mp3 のフレームのさかいで切るだけ）ので、音はもとのまま
-// - アプリで使うのは鳴りはじめから5秒まで（core.js の PIANO.keep）。頭の無音（〜20ms）があるので少し長めに切る
+// - アプリで使うのは鳴りはじめから6秒まで（core.js の PIANO.keep）。頭の無音（〜20ms）と、上にずらして速く鳴らす分があるので少し長めに切る
 import fs from 'node:fs';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 
-const SEC='5.3';
+const SEC='6.3';
 const src=process.argv[2];
 if(!src){console.error('つかいかた: node tools/trim-piano.mjs <もとの mp3 のフォルダ>');process.exit(1);}
 const out=path.join(path.dirname(fileURLToPath(import.meta.url)),'..','assets','piano');

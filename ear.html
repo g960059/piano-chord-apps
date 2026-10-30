@@ -464,7 +464,7 @@ function chRestore(c){
   if(!ok||c.startedAt>Date.now()+6e4||Date.now()-c.startedAt>RUN_KEEP) return;
   if(c.phase==='result'&&!c.answers.length) return;
   const rb=rebuildRun(c.seed,c.answers);
-  Object.assign(ch,{voice:PA.lockVoice(c.voice==='synth'?'synth':'piano'),runId:c.offline?null:c.runId,seed:c.seed,offline:c.offline,offWhy:c.offline?(c.offWhy==='time'||c.offWhy==='busy'?c.offWhy:'net'):'',startedAt:c.startedAt,
+  Object.assign(ch,{voice:c.voice==='piano'?'piano':'synth',runId:c.offline?null:c.runId,seed:c.seed, // 音色のない前の版の記録は合成の音だったoffline:c.offline,offWhy:c.offline?(c.offWhy==='time'||c.offWhy==='busy'?c.offWhy:'net'):'',startedAt:c.startedAt,
     run:rb.run,vrng:rb.vrng,heard:false,event:null,capped:false,q:null,answer:null,left:null,resShown:false,
     newBest:c.newBest===true,endedEarly:c.endedEarly===true,sending:false,sendError:null,submitted:null,closed:null});
   const st=rb.run.state;
@@ -485,7 +485,7 @@ function chRestore(c){
   }
 }
 function chClear(){
-  Object.assign(ch,{voice:PA.lockVoice(null),phase:'intro',runId:null,seed:0,offline:false,offWhy:'',startedAt:0,run:null,vrng:null,heard:false,event:null,capped:false,
+  Object.assign(ch,{voice:null,phase:'intro',runId:null,seed:0,offline:false,offWhy:'',startedAt:0,run:null,vrng:null,heard:false,event:null,capped:false,
     q:null,answer:null,left:null,resShown:false,connectError:'',connectBusy:false,newBest:false,endedEarly:false,sending:false,sendError:null,submitted:null,closed:null});
   if(state.mode==='ch'){state.q=null;state.answer=null;state.left=null;state.resShown=false;}
 }
@@ -525,9 +525,19 @@ function newEar(){
   state.q=makeQ(lv,state.q&&state.q.type,state.mode);
   state.answer=null; state.resShown=false; state.left=replaysOf(lv,state.mode); state.hinted=false; state.qn++; save();
 }
+// チャレンジがピアノではじまったのに、まだ録音が読めていない（とちゅうでページをひらきなおした）：読めるのをまってから鳴らす。
+// 読めなければ、このチャレンジはさいごまで合成の音にする（あとから読めてもかえない）
+function chVoiceThen(fn){
+  if(state.mode!=='ch'||ch.phase!=='play'||ch.voice!=='piano'||PA.pianoReady()){fn();return;}
+  const q=state.q, g=PA.soundGen();
+  PA.loadPiano().then(ok=>{
+    if(!ok){ch.voice='synth';save();render();}
+    if(state.q===q&&state.mode==='ch'&&PA.soundGen()===g) fn(); // そのあいだに音をとめた・つぎへすすんだときは鳴らさない
+  });
+}
 function playEar(arp=false){
   const q=state.q; if(!q) return;
-  PA.stopSound(); PA.chord(q.notes.map(n=>n.midi),arp?{arp:true}:{dur:2.2});
+  PA.stopSound(); chVoiceThen(()=>PA.chord(q.notes.map(n=>n.midi),arp?{arp:true}:{dur:2.2}));
 }
 // 問題の和音とおなじ高さで解決する：鳴っている1つ1つの音が、そのオクターブのままとなりの音へすすむ
 function resInfo(){
@@ -538,7 +548,7 @@ function resInfo(){
 }
 function playRes(){
   const q=state.q, res=resInfo(); if(!res) return;
-  PA.stopSound(); PA.chord(q.notes.map(n=>n.midi),{dur:1.3}); PA.chord(res.map(n=>n.midi),{when:1.25,dur:2.2});
+  PA.stopSound(); chVoiceThen(()=>{PA.chord(q.notes.map(n=>n.midi),{dur:1.3}); PA.chord(res.map(n=>n.midi),{when:1.25,dur:2.2});});
 }
 
 /* ===== ランキングのサーバー（/api/*。ないところ＝file://・ふつうの静的サーバーでは「オフライン」） ===== */
@@ -620,8 +630,8 @@ function chConnect(){
 }
 function chBegin(runId,seed,offline){
   const rb=rebuildRun(seed,[]);
-  // とちゅうでピアノの録音が読めても音色がかわらないように、はじめた時の音色でとめる
-  Object.assign(ch,{phase:'play',voice:PA.lockVoice(PA.voice()),runId,seed,offline,offWhy:offline?(ch.connectBusy?'busy':'net'):'',startedAt:Date.now(),run:rb.run,vrng:rb.vrng,connectError:'',connectBusy:false,
+  // とちゅうでピアノの録音が読めても音色がかわらないように、はじめた時の音色でさいごまで鳴らす（render で PA.lockVoice）
+  Object.assign(ch,{phase:'play',voice:PA.voice(),runId,seed,offline,offWhy:offline?(ch.connectBusy?'busy':'net'):'',startedAt:Date.now(),run:rb.run,vrng:rb.vrng,connectError:'',connectBusy:false,
     newBest:false,endedEarly:false,sending:false,sendError:null,submitted:null,closed:null});
   chAsk(state.mode==='ch');
 }
@@ -641,7 +651,7 @@ function chAsk(play){
 function finishRun(early,record){
   if(state.mode==='ch'){state.q=null;state.answer=null;state.left=null;state.resShown=false;}
   ch.q=null; ch.answer=null; ch.left=null; ch.resShown=false; ch.event=null; ch.heard=false;
-  ch.phase='result'; ch.endedEarly=!!early; ch.voice=PA.lockVoice(null);
+  ch.phase='result'; ch.endedEarly=!!early;
   // ランキングにのせられるのははじめてから2時間まで（サーバーとおなじ）
   if(!ch.offline&&Date.now()-ch.startedAt>CH.runTtlMs){ch.offline=true;ch.offWhy='time';ch.runId=null;}
   if(record) ch.newBest=recordBest(ch.run.result());
@@ -1036,6 +1046,7 @@ function actionsHTML(){
   return `<button class="btn night" data-act="eplay" data-hot="listen"${off}>🔁 もういちどきく</button><button class="btn" data-act="earp"${off}>🎶 ばらばらにきく</button>`;
 }
 function render(){
+  PA.lockVoice(state.mode==='ch'&&ch.phase==='play'?ch.voice:null); // チャレンジの画面だけ、はじめた時の音色（れんしゅう・せっていはふつうの音色）
   // チャレンジでこたえる前は「くらべてきく」をつかえない。れんしゅうではつかえるが「ヒントでできた」になる
   const open=!!state.q&&!state.answer&&!sumView(), lock=open&&state.mode==='ch';
   const cmp=state.mode==='rank'?'':`<section class="card">

@@ -133,7 +133,7 @@
 - `manifest.webmanifest` とアイコン（`assets/icons/`・`favicon.svg`）で、スマホのホーム画面に追加できます。
 - https では `sw.js`（サービスワーカー）を登録します。ページはネットがさき（3びょうまってこなければ保存したページ）、js・css・画像は保存したものをすぐ出してうらで新しくします。
   一度ひらけばネットがなくてもつかえます。
-- ピアノの録音（`assets/piano/`、30こ・約0.8MB）は、べつの保存場所にしまいます。サイトを新しくしても、録音がかわっていなければダウンロードしなおしません。
+- ピアノの録音（`assets/piano/`、30こ・約1MB）は、べつの保存場所にしまいます。サイトを新しくしても、録音がかわっていなければダウンロードしなおしません。
 - `sw.js` の `PRECACHE`・`VERSION`・`AUDIO`・`AUDIO_VERSION` と各ページの `<head>` の説明・シェア用タグは `npm run build:meta` が書きます（手でなおさない）。
 
 ## しくみ
@@ -150,7 +150,7 @@
 ## 音のクレジット
 
 - ピアノの音：[Salamander Grand Piano V3](https://sfzinstruments.github.io/pianos/salamander/)（Yamaha C5、Alexander Holm、[CC BY 3.0](https://creativecommons.org/licenses/by/3.0/)）。
-  [Tone.js が公開している版](https://tonejs.github.io/audio/salamander/)（3半音おき）を、`tools/trim-piano.mjs` ではじめの5.3秒だけに切って使っています（音のつくりなおしはしていません）。
+  [Tone.js が公開している版](https://tonejs.github.io/audio/salamander/)（3半音おき）を、`tools/trim-piano.mjs` ではじめの6.3秒だけに切って使っています（音のつくりなおしはしていません）。
   アプリの中では、頭の無音をとってモノラルにし、高さを上のように直して鳴らします。
 
 ## ローカルで動かす・テスト

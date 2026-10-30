@@ -6,9 +6,9 @@
    ・画像などは保存してあるものをすぐ出して、うらで新しくしておく
    ・インストールでとれなかったファイルは前の保存ぶんからうつす（オフラインでこわれないように）
    ・ピアノの録音（assets/piano/）は、べつの保存場所（AUDIO_CACHE）にしまう。サイトを新しくしても、
-     録音がかわっていなければ読みなおさない（毎回 0.8MB をダウンロードしないように）
+     録音がかわっていなければ読みなおさない（毎回 1MB をダウンロードしないように）
    ・VERSION・PRECACHE・AUDIO_VERSION・AUDIO は tools/build-meta.mjs が書きかえる（手でなおさない） */
-const AUDIO_VERSION='9867d88125';
+const AUDIO_VERSION='3fa6563a47';
 const AUDIO=[
   'assets/piano/A0.mp3',
   'assets/piano/A1.mp3',
@@ -41,7 +41,7 @@ const AUDIO=[
   'assets/piano/Fs6.mp3',
   'assets/piano/Fs7.mp3',
 ];
-const VERSION='feca5ed91c';
+const VERSION='b95b417250';
 const PRECACHE=[
   './',
   'accompaniment.html',
@@ -110,7 +110,7 @@ function copyOld(c,url){
 function fillAudio(){
   return caches.open(AUDIO_CACHE).then(c=>Promise.all(AUDIO.map(p=>{
     const url=new URL(p,self.registration.scope).href;
-    return c.match(url).then(hit=>hit||fetch(url).then(res=>okToKeep(res)?c.put(url,res):undefined)).catch(()=>{});
+    return c.match(url).then(hit=>hit||fetch(new Request(url,{cache:'reload'})).then(res=>okToKeep(res)?c.put(url,res):undefined)).catch(()=>{});
   })));
 }
 
@@ -179,10 +179,16 @@ function onCode(e){
 /* 録音：保存してあればそれ（中身はかわらない）。なければネットからとって、録音の保存場所にしまう */
 function onAudio(e){
   const req=e.request;
-  return caches.open(AUDIO_CACHE).then(c=>c.match(req).then(hit=>hit||fetch(req).then(res=>{
-    if(okToKeep(res)){const copy=res.clone();e.waitUntil(c.put(req,copy).catch(()=>{}));}
-    return res;
-  })));
+  let done;
+  e.waitUntil(new Promise(r=>{done=r;})); // waitUntil はその場でよぶ。保存がおわったら done
+  return caches.open(AUDIO_CACHE).then(c=>c.match(req).then(hit=>{
+    if(hit){done();return hit;}
+    // 古いHTTPキャッシュの録音を保存しないように、サーバーにたしかめてからとる
+    return fetch(new Request(req.url,{cache:'no-cache'})).then(res=>{
+      if(okToKeep(res)) c.put(req,res.clone()).catch(()=>{}).then(done); else done();
+      return res;
+    });
+  })).catch(err=>{done();throw err;});
 }
 
 function onAsset(e){

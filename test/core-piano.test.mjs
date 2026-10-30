@@ -73,3 +73,25 @@ test('sw.js：録音はべつの保存場所。build-meta の一覧とファイ�
   assert.match(sw,/k!==CACHE&&k!==AUDIO_CACHE/,'あたらしくしたときに録音の保存場所を消さない');
   assert.ok(!/const PRECACHE=\[[^\]]*\.mp3/.test(sw),'録音は PRECACHE（毎回とりなおす）に入れない');
 });
+
+test('stopSound で soundGen がふえる（あとで鳴らす予定の音をとりけすため）',()=>{
+  const g=PA.soundGen();PA.stopSound();assert.equal(PA.soundGen(),g+1);
+});
+
+test('せっていでピアノをえらんだ「ためしの音」：読みこむあいだにとじる・とめると鳴らない',async()=>{
+  const P=loadPA(fs.readFileSync(path.join(ROOT,'assets','core.js'),'utf8')+'\nPA.testDocument=document;');
+  const el={open:false,querySelector:()=>({}),addEventListener(){},classList:{contains:()=>false},hasAttribute:()=>false,showModal(){this.open=true;},close(){this.open=false;}};
+  P.testDocument.createElement=()=>el;P.testDocument.body.appendChild=()=>{};
+  const run=async after=>{
+    let resolve;const notes=[];
+    P.loadPiano=()=>new Promise(r=>{resolve=r;});P.playNote=m=>notes.push(m);
+    P.settings.voice='synth';P.openSettings();
+    el.onchange({target:{id:'pa-voice',value:'piano'}});
+    after();
+    resolve(true);await new Promise(r=>setImmediate(r));
+    return [...notes];
+  };
+  assert.deepEqual(await run(()=>{}),[60],'ひらいたままなら鳴る');
+  assert.deepEqual(await run(()=>el.close()),[],'とじたら鳴らない');
+  assert.deepEqual(await run(()=>P.stopSound()),[],'音をとめたら鳴らない');
+});
