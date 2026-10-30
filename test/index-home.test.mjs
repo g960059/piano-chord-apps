@@ -67,7 +67,7 @@ test('index.html：はじめての人は まなぶ のタブとはじめのカ�
 
 test('index.html：クイズのきろくがある人は あそぶ、つづき・にがての3もん・できた調',()=>{
   const now=Date.now();
-  const {html:h}=renderHome({
+  const {html:h,PA}=renderHome({
     'visited':{'chord-quiz':now},
     'last-practice':{app:'chord-quiz',title:'和音クイズ',t:now},
     'keystats-chord-quiz':{M0:{right:1,wrong:3,recent:'oxxx',last:1}}
@@ -79,6 +79,8 @@ test('index.html：クイズのきろくがある人は あそぶ、つづき・
   assert.match(h,/id="panel-learn"[^>]*hidden/);
   assert.match(h,/href="chord-quiz\.html\?key=M0&amp;n=3"/,'にがての調を3もん');
   assert.match(h,/できた調 0／24/);
+  for(const a of PA.APPS) assert.ok(h.includes(`href="${a.id}.html"`),a.id+' へのリンク（2回目の人）');
+  assert.ok(!/コース/.test(h));
 });
 
 test('index.html：えらんだタブはおぼえる・アプリではホーム画面の話をしない',()=>{
