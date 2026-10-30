@@ -50,4 +50,7 @@ test('index.html：あそぶ（クイズ・耳のタイル）とまなぶ。「�
   const cols=[...js.matchAll(/\{c:'(#[0-9a-f]{6})'/g)].map(m=>m[1]);
   assert.ok(cols.length>=6);
   cols.forEach(c=>assert.ok(1.05/(lum(c)+.05)>=4.5,c+' は白い字で4.5:1いじょう'));
+  // おしたとき・マウスをのせたときにタイルをあかるくしない（白い字が4.5:1をきる）
+  const css=(/<style>([\s\S]*?)<\/style>/.exec(h)||[])[1]||'';
+  [...css.matchAll(/\.tile[^{}]*\{[^}]*brightness\(([\d.]+)\)/g)].forEach(m=>assert.ok(+m[1]<=1,'タイルの brightness '+m[1]));
 });
