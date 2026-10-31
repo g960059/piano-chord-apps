@@ -415,7 +415,7 @@ function heroMsg(key,I){
   let m=`<b>${I.lab}</b>は「${shortLab(I.tl)}の${I.k==='V7'?'Ⅴ7':'Ⅶ7'}」と読むよ。<br>`;
   m+=`<b>その和音をいっときのⅠと考えて、その調${I.vb?'と同じ主音の短調':''}の${what}を前におく。</b><br>`;
   m+=`${I.tl}「${namesW(I.T.slice(1))}」をⅠと考えると<b class="tg">${I.tkName}</b>。`;
-  if(I.vb) m+=`${I.tkName}のⅦ7は減七にならない（長調の形）ので、同じ主音の短調（<b>${I.pm}</b>）の${what}を使う。それが<b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝${I.lab}。`;
+  if(I.vb) m+=`${I.tkName}のⅦ7は減七にならない（長調のⅤ9の根音省略で、減七にならない形）ので、同じ主音の短調（<b>${I.pm}</b>）の${what}を使う。それが<b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝${I.lab}。`;
   else m+=`${srcWhat(I)}が<b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝${I.lab}。`;
   if(I.k!=='V7'){
     m+=`<br>${KNAME[I.k]}のⅦ7は、${I.src}のⅤ9から根音をはぶいた形（Ⅴの家族）だよ。`;
@@ -443,7 +443,7 @@ function rolesHTML(key,I){
 }
 function kindNote(key,I){
   if(H.secondary(key,I.t,'vii7h')) return '';
-  return `<p class="note" style="margin:0">${I.tl}には長調の形は使わないよ（${I.tmin?'目標が短三和音':'長調の形の第9音がこの調にない音'}だから）。</p>`;
+  return `<p class="note" style="margin:0">${I.tl}には長調の形（長調のⅤ9の根音省略）は使わないよ（${I.tmin?'目標が短三和音':'長調のⅤ9の第9音がこの調にない音'}だから）。</p>`;
 }
 function staticMsgDone(key,I){
   const lt=I.X.find(n=>n.tag==='lt'), i=I.X.indexOf(lt);
@@ -565,11 +565,12 @@ function tryCard(key){
   return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',chord:'dd,s2,s3,s4,s6',key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
     sub:`${PA.keyName(key)}で、副属和音（${key.minor?'Ⅴ7/Ⅲ・Ⅴ7/Ⅳ':'Ⅴ7/Ⅱ・Ⅴ7/Ⅳ'}など）をけんばんで5問おさえてみよう。`,btn:PA.icon('target')+'けんばんで5問'});
 }
+// レベルアップのつぎ（先生のじゅん：副属和音 → 準固有和音）をいちばん上に。
 // ドッペル（doppel.html）へのリンクは1つだけ：目標がⅤのときは上の doppelCard がリンクになるので、ここは出さない
 function linksCard(I){
-  if(I.t===5) return '';
-  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>ドッペルドミナントのページ</small></h2></summary><div class="links">
-    <a class="btn" href="doppel.html" data-go="doppel">🔺 <span>Ⅱ7とドッペルドミナント ›<small>Ⅴ7/Ⅴ＝ドッペルドミナント</small></span></a></div></details>`;
+  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>次は準固有和音${I.t===5?'':'・ドッペルドミナント'}</small></h2></summary><div class="links">
+    <a class="btn" href="borrowed.html" data-go="borrowed"><span aria-hidden="true">🎁</span> <span>次は準固有和音 ›<small>同じ主音の短調からかりる○Ⅳ・○Ⅵ</small></span></a>`+
+    (I.t===5?'':`<a class="btn" href="doppel.html" data-go="doppel">🔺 <span>Ⅱ7とドッペルドミナント ›<small>Ⅴ7/Ⅴ＝ドッペルドミナント</small></span></a>`)+`</div></details>`;
 }
 
 /* ===== 画面 ===== */
@@ -587,7 +588,7 @@ function render(){
       <p class="sellab">🎯 目標の和音（どの和音をよぶ？）</p>
       ${PA.seg('target',H.targets(key).map(t=>[t,`${ROMAN[t-1]}<small>${H.symbol(key,'target',t)}</small>`]),state.target,'full tseg')}
       <p class="sellab" style="margin-top:4px">🧩 前におく和音の形</p>
-      <div class="seg full kseg" role="group">${KINDS.map(k=>{const ok=!!H.secondary(key,I.t,k);return `<button class="${I.k===k?'on':''}" data-act="kind" data-v="${k}" aria-pressed="${I.k===k}" ${ok?'':'disabled'}>${KNAME[k]}<small>${k==='V7'?'Ⅴの七の和音':k==='vii7'?'Ⅶ7・くらいひびき':'Ⅶ7・やわらかいひびき'}</small></button>`;}).join('')}</div>
+      <div class="seg full kseg" role="group">${KINDS.map(k=>{const ok=!!H.secondary(key,I.t,k);return `<button class="${I.k===k?'on':''}" data-act="kind" data-v="${k}" aria-pressed="${I.k===k}" ${ok?'':'disabled'}>${KNAME[k]}<small>${k==='V7'?'Ⅴの七の和音':k==='vii7'?'Ⅶ7・くらいひびき':'長調のⅤ9の根音省略'}</small></button>`;}).join('')}</div>
       ${kindNote(key,I)}
     </section>
     ${heroCard(key,I)}`;
@@ -716,7 +717,11 @@ document.addEventListener('click',e=>{
       stop();
       const p=PA.store.get('doppel',{});
       PA.store.set('doppel',{...(p&&typeof p==='object'?p:{}),minor:state.minor,keyIdx:state.keyIdx,raised:true});
-    }
+    }else if(g.dataset.go==='borrowed'&&!state.minor){ // 準固有和音は長調だけ：おなじ長調で
+      stop();
+      const p=PA.store.get('borrowed',{});
+      PA.store.set('borrowed',{...(p&&typeof p==='object'?p:{}),keyIdx:state.keyIdx});
+    }else stop();
     return;
   }
   const el=e.target.closest('[data-act]'); if(!el||el.disabled) return;

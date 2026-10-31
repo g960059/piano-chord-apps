@@ -317,20 +317,21 @@ function stepMsg(P,i){
   if(i===0) return `<b>①</b> ${k}の音階の5ばんめ${q(r)}から、ひとつとばしに3つ。7ばんめ${q(N.k.natLT)}は、短調では半音上げて<span class="up">${q(st[0])}</span>にする（<span class="up">導音</span>）ので臨時記号がつくよ。これが<b>Ⅴ</b>。`;
   if(i===1) return `<b>②</b> もうひとつとばして${q(st[2])}をのせると<b>Ⅴ7</b>（4つの音）。`;
   if(i===2) return `<b>③</b> さらにひとつとばして${q(st[3])}をのせると<b>Ⅴ9</b>（5つの音）。${q(st[3])}は音階の6ばんめ（調号のとおりの音）で、<b class="dn">第9音</b>というよ。`;
-  if(i===3) return `<b>④</b> いちばん下の根音${q(r)}を<b>省略する（はぶく）</b>と… <b class="big">${namesW(st)}</b><br>4つの音のとなりどうしが、ぜんぶ同じ間かく。これが<b>減七の和音</b>！短調では、Ⅴ9の根音省略は減七になるよ。`;
+  if(i===3) return `<b>④</b> 根音${q(r)}を<b>省略する（はぶく）</b>と… <b class="big">${namesW(st)}</b><br>4つの音のとなりどうしが、ぜんぶ同じ間かく。これが<b>減七の和音</b>！短調では、Ⅴ9の根音省略は減七になるよ。`;
   return `<b>⑤</b> 減七はⅤのなかま。Ⅴと同じように<b>Ⅰ</b>へすすむよ。<span class="up">導音${q(st[0])}は上</span>の主音${q(N.closeRes[0])}へ、ほかの3つは下へ。`;
 }
 // さいごのまとめ
 const doneMsg=P=>`🎉 <b>わかったかな？</b>Ⅴ・Ⅴ7は、長調も短調も同じ音。ちがうのはⅤ9の<b class="dn">第9音</b>（${q(P.maj.six)}と${q(P.min.six)}）だけ。<br>だから根音を省略すると、<b style="color:${NIGHT}">短調は減七</b>（${namesD(P.min)}）、<b style="color:${SUN}">長調は減七にならない</b>（${namesD(P.maj)}）。`;
 // ⓪ ことばの意味：「根音」と「省略」（先生：このことばはわかってもらわないと困る）
-const wordBox=()=>`<div class="wordbox"><b>「Ⅴ9の根音省略」ってなに？</b>
-    <p><b>根音</b><span class="yomi">（こんおん）</span>＝和音の土台になる、いちばん下の音。<b>省略</b><span class="yomi">（しょうりゃく）</span>＝はぶくこと。<br>だから「Ⅴ9の根音省略」は、<b>Ⅴ9から、いちばん下の根音をはぶいた和音</b>のことだよ。</p></div>`;
+//   根音は「いちばん下の音」とは書かない（転回形ではいちばん下とはかぎらない。和音のかたち・和音クイズとおなじ意味）
+const wordBox=P=>`<div class="wordbox"><b>「Ⅴ9の根音省略」ってなに？</b>
+    <p><b>根音</b><span class="yomi">（こんおん）</span>＝和音のもとになる音。音をひとつとばしにつんだとき、いちばん下にくる音（${kn(P.min.k)}のⅤ9なら${q(P.min.root)}）。ならべかたをかえても、根音はかわらないよ。<b>省略</b><span class="yomi">（しょうりゃく）</span>＝はぶくこと。<br>だから「Ⅴ9の根音省略」は、<b>Ⅴ9から根音をはぶいた和音</b>のことだよ。</p></div>`;
 function heroCard(P){
   const A=state.anim, N=P.min, cur=A?A.step:state.step;
   const msg=A?A.msg():state.autoWait?'👆 どこかをタッチすると、<b>つくりかた</b>が始まるよ':state.done?doneMsg(P):stepMsg(P,state.step);
   return `<section class="card hero">
     <h2><span aria-hidden="true">🌙</span> 短調で、Ⅴ9の根音を省略すると？<small>${kn(N.k)}で、Ⅴ→Ⅴ7→Ⅴ9→根音を省略→Ⅰ</small></h2>
-    ${wordBox()}
+    ${wordBox(P)}
     ${PA.seg('step',STEPS.map((s,j)=>[j,s.label]),A?-1:state.step,'full steps')}
     ${stepStaff(P,cur)}
     <div class="msg" aria-live="polite">${msg}</div>

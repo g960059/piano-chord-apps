@@ -30,8 +30,10 @@ test('「減七と半減七」のページは「Ⅴ9の根音省略」に（フ�
   assert.match(h,/<title>Ⅴ9の根音省略<\/title>/);
   assert.match(js,/PA\.mountBar\(\{title:'Ⅴ9の根音省略',app:'dim-halfdim'\}\)/);
   // はじめに「根音」と「省略」の意味を教える（先生）
-  assert.match(js,/<b>根音<\/b><span class="yomi">（こんおん）<\/span>＝和音の土台になる、いちばん下の音。<b>省略<\/b><span class="yomi">（しょうりゃく）<\/span>＝はぶくこと。/);
-  assert.match(js,/\$\{wordBox\(\)\}/);
+  //   根音＝和音のもとになる音（「いちばん下の音」とは書かない。転回形ではちがうので。和音のかたち・和音クイズとおなじ意味）
+  assert.match(js,/<b>根音<\/b><span class="yomi">（こんおん）<\/span>＝和音のもとになる音。音をひとつとばしにつんだとき、いちばん下にくる音（[^]*ならべかたをかえても、根音はかわらないよ。<b>省略<\/b><span class="yomi">（しょうりゃく）<\/span>＝はぶくこと。/);
+  assert.ok(!/土台になる、いちばん下の音|いちばん下の根音/.test(js),'根音を「いちばん下の音」と言いきらない');
+  assert.match(js,/\$\{wordBox\(P\)\}/);
   assert.match(js,/PA\.store\.get\('dim-halfdim',/);
   assert.match(js,/PA\.store\.set\('dim-halfdim',\{minor:state\.minor,keyIdx:state\.keyIdx\}\)/);
   assert.match(js,/PA\.keyDeck\.parse\(PA\.params\(\)\.key\)/,'先生のリンク key はそのまま');
@@ -72,7 +74,10 @@ test('長調と短調のⅤ・Ⅴ7は同じ音、ちがうのはⅤ9の第9音�
 test('Ⅴの家族：減七は「短調では」とはっきり書き、長調とくらべるページへつなぐ',()=>{
   const h=read('minor-family.html'), js=scriptOf(h);
   assert.match(js,/DIM:\{label:'減七',ks:\[6,8,10,12\],title:'減七の和音（短調のⅤ9から根音をはぶいた形）'\}/);
-  assert.match(js,/DIM:`<b>短調では<\/b>、Ⅴ9から根音/);
+  assert.match(js,/<br><b>短調では<\/b>、Ⅴ9から根音/);
+  // 島のさいしょのページでも「根音」と「省略」の意味から（先生の答え3）。dim-halfdim.html の ⓪ とおなじ意味で、そこへリンク
+  assert.match(js,/DIM:`<b>根音<\/b>＝和音のもとになる音（ここでは「\$\{PA\.nmH\(root\)\}」）。<b>省略<\/b>＝はぶくこと。だから<b>Ⅴ9の根音省略<\/b>＝Ⅴ9から根音をはぶいた和音（\$\{dhLink\('ことばのせつめい'\)\}）。/);
+  assert.ok(!/いちばん下の根音/.test(js),'根音を「いちばん下」と言いきらない');
   assert.match(js,/PA\.url\('dim-halfdim',\{key:PA\.keyDeck\.id\(true,state\.keyIdx\)\}\)/);
   assert.match(js,/to:'dim-halfdim',params:\{key:PA\.keyDeck\.id\(true,state\.keyIdx\)\}/);
   assert.match(js,/短調で「Ⅴ9の根音省略形」と書いてあったら減七の和音/);

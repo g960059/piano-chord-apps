@@ -142,11 +142,13 @@
  *     level＝👂 は1〜3（EAR_LV）：1＝Ⅱ7・ドッペル  2＝増六3しゅるい  3＝Ⅳ・○Ⅳ・ナポリ（長調だけ）。画面では先生のじゅん（1・3・2）にならべる
  *       🎹 の level（1〜5）はまえのリンク：そのときとおなじ和音（OLD_KLV）にする（ステップとおなじならそのステップ）。step があれば step
  *       学ぶページから：doppel → step 1・ear 1、secondary → chord dd,s2,s3,s4,s6、borrowed → step 3、
- *         neapolitan → step 4・ear 3、aug6 → step 5・ear 2、enharmonic → chord vii7（step 6）、enharmonic の 🔥 チャレンジ → chord ger
+ *         neapolitan → step 4・ear 3、aug6 → step 5・ear 2、enharmonic → chord vii7（step 6）、enharmonic の 🔥 チャレンジ → chord ger・chal 1
  *         （その和音だけにしたいときは chord：neapolitan → n6、borrowed → ivm,bvi、secondary → s2,s3,s4,s6、enharmonic → vii7）
  *       🔥 チャレンジ（先生：読みかえのクイズに増六が入る問題は「チャレンジ」としてわける）：読みかえの和音（READ_SET＝減七/Ⅴ・Ⅶ7）と
- *         ドイツの6だけを「じぶんで選ぶ」で出すとき（chord＝ger、まえのリンクの ger,ddim,vii7 など）、ドイツの6の問題に 🔥 チャレンジのしるし（chalOf）。
- *         ステップ5（増六）・6（ぜんぶ）では出さない（ふつうの増六の問題）
+ *         ドイツの6だけを「じぶんで選ぶ」で出すとき、ドイツの6の問題に 🔥 チャレンジのしるし（chalOf）。読みかえのチャレンジから来たとき
+ *         （chal＝1。enharmonic の chord=ger&chal=1）か、読みかえの和音もいっしょに出すとき（まえのリンクの ger,ddim,vii7 など）だけ。
+ *         🎛 でドイツだけを選んで増六の練習をするときや、ステップ5（増六）・6（ぜんぶ）では出さない（ふつうの増六の問題）
+ *     chal＝1（読みかえのチャレンジから来た。その回だけ。保存しない。🎛・ステップをかえるとおしまい）
  *     chord＝🎹 の和音の id を , で（ii7 dd ddim it fr ger n6 ivm bvi s2 s3 s4 s6 vii7）。level よりさき（「じぶんでえらぶ」になる）
  *     tier＝easy｜normal｜hard｜all（🎹 の調のむずかしさ）、key＝M0〜M12・m0〜m12（その調だけ出す。🎹・👂 どちらも）、n＝1〜20（📝 n もん）
  *     リンクのせっていはほぞんする（いまのせっていになる）。おなじタブで読みなおしたとき（「もどる」）はもういちどつかわない
@@ -185,21 +187,23 @@ const KLV=[
   {lv:5,types:AUG,name:'増六',desc:'増六の和音（イタリアの6・フランスの6・ドイツの6）'},
   {lv:6,types:TYPES,name:'ぜんぶ',desc:'ぜんぶ（ステップ1〜5と、異名同音の読みかえで出てくるⅦ7）'}
 ];
-// 🔥 チャレンジ：読みかえの和音（減七）といっしょに出すドイツの6（増六に読みかえる）。kLv＝いまのステップ（0＝じぶんで選ぶ）、sel＝えらんだ和音
+// 🔥 チャレンジ：読みかえの和音（減七）といっしょに出すドイツの6（増六 に読みかえる）。kLv＝いまのステップ（0＝じぶんで選ぶ）、sel＝えらんだ和音、
+//   fromChal＝読みかえのチャレンジのリンク（chal=1）から来た。ドイツだけのときは、チャレンジから来たときだけしるしをつける
 const READ_SET=['ddim','vii7'], CHAL=['ger'];
-const chalOf=(t,kLv,sel)=>CHAL.includes(t)&&!kLv&&sel.includes(t)&&sel.every(x=>READ_SET.includes(x)||CHAL.includes(x));
+const chalOf=(t,kLv,sel,fromChal)=>CHAL.includes(t)&&!kLv&&sel.includes(t)&&sel.every(x=>READ_SET.includes(x)||CHAL.includes(x))
+  &&(!!fromChal||sel.some(x=>READ_SET.includes(x)));
 // まえのリンク・保存の「レベル」（1〜5）の和音。おなじ和音でひらく
 const OLD_KLV={1:['ii7','dd'],2:['ii7','dd','ddim'],3:AUG,4:[...AUG,'n6','ivm','bvi'],5:TYPES};
 const EAR_LV={1:['ii7','dd'],2:['it','fr','ger'],3:['iv','ivm','n6']};
 const EAR_NAME={1:'Ⅱ7・ドッペル',2:'増六3しゅるい',3:'Ⅳ・○Ⅳ・ナポリ'};
 const EAR_ORDER=[1,3,2]; // 画面のならび（先生のじゅん：ナポリが増六よりさき）。番号はリンクの level のまま
-// リンクのパラメータ（PA.params() の文字）→ {mode, kLv, types, earLv, tier, key, n}（つかえない値は null。なにもなければ null）
+// リンクのパラメータ（PA.params() の文字）→ {mode, kLv, types, earLv, tier, key, n, chal}（つかえない値は null。なにもなければ null）
 //   tiers＝えらべるむずかしさの id。key は PA.keyDeck の id だけ（ほかの文字はすてる）
 function linkOf(p,tiers){
   p=p&&typeof p==='object'?p:{};
   const str=k=>Object.prototype.hasOwnProperty.call(p,k)&&typeof p[k]==='string'?p[k]:null;
   const int=(k,lo,hi)=>{const v=str(k);return v!=null&&/^\d{1,2}$/.test(v)&&+v>=lo&&+v<=hi?+v:null;};
-  const out={mode:null,kLv:null,types:null,earLv:null,tier:null,key:null,n:null};
+  const out={mode:null,kLv:null,types:null,earLv:null,tier:null,key:null,n:null,chal:null};
   out.mode=str('mode')==='keys'||str('mode')==='ear'?str('mode'):null;
   if(!out.mode&&(str('step')!=null||str('level')!=null||str('chord')!=null||str('tier')!=null)) out.mode='keys';
   // key と n（ホームのにがてふくしゅう：🎹 のチェック表からえらんだ調）も keys。key だけ・n だけならそのまま
@@ -220,6 +224,7 @@ function linkOf(p,tiers){
   const k=str('key'), kp=k!=null&&PA.keyDeck?PA.keyDeck.parse(k):null;
   if(kp&&kp.id===k) out.key=k;
   out.n=int('n',1,20);
+  if(str('chal')==='1'&&out.types) out.chal=true; // chal は chord といっしょのときだけ（読みかえのチャレンジのリンク）
   return Object.keys(out).some(x=>out[x]!=null)?out:null;
 }
 // </cq-link>
@@ -335,7 +340,7 @@ const shiftN=(ns,s)=>ns.map(n=>({...n,midi:n.midi+s}));
 const uniqM=ns=>ns.filter((n,i)=>ns.findIndex(x=>x.midi===n.midi)===i);
 
 /* ===== 状態（せってい・スコア・いまのもんだいは保存する） ===== */
-const Q={mode:'keys',keyset:'both',tier:'all',weak:true,kLv:1,types:typesOf(1),earLv:1,openSet:false,
+const Q={mode:'keys',keyset:'both',tier:'all',weak:true,kLv:1,types:typesOf(1),earLv:1,openSet:false,chal:false,
   sc:{keys:{right:0,total:0,streak:0,hint:0},ear:{right:0,total:0,streak:0,hint:0}},
   q:null,qid:0,picked:new Set(),checked:false,result:null,lastOk:null,hint:0,peek:false,
   eq:null,ans:null,resShown:false,eqid:0,eHint:false,fresh:false,deck:null,
@@ -419,6 +424,7 @@ const LINK=(()=>{
     if(LINK.earLv) Q.earLv=LINK.earLv;
     if(LINK.tier) Q.tier=LINK.tier;
     Q.lock=LINK.key; Q.lockSess=!!LINK.key&&!!LINK.n; // key のないリンクは「この調だけ」をやめる
+    Q.chal=!!LINK.chal; // 読みかえのチャレンジから来た（保存しない）
   }
   Q.deck=KD.create({quiz:QUIZ,tier:Q.tier,modes:effModes(),weak:Q.weak});
   const hasBag=Q.deck.restore(d.deck); // ひらきなおしても調のふくろのつづきから
@@ -833,8 +839,9 @@ function kbRange(ms){
 // ステップのボタン（スマホは数字だけ4つずつ2行にならべて、下の1行でなかみを書く。広い画面はなかみもボタンに）
 const kLvName=()=>Q.kLv?`ステップ${Q.kLv}`:'じぶんで選ぶ';
 // 🔥 チャレンジのしるし（chalOf：読みかえの和音といっしょに出すドイツの6）
-const chalNow=t=>chalOf(t,Q.kLv,selTypes());
-const CHAL_LINE=`<p class="challine"><span class="chalbadge"><span aria-hidden="true">🔥</span> チャレンジ</span><span>増六に読みかえる問題。つぎのレベルだよ</span></p>`;
+const chalNow=t=>chalOf(t,Q.kLv,selTypes(),Q.chal);
+// このもんだいはけんばんでおさえるだけ。読みかえ（Ⅴ7と同じ音）は、こたえたあとの説明に出る
+const CHAL_LINE=`<p class="challine"><span class="chalbadge"><span aria-hidden="true">🔥</span> チャレンジ</span><span>読みかえのチャレンジで出るドイツの6。けんばんではⅤ7と同じ音になる和音だよ</span></p>`;
 function klevelHTML(){
   const cur=Q.kLv, L=KLV.find(x=>x.lv===cur), sel=selTypes();
   const b=(v,top,big,name,aria)=>`<button class="${v===cur?'on':''}" data-act="klevel" data-v="${v}" aria-pressed="${v===cur}" aria-label="${aria}"><small>${top}</small><span class="lvn">${big}</span><span class="lvname">${name}</span></button>`;
@@ -1191,9 +1198,9 @@ document.addEventListener('click',e=>{
         return;
       }
       if(lv===Q.kLv||!KLV.some(x=>x.lv===lv)) return;
-      PA.stopSound(); Q.kLv=lv; Q.types=typesOf(lv); newQ(); break;
+      PA.stopSound(); Q.kLv=lv; Q.types=typesOf(lv); Q.chal=false; newQ(); break;
     }
-    case 'qtype': if(!TYPES.includes(v)) return; Q.types[v]=!Q.types[v]; if(!TYPES.some(t=>Q.types[t])) Q.types[v]=true; Q.kLv=levelOf(Q.types); newQ(); break;
+    case 'qtype': if(!TYPES.includes(v)) return; Q.types[v]=!Q.types[v]; if(!TYPES.some(t=>Q.types[t])) Q.types[v]=true; Q.kLv=levelOf(Q.types); Q.chal=false; newQ(); break;
     case 'keystats-reset': if(v!==QUIZ) return; Q.deck.reset(); break; // 2回おす（data-confirm）は core がたしかめる
     case 'qreset': Q.sc[Q.mode]={right:0,total:0,streak:0,hint:0}; break; // いまのもんだいがきろくずみ（つくりかたを見た）ならそのまま（2回きろくしない）
     case 'qcheck': if(Q.mode!=='keys'||Q.checked||!Q.picked.size) return; checkKeys(); save(); render(); showFb(); return;

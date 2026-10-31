@@ -1,7 +1,7 @@
 // 異名同音の読みかえ：増六が入る問題は「🔥 チャレンジ」としてわける（先生の意見：docs/TEACHER-FEEDBACK.md 2026-10-31 追加の意見）
 // ・enharmonic.html：ふつうの読みかえ（🎲 どこへ行った？・ためしてみる）は減七だけ。増六（ドイツの6）の問題はチャレンジのカードの中だけ
-// ・chroma-quiz.html：読みかえの和音（減七/Ⅴ・Ⅶ7）とドイツの6だけを出すとき（chord=ger、まえの ger,ddim,vii7）は 🔥 チャレンジのしるし。
-//   ステップ5（増六）・6（ぜんぶ）ではしるしを出さない
+// ・chroma-quiz.html：読みかえのチャレンジから来たとき（chord=ger&chal=1）と、読みかえの和音（減七/Ⅴ・Ⅶ7）もいっしょに出すとき
+//   （まえの ger,ddim,vii7）のドイツの6に 🔥 チャレンジのしるし。🎛 でドイツだけを選んだとき・ステップ5（増六）・6（ぜんぶ）では出さない
 // ・レベルアップの順番：Ⅱ7・ドッペル → 副属和音 → 準固有和音 → ナポリの六 → 増六 → 異名同音の読みかえ（いちばん最後）
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -24,17 +24,21 @@ const L=(()=>{
   return new Function('PA',m[1]+'\nreturn {TYPES,KLV,READ_SET,CHAL,chalOf,linkOf};')(loadPA());
 })();
 const levelOf=sel=>(L.KLV.find(x=>x.types.length===sel.length&&sel.every(t=>x.types.includes(t)))||{lv:0}).lv;
-const chalSel=sel=>L.chalOf('ger',levelOf(sel),sel);
+const chalSel=(sel,fromChal)=>L.chalOf('ger',levelOf(sel),sel,fromChal);
 
 test('変化和音クイズ：🔥 チャレンジになるのは、読みかえの和音といっしょに出すドイツの6だけ',()=>{
   assert.deepEqual([...L.READ_SET],['ddim','vii7']);
   assert.deepEqual([...L.CHAL],['ger']);
-  assert.equal(chalSel(['ger']),true,'enharmonic の 🔥 チャレンジのリンク（chord=ger）');
+  assert.equal(chalSel(['ger'],true),true,'enharmonic の 🔥 チャレンジのリンク（chord=ger&chal=1）');
+  assert.equal(chalSel(['ger'],false),false,'🎛 でドイツだけを選んで増六の練習をするときはしるしなし');
+  assert.equal(chalSel(['ger']),false);
   assert.equal(chalSel(['ddim','ger','vii7']),true,'まえのリンク chord=ger,ddim,vii7 もドイツの6はそのまま出して、しるしをつける');
   assert.equal(chalSel(['ger','vii7']),true);
   assert.equal(chalSel(['it','fr','ger']),false,'ステップ5（増六）はふつうの増六の問題');
   assert.equal(chalSel([...L.TYPES]),false,'ステップ6（ぜんぶ）もしるしなし');
   assert.equal(chalSel(['ii7','ger']),false,'読みかえとかんけいない和音といっしょならしるしなし');
+  assert.equal(chalSel(['ii7','ger'],true),false);
+  assert.equal(chalSel(['it','fr','ger'],true),false);
   assert.equal(L.chalOf('vii7',0,['ger','vii7']),false,'減七の問題はふつうの読みかえ');
   assert.equal(L.chalOf('ddim',0,['ddim','ger']),false);
   assert.equal(L.chalOf('ger',0,['vii7']),false,'えらんでいない和音にはつけない');
@@ -57,16 +61,29 @@ function openQuiz(search,mem=new Map()){
     +'document.addEventListener=function(){};\n'+js+'\nPA.__Q=Q;PA.__start=startQ;PA.__render=render;PA.__check=checkKeys;',{storage:mem,search,href:'https://example.test/chroma-quiz.html'+search});
 }
 
-test('変化和音クイズのページ：chord=ger（読みかえの 🔥 チャレンジ）では、ドイツの6の問題にチャレンジのしるし',()=>{
-  const P=openQuiz('?key=m0&mode=keys&chord=ger&n=5'), Q=P.__Q;
-  assert.equal(Q.q.type,'ger'); assert.equal(Q.kLv,0);
-  assert.match(P.__html,/class="challine"[^]*チャレンジ[^]*増六に読みかえる問題/);
+test('変化和音クイズのページ：chord=ger&chal=1（読みかえの 🔥 チャレンジ）では、ドイツの6の問題にチャレンジのしるし',()=>{
+  const P=openQuiz('?key=m0&mode=keys&chord=ger&chal=1&n=5'), Q=P.__Q;
+  assert.equal(Q.q.type,'ger'); assert.equal(Q.kLv,0); assert.equal(Q.chal,true);
+  // このもんだいはけんばんでおさえるだけ：「読みかえる問題」とは言わない
+  assert.match(P.__html,/class="challine"[^]*チャレンジ[^]*読みかえのチャレンジで出るドイツの6。けんばんではⅤ7と同じ音になる和音だよ/);
+  assert.ok(!/増六に読みかえる問題/.test(P.__html));
   assert.match(P.__html,/ドイツ（<span aria-hidden="true">🔥<\/span>チャレンジ）/,'じぶんで選ぶの説明にも');
   // こたえたあとの「けんばんではⅤ7と同じ音」にも 🔥 チャレンジ
   const key=PA_keyOf(P,Q.q); P.__Q.picked=new Set(P.chroma.aug6(key,'ger').map(n=>n.midi)); P.__check(); P.__render();
   assert.match(P.__html,/🎉 正解/); assert.match(P.__html,/チャレンジ：読みかえ<\/span> けんばんでは/);
 });
 const PA_keyOf=(P,q)=>P.keyOf(q.minor,q.keyIdx);
+
+test('変化和音クイズのページ：chal のない chord=ger（🎛 でドイツだけ・ふつうのリンク）はしるしなし。ステップをかえるとチャレンジはおしまい',()=>{
+  const P=openQuiz('?key=m0&mode=keys&chord=ger&n=5'), Q=P.__Q;
+  assert.equal(Q.q.type,'ger'); assert.equal(Q.chal,false);
+  assert.ok(!/class="challine"/.test(P.__html));
+  assert.ok(!/チャレンジ/.test(P.__html.replace(/<[^>]+>/g,'').split('じぶんで選ぶ：')[1].split('（下の')[0]),'じぶんで選ぶの説明にもつけない');
+  // 保存はしない：おなじ設定でひらきなおしたら（リンクなし）しるしなし
+  const mem=new Map(), P2=openQuiz('?key=m0&mode=keys&chord=ger&chal=1&n=5',mem);
+  assert.match(P2.__html,/class="challine"/);
+  assert.ok(![...mem.values()].some(v=>/"chal"/.test(v)),'chal は保存しない');
+});
 
 test('変化和音クイズのページ：まえのリンク chord=ger,ddim,vii7 もドイツの6を出して、しるしをつける。減七にはつけない',()=>{
   const P=openQuiz('?key=m0&mode=keys&chord=ger,ddim,vii7&n=5'), Q=P.__Q;
@@ -119,8 +136,11 @@ test('異名同音の読みかえ：増六に読みかえるのは「🔥 チャ
   assert.ok(card.length<h.length,'data-d="ger" はそのまま（ひらいたかのきろく）');
   assert.match(card,/<span class="chalbadge"><span aria-hidden="true">🔥<\/span> チャレンジ<\/span>増六に読みかえる<small>つぎのレベル。増六の和音をならったら挑戦しよう<\/small>/);
   assert.match(card,/チャレンジ問題：どっちに読んだ？/);
-  // ドイツの6をけんばんで5問（変化和音クイズの chord=ger。クイズでもチャレンジのしるし）
-  assert.match(card,/href="chroma-quiz\.html\?key=m0&amp;mode=keys&amp;chord=ger&amp;n=5"/);
+  // ドイツの6をけんばんで5問（変化和音クイズの chord=ger&chal=1。クイズでもチャレンジのしるし）
+  assert.match(card,/href="chroma-quiz\.html\?key=m0&amp;mode=keys&amp;chord=ger&amp;chal=1&amp;n=5"/);
+  // 子どもが見ることばは「ナポリの和音」（♭Ⅱ は出さない。先生：♭のついた記号はコードネームのよう）
+  assert.ok(!/♭Ⅱ/.test(plain(card)),'チャレンジのカードに ♭Ⅱ を出さない');
+  assert.match(card,/ドイツの6と、ナポリの和音のためのⅤ7/);
 });
 
 test('異名同音の読みかえ：🔥 チャレンジ問題（ドイツの6 → Ⅰ6/4 → Ⅴ か、Ⅴ7/♭Ⅱ → ♭Ⅱ か）',()=>{
@@ -128,7 +148,8 @@ test('異名同音の読みかえ：🔥 チャレンジ問題（ドイツの6 �
   P.click('gqnext');
   assert.ok(S.gq&&['ger','v7'].includes(S.gq.ans)); assert.equal(S.gq.pick,null);
   assert.match(P.__html,/data-act="gqchoose" data-v="ger"[^>]*>ドイツの6/);
-  assert.match(P.__html,/data-act="gqchoose" data-v="v7"[^>]*>[^<]*（Ⅴ7\/♭Ⅱ）/);
+  assert.match(P.__html,/data-act="gqchoose" data-v="v7"[^>]*>[^<]*（ナポリの和音のためのⅤ7）<small>→ [^<]*（ナポリの和音）/);
+  assert.match(P.__html,/data-act="gqchoose" data-v="ger"[^>]*>ドイツの6<small>→ Ⅰ/);
   // ちがう答え → おしい・せいかいは0
   const wrong=S.gq.ans==='ger'?'v7':'ger';
   P.click('gqchoose',wrong);
@@ -140,13 +161,32 @@ test('異名同音の読みかえ：🔥 チャレンジ問題（ドイツの6 �
   for(let i=0;i<20;i++){
     P.click('gqnext'); const a=S.gq.ans; P.click('gqchoose',a);
     assert.match(P.__html,/🎉 そのとおり！/);
-    assert.match(plain(P.__html),a==='ger'?/Ⅴへの導音。半音上へすすんで/:/第7音。半音下へすすんで/);
+    assert.match(plain(P.__html),a==='ger'?/Ⅴへの導音。半音上へすすんで、Ⅰ64へ行ったね。このあとⅤへすすむよ/:/第7音。半音下へすすんで、ナポリの和音の/);
   }
   assert.equal(S.gN,21); assert.equal(S.gOk,20);
   assert.match(P.__html,/20 \/ 21問正解/);
   // 調がかわったら問題はおしまい
   P.click('gqnext'); P.click('pick',String(P.__state.keyIdx===0?[...Array(P.keyCount(true)).keys()].find(i=>i>0&&P.mod(P.minorKey(i).lt.midi,3)===P.__state.fam):0));
   assert.equal(S.gq,null);
+});
+
+test('異名同音の読みかえ：チャレンジ問題で鳴る和音の数はどちらも同じ（数で答えがわからない）。こたえたあとはさいごまで',()=>{
+  const src=en.match(/const gqSeq=[^\n]*/)[0];
+  const P=openEnh(), gqSeq=new Function(src+'\nreturn gqSeq;')();
+  for(let i=0;i<P.keyCount(true);i++){
+    const g=P.__gerSet(P.minorKey(i)), lab=P.keyName(P.minorKey(i));
+    const a=gqSeq(g,'ger',false), b=gqSeq(g,'v7',false);
+    assert.equal(a.length,b.length,lab+'：問題ではおなじ数');
+    assert.equal(a.length,2,lab);
+    assert.deepEqual(a[0].map(n=>n.midi),b[0].map(n=>n.midi),lab+'：1つめはおなじけんばん');
+    assert.equal(a[1],g.gerRes[0],lab+'：ドイツの6 → Ⅰ6/4'); assert.equal(b[1],g.v7Res,lab+'：Ⅴ7 → ナポリの和音');
+    // こたえたあと：ドイツの6はⅤまで
+    const fa=gqSeq(g,'ger',true);
+    assert.equal(fa.length,3); assert.equal(fa[2],g.gerRes[1]);
+  }
+  // gqPlay は gqSeq をつかい、こたえたあと（pick がある）はさいごまで。こたえたら鳴らす
+  assert.match(enJs,/const seq=gqSeq\(gerSet\(curKey\(\)\),Q\.ans,Q\.pick!=null\);/);
+  assert.match(enJs,/state\.gN\+\+; if\(v===Q\.ans\) state\.gOk\+\+; render\(\);\n\s*gqPlay\(\);/);
 });
 
 test('異名同音の読みかえ：チャレンジ問題の音（ドイツの6とⅤ7/♭Ⅱは同じけんばん、すすむ先だけがちがう）',()=>{
@@ -175,6 +215,21 @@ test('レベルアップの順番：地図・ページの「次は」も先生�
   assert.ok(!/次は増六/.test(dp),'ドッペルのつぎは副属和音（増六ではない）');
   assert.match(dp,/href="secondary\.html" data-go="secondary"><span aria-hidden="true">🧭<\/span> <span>次は副属和音/);
   assert.match(scriptOf(read('doppel.html')),/PA\.store\.set\('secondary',\{minor:state\.minor,keyIdx:state\.keyIdx,target:5,kind:'V7'\}\)/);
+  // 副属和音 → 次は準固有和音（どの目標でも）、準固有 → 次はナポリの六、ナポリ → 次は増六
+  const sc=read('secondary.html');
+  assert.match(sc,/<a class="btn" href="borrowed\.html" data-go="borrowed"><span aria-hidden="true">🎁<\/span> <span>次は準固有和音 ›<small>同じ主音の短調からかりる○Ⅳ・○Ⅵ<\/small><\/span><\/a>/);
+  assert.ok(!/if\(I\.t===5\) return '';/.test(sc),'目標がⅤのときもつながるアプリを出す');
+  assert.match(scriptOf(sc),/g\.dataset\.go==='borrowed'&&!state\.minor/);
+  assert.doesNotThrow(()=>new Function(scriptOf(sc)));
+  // 「長調の形」だけでは何の形かわからない：長調のⅤ9の根音省略だとそえる（「半減七」は出さない）
+  assert.match(sc,/には長調の形（長調のⅤ9の根音省略）は使わないよ（\$\{I\.tmin\?'目標が短三和音':'長調のⅤ9の第9音がこの調にない音'\}だから）/);
+  assert.match(sc,/のⅦ7は減七にならない（長調のⅤ9の根音省略で、減七にならない形）ので/);
+  assert.match(sc,/k==='vii7'\?'Ⅶ7・くらいひびき':'長調のⅤ9の根音省略'/);
+  assert.ok(!/半減七/.test(screenOf(sc)));
+  const bw=read('borrowed.html');
+  assert.match(bw,/href="neapolitan\.html" data-go="neapolitan">🌋 <span>次はナポリの六 ›/);
+  assert.ok(bw.indexOf('次はナポリの六')<bw.indexOf('href="aug6.html" data-go="aug6"'),'次はをいちばん上に');
+  assert.match(read('neapolitan.html'),/data-act="go" data-v="aug6"><span aria-hidden="true">↔️<\/span> 次は増六の和音/);
   const a6=read('aug6.html');
   assert.match(a6,/data-v="enharmonic"><span aria-hidden="true">🔀<\/span> 次は異名同音の読みかえ/);
   assert.match(a6,/<span class="chalbadge"><span aria-hidden="true">🔥<\/span> チャレンジ<\/span>けんばんでは/,'増六のページの読みかえもチャレンジのしるし');

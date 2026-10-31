@@ -413,8 +413,8 @@ function tryCard(key){
     links:[{to:'chroma-quiz',params:{mode:'ear',level:3,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:PA.icon('ear')+'耳で聴きわける'}]});
 }
 function linksCard(){
-  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>増六の和音</small></h2></summary><div class="links">
-    <button class="btn" data-act="go" data-v="aug6">↔️ 増六の和音<small>同じ「下げた第6音」を使う和音</small></button>
+  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>次は増六の和音</small></h2></summary><div class="links">
+    <button class="btn" data-act="go" data-v="aug6"><span aria-hidden="true">↔️</span> 次は増六の和音<small>同じ「下げた第6音」を使う和音</small></button>
   </div></details>`;
 }
 // がくふの下に：その楽譜にダブルシャープ・ダブルフラットが出ているときだけ、書きかたのメモ（出ていなければ ''）

@@ -182,6 +182,12 @@ const isTimed=id=>id==='chromatic'; // ⏱ 12の調をじゅんばんに（も�
 const isDrill=id=>CAT_IDS.includes(id)&&!OLD_TYPES.includes(id)&&!isTimed(id); // えらんでこたえる新しいしゅるい
 const quizOf=id=>isDrill(id)||isTimed(id)?QUIZ+'-'+id:QUIZ;
 const STAGES={copy:'まねる',fill:'うめる',make:'つくる',other:'べつの出しかた',prog:'ならび',time:'すらすら'};
+// ステップのいちらんの段階の字。ならび（prog）のあとのステップは、しゅるいの段階ではなく「もっと」（調号がふえる）・「ぜんぶの調」
+const stageText=(list,i)=>{
+  const s=list[i], c=catOf(s.cat), pi=list.findIndex(x=>x.cat==='prog');
+  if(isTimed(s.cat)||pi<0||i<=pi) return STAGES[c.stage];
+  return s.tier==='all'?'ぜんぶの調':'もっと';
+};
 // ステップ：1つのステップでむずかしくするのは1つだけ（しゅるい・調号の数・和音のどれか）
 const ST=(cat,tier,chords,note)=>({id:cat+'-'+tier,cat,tier,chords:chords.split(','),note:note||''});
 const ALL4='I,IV,V,V7';
@@ -911,8 +917,8 @@ function drillTitle(key,c,col){
     case 'root': return `${kn}<span>の</span>${badge(c.label,col)}<span>は、どの音から？</span>`;
     case 'fill': return `${kn}<span>の</span><span class="tg">${badge(c.label,col)}<span>、□は？</span></span>`;
     case 'add7': return `${kn}<span>の</span>${badge('Ⅴ',PA.COL.V)}<span>に、どの音をたすと</span>${badge('Ⅴ7',PA.COL.V7)}<span>？</span>`;
-    case 'staff': return `${kn}<span>の、この和音は？</span>`;
-    case 'inv': return `${kn}<span>の、この和音は？かたちは？</span>`;
+    case 'staff': return `<span class="tg">${kn}<span>の、</span></span><span>この和音は？</span>`;
+    case 'inv': return `<span class="tg">${kn}<span>の、</span></span><span>この和音は？かたちは？</span>`;
     case 'fix': return `${kn}<span>の</span>${badge(c.label,col)}<span>をかいたよ。1つだけまちがい！</span>`;
     case 'prog': return `${kn}<span>のならび。「？」の和音は？</span>`;
     case 'lt': return `${kn}<span>の7ばんめの音は？</span>`;
@@ -1162,6 +1168,7 @@ function renderSteps(){
   stopMic(); stopProg();
   const ks=Q.stepsKs, rec=stepRec(), list=STEPS[ks].map((_,i)=>stepOf(ks,i+1));
   const nDone=list.filter(s=>stepDone(rec,s)).length, nextI=list.findIndex(s=>!stepDone(rec,s));
+  const invS=list.find(s=>s.cat==='inv'), invNo=invS&&!stepDone(rec,invS)?invS.n:0; // 転回形は④「和音をもっと知ろう」でならう
   const items=list.map((s,i)=>{
     const ok=stepDone(rec,s), c=catOf(s.cat), tr=KD.TIERS.find(t=>t.id===s.tier), best=rec[stepKey(s)];
     const ch=s.cat==='add7'||s.cat==='lt'||isTimed(s.cat)?'':s.chords.map(k=>CHORDS[k].label).join('・');
@@ -1170,13 +1177,14 @@ function renderSteps(){
       :[`<span aria-hidden="true">${tr.emoji}</span> 調号${tr.min}〜${tr.max}`,ch,s.note,isInt(best,1,STEP_N)&&!ok?`さいこう${best}／${STEP_N}`:''].filter(Boolean).join('・');
     return `<li><button class="stepbtn${ok?' done':''}${i===nextI?' next':''}" data-act="step-go" data-ks="${ks}" data-v="${s.n}">`
       +`<span class="sn" aria-hidden="true">${ok?'✓':s.n}</span>`
-      +`<span class="stx"><span class="pa-sr">ステップ${s.n}${ok?'（できた）':i===nextI?'（つぎはここ）':''}</span><span class="stg">${STAGES[c.stage]}</span><b><span aria-hidden="true">${c.emoji}</span> ${c.name}</b><small>${info}</small></span>`
+      +`<span class="stx"><span class="pa-sr">ステップ${s.n}${ok?'（できた）':i===nextI?'（つぎはここ）':''}</span><span class="stg">${stageText(list,i)}</span><b><span aria-hidden="true">${c.emoji}</span> ${c.name}</b><small>${info}</small></span>`
       +`<span class="sgo" aria-hidden="true">${isTimed(s.cat)?'⏱':'5もん'} ›</span></button></li>`;
   }).join('');
   const h=`<div class="stack"><section class="card shead"><h2>📋 ステップ<small>やさしいじゅんに1つずつ。1つのステップは5もん。5もん中${STEP_PASS}もんいじょう、じぶんで（ヒントなしで）できたら ✓。さいごの⏱は、12の調をさいごまでひけたら ✓</small></h2>
     ${PA.seg('stepks',[['major','<span aria-hidden="true">☀️</span> 長調'],['minor','<span aria-hidden="true">🌙</span> 短調']],ks,'full')}
-    <p class="note">まねる → うめる → つくる → べつの出しかた → ならび → すらすら。いま${nDone}／${list.length}できた</p></section>
+    <p class="note">まねる → うめる → つくる → べつの出しかた → ならび → もっと → すらすら。いま${nDone}／${list.length}できた</p></section>
     <ol class="steps">${items}</ol>
+    ${invNo?`<p class="note" style="text-align:center"><span aria-hidden="true">🔄</span> ステップ${invNo}（がくふで転回形）がはじめてなら、さきに<a href="inversion.html">和音のかたち（転回形）</a>を見てね</p>`:''}
     <div class="row center"><button class="btn" data-act="steps-free">🎈 じぶんで選んでとく</button></div></div>`;
   PA.paint(document.getElementById('view'),h,'steps:'+ks);
   clearActions();
@@ -1208,7 +1216,9 @@ function render(){
     h+=drillParts().replace('<section class="card dpart cur"><h2>',`<section class="card dpart cur">${part}<h2>`);
     if(done) h+=`<div class="fb ${Q.lastOk?'good':'bad'}" id="fb" role="status">${msg}</div>`;
     else if(Q.hint>=1) h+=`<div class="msg" role="status">💡 ヒント：${drillHint(key,c)}</div>`;
-    h+=`<div class="row center"><button class="btn small" data-act="qexplain">🐸 つくりかたを見る</button></div>`+(done||Q.result!==null?'':PA.once('hint-rule',`<p class="qsub" style="text-align:center;margin:0">💡 ${PA.esc(PA.HINT_NOTE)}</p>`));
+    // 転回形は④「和音をもっと知ろう」でならう：はじめての子へ「和音のかたち」へのリンク
+    const invLink=Q.dr.cat==='inv'?`<a class="btn small" href="inversion.html" data-go="inversion"><span aria-hidden="true">🔄</span> 転回形がはじめてなら：和音のかたち ›</a>`:'';
+    h+=`<div class="row center"><button class="btn small" data-act="qexplain">🐸 つくりかたを見る</button>${invLink}</div>`+(done||Q.result!==null?'':PA.once('hint-rule',`<p class="qsub" style="text-align:center;margin:0">💡 ${PA.esc(PA.HINT_NOTE)}</p>`));
     if(done) h+=`<section class="card"><h2>🎹 こたえのけんばん<small>${PA.keyName(key)}の${c.label}。下のローマ数字は音階のなんばんめ</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(LO,HI,kbMarks(key,Q.dr.cat==='inv'?Q.dr.voice:t,col,done))}</div></section>`;
   }else{
     h+=`<section class="card hero" style="--c:${col}">
@@ -1302,7 +1312,8 @@ function startStep(s){
  * wrong＝まちがえたときのようす（つぎにおすまで出す）、stale＝電子ピアノでまえの和音からおさえたままの音、tok＝はかっている回（かわったらタイマーをとめる）
  * きろく：PA.store 'chord-quiz-chromatic'（chromaRec）、調ごとに keystats-chord-quiz-chromatic（その調を1つもまちがえずにひけたら ○）、
  *   ステップのときは 'chord-quiz-steps' に STEP_N（12の調をさいごまでひけたら ✓） */
-const CR={phase:'idle',run:null,picked:new Set(),wrong:null,stale:[],tok:0,heldSig:'',result:null};
+const CR={phase:'idle',run:null,picked:new Set(),wrong:null,stale:[],tok:0,heldSig:'',result:null,left:false};
+// left＝とちゅうで画面をはなれたので、はかるのをやめた（スタートのカードに出す。つぎにスタートしたらけす）
 const CR_KEY='chord-quiz-chromatic';
 const crRec=()=>chromaRec(PA.store.get(CR_KEY,null));
 const crMode=()=>{const s=curStep();return s?s.ks:Q.keyset==='minor'?'minor':'major';};
@@ -1312,8 +1323,10 @@ function stopChroma(){CR.tok++;CR.phase='idle';CR.run=null;CR.picked=new Set();C
 function startChroma(){
   stopChroma(); PA.stopSound();
   const my=CR.tok;
-  CR.run=chromaNew(crMode(),crRec().gb); CR.phase='run'; CR.stale=PA.midi.active()?[...PA.midi.held()]:[]; CR.heldSig='';
+  CR.run=chromaNew(crMode(),crRec().gb); CR.phase='run'; CR.stale=PA.midi.active()?[...PA.midi.held()]:[]; CR.heldSig=''; CR.left=false;
   render();
+  // フォーカスはひくけんばんへ（スタートのボタンは「さいしょから」に入れかわるので、そこにのこさない）
+  const k=document.querySelector('#view [data-sk="kb"] [data-m][tabindex="0"]'); if(k&&k.focus) k.focus({preventScroll:true});
   // 1つめの和音が画面に出てから、時間をはかりはじめる（描いたあとのつぎのコマ）
   afterPaint(()=>{if(my!==CR.tok||CR.phase!=='run') return;if(CR.run.startAt==null) CR.run.startAt=Date.now();crTick(my);});
 }
@@ -1409,6 +1422,7 @@ function renderChroma(){
       ${st?`<p class="note"><span aria-hidden="true">📋</span>ステップ${st.n}（${KS_NAME[st.ks]}）：12の調をさいごまでひけたら ✓</p>`:`<div class="opt"><span class="lab">調</span>${PA.seg('crmode',[['major','<span aria-hidden="true">☀️</span> 長調'],['minor','<span aria-hidden="true">🌙</span> 短調']],mode,'full')}</div>`}
       ${mode==='major'?`<div class="opt"><span class="lab">ファ♯・ソ♭の調</span>${PA.seg('crgb',[['fs','嬰ヘ長調'],['gb','変ト長調']],rec.gb?'gb':'fs','full')}<small>どちらも調号は6つ</small></div>`:''}
       ${crKeysHTML(ids,-1)}
+      ${CR.left?'<p class="note" role="status">とちゅうで画面をはなれたので、はかるのをやめたよ。もういちどスタートしてね。</p>':''}
       <p class="crres">じぶんのベスト（${KS_NAME[mode]}）：<b>${crBestText(rec.best[mode])}</b></p>
       ${PA.midi.active()?'<p class="note"><span aria-hidden="true">🎹</span>つないだ電子ピアノでひけるよ</p>':''}</section>`;
   }
@@ -1418,7 +1432,7 @@ function renderChroma(){
 }
 function crActions(){
   let a;
-  if(CR.phase==='run') a=`<button class="btn" data-act="crclear" ${CR.picked.size?'':'disabled'}>${PA.icon('erase')}けす</button><button class="btn" data-act="crrestart">${PA.icon('retry')}さいしょから</button><button class="btn" data-act="crstop">やめる</button>`;
+  if(CR.phase==='run') a=`<button class="btn" data-act="crclear" ${CR.picked.size?'':'disabled'}>${PA.icon('erase')}けす</button><button class="btn" data-act="crrestart" data-confirm="もう1回おす">${PA.icon('retry')}さいしょから</button><button class="btn" data-act="crstop">やめる</button>`;
   else if(CR.phase==='done') a=`<button class="btn primary" data-act="crstart" data-hot="next">${PA.icon('retry')}もういちど</button>`+(CR.result&&CR.result.step?`<button class="btn" data-act="steps">📋 ステップのいちらん</button>`:`<button class="btn" data-act="crstop">もどる</button>`);
   else a=`<button class="btn primary" data-act="crstart" data-hot="check"><span aria-hidden="true">⏱</span>スタート</button>`;
   if(a!==lastActions){PA.paint(document.getElementById('actions'),a,'bar');lastActions=a;}
@@ -1588,9 +1602,16 @@ document.addEventListener('toggle',e=>{
   const b=document.querySelector('[data-act="qsetopen"]'); if(b) b.setAttribute('aria-expanded',e.target.open?'true':'false');
   if(Q.openSet!==e.target.open){Q.openSet=e.target.open;save();}
 },true);
-// 画面をはなれたらマイクをとめる
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&(MIC.phase==='on'||MIC.phase==='wait')){stopMic();render();}});
-window.addEventListener('pagehide',()=>{stopMic();});
+// 画面をはなれたらマイクをとめる。⏱ 12の調もやめる（はなれていた時間が足されないように。もどったらスタートから）
+function leaveChroma(){if(CR.phase!=='run') return false;stopChroma();CR.left=true;return true;}
+document.addEventListener('visibilitychange',()=>{
+  if(!document.hidden) return;
+  let re=false;
+  if(MIC.phase==='on'||MIC.phase==='wait'){stopMic();re=true;}
+  if(leaveChroma()) re=true;
+  if(re) render();
+});
+window.addEventListener('pagehide',()=>{stopMic();leaveChroma();});
 if(!Q.q) newQuestion();
 save(); render();
 </script>

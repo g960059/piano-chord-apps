@@ -16,7 +16,7 @@ const J=x=>JSON.parse(JSON.stringify(x));
 const eq=(a,b,msg)=>assert.deepStrictEqual(J(a),J(b),msg);
 const TIERS=['easy','normal','hard','all'];
 const link=p=>L.linkOf(p,TIERS);
-const NONE={mode:null,kLv:null,types:null,earLv:null,tier:null,key:null,n:null};
+const NONE={mode:null,kLv:null,types:null,earLv:null,tier:null,key:null,n:null,chal:null};
 const W=o=>Object.assign({},NONE,o);
 
 test('ステップのなかみ（先生のじゅん。学ぶページの step= とそろえる）',()=>{
@@ -90,6 +90,12 @@ test('linkOf：chord・tier・key・n',()=>{
   eq(link(PA.parseParams('?mode=keys&level=1&key=M3&n=5')),W({mode:'keys',types:['ii7','dd'],key:'M3',n:5}),'まえの doppel.html のリンク');
   // 文字いがい（ほかのページがまちがえてわたしたとき）はすてる
   eq(link({level:3,key:{},n:5}),null);
+  // chal=1（異名同音の読みかえの 🔥 チャレンジから）は chord といっしょのときだけ
+  eq(link(PA.parseParams('?key=m0&mode=keys&chord=ger&chal=1&n=5')),W({mode:'keys',types:['ger'],key:'m0',n:5,chal:true}));
+  eq(link(PA.parseParams('?key=m0&mode=keys&chord=ger&n=5')),W({mode:'keys',types:['ger'],key:'m0',n:5}));
+  eq(link({chal:'1'}),null,'chal だけのリンクはなにもしない');
+  eq(link({chord:'ger',chal:'yes'}),W({mode:'keys',types:['ger']}));
+  eq(link({step:'5',chal:'1'}),W({mode:'keys',kLv:5}),'ステップには chal をつけない');
 });
 
 test('準固有和音は ○Ⅳ・○Ⅵ と書く（先生：♭Ⅵ・Ⅳm はつかわない）。画面・目次・聴きわけの名前',()=>{

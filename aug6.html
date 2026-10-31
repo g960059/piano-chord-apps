@@ -262,10 +262,10 @@ function bIIDetails(key){
   const [lo,hi]=kbRange([g,b.res,i64,gv]);
   // 🔥 チャレンジ（先生：増六が入る読みかえは「チャレンジ」としてわける。異名同音の読みかえはレベルアップのさいご）
   let h=`<details class="more" data-d="bii"><summary><span class="chalbadge"><span aria-hidden="true">🔥</span> チャレンジ</span>けんばんでは${b.domName}と同じ音（異名同音の読みかえ）</summary>
-    <p>ドイツの6${b.plain?`の音をぜんぶ、けんばんのふつうの名前（${namesC(d,'・')}）で書きかえると`:`${q(g[3])}を${q(d[3])}と書きかえると`}、<b>${b.domName}</b>（♭Ⅱ＝${b.bII}のためのⅤ7）と<b>まったく同じけんばん</b>。絶対音感で聴くと、同じ和音に聴こえるね。でも書き方とすすみ方がちがうよ。</p>
+    <p>ドイツの6${b.plain?`の音をぜんぶ、けんばんのふつうの名前（${namesC(d,'・')}）で書きかえると`:`${q(g[3])}を${q(d[3])}と書きかえると`}、<b>${b.domName}</b>（ナポリの和音＝${b.bII}のためのⅤ7）と<b>まったく同じけんばん</b>。絶対音感で聴くと、同じ和音に聴こえるね。でも書き方とすすみ方がちがうよ。</p>
     <div class="vs">
       <div><h3 style="color:${AUG}">ドイツの6</h3>${namesC(g,'・')}<br><span class="note">${q(g[3])}は半音上へ → Ⅴへ</span></div>
-      <div><h3 style="color:${VCOL}">${b.domName}</h3>${d.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}<br><span class="note">${q(d[3])}は半音下へ → ${b.bII}（♭Ⅱ）へ</span></div>
+      <div><h3 style="color:${VCOL}">${b.domName}</h3>${d.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}<br><span class="note">${q(d[3])}は半音下へ → ナポリの和音の${b.bII}へ</span></div>
     </div>
     <div class="scroll" data-sk="biikb" style="margin-top:8px">${PA.kbSVG(lo,hi,mk)}</div>
     <p class="note" style="margin-top:2px">${alt?alt.cap:`けんばんの下の赤い字は${b.domName}での名前`}</p>
@@ -316,7 +316,7 @@ function termsHTML(key,t){
     <li><b>${I64H}</b>（四六の和音・終止四六） … Ⅰの第5音をいちばん下にした形。Ⅴの前におくと、Ⅴのなかまになるよ。Ⅰ²と書く本もあるよ。</li>
     ${key.minor?'':`<li><b>準固有</b> … 同じ主音の短調（${parMinor(key)}）から音をかりること。下げた第5音${t==='ger'?'と第9音':''}は、${parMinor(key)}の音だよ。</li>`}
     <li><b>異名同音</b> … 名前（書きかた）はちがうけど、けんばんでは同じ音。ドイツの6は${b.domName}（${b.bII}のためのⅤ7）と同じけんばんなので、この読みかえで、ちがう調へうつる曲もあるよ。</li>
-    <li><b>ナポリの和音</b>（♭Ⅱ） … Ⅱの根音を半音下げた長三和音。${PA.keyName(key)}では${b.bII}。</li>
+    <li><b>ナポリの和音</b> … Ⅱの根音を半音下げた長三和音。${PA.keyName(key)}では${b.bII}。</li>
   </ul></details>`;
 }
 // 変化和音クイズへ：いまの調で、🎹 おさえるステップ5（増六3しゅるい）を5もん。👂 聴きわけはレベル2（増六）
@@ -498,7 +498,7 @@ document.addEventListener('click',e=>{
     stop(); state.cmp=v; render(); PA.chord(aug(key,v).map(n=>n.midi),{dur:2.2});
     const my=token; setTimeout(()=>{if(my===token&&state.cmp===v){state.cmp=null;render();}},2300);
   }
-  else if(a==='biidom'){const b=bIIinfo(key);playSeq([{notes:b.dom,color:VCOL,cap:`${b.domName}（♭ⅡのためのⅤ7）`},{notes:b.res,color:VCOL,cap:`${b.bII}（♭Ⅱ）`}]);}
+  else if(a==='biidom'){const b=bIIinfo(key);playSeq([{notes:b.dom,color:VCOL,cap:`${b.domName}（ナポリの和音のためのⅤ7）`},{notes:b.res,color:VCOL,cap:`${b.bII}（ナポリの和音）`}]);}
   else if(a==='biiger'){playSeq([{notes:aug(key,'ger'),color:AUG,cap:'ドイツの6'},{notes:C.gerToI64(key),color:ICOL,cap:`${I64H}（Ⅰの第5音がいちばん下）`},{notes:C.aug6ToV(key,'ger'),color:VCOL,cap:'Ⅴ'}]);}
   else if(a==='altplay'){
     const alt=C.gerMajorAlt(key); if(!alt) return;
