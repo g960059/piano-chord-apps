@@ -40,7 +40,8 @@
  * ----- アプリの目次（ホーム・つぎへのリンク・もどるにつかう） -----
  *   PA.APP_TYPES … {learn,quiz,play,ref,ear}：{label, c(色), l(うすい色), dk(白い字をのせられるこい色)}
  *   PA.UNITS … [{id, kind, title, sub, tasks:[{app, href, title}], apps:[app の id]}]（ホームにならべるじゅん）
- *     kind：'basic'＝基本の地図（①〜⑥）、'daily'＝毎日たのしむところ（耳のひろば）、'extra'＝レベルアップしたい人へ
+ *     kind：'basic'＝基本の地図（①〜⑥）、'daily'＝毎日たのしむところ（耳のひろば）、'pieces'＝名曲で楽曲分析（基本の地図のあと）、'extra'＝レベルアップしたい人へ
+ *     soon＝'pieces' の「じゅんびちゅう」の曲 [{title, sub}]（リンクにしない。ホームでうすく出すだけ）
  *     tasks＝島の中の課題。おなじアプリを、べつの設定（href の ?keyset=… など）でいくつかの単元に出せる（和音クイズは①長調・②短調）
  *     apps＝tasks のアプリの id（おなじものは1つ）。PA.unit(id) → その単元（なければ null）
  *   PA.APPS  … [{id, ic, title, d, type:'learn'|'quiz'|'play'|'ref'|'ear', unit, practice?(れんしゅうのページの id), href?(外のページ)}]
@@ -580,8 +581,16 @@ PA.gClef=(x,y0)=>`<g transform="translate(${x} ${y0})" fill="none" stroke="#3a32
 PA.fClef=(x,y0)=>`<g transform="translate(${x} ${y0})"><circle cx="5" cy="0" r="4" fill="#3a3245"/><path d="M3 -2 C4 -10 14 -12 19 -7 C25 -1 22 10 14 17 C9 21 4 24 -1 26" fill="none" stroke="#3a3245" stroke-width="2.8" stroke-linecap="round"/><circle cx="27" cy="-5" r="2.2" fill="#3a3245"/><circle cx="27" cy="5" r="2.2" fill="#3a3245"/></g>`;
 /* cols: [{notes:[...ト音記号], lh:[...ヘ音記号], color, ltColor(導音の色), accColor, accRing, label（文字か、PA.rn の部品）, sub(和音名の下の小さな字), labelColor, op, noAcc, carry:{文字:変化記号},
  *         hl(その列のうしろをぬる色), lhRing(ヘ音記号の音をかこむ色)}]
- * opts: {grand, colW, minW, arrows:[{c1,i1,c2,i2,color,text,dash,dy}], sigOverride:{letter,acc}, noSig, maxScale, autoCarry}
+ * opts: {grand, colW, minW, arrows:[{c1,i1,c2,i2,color,text,dash,dy}], sigOverride:{letter,acc}, noSig, maxScale, autoCarry,
+ *         measures:[{ci, n}]（小節：ci の列の前にたて線、上に小節の番号 n。さいごの右はしにもたて線）}
+ * PA.staffGeom(key,ncols,o) → {nx（1つめの列の左はし）, cw（列のはば）, W（ぜんたいのはば）}。がくふの列の下に HTML をならべるとき（名曲で楽曲分析の「？」） 
  * autoCarry：ぜんぶの列を1つの小節とみて、前の臨時記号をもどす音に♮など（おなじ段・高さはきまりどおり、音名がおなじならねんのためも。c.carry はつかわない） */
+// 調号のはばと列のはば（staffSVG とおなじ計算。列の下に HTML をならべるページはこれで位置をあわせる）
+PA.staffGeom=(key,ncols,o={})=>{
+  const sig=o.noSig?{letters:[]}:PA.sigInfo(key), ov=o.sigOverride;
+  const ns=sig.letters.length+(ov&&sig.letters.indexOf(ov.letter)<0?1:0), cw=o.colW||70, nx=50+ns*10+(ns?24:14);
+  return {nx,cw,W:Math.max(nx+ncols*cw+8,o.minW||0)};
+};
 const RNPX=16; // がくふの和音名の記号の数字の高さ（17px の太字よりすこし大きめ。2段の小さい数字も読めるように）
 PA.staffSVG=(key,cols,o={})=>{
   const sig=o.noSig?{type:1,letters:[]}:PA.sigInfo(key), ov=o.sigOverride, grand=!!o.grand;
@@ -593,7 +602,7 @@ PA.staffSVG=(key,cols,o={})=>{
     if(hit){hit.a=ov.acc;hit.red=true;}
     else sigDraw.push({L:ov.letter,st:TSs[PA.SHARP_ORDER.indexOf(ov.letter)],a:ov.acc,red:true});
   }
-  const ns=sigDraw.length, TB=grand?96:110, BT=TB+82, cw=o.colW||70, sx=50, nx=sx+ns*10+(ns?24:14);
+  const G=PA.staffGeom(key,cols.length,o), TB=grand?96:110, BT=TB+82, cw=G.cw, sx=50, nx=G.nx;
   const hasLabel=cols.some(c=>c.label);
   const ty=s=>TB-(s-30)*5, by=s=>BT-(s-26)*5;
   // いちばん低い音符の下に余白と和音名をおく（低いベースと名前が重ならないように）
@@ -608,7 +617,7 @@ PA.staffSVG=(key,cols,o={})=>{
   const baseH=grand?BT+48:TB+48, labelY=Math.max(baseH+16,lowY+30)+Math.ceil(rise);
   const hasSub=hasLabel&&cols.some(c=>c.sub); // c.sub＝和音名の下の小さな字（なければ前とおなじ図）
   const fdy=rnp.some(p=>p&&p.form)?7:0; // 記号の右下の7・9のぶん、下の小さな字とその下のあきをさげる
-  const W=Math.max(nx+cols.length*cw+8,o.minW||0), H=hasLabel?labelY+6+fdy+(hasSub?15:0):Math.max(baseH,lowY+16);
+  const W=G.W, H=hasLabel?labelY+6+fdy+(hasSub?15:0):Math.max(baseH,lowY+16);
   let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="がくふ" style="max-width:${Math.round(W*(o.maxScale||1.5))}px;margin:0 auto">`;
   // c.hl：列のうしろの色は、五線より先にぬる（五線が見えるように）
   cols.forEach((c,ci)=>{if(c.hl) svg+=`<rect x="${nx+ci*cw+3}" y="4" width="${cw-6}" height="${H-8}" rx="12" fill="${c.hl}"/>`;});
@@ -616,6 +625,16 @@ PA.staffSVG=(key,cols,o={})=>{
   sigDraw.forEach((d,i)=>{if(d.red) svg+=`<circle cx="${sx+i*10}" cy="${ty(d.st)}" r="10" fill="#fde4e7"/>`;});
   for(let i=0;i<5;i++) svg+=`<line x1="6" x2="${W-4}" y1="${TB-i*10}" y2="${TB-i*10}" stroke="#6b6273" stroke-width="1.2"/>`;
   svg+=PA.gClef(10,TB-10);
+  // 小節のたて線と番号（番号は上の線より上。音符より先に描く）
+  if(o.measures&&o.measures.length){
+    const y1=TB-40, y2=grand?BT+40:TB;
+    o.measures.forEach(m=>{
+      const x=nx+m.ci*cw;
+      if(m.ci>0) svg+=`<line x1="${x}" x2="${x}" y1="${y1}" y2="${y2}" stroke="#6b6273" stroke-width="1.4"/>`;
+      svg+=`<text x="${m.ci>0?x+3:x-2}" y="14" font-size="13" font-weight="700" fill="#5f5869">${PA.esc(m.n)}</text>`;
+    });
+    svg+=`<line x1="${W-4}" x2="${W-4}" y1="${y1}" y2="${y2}" stroke="#6b6273" stroke-width="1.4"/>`;
+  }
   if(grand){
     for(let i=0;i<5;i++) svg+=`<line x1="6" x2="${W-4}" y1="${BT+i*10}" y2="${BT+i*10}" stroke="#6b6273" stroke-width="1.2"/>`;
     svg+=`<line x1="6" x2="6" y1="${TB-40}" y2="${BT+40}" stroke="#6b6273" stroke-width="2"/>`;
@@ -856,6 +875,12 @@ PA.UNITS=[
   {id:'accomp',kind:'basic',title:'🎼 曲につけてみよう',sub:'知っている曲のメロディーに和音をつける',tasks:[{app:'accompaniment'}]},
   // 毎日たのしむところ（学ぶじゅんとはべつ。いつでもあそべる）
   {id:'ear',kind:'daily',title:'👂 耳のひろば',sub:'毎日すこしずつ。聴いてパッとわかる',tasks:[{app:'ear'},{app:'progression'}]},
+  // 名曲で楽曲分析（先生の案：コンクールでひくような曲の和音を穴うめ。docs/REPERTOIRE-ANALYSIS.md）。基本の地図のあと、レベルアップの前
+  //   曲は piece.html?id=…（データは assets/pieces/<id>.json）。soon＝きまっているつぎの曲（まだリンクにしない）
+  {id:'pieces',kind:'pieces',title:'🎼 名曲で楽曲分析',sub:'本物の曲の和音を、記号で穴うめ',tasks:[
+    {app:'piece',href:'piece.html?id=k545-1',title:'モーツァルトのソナタ K.545 第1楽章'}],
+   soon:[{title:'ベートーヴェンのソナタ第1番 Op.2-1',sub:'ヘ短調'},{title:'シューベルトの曲',sub:'曲はこれからきめるよ'},
+     {title:'ショパンのエチュード Op.10-8',sub:'ヘ長調'},{title:'ショパンのスケルツォ第2番',sub:'いちばんむずかしい曲'}]},
   // レベルアップしたい人へ（変化和音。先生のじゅん：準固有和音がナポリの六よりさき、異名同音の読みかえはいちばん最後）
   {id:'extra',kind:'extra',title:'🌈 レベルアップしたい人へ',sub:'変化和音：調の音を半音動かす・よその調からかりる',tasks:[
     {app:'doppel'},{app:'secondary'},{app:'borrowed'},{app:'neapolitan'},{app:'aug6'},{app:'enharmonic'},{app:'chroma-quiz'}]}
@@ -886,6 +911,7 @@ PA.APPS=[
   {id:'aug6',ic:'↔️',title:'増六の和音',d:'イタリア・フランス・ドイツの6。外へひらいてⅤへ',type:'learn',practice:'chroma-quiz'},
   {id:'enharmonic',ic:'🔀',title:'異名同音の読みかえ',d:'同じけんばんでも、書き方とすすむ先で役わりがかわる',type:'learn',practice:'chroma-quiz'},
   {id:'chroma-quiz',ic:'🎯',title:'変化和音クイズ',d:'Ⅱ7・ドッペルから順に、けんばんでおさえる／耳で聴きわける',type:'quiz'},
+  {id:'piece',ic:'🎼',title:'名曲で楽曲分析',d:'本物の曲の和音を、記号で穴うめ。じぶんの楽譜もひらいて、いっしょに見よう',type:'quiz'},
   {id:'ear',ic:'👂',title:'和音の聴きわけ',d:'10しゅるいの和音を音で当てる。8レベルとチャレンジ',type:'ear'},
   {id:'progression',ic:'🧩',title:'ならびの聴きわけ',d:'Ⅰ→Ⅳ→Ⅴ7→Ⅰ などのならびを聴いて、「？」の和音を当てる。おちつく・もどりたい感じ、いちばん下と上の音の動きも',type:'ear'}
 ];

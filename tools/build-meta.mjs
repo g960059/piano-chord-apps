@@ -102,7 +102,10 @@ const iconDir='assets/icons';
 const icons=fs.existsSync(path.join(ROOT,iconDir))?fs.readdirSync(path.join(ROOT,iconDir)).filter(f=>/\.(png|svg)$/.test(f)).sort().map(f=>iconDir+'/'+f):[];
 // core.js・app.css などぜんぶ（native.js は iOS アプリだけでつかうので、ウェブではとっておかない）
 const assets=fs.readdirSync(path.join(ROOT,'assets')).filter(f=>/\.(js|css)$/.test(f)&&f!=='native.js').sort().map(f=>'assets/'+f);
-const files=[...pages,...assets,'manifest.webmanifest','favicon.svg',...icons].filter(f=>fs.existsSync(path.join(ROOT,f)));
+// 名曲で楽曲分析の曲のデータ（piece.html が読む。オフラインでもひらけるように）
+const pieceDir='assets/pieces';
+const pieces=fs.existsSync(path.join(ROOT,pieceDir))?fs.readdirSync(path.join(ROOT,pieceDir)).filter(f=>/\.json$/.test(f)).sort().map(f=>pieceDir+'/'+f):[];
+const files=[...pages,...assets,...pieces,'manifest.webmanifest','favicon.svg',...icons].filter(f=>fs.existsSync(path.join(ROOT,f)));
 const hash=crypto.createHash('sha256');
 files.forEach(f=>{hash.update(f+'\0');hash.update(now(f));hash.update('\0');});
 const VERSION=hash.digest('hex').slice(0,10);

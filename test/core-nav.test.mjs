@@ -12,8 +12,8 @@ const root=path.join(path.dirname(fileURLToPath(import.meta.url)),'..');
 
 test('目次：PA.UNITS・PA.APPS・PA.app（先生のじゅん：docs/TEACHER-FEEDBACK.md）',()=>{
   const PA=loadPA();
-  eq(PA.UNITS.map(u=>u.id),['major','minor','minor9','more','ending','accomp','ear','extra']);
-  eq(PA.UNITS.map(u=>u.kind),['basic','basic','basic','basic','basic','basic','daily','extra']);
+  eq(PA.UNITS.map(u=>u.id),['major','minor','minor9','more','ending','accomp','ear','pieces','extra']);
+  eq(PA.UNITS.map(u=>u.kind),['basic','basic','basic','basic','basic','basic','daily','pieces','extra']);
   const apps=id=>PA.unit(id).apps;
   eq(apps('major'),['chord-build','chord-quiz','cadence','chord-table']);
   eq(apps('minor'),['minor-why','minor-signature','chord-quiz']);
@@ -22,6 +22,11 @@ test('目次：PA.UNITS・PA.APPS・PA.app（先生のじゅん：docs/TEACHER-F
   eq(apps('ending'),['ending','ending-quiz']);
   eq(apps('accomp'),['accompaniment']);
   eq(apps('ear'),['ear','progression']);
+  // 名曲で楽曲分析：曲ごとに piece.html?id=…。きまっているつぎの曲は soon（リンクにしない）
+  eq(apps('pieces'),['piece']);
+  eq(PA.unit('pieces').tasks.map(t=>t.href),['piece.html?id=k545-1']);
+  eq(PA.unit('pieces').soon.map(x=>x.title),['ベートーヴェンのソナタ第1番 Op.2-1','シューベルトの曲','ショパンのエチュード Op.10-8','ショパンのスケルツォ第2番']);
+  PA.unit('pieces').tasks.forEach(t=>assert.ok(fs.existsSync(path.join(root,'assets','pieces',PA.parseParams(t.href.split('?')[1]).id+'.json')),t.href));
   // レベルアップ：Ⅱ7とドッペル → 副属和音 → 準固有和音 → ナポリの六 → 増六 → 異名同音（いちばん最後）（＋変化和音クイズ）
   eq(apps('extra'),['doppel','secondary','borrowed','neapolitan','aug6','enharmonic','chroma-quiz']);
   assert.equal(PA.unit('nope'),null);
@@ -38,7 +43,7 @@ test('目次：PA.UNITS・PA.APPS・PA.app（先生のじゅん：docs/TEACHER-F
   // 課題の href・title：なければそのアプリのページと名前
   tasks.forEach(t=>{
     assert.ok(t.title&&t.href,t.app);
-    if(t.app!=='chord-quiz'){assert.equal(t.href,t.app+'.html');assert.equal(t.title,PA.app(t.app).title);}
+    if(t.app!=='chord-quiz'&&t.app!=='piece'){assert.equal(t.href,t.app+'.html');assert.equal(t.title,PA.app(t.app).title);}
   });
   PA.APPS.forEach(a=>{
     assert.ok(['learn','quiz','play','ref','ear'].includes(a.type),a.id);

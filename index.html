@@ -165,6 +165,13 @@ details.xmap[open]>summary::after{transform:rotate(180deg)}
 .xsteps .stone{position:absolute;left:0;top:13px;width:32px;height:32px;border-radius:50%;background:#fff;border:2px solid #b9ac99;display:grid;place-items:center;font-size:14px;font-weight:800;color:var(--ink);z-index:1}
 .xsteps li.done .stone{background:var(--ok);border-color:var(--ok);color:#fff}
 #view .xsteps li a.arow{background:#fff;border:1.5px solid var(--line)}
+/* 名曲で楽曲分析のじゅんびちゅうの曲：リンクではない。うすい地の色（字は 4.5:1いじょう） */
+.xsteps li.soon .stone{background:#f3efe8;border-style:dashed;color:#5f5869}
+.soonrow{display:flex;align-items:center;gap:10px;min-height:56px;padding:6px 8px;border-radius:12px;background:#f6f2ec;border:1.5px dashed #d9cfc1;color:#5f5869}
+.soonrow .ic{background:#fff;filter:grayscale(1);opacity:.7}
+.soonrow .tx b{font-size:15px;font-weight:700}
+.soonrow .d{color:#5f5869;white-space:normal}
+.soontag{display:inline-block;margin-right:6px;font-size:12px;font-weight:800;padding:0 8px;border-radius:999px;background:#e9e2d6;color:#4f4858;line-height:1.7}
 /* せまい画面（320px）：島を小さくして、看板の文字をすこし小さく */
 @media (max-width:360px){
   .isle{width:52px;height:52px;font-size:24px}
@@ -184,8 +191,8 @@ details.xmap[open]>summary::after{transform:rotate(180deg)}
 <main class="page" id="view"></main>
 <script src="assets/core.js"></script>
 <script>
-/* 入口：つづきから（＋にがて）・耳のひろば・ぼうけんの地図（基本①〜⑥）・レベルアップしたい人へ（もう1つの地図）
- *   目次は core の PA.UNITS（kind：basic＝基本の島、daily＝耳のひろば、extra＝レベルアップ）・PA.APPS・PA.APP_TYPES（このページではもたない）。
+/* 入口：つづきから（＋にがて）・耳のひろば・ぼうけんの地図（基本①〜⑥）・名曲で楽曲分析・レベルアップしたい人へ（もう1つの地図）
+ *   目次は core の PA.UNITS（kind：basic＝基本の島、daily＝耳のひろば、pieces＝名曲で楽曲分析、extra＝レベルアップ）・PA.APPS・PA.APP_TYPES（このページではもたない）。
  *   島の名前・色（LOOK）だけこのページのもの。しらない単元は PA.UNITS の名前と PALETTE の色。app.title・task.title はただの文字、app.d は HTML
  *   ひらいたアプリ：PA.store 'visited'（PA.mountBar がきろく）。まえからの人は 'last'・'keystats-…' なども見る
  *   島・レベルアップの地図のひらく／とじる：PA.store 'home-units'＝{unit の id: true/false}（じぶんでおしたときだけほぞん）
@@ -231,9 +238,10 @@ const look=(u,i)=>{
   const m=String(u.title).match(EMOJI_RE), lk=LOOK[u.id]||{}, pl=PALETTE[i%PALETTE.length];
   return {id:u.id,emoji:m?m[1]:'🏝️',name:lk.name||String(u.title).replace(EMOJI_RE,''),sub:lk.sub||u.sub||'',c:lk.c||pl[0],l:lk.l||pl[1],tasks:u.tasks,apps:u.apps};
 };
-const units=kind=>PA.UNITS.filter(u=>u.tasks.length&&(kind==='basic'?(u.kind!=='daily'&&u.kind!=='extra'):u.kind===kind));
+const units=kind=>PA.UNITS.filter(u=>u.tasks.length&&(kind==='basic'?!['daily','extra','pieces'].includes(u.kind):u.kind===kind));
 const BASIC=units('basic').map(look);   // 基本の地図（しらない kind も基本に）
 const DAILY=units('daily').map(look);   // 耳のひろば（地図ではなくカードに）
+const PIECES=units('pieces').map(look); // 名曲で楽曲分析（基本の地図のあと）
 const EXTRA=units('extra').map(look);   // レベルアップしたい人へ（もう1つの地図）
 
 // ひらいたことのあるアプリ（id の Set）
@@ -346,7 +354,19 @@ function islandModes(s){
   const t=(s.tasks||[]).find(x=>/[?&]keyset=(major|minor)(?:&|$)/.test(x.href||''));
   return t?modesOf(t):null;
 }
+// 名曲で楽曲分析（piece.html?id=…）：曲ごとのきろく 'pieces'＝{id:{t, n, best:{deg|inv|full:{ok,n}}}}
+//   ★＝ひらいた、★★＝5もんいじょう答えた か どれかの答えかたでさいごまで、★★★＝どれかの答えかたで8わりいじょう正解
+function pieceStars(t){
+  const m=/[?&]id=([a-z0-9-]+)/.exec(t.href||''), d=PA.store.get('pieces',{}), me=m&&isObj(d)&&isObj(d[m[1]])?d[m[1]]:null;
+  if(!me||!(me.t>0)) return {n:0,max:3,q:null};
+  const best=isObj(me.best)?Object.keys(me.best).map(k=>me.best[k]).filter(b=>isObj(b)&&isInt(b.n,1,999)&&isInt(b.ok,0,b.n)):[];
+  let n=1;
+  if(isInt(me.n,5,1e6)||best.length) n=2;
+  if(best.some(b=>b.ok>=b.n*0.8)) n=3;
+  return {n,max:3,q:null};
+}
 function taskStars(t,vis,im){
+  if(t.app==='piece') return pieceStars(t);
   const a=PA.app(t.app), max=maxStars(a), ks=/[?&]keyset=/.test(t.href||''), md=modesOf(t);
   const q=a.type==='quiz'?quizStat(a.id,md):null;
   if(!vis.has(a.id)||(ks&&!seenIn(a.id,md))) return {n:0,max,q};
@@ -501,14 +521,32 @@ function mapHTML(vis,stars,here){
   return h+`</div></section>`;
 }
 
+/* ----- 名曲で楽曲分析：本物の曲で穴うめ（基本の地図のあと）。じゅんびちゅうの曲はリンクにしない ----- */
+// ひらくのは、じぶんでひらいたとき か、さいごにやったページがここにあるとき（レベルアップの地図とおなじ）
+const openOf=(u,times)=>{
+  const sv=savedOpen(); if(typeof sv[u.id]==='boolean') return sv[u.id];
+  let mine=0, other=0; Object.keys(times).forEach(id=>{if(u.apps.indexOf(id)>=0) mine=Math.max(mine,times[id]);else other=Math.max(other,times[id]);});
+  return mine>0&&mine>=other;
+};
+function piecesHTML(vis,stars,times){
+  return PIECES.map(u=>{
+    const st=stars[u.id], U=PA.unit(u.id), soon=U&&Array.isArray(U.soon)?U.soon:[];
+    let no=0;
+    return `<details class="card xmap pmap" data-d="pmap-${u.id}" data-u="${u.id}"${openOf(u,times)?' open':''}>`
+      +`<summary><span class="xic" aria-hidden="true">${u.emoji}</span><span class="xt"><b>${ESC(u.name)}</b>`
+      +`<small>${ESC(u.sub)}。答えかたは、じぶんでえらべるよ</small>${sumHTML(st)}</span></summary>`
+      +`<ol class="xsteps">${u.tasks.map((t,k)=>{const s=st.tasks[k];
+        return `<li class="${taskDone(s)?'done':''}"><span class="stone" aria-hidden="true">${++no}</span>${rowHTML(t,s,vis)}</li>`;}).join('')}`
+      +soon.map(x=>`<li class="soon"><span class="stone" aria-hidden="true">${++no}</span><div class="arow soonrow"><span class="ic" aria-hidden="true">🎼</span>`
+        +`<span class="tx"><b>${ESC(x.title)}</b><span class="d"><span class="soontag">じゅんびちゅう</span>${x.sub?ESC(x.sub):''}</span></span></div></li>`).join('')
+      +`</ol></details>`;
+  }).join('');
+}
+
 /* ----- レベルアップしたい人へ：もう1つの地図（先生のじゅん。はじめはとじておく） ----- */
 function extraHTML(vis,stars,times){
-  const sv=savedOpen();
   return EXTRA.map(u=>{
-    const st=stars[u.id];
-    // ひらくのは、じぶんでひらいたとき か、さいごにやったページがこの地図にあるとき
-    let mine=0, other=0; Object.keys(times).forEach(id=>{if(u.apps.indexOf(id)>=0) mine=Math.max(mine,times[id]);else other=Math.max(other,times[id]);});
-    const open=typeof sv[u.id]==='boolean'?sv[u.id]:mine>0&&mine>=other;
+    const st=stars[u.id], open=openOf(u,times);
     let no=0;
     return `<details class="card xmap" data-d="xmap-${u.id}" data-u="${u.id}"${open?' open':''}>`
       +`<summary><span class="xic" aria-hidden="true">${u.emoji}</span><span class="xt"><b>${ESC(u.name)}</b>`
@@ -530,14 +568,14 @@ function footHTML(){
 
 function render(){
   const vis=visitedSet(), times=lastTimes(), stars={};
-  BASIC.concat(EXTRA).forEach(s=>{stars[s.id]=islandStars(s,vis);});
+  BASIC.concat(PIECES,EXTRA).forEach(s=>{stars[s.id]=islandStars(s,vis);});
   const here=hereId(stars,times);
-  const h=`<div class="stack home">${topHTML(vis,here)}${plazaHTML()}${mapHTML(vis,stars,here)}${extraHTML(vis,stars,times)}${footHTML()}</div>`;
+  const h=`<div class="stack home">${topHTML(vis,here)}${plazaHTML()}${mapHTML(vis,stars,here)}${piecesHTML(vis,stars,times)}${extraHTML(vis,stars,times)}${footHTML()}</div>`;
   PA.paint(document.getElementById('view'),h,'home');
 }
 // じぶんでひらいた／とじた島・地図だけおぼえる
 document.getElementById('view').addEventListener('click',e=>{
-  const sm=e.target.closest&&e.target.closest('details.stage>summary,details.xmap>summary'); if(!sm) return;
+  const sm=e.target.closest&&e.target.closest('details.stage>summary,details.xmap>summary'); if(!sm) return; // 名曲で楽曲分析（.pmap）も .xmap
   const d=sm.parentNode;
   setTimeout(()=>{const s=PA.store.get('home-units',{}), sv=isObj(s)?s:{};sv[d.dataset.u]=d.open;PA.store.set('home-units',sv);},0);
 });

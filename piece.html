@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- meta:start -->
+<meta name="description" content="本物の曲の和音を、記号で穴うめ。じぶんの楽譜もひらいて、いっしょに見よう">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ピアノ和音アプリ">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="名曲で楽曲分析｜ピアノ和音アプリ">
+<meta property="og:description" content="本物の曲の和音を、記号で穴うめ。じぶんの楽譜もひらいて、いっしょに見よう">
+<meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/piece.html">
+<meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ピアノ和音アプリ">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<!-- meta:end -->
+<meta name="theme-color" content="#fdf8f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>名曲で楽曲分析</title>
+<link rel="stylesheet" href="assets/app.css">
+<style>
+.phead{border-top:6px solid #c0392b}
+.pcomp{margin:0;font-size:14px;font-weight:800;color:var(--sub)}
+.phead h2{font-size:20px;line-height:1.35}
+.phead h2 small{display:block;margin-top:2px}
+.lvsub{margin-top:8px}
+.prog{display:flex;flex-wrap:wrap;align-items:center;gap:4px 12px;margin-top:10px;font-size:15px;font-weight:700}
+.prog .bar{flex:1 1 120px;height:10px;border-radius:999px;background:var(--soft);overflow:hidden;min-width:100px}
+.prog .bar i{display:block;height:100%;background:var(--ok);border-radius:999px}
+.prow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:10px}
+.prow .lbl{font-size:14px;font-weight:700;color:var(--sub)}
+/* がくふと「？」：がくふのカードは左右を少しせまく（320px でも「？」が44pxいじょうになるように） */
+.sysc{padding-left:6px;padding-right:6px}
+.sysc>h2,.sysc>.note,.sysc>.soundhint{margin-left:10px;margin-right:10px}
+.sys{margin-top:14px;padding-top:10px;border-top:2px dashed var(--line)}
+.sysbar{display:flex;flex-wrap:wrap;gap:6px;margin:0 8px 4px}
+.sysin{margin:0 auto}
+.slots{position:relative;display:flex;align-items:stretch;margin-top:2px}
+.slots .kpre{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:var(--ink)}
+.slotc{flex:none;display:flex;justify-content:center;padding:0 2px}
+.slot{flex:1;min-width:44px;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;border-radius:12px;font-size:20px;font-weight:800;line-height:1;padding:4px 2px;position:relative;color:var(--ink)}
+.slot.given{background:transparent}
+button.slot{border:2px solid #b9ac99;background:#fff}
+button.slot.q{border:2px dashed #8d7e69;background:#fffaf0;font-size:24px;color:#5f5869}
+button.slot.ok{border-color:var(--ok);background:#dcf5e8;color:#0f5c3a}
+button.slot.ng{border-color:var(--ng);background:#fde4e7;color:#8f2233}
+.slot .mk{font-size:12px;line-height:1}
+.slot.sel{outline:3px solid #2f7ee8;outline-offset:1px}
+.slot.play{box-shadow:0 0 0 4px #ffd66b}
+/* こたえる場所（えらんだ「？」の段のすぐ下） */
+.pick,.pq{margin:10px 6px 0;padding:12px;border-radius:16px;background:#f4f7ff;border:2px solid #c9d6f5;scroll-margin-top:72px;scroll-margin-bottom:96px}
+.pq{background:#fffaf0;border-color:#f0d9a8}
+.pick h3,.pq h3{margin:0 0 8px;font-size:17px;line-height:1.4}
+.pick h3:focus{outline:none}
+.plab{margin:12px 0 6px;font-size:15px;font-weight:800}
+.degs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.dbtn{min-height:52px;min-width:0;border-radius:12px;background:#fff;border:2px solid #b9ac99;font-size:20px;font-weight:800;color:var(--ink);padding:0}
+.dbtn.on,.tog.on{background:#2f5fc4;border-color:#2f5fc4;color:#fff}
+.tog{min-height:48px;padding:6px 14px;border-radius:999px;background:#fff;border:2px solid #b9ac99;font-size:16px;font-weight:800;color:var(--ink)}
+.pv{display:flex;align-items:center;gap:8px;margin:12px 0 8px;font-size:17px;font-weight:800;min-height:44px}
+.pv .rnum{font-size:26px}
+.pchoices .choice{font-size:28px}
+.pq .choice small{display:block;font-size:14px;color:var(--sub)}
+.expl{margin:8px 0 0;font-size:15.5px;line-height:1.6}
+.fb .rnum{font-size:1.25em}
+.fb .yours{display:inline-block;font-size:14px;font-weight:700}
+.cadinfo{margin:8px 10px 0;padding:8px 12px;border-radius:12px;background:#fffaf0;border:2px solid #f0d9a8;font-size:15px}
+.sumc{border-top:6px solid var(--ok)}
+.src p{margin:6px 0 0}
+@media (max-width:359px){.degs{gap:3px}.dbtn{font-size:18px}}
+</style>
+</head>
+<body>
+<header class="appbar" id="appbar"></header>
+<main class="page" id="view"></main>
+<div class="actionbar" id="actions"></div>
+<script src="assets/core.js"></script>
+<script src="assets/piece.js"></script>
+<script>
+/* 名曲で楽曲分析：本物の曲（コンクールでひくような曲）の和音を、記号で穴うめする（先生の案。docs/REPERTOIRE-ANALYSIS.md）
+ *   曲のデータ：assets/pieces/<id>.json（しくみと形は assets/piece.js のコメント）。ページ：piece.html?id=k545-1
+ *   がくふは「骨組み」（和音の音を全音符にしたもの。PA.staffSVG）。小節ごとにたて線と番号。その下に、和音がかわる所ごとに「？」
+ *   答えかた（先生：人では分けない。何を答えるかを自分でえらぶ）：'deg'＝和音の番号だけ（4択）、'inv'＝転回形も、
+ *     'full'＝ぜんぶ（番号・7／9・転回形・○・ⅤのⅤを部品でつくる。調とおわりかたの問題も）
+ *   音：この和音・この小節・ぜんぶ（鳴っている所をがくふの下の色と「？」のわくで見せる）
+ * リンク：id＝曲（なければさいごにひらいた曲）、mode＝deg｜inv｜full（その答えかたで。ほぞんもする）
+ * 保存：PA.store 'piece-<id>'＝{lv, tempo, ans:{deg:{問題の id:{a（部品か文字）, ok}}, inv:{…}, full:{…}}}（いちど答えたらかえない）
+ *       PA.store 'pieces'＝{<id>:{t（さいごにひらいた時こく）, n（答えた数）, best:{deg|inv|full:{ok, n}}}}（ホームの ★ でつかう） */
+const PC=PA.piece, ESC=PA.esc, LEVELS=PC.LEVELS;
+const LV_NAME={deg:'和音の番号だけ',inv:'転回形も',full:'ぜんぶ'};
+const LV_SUB={deg:'Ⅰ〜Ⅶの番号を、4つからえらぶよ。',inv:'番号と、転回形（いちばん下の音で決まる形）を答えるよ。',full:'番号・7の和音・転回形・○・ⅤのⅤまで、記号をぜんぶつくるよ。調とおわりかたの問題もあるよ。'};
+const isObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
+// 地図にある曲（PA.UNITS の 'pieces' の課題の href から）
+const READY=[];
+PA.UNITS.filter(u=>u.kind==='pieces').forEach(u=>u.tasks.forEach(t=>{const m=/[?&]id=([a-z0-9-]+)/.exec(t.href||'');if(m) READY.push(m[1]);}));
+const META=(()=>{const m=PA.store.get('pieces',{});return isObj(m)?m:{};})();
+const P=PA.params();
+// 曲：リンクの id → さいごにひらいた曲 → さいしょの曲。地図にない id は「見つからない」
+const ID=(()=>{
+  if(P.id!=null) return READY.includes(P.id)?P.id:null;
+  let best=null; READY.forEach(id=>{const t=isObj(META[id])?META[id].t:0;if(t>0&&(!best||t>META[best].t)) best=id;});
+  return best||READY[0]||null;
+})();
+const SKEY='piece-'+ID;
+const S={pc:null,err:ID?null:'notfound',lv:'deg',tempo:'slow',ans:{deg:{},inv:{},full:{}},sel:null,
+  B:{deg:null,form:0,inv:0,borrowed:false,of:false},playing:null,cur:-1,muteHint:false,focusNext:false};
+if(LEVELS.includes(P.mode)) S.lv=P.mode;
+
+/* ===== 保存 ===== */
+function load(){
+  const d=PA.store.get(SKEY,{}), o=isObj(d)?d:{};
+  if(!LEVELS.includes(P.mode)&&LEVELS.includes(o.lv)) S.lv=o.lv;
+  if(o.tempo==='slow'||o.tempo==='normal') S.tempo=o.tempo;
+  // こたえ：いまの曲の問題で、形があっているものだけ
+  const pc=S.pc, ans=isObj(o.ans)?o.ans:{};
+  LEVELS.forEach(lv=>{
+    const r=isObj(ans[lv])?ans[lv]:{}, out={};
+    PC.items(pc,lv).forEach(x=>{
+      const a=r[x.id]; if(!isObj(a)||typeof a.ok!=='boolean') return;
+      if(x.kind==='q'){if(x.item.choices.includes(a.a)) out[x.id]={a:a.a,ok:PC.check(x.item,a.a,lv)};}
+      else if(isObj(a.a)&&Number.isInteger(a.a.deg)) out[x.id]={a:PA.rnNorm(a.a),ok:PC.check(x.item,a.a,lv)};
+    });
+    S.ans[lv]=out;
+  });
+}
+function save(){PA.store.set(SKEY,{lv:S.lv,tempo:S.tempo,ans:S.ans});}
+// ホームの ★：ひらいた時こく・答えた数・答えかたごとのいちばんよいけっか
+function saveMeta(f){
+  const m=PA.store.get('pieces',{}), all=isObj(m)?m:{}, me=isObj(all[ID])?all[ID]:{};
+  const best=isObj(me.best)?me.best:{};
+  all[ID]=f({t:typeof me.t==='number'?me.t:0,n:Number.isInteger(me.n)&&me.n>=0?me.n:0,best});
+  PA.store.set('pieces',all);
+}
+
+/* ===== 問題 ===== */
+const items=()=>PC.items(S.pc,S.lv);
+const ansOf=id=>S.ans[S.lv][id]||null;
+const evById=id=>S.pc.events.find(e=>e.id===id)||null;
+const qById=id=>(S.pc.questions||[]).find(q=>q.id===id)||null;
+function tally(){
+  const its=items(); let done=0, ok=0;
+  its.forEach(x=>{const a=ansOf(x.id);if(a){done++;if(a.ok) ok++;}});
+  return {n:its.length,done,ok,all:its.length>0&&done===its.length};
+}
+function record(it,id,a){
+  if(ansOf(id)) return;
+  const ok=PC.check(it,a,S.lv);
+  S.ans[S.lv][id]={a,ok};
+  PA.answerFx(ok);
+  save();
+  const t=tally();
+  saveMeta(me=>{
+    me.n++;
+    if(t.all){const b=me.best[S.lv];if(!isObj(b)||!(b.ok/b.n>=t.ok/t.n)) me.best[S.lv]={ok:t.ok,n:t.n};}
+    return me;
+  });
+  PA.announce(ok?'せいかい':'ざんねん');
+}
+// つぎのまだの和音（いまの和音のあとから。なければ調・おわりかたの問題 → null）
+function nextOpen(){
+  const its=items(), i=its.findIndex(x=>x.id===S.sel);
+  for(let k=1;k<=its.length;k++){const x=its[(i+k)%its.length];if(x.kind==='ev'&&!ansOf(x.id)) return x;}
+  return its.find(x=>!ansOf(x.id))||null;
+}
+const resetB=()=>{S.B={deg:null,form:0,inv:0,borrowed:false,of:false};};
+const built=()=>{const B=S.B,p={deg:B.deg||1};if(B.form) p.form=B.form;if(B.inv) p.inv=B.inv;if(B.borrowed) p.borrowed=true;if(B.of) p.of=5;return PA.rnNorm(p);};
+
+/* ===== 音 ===== */
+let token=0;
+const midis=ev=>ev.skel.lh.concat(ev.skel.rh).map(s=>PC.note(s).midi);
+const bpm=()=>S.tempo==='normal'?S.pc.tempo.normal:S.pc.tempo.slow;
+function stop(){token++;S.playing=null;S.cur=-1;PA.stopSound();}
+// list＝鳴らす和音の番号（S.pc.events の）。what＝鳴らしているボタン（'all'・'m3'・'e:m2a'）
+async function playList(list,what){
+  if(!PA.settings.sound){S.muteHint=true;render();return;}
+  stop(); const my=token; S.playing=what; S.muteHint=false;
+  for(const i of list){
+    if(my!==token) return;
+    S.cur=i; render();
+    const ev=S.pc.events[i], sec=ev.dur*60/bpm();
+    PA.chord(midis(ev),{dur:Math.max(0.6,sec+0.3)});
+    await PA.sleep(sec*1000);
+  }
+  if(my!==token) return;
+  S.playing=null; S.cur=-1; render();
+}
+const idxOf=pred=>S.pc.events.map((e,i)=>pred(e)?i:-1).filter(i=>i>=0);
+
+/* ===== 画面 ===== */
+const where=ev=>`${ev.m}小節${PC.beatText(ev.beat)}`;
+// 調のしるし：ぜんぶの答えかたで、調の問題にまだ答えていなければ「？」
+function keyPre(ev){
+  const kq=(S.pc.questions||[]).find(q=>q.type==='key'&&q.level==='full');
+  if(S.lv==='full'&&kq&&!ansOf(kq.id)) return '？:';
+  return PA.rnKey(PC.key(ev.key));
+}
+function headHTML(){
+  const pc=S.pc, ex=pc.excerpts[0];
+  return `<section class="card phead" aria-labelledby="ph"><p class="pcomp">${ESC(pc.composer)}</p>
+    <h2 id="ph">${ESC(pc.title)}<small>${ESC(pc.movement)}・${ex.from}〜${ex.to}小節（${ESC(ex.label)}）</small></h2>
+    <p class="msg" style="margin-top:10px"><span aria-hidden="true">📖 </span>じぶんの楽譜もひらいて、いっしょに見てね。下のがくふは、和音の音だけを全音符にした「骨組み」だよ。</p></section>`;
+}
+function lvHTML(){
+  const t=tally(), pct=t.n?Math.round(t.done/t.n*100):0;
+  return `<section class="card" aria-labelledby="lv-h"><h2 id="lv-h">なにを答える？<small>じぶんでえらんでね</small></h2>
+    ${PA.seg('plv',LEVELS.map(l=>[l,LV_NAME[l]]),S.lv,'full')}
+    <p class="note lvsub">${LV_SUB[S.lv]}</p>
+    <div class="prog"><span>こたえた ${t.done} / ${t.n}もん</span><span class="bar" aria-hidden="true"><i style="width:${pct}%"></i></span><span><span aria-hidden="true">⭕ </span>正解${t.ok}</span></div>
+    <div class="prow"><span class="lbl">音のはやさ</span>${PA.seg('ptempo',[['slow','ゆっくり'],['normal','ふつう']],S.tempo)}
+      ${t.done?`<button type="button" class="btn small" data-act="preset" data-confirm="もういちどおすと、「${LV_NAME[S.lv]}」のこたえをけすよ">${PA.icon('retry')}さいしょから</button>`:''}</div></section>`;
+}
+// 1つの段（2小節）。Wmax＝いちばん和音の多い段のはば：どの段もおなじはば・おなじ大きさにして、和音の少ない段は列を広く
+function sysHTML(ms,si,Wmax){
+  const pc=S.pc, ev0=pc.events.map((e,i)=>({e,i})).filter(x=>ms.includes(x.e.m));
+  const key=PC.key(ev0[0].e.key);
+  // 臨時記号：おなじ小節の前の列の変化記号をおぼえる（もどすときは♮）
+  let carry={}, lastM=null;
+  const cols=ev0.map(({e,i})=>{
+    if(e.m!==lastM){carry={};lastM=e.m;}
+    const c={notes:e.skel.rh.map(PC.note),lh:e.skel.lh.map(PC.note),carry:{...carry}};
+    if(S.cur===i) c.hl='#ffe9a8'; else if(S.sel===e.id) c.hl='#e6eefc';
+    c.notes.concat(c.lh).forEach(n=>{if(n.acc!==(key.sig[n.letter]||0)||carry[n.letter]!=null) carry[n.letter]=n.acc;});
+    return c;
+  });
+  const measures=[]; ev0.forEach(({e},ci)=>{if(!ci||ev0[ci-1].e.m!==e.m) measures.push({ci,n:e.m});});
+  const cw=(Wmax-PA.staffGeom(key,cols.length,{}).nx-8)/cols.length;
+  const o={grand:true,measures,colW:Math.round(cw*100)/100}, G=PA.staffGeom(key,cols.length,o), pct=v=>(v/G.W*100).toFixed(3)+'%';
+  const svg=PA.staffSVG(key,cols,o);
+  const slots=ev0.map(({e,i})=>`<div class="slotc" style="width:${pct(G.cw)}">${slotHTML(e,i)}</div>`).join('');
+  const mbtn=m=>{const on=S.playing==='m'+m;return `<button type="button" class="btn small${on?' night':''}" data-act="${on?'pstop':'pm'}" data-v="${m}">${PA.icon(on?'stop':'play')}${m}小節</button>`;};
+  let h=`<div class="sys" data-sys="${si}"><p class="pa-sr">${ms[0]}〜${ms[ms.length-1]}小節のがくふ（和音の骨組み）</p>
+    <div class="sysbar">${ms.map(mbtn).join('')}</div>
+    <div class="scroll"><div class="sysin" style="min-width:${Math.round(G.W*45/Math.min(G.cw,70))}px;max-width:${Math.round(G.W*1.5)}px">${svg}
+      <div class="slots" style="padding-left:${pct(G.nx)};padding-right:${pct(G.W-G.nx-cols.length*G.cw)}"><span class="kpre" style="width:${pct(G.nx)}" aria-hidden="true">${ESC(keyPre(ev0[0].e))}</span>${slots}</div>
+    </div></div>`;
+  const sel=S.sel&&ev0.find(x=>x.e.id===S.sel);
+  if(sel) h+=pickHTML(sel.e);
+  // おわりかた：ぜんぶ＝問題、ほか＝この段の「？」にぜんぶ答えたらおしえる
+  (pc.questions||[]).filter(q=>q.type==='cadence'&&ms.includes(q.m)).forEach(q=>{
+    if(S.lv==='full') h+=qHTML(q);
+    else if(ev0.every(({e})=>!PC.asked(e,S.lv)||ansOf(e.id))) h+=`<p class="cadinfo"><span aria-hidden="true">🏁 </span>${ESC(q.range)}のおわりかた：<b>${PC.CAD[q.answer]}</b>。${ESC(q.note)}</p>`;
+  });
+  return h+`</div>`;
+}
+function slotHTML(ev,i){
+  const a=ansOf(ev.id), sel=S.sel===ev.id, cls=`slot${sel?' sel':''}${S.cur===i?' play':''}`;
+  if(!PC.asked(ev,S.lv)) return `<span class="${cls} given"><span class="pa-sr">${where(ev)}：</span>${PA.rn(ev.rn)}</span>`;
+  if(!a) return `<button type="button" class="${cls} q" data-act="pick" data-v="${ev.id}" aria-pressed="${sel}" aria-label="${where(ev)}の和音（まだ）">？</button>`;
+  return `<button type="button" class="${cls} ${a.ok?'ok':'ng'}" data-act="pick" data-v="${ev.id}" aria-pressed="${sel}" aria-label="${ESC(where(ev)+'：'+(a.ok?'せいかい':'まちがい')+'。こたえは'+PA.rnAria(ev.rn))}">${PA.rn(ev.rn)}<span class="mk" aria-hidden="true">${a.ok?'⭕':'✗'}</span></button>`;
+}
+function pickHTML(ev){
+  const a=ansOf(ev.id), on=S.playing==='e:'+ev.id;
+  let h=`<div class="pick" id="pick" role="group" aria-labelledby="pick-h"><h3 id="pick-h" tabindex="-1">${where(ev)}の和音は？</h3>
+    <div class="row"><button type="button" class="btn small${on?' night':''}" data-act="${on?'pstop':'pplay'}" data-v="${ev.id}" data-hot="listen">${PA.icon(on?'stop':'listen')}この和音</button>
+    <button type="button" class="btn small" data-act="pclose">${PA.icon('close')}とじる</button></div>`;
+  if(a) h+=fbHTML(ev,a);
+  else if(S.lv==='deg') h+=`<p class="plab">何の和音？</p><div class="choices pchoices">${PC.degChoices(ev).map(d=>`<button type="button" class="choice" data-act="adeg" data-v="${d}">${PA.rn({deg:d})}</button>`).join('')}</div>`;
+  else h+=builderHTML();
+  return h+`</div>`;
+}
+// 部品をえらんで記号をつくる（転回形も・ぜんぶ）
+function builderHTML(){
+  const B=S.B, full=S.lv==='full';
+  let h=`<p class="plab">① 何の和音？</p><div class="degs" role="group" aria-label="何の和音？">`
+    +[1,2,3,4,5,6,7].map(d=>`<button type="button" class="dbtn${B.deg===d?' on':''}" data-act="bdeg" data-v="${d}" aria-pressed="${B.deg===d}">${PA.rn({deg:d})}</button>`).join('')+`</div>`;
+  let no=1;
+  if(full) h+=`<p class="plab">${'①②③④'[no++]} 7の和音？9の和音？</p>`+PA.seg('bform',[['0','なし'],['7','7の和音'],['9','9の和音']],String(B.form),'full');
+  h+=`<p class="plab">${'①②③④'[no++]} 転回形は？（いちばん下の音）</p>`+PA.seg('binv',[['0','基本形'],['1','第1'],['2','第2'],['3','第3']],String(B.inv),'full');
+  if(full) h+=`<p class="plab">${'①②③④'[no++]} しるし（あれば）</p><div class="row">`
+    +`<button type="button" class="tog${B.borrowed?' on':''}" data-act="bborrow" aria-pressed="${B.borrowed}">○ 準固有</button>`
+    +`<button type="button" class="tog${B.of?' on':''}" data-act="bof" aria-pressed="${B.of}">ⅤのⅤ（2だん）</button></div>`;
+  h+=`<div class="pv" aria-live="polite">こたえ：${B.deg?PA.rn(built()):'<span class="note" style="margin:0">①をえらんでね</span>'}</div>`
+    +`<button type="button" class="btn primary" data-act="bok" data-hot="check"${B.deg?'':' disabled'}>${PA.icon('check')}こたえる</button>`;
+  return h;
+}
+function fbHTML(ev,a){
+  const nx=nextOpen();
+  let h=a.ok?`<div class="fb good" role="status"><span aria-hidden="true">⭕ </span>せいかい！ ${PA.rn(ev.rn)}</div>`
+    :`<div class="fb bad" role="status"><span aria-hidden="true">✗ </span>ざんねん。こたえは ${PA.rn(ev.rn)}<br><span class="yours">えらんだのは ${PA.rn(a.a)}</span></div>`;
+  h+=`<p class="expl">${PC.explainHTML(ev)}。${ESC(ev.note||'')}</p>`;
+  if(ev.accept&&ev.accept.length) h+=`<p class="note">こう答えても正解：${ev.accept.map(p=>PA.rn(p)).join('・')}</p>`;
+  if(ev.cad&&S.lv!=='full') h+=`<p class="note"><span aria-hidden="true">🏁 </span>ここで${PC.CAD[ev.cad]}</p>`;
+  h+=`<div class="row" style="margin-top:10px">`+(nx?`<button type="button" class="btn primary" data-act="pnext" data-hot="next">${PA.icon('next')}${nx.kind==='ev'?'次の「？」へ':'のこりの問題へ'}</button>`
+    :`<button type="button" class="btn primary" data-act="psum" data-hot="next">${PA.icon('next')}けっかを見る</button>`)+`</div>`;
+  return h;
+}
+// 調・おわりかたの問題
+function qHTML(q){
+  const a=ansOf(q.id), ask=q.type==='key'?q.ask:q.range+'のおわりかたは？';
+  const name=c=>q.type==='key'?`${PA.keyName(PC.key(c))}<small>${ESC(PA.rnKey(PC.key(c)))}</small>`:PC.CAD[c];
+  const right=q.type==='key'?PA.keyName(PC.key(q.answer)):PC.CAD[q.answer];
+  return `<div class="pq" id="q-${q.id}" role="group" aria-labelledby="qh-${q.id}"><h3 id="qh-${q.id}" tabindex="-1"><span aria-hidden="true">${q.type==='key'?'🔑':'🏁'} </span>${ESC(ask)}</h3>
+    <div class="choices">${q.choices.map(c=>`<button type="button" class="choice${a?(c===q.answer?' right':c===a.a?' wrong':''):''}" data-act="aq" data-q="${q.id}" data-v="${c}"${a?' disabled':''}>${name(c)}</button>`).join('')}</div>
+    ${a?`<div class="fb ${a.ok?'good':'bad'}" role="status" style="margin-top:10px">${a.ok?'<span aria-hidden="true">⭕ </span>せいかい！':'<span aria-hidden="true">✗ </span>ざんねん。こたえは<b>'+right+'</b>'}<br><span style="font-size:15px;font-weight:400">${ESC(q.note)}</span></div>`:''}</div>`;
+}
+function sumHTML(){
+  const t=tally(); if(!t.all) return '';
+  const r=t.ok/t.n, stars=r>=0.8?3:r>=0.5?2:1, other=LEVELS.filter(l=>l!==S.lv);
+  const msg=stars===3?'すばらしい！ほんものの曲でも、和音が読めたね':stars===2?'よくできたね。✗のところを、もういちど楽譜で見てみよう':'さいごまでできたね。まちがえたところの説明を読んで、もういちどやってみよう';
+  return `<section class="card sumc" id="sum" aria-labelledby="sum-h" tabindex="-1"><h2 id="sum-h"><span aria-hidden="true">🎉 </span>さいごまで答えたよ</h2>
+    <p class="sess-big"><b>${t.ok}</b> / ${t.n}もん正解</p>
+    <p class="stars" role="img" aria-label="ほし3こ中${stars}こ" style="font-size:26px;margin:4px 0">${'★'.repeat(stars)}${'☆'.repeat(3-stars)}</p>
+    <p>${msg}</p>
+    <div class="row" style="flex-wrap:wrap;gap:8px">${other.map(l=>`<button type="button" class="btn small" data-act="plv" data-v="${l}">「${LV_NAME[l]}」でやってみる</button>`).join('')}
+      <button type="button" class="btn small" data-act="preset" data-confirm="もういちどおすと、「${LV_NAME[S.lv]}」のこたえをけすよ">${PA.icon('retry')}さいしょから</button></div></section>`;
+}
+function srcHTML(){
+  const s=S.pc.source;
+  return `<section class="card src" aria-labelledby="src-h"><h2 id="src-h"><span aria-hidden="true">📚 </span>この楽譜について</h2>
+    <p class="note">${ESC(S.pc.composerFull)}。楽譜：${ESC(s.edition)}。${ESC(s.measures)}。</p>
+    <p class="note">${ESC(s.made)}。${ESC(s.license)}。</p></section>`;
+}
+function render(){
+  const v=document.getElementById('view');
+  if(S.err){
+    const msg=S.err==='notfound'?'その曲は見つからなかったよ。':'曲のデータをよみこめなかったよ。ネットにつながっているか見てね。';
+    PA.paint(v,`<div class="stack"><section class="card"><p class="lead">${msg}</p><div class="row" style="margin-top:10px">`
+      +(S.err==='notfound'?`<a class="btn" href="${READY[0]?'piece.html?id='+READY[0]:'index.html'}">${READY[0]?'さいしょの曲をひらく':'ホームへ'}</a>`:`<button type="button" class="btn" data-act="reload">${PA.icon('refresh')}もういちど</button>`)
+      +`</div></section></div>`,'err');
+    renderActions(); return;
+  }
+  if(!S.pc){PA.paint(v,`<div class="stack"><section class="card"><p class="lead" role="status">よみこんでいるよ…</p></section></div>`,'load');renderActions();return;}
+  const pc=S.pc, ex=pc.excerpts[0], ms=[];
+  for(let m=ex.from;m<=ex.to;m++) ms.push(m);
+  const groups=[]; for(let i=0;i<ms.length;i+=2) groups.push(ms.slice(i,i+2)); // 1段に2小節（スマホでも「？」がおせる大きさ）
+  const Wmax=Math.max(...groups.map(g=>{const es=pc.events.filter(e=>g.includes(e.m));return PA.staffGeom(PC.key(es[0].key),es.length,{}).W;}));
+  const kq=(pc.questions||[]).filter(q=>q.type==='key'&&PC.LV_RANK[q.level]<=PC.LV_RANK[S.lv]);
+  let h=`<div class="stack">${headHTML()}${lvHTML()}<section class="card sysc" aria-labelledby="sys-h"><h2 id="sys-h"><span aria-hidden="true">🎼 </span>がくふと和音</h2>
+    <p class="note">「？」をおして、和音の記号を答えよう。小節の番号のボタンで、その小節の音を聴けるよ。</p>`
+    +(S.muteHint&&!PA.settings.sound?`<p class="msg soundhint" role="status" style="margin-top:8px"><span aria-hidden="true">🔇 </span>音がオフだよ <button type="button" class="btn small" data-pa="sound-on">${PA.icon('listen')}音を出す</button></p>`:'')
+    +kq.map(qHTML).join('')+groups.map((g,i)=>sysHTML(g,i,Wmax)).join('')+`</section>${sumHTML()}${srcHTML()}${PA.rnHelp()}</div>`;
+  PA.paint(v,h,'piece:'+S.lv);
+  renderActions();
+}
+let lastActions=null;
+function renderActions(){
+  const bar=document.getElementById('actions');
+  const a=S.pc?(S.playing==='all'?`<button type="button" class="btn" data-act="pstop" data-hot="listen">${PA.icon('stop')}とめる</button>`
+    :`<button type="button" class="btn night" data-act="pall" data-hot="listen">${PA.icon('play')}ぜんぶ聴く（${S.pc.excerpts[0].from}〜${S.pc.excerpts[0].to}小節）</button>`):'';
+  bar.style.display=a?'':'none';
+  if(a!==lastActions){PA.paint(bar,a,'bar');lastActions=a;}
+}
+// 見えるところへ（下のボタンバーにかくれないように）
+function reveal(sel,focus){
+  const el=document.querySelector(sel); if(!el) return;
+  if(el.scrollIntoView) el.scrollIntoView({block:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});
+  if(focus){const f=typeof focus==='string'?el.querySelector(focus):el;if(f&&f.focus) f.focus({preventScroll:true});}
+}
+
+/* ===== 操作 ===== */
+function pick(id){
+  if(!evById(id)) return;
+  stop(); S.sel=id; resetB(); render(); reveal('#pick','#pick-h');
+}
+function goNext(){
+  const nx=nextOpen();
+  if(!nx){S.sel=null;render();reveal('#sum',true);return;}
+  if(nx.kind==='ev'){pick(nx.id);return;}
+  S.sel=null; render(); reveal('#q-'+nx.id,'h3');
+}
+function answered(){render();reveal('#pick','[data-act="pnext"],[data-act="psum"]');}
+document.addEventListener('click',e=>{
+  const el=e.target.closest&&e.target.closest('[data-act]'); if(!el||el.disabled) return;
+  const a=el.dataset.act, v=el.dataset.v;
+  if(a==='reload'){location.reload();return;}
+  if(!S.pc) return;
+  switch(a){
+    case 'plv': if(!LEVELS.includes(v)||v===S.lv) return; stop(); S.lv=v; S.sel=null; resetB(); save(); render(); return;
+    case 'ptempo': if(v!=='slow'&&v!=='normal') return; S.tempo=v; save(); render(); return;
+    case 'preset': stop(); S.ans[S.lv]={}; S.sel=null; resetB(); save(); render(); PA.scrollTop(); return;
+    case 'pick': if(S.sel===v){S.sel=null;render();return;} pick(v); return;
+    case 'pclose': S.sel=null; render(); return;
+    case 'pnext': goNext(); return;
+    case 'psum': S.sel=null; render(); reveal('#sum',true); return;
+    case 'adeg': {
+      const ev=evById(S.sel), d=+v; if(!ev||ansOf(ev.id)||!PC.degChoices(ev).includes(d)) return;
+      stop(); record(ev,ev.id,{deg:d}); answered(); return;
+    }
+    case 'bdeg': {const d=+v; if(!Number.isInteger(d)||d<1||d>7) return; S.B.deg=d; render(); return;}
+    case 'bform': if(S.lv!=='full'||!['0','7','9'].includes(v)) return; S.B.form=+v; render(); return;
+    case 'binv': if(!['0','1','2','3'].includes(v)) return; S.B.inv=+v; render(); return;
+    case 'bborrow': if(S.lv!=='full') return; S.B.borrowed=!S.B.borrowed; render(); return;
+    case 'bof': if(S.lv!=='full') return; S.B.of=!S.B.of; render(); return;
+    case 'bok': {
+      const ev=evById(S.sel); if(!ev||ansOf(ev.id)||!S.B.deg) return;
+      stop(); record(ev,ev.id,built()); answered(); return;
+    }
+    case 'aq': {
+      const q=qById(el.dataset.q); if(!q||ansOf(q.id)||!q.choices.includes(v)) return;
+      record(q,q.id,v); render(); reveal('#q-'+q.id,'h3'); return;
+    }
+    case 'pplay': {const i=S.pc.events.findIndex(x=>x.id===v); if(i<0) return; playList([i],'e:'+v); return;}
+    case 'pm': {const m=+v, l=idxOf(x=>x.m===m); if(!l.length) return; playList(l,'m'+m); return;}
+    case 'pall': playList(S.pc.events.map((x,i)=>i),'all'); return;
+    case 'pstop': stop(); render(); return;
+    default: return;
+  }
+});
+PA.mountBar({title:'名曲で楽曲分析',app:'piece'});
+PA.onSettings=render;
+PA.onPageShow=render;
+// リンクの mode はつかったので、アドレスは id だけに（「もどる」の読みなおしでかわらないように）
+if(ID&&(P.mode!=null||P.id!==ID)){try{history.replaceState(history.state,'',PA.url('piece',{id:ID})+location.hash);}catch(e){}}
+render();
+if(ID){
+  fetch('assets/pieces/'+ID+'.json').then(r=>{if(!r.ok) throw new Error(r.status);return r.json();}).then(pc=>{
+    const err=PC.validate(pc);
+    if(err.length||pc.id!==ID) throw new Error(err.join(' / ')||'id');
+    S.pc=pc; load(); save(); saveMeta(me=>{me.t=Date.now();return me;}); render();
+  }).catch(err=>{if(window.console) console.error('piece:',err);S.err='load';render();});
+}
+</script>
+</body>
+</html>
