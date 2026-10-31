@@ -138,11 +138,11 @@ test('index.html：★ は開いただけでは1つ。その調で5もんやっ�
   PA.store.set('keystats-chord-quiz',{});
   PA.store.set('chord-quiz-steps',{'major:root-easy':3});
   h=renderHome(mem).__html;
-  assert.match(stageOf(h,'major'),/href="chord-quiz\.html\?keyset=major"[\s\S]*?aria-label="ほし3こ中2こ"[\s\S]*?ステップ✓0／11/);
+  assert.match(stageOf(h,'major'),/href="chord-quiz\.html\?keyset=major"[\s\S]*?aria-label="ほし3こ中2こ"[\s\S]*?ステップ✓0／13/);
   const all=Object.fromEntries(Array.from({length:PA.STEP_INFO['chord-quiz'].major},(_,i)=>['major:s'+i+'-easy',4]));
   PA.store.set('chord-quiz-steps',all);
   h=renderHome(mem).__html;
-  assert.match(stageOf(h,'major'),/href="chord-quiz\.html\?keyset=major"[\s\S]*?aria-label="ほし3こ中3こ"[\s\S]*?ステップ✓11／11/);
+  assert.match(stageOf(h,'major'),/href="chord-quiz\.html\?keyset=major"[\s\S]*?aria-label="ほし3こ中3こ"[\s\S]*?ステップ✓13／13/);
   assert.match(stageOf(h,'minor'),/href="chord-quiz\.html\?keyset=minor"[\s\S]*?aria-label="ほし3こ中0こ"/,'長調のステップは②に入れない');
 });
 

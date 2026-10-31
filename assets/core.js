@@ -707,7 +707,7 @@ PA.UNITS=[
 ];
 // ステップのあるクイズ：長調・短調のステップの数と、✓ になる数（5もん中）。ホームの★★★（ステップがぜんぶ ✓）でつかう。
 //   chord-quiz.html の STEPS・STEP_PASS とおなじ数にする（test/chord-quiz-cats.test.mjs でたしかめる）
-PA.STEP_INFO={'chord-quiz':{major:11,minor:13,pass:4}};
+PA.STEP_INFO={'chord-quiz':{major:13,minor:15,pass:4}};
 PA.APPS=[
   {id:'chord-build',ic:'🐸',title:'和音のしくみ',d:'音階のなんばんめから「ひとつとばし」で和音をつくる',type:'learn',practice:'chord-quiz'},
   {id:'chord-quiz',ic:'🎯',title:'和音クイズ',d:'Ⅰ・Ⅳ・Ⅴ・Ⅴ7を、いろいろな問題で。やさしいじゅんのステップつき',type:'quiz'},

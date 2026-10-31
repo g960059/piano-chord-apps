@@ -115,6 +115,22 @@
 .stepbtn .stx small{font-size:13px;color:var(--sub)}
 .stepbtn .sgo{flex:none;font-size:14px;font-weight:700;color:var(--sub)}
 .stepres.good h2{color:#15804f}
+/* ⏱ 12の調をじゅんばんに */
+.crtime{margin:0;text-align:center;font-size:clamp(36px,12vw,56px);font-weight:800;line-height:1.15;font-variant-numeric:tabular-nums}
+.crnow{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:6px 8px;font-size:clamp(22px,6.4vw,30px);font-weight:800;margin-top:4px}
+.crn{font-size:16px;color:var(--sub);font-weight:700}
+.crdots{display:flex;justify-content:center;gap:6px;margin-top:10px}
+.crdots span{min-width:48px;padding:4px 6px;border-radius:12px;border:2px solid var(--line);text-align:center;font-weight:800;color:var(--sub);background:var(--card)}
+.crdots span.cur{border-color:var(--c);color:var(--ink);border-width:3px}
+.crdots span.ok{background:#e3f5ec;color:#15804f;border-color:#15804f}
+.crkeys{list-style:none;display:flex;flex-wrap:wrap;gap:4px;padding:0;margin:10px 0 0}
+.crkeys li{padding:2px 8px;border-radius:10px;background:var(--soft2);font-size:13px;color:var(--ink)}
+.crkeys li.done{background:#e3f5ec;color:#15804f}
+.crkeys li.cur{background:var(--ink);color:#fff;font-weight:700}
+.crres{margin:8px 0 0;text-align:center}
+.crrule{margin:8px 0 0;padding-left:1.3em}
+.crrule li{margin:4px 0}
+.crhero.good h2{color:#15804f}
 </style>
 </head>
 <body>
@@ -151,8 +167,10 @@ const CATS=[
   {id:'choice',emoji:'✋',name:'名前からえらぶ',desc:'4つの音のくみあわせから選ぶ',stage:'make'},
   {id:'keys',emoji:'🎹',name:'名前からおさえる',desc:'けんばんで和音をおさえる',stage:'make'},
   {id:'staff',emoji:'🎼',name:'がくふを見て',desc:'がくふの和音はⅠ・Ⅳ・Ⅴ・Ⅴ7のどれ？',stage:'other'},
+  {id:'inv',emoji:'🔄',name:'がくふで転回形',desc:'がくふの和音と、基本形・第1転回形などのかたち',stage:'other'},
   {id:'fix',emoji:'🔎',name:'まちがいさがし',desc:'1つだけちがう音をさがす',stage:'other'},
   {id:'prog',emoji:'🎶',name:'ならびの「？」',desc:'Ⅰ→？→Ⅴ7→Ⅰの「？」は？',stage:'prog'},
+  {id:'chromatic',emoji:'⏱',name:'12の調をじゅんばんに',desc:'半音ずつ上の調へ。Ⅰ・Ⅳ・Ⅴ・Ⅴ7をひいて時間をはかる',stage:'time'},
   {id:'lt',emoji:'🪜',name:'7ばんめの音',desc:'短調の7ばんめと、Ⅴで上げた音',stage:'copy',minor:true,chords:['V']},
   {id:'mark',emoji:'♯',name:'どの記号？',desc:'7ばんめにつけるのは♯・♮・ダブルシャープのどれ？',stage:'fill',minor:true}
 ];
@@ -160,20 +178,23 @@ const CAT_IDS=CATS.map(c=>c.id);
 const TYPES=CAT_IDS; // Q.type＝もんだいのしゅるい
 const OLD_TYPES=['keys','choice'];
 const catOf=id=>CATS.find(c=>c.id===id)||CATS[4];
-const isDrill=id=>CAT_IDS.includes(id)&&!OLD_TYPES.includes(id); // えらんでこたえる新しいしゅるい
-const quizOf=id=>isDrill(id)?QUIZ+'-'+id:QUIZ;
-const STAGES={copy:'まねる',fill:'うめる',make:'つくる',other:'べつの出しかた',prog:'ならび'};
+const isTimed=id=>id==='chromatic'; // ⏱ 12の調をじゅんばんに（もんだいではなく、時間をはかる）
+const isDrill=id=>CAT_IDS.includes(id)&&!OLD_TYPES.includes(id)&&!isTimed(id); // えらんでこたえる新しいしゅるい
+const quizOf=id=>isDrill(id)||isTimed(id)?QUIZ+'-'+id:QUIZ;
+const STAGES={copy:'まねる',fill:'うめる',make:'つくる',other:'べつの出しかた',prog:'ならび',time:'すらすら'};
 // ステップ：1つのステップでむずかしくするのは1つだけ（しゅるい・調号の数・和音のどれか）
 const ST=(cat,tier,chords,note)=>({id:cat+'-'+tier,cat,tier,chords:chords.split(','),note:note||''});
 const ALL4='I,IV,V,V7';
 const STEPS={
   major:[ST('root','easy','I,IV,V'),ST('fill','easy','I,IV,V'),ST('add7','easy','V7','Ⅴに1つたしてⅤ7'),ST('choice','easy',ALL4),ST('keys','easy',ALL4),
-    ST('keys','normal',ALL4),ST('staff','easy',ALL4),ST('fix','easy',ALL4),ST('prog','easy',ALL4),
-    ST('keys','hard',ALL4),ST('keys','all',ALL4)],
+    ST('keys','normal',ALL4),ST('staff','easy',ALL4),ST('inv','easy',ALL4),ST('fix','easy',ALL4),ST('prog','easy',ALL4),
+    ST('keys','hard',ALL4),ST('keys','all',ALL4),ST('chromatic','all',ALL4)],
   minor:[ST('lt','easy','V'),ST('root','easy','I,IV,V'),ST('fill','easy','I,IV,V'),ST('add7','easy','V7'),
     ST('mark','normal','V,V7','♮をつける調も出るよ'),ST('choice','easy',ALL4),ST('keys','easy',ALL4),ST('keys','normal',ALL4),
-    ST('staff','easy',ALL4),ST('fix','easy',ALL4),ST('prog','easy',ALL4),ST('mark','hard','V,V7','ダブルシャープ（x）の調も出るよ'),ST('keys','all',ALL4)]
+    ST('staff','easy',ALL4),ST('inv','easy',ALL4),ST('fix','easy',ALL4),ST('prog','easy',ALL4),ST('mark','hard','V,V7','ダブルシャープ（x）の調も出るよ'),ST('keys','all',ALL4),
+    ST('chromatic','all',ALL4)]
 };
+// さいごのステップ（⏱ 12の調をじゅんばんに）は5もんではなく、12の調をさいごまでひけたら ✓（きろくは STEP_N）
 const STEP_N=5, STEP_PASS=4; // 5もん中4もんいじょう、じぶんでできたら ✓
 const stepOf=(ks,n)=>STEPS[ks]&&Number.isInteger(n)&&n>=1&&n<=STEPS[ks].length?Object.assign({ks,n},STEPS[ks][n-1]):null;
 const stepById=sid=>{const r=/^(major|minor):([a-z0-9]+-[a-z]+)$/.exec(String(sid||''));if(!r) return null;const i=STEPS[r[1]].findIndex(s=>s.id===r[2]);return i<0?null:stepOf(r[1],i+1);};
@@ -256,6 +277,9 @@ function scoreText(s){
  *         oct おなじ音をかさねた／tonic 主音／keep そのまま／over 上げすぎ／down 下げた */
 const MARKS=[1,0,2,-1]; // 記号のじゅん：♯・♮・𝄪・♭（acc の値）
 const MARK3=[1,0,2];    // どの記号？は ♯・♮・𝄪 から
+// 和音のかたち（いちばん下の音で名前がきまる）。書きかたはことばで（記号のきまりは先生にたしかめてからそろえる）
+const SHAPES=['基本形','第1転回形','第2転回形','第3転回形'];
+const ROLES=['根音','第3音','第5音','第7音']; // SHAPES[i]＝ROLES[i]がいちばん下
 const rngOf=seed=>{let a=seed>>>0;return ()=>{a=(a+0x6D2B79F5)>>>0;let t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};};
 const pickR=(rng,a)=>a[Math.floor(rng()*a.length)];
 const shuffleR=(rng,a)=>{for(let i=a.length-1;i>0;i--){const j=Math.floor(rng()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
@@ -315,6 +339,16 @@ function makeDrill(cat,q,seed){
       break;
     }
     case 'staff': out.parts=[chordOpts(q.chord)]; break;
+    case 'inv': { // がくふで転回形：和音の名前 → かたち（いちばん下の音が根音・第3音・第5音・第7音のどれか）
+      const inv=Math.floor(rng()*t.length);
+      const v=t.slice(inv).concat(t.slice(0,inv).map(n=>Object.assign({},n,{midi:n.midi+12}))); // 下から、ならべかえた和音（となりどうしの音）
+      // ト音記号の五線にのせる：いちばん下の音をレ4〜シ4（stepOf 29〜35）に。いちばん上はシ5まで（加線は1本まで）
+      const sh=Math.ceil((29-PA.stepOf(v[0]))/7);
+      out.inv=inv;
+      out.voice=v.map(n=>{const x={letter:n.letter,acc:n.acc,midi:n.midi+12*sh};if(n.raised) x.raised=true;return x;});
+      out.parts=[chordOpts(q.chord),{opts:SHAPES.slice(0,t.length).map((_,i)=>({inv:i,ok:i===inv}))}];
+      break;
+    }
     case 'fix': { // まちがいさがし：1つだけまちがえた和音
       const N=t.length, errs=[];
       t.forEach((x,i)=>{
@@ -350,6 +384,75 @@ function makeDrill(cat,q,seed){
 // こたえおわったか（picks＝パートごとにえらんだ番号。1つめをまちがえたら、そこでおわり）・ぜんぶあっているか
 const drillDone=(dr,picks)=>picks.length>=dr.parts.length||picks.some((p,i)=>!dr.parts[i].opts[p].ok);
 const drillOk=(dr,picks)=>picks.length===dr.parts.length&&picks.every((p,i)=>!!dr.parts[i].opts[p].ok);
+
+/* ===== ⏱ 12の調をじゅんばんに（時間をはかる） =====
+ * 先生の目標：ハ長調 → 変ニ長調 → ニ長調 →…と主音を半音ずつ上げながら、Ⅰ・Ⅳ・Ⅴ・Ⅴ7 を基本形ですぐにひける。
+ * 調のじゅん（PA.keyDeck の id）。主音が半音ずつ上がる。
+ *   長調の主音ファ♯／ソ♭は「嬰ヘ長調」にする：短調のおなじところ（嬰ヘ短調）と主音の名前がそろうので、同じ主音の長調・短調をくらべやすい。
+ *     調号の数はどちらも6つ。変ト長調でれんしゅうしたいときは、画面のボタンでかえられる（gb。PA.store 'chord-quiz-chromatic'.gb）
+ *   短調の主音レ♯／ミ♭は、先生のじゅんのとおり「変ホ短調」（嬰ニ短調ではない）
+ * 1つの調で Ⅰ → Ⅳ → Ⅴ → Ⅴ7。オクターブ・ならべかたは自由。ただし基本形＝いちばん下の音が根音（先生：ひくのは基本形まで）
+ * run＝{mode, gb, ids, ki(いまの調の番号), ci(いまの和音の番号), misses, keyMiss(いまの調のまちがい), startAt, endAt}
+ *   時間は now（ミリ秒）をわたす（テストではにせの時計）。startAt は1つめの和音が画面に出てからきめる（ページがきめる。null ならさいしょの答えのとき） */
+const CHROMA_IDS={major:['M0','M11','M2','M9','M4','M7','M6','M1','M10','M3','M8','M5'],minor:['m9','m4','m7','m12','m1','m10','m3','m8','m5','m0','m11','m2']};
+const CHROMA_CHORDS=['I','IV','V','V7'];
+const chromaMode=m=>m==='minor'?'minor':'major';
+const chromaIds=(mode,gb)=>CHROMA_IDS[chromaMode(mode)].map(id=>gb&&id==='M6'?'M12':id);
+const chromaNew=(mode,gb)=>({mode:chromaMode(mode),gb:!!gb&&chromaMode(mode)==='major',ids:chromaIds(mode,gb),ki:0,ci:0,misses:0,keyMiss:0,startAt:null,endAt:null});
+// いまひく和音（おわったら null）
+function chromaNow(r){
+  if(!r||r.ki>=r.ids.length) return null;
+  const k=KD.parse(r.ids[r.ki]);
+  return {id:k.id,minor:k.minor,keyIdx:k.idx,chord:CHROMA_CHORDS[r.ci],n:r.ki+1,of:r.ids.length};
+}
+// おさえた音（midi）をしらべる：音（ピッチクラス）がぴったり・いちばん下が根音（基本形）
+function chromaJudge(key,ch,ms){
+  const t=chordTones(key,ch), want=new Set(t.map(pcOf)), got=[...new Set(ms.map(m=>PA.mod(m,12)))];
+  const missing=t.filter(n=>!got.includes(pcOf(n))), extra=got.filter(p=>!want.has(p));
+  const low=ms.length?Math.min(...ms):null, notesOk=!missing.length&&!extra.length, rootOk=low!=null&&PA.mod(low,12)===pcOf(t[0]);
+  return {ok:notesOk&&rootOk,notesOk,rootOk,missing,extra,count:got.length,n:t.length,low};
+}
+// 答える。音の数（ちがう音名）がそろうまではまつ（'wait'）。'miss' はおなじ和音をもういちど。'ok' でつぎへ（keyDone＝その調がおわった）
+function chromaAnswer(r,ms,now){
+  const cur=chromaNow(r); if(!cur||r.endAt!=null||!ms||!ms.length) return {v:'idle'};
+  const j=chromaJudge(PA.keyOf(cur.minor,cur.keyIdx,60),cur.chord,ms);
+  if(j.count<j.n) return {v:'wait',j};
+  if(r.startAt==null) r.startAt=now;
+  if(!j.ok){r.misses++;r.keyMiss++;return {v:'miss',j,cur};}
+  let keyDone=null;
+  r.ci++;
+  if(r.ci>=CHROMA_CHORDS.length){keyDone={id:cur.id,ok:r.keyMiss===0};r.ci=0;r.ki++;r.keyMiss=0;}
+  if(r.ki>=r.ids.length) r.endAt=now;
+  return {v:'ok',j,cur,keyDone,finished:r.endAt!=null};
+}
+const chromaElapsed=(r,now)=>!r||r.startAt==null?0:Math.max(0,(r.endAt!=null?r.endAt:now)-r.startAt);
+// 電子ピアノ：まえの和音からおさえたままの音（stale）がのこっていても、×にしない。
+//   ぜんぶでぴったり → ぜんぶ。新しくおさえた音だけでぴったり → それ。新しい音がまだそろわない → null（まつ）。ほかはしらべる
+function chromaMidiPick(key,ch,ms,stale){
+  if(chromaJudge(key,ch,ms).ok) return ms;
+  const fresh=ms.filter(m=>stale.indexOf(m)<0);
+  if(fresh.length===ms.length) return ms;
+  if(!fresh.length) return null;
+  const fj=chromaJudge(key,ch,fresh);
+  return fj.ok||fj.count>=fj.n?fresh:null;
+}
+// 時間のことば：1:23.4（画面）
+const chromaClock=ms=>{const d=Math.floor(Math.max(0,ms)/100), s=Math.floor(d/10);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')+'.'+(d%10);};
+// じぶんのベスト（PA.store 'chord-quiz-chromatic'＝{best:{major:{ms,misses,at},minor:…}, gb}）。形がちがうものはすてる
+function chromaRec(d){
+  const o={best:{},gb:false}, ok=b=>!!b&&typeof b==='object'&&Number.isInteger(b.ms)&&b.ms>0&&b.ms<864e5&&Number.isInteger(b.misses)&&b.misses>=0;
+  if(!d||typeof d!=='object'||Array.isArray(d)) return o;
+  if(d.best&&typeof d.best==='object') ['major','minor'].forEach(m=>{const b=d.best[m];if(ok(b)) o.best[m]={ms:b.ms,misses:b.misses,at:Number.isFinite(b.at)?b.at:0};});
+  o.gb=d.gb===true;
+  return o;
+}
+// はやくできたらベストをかえる（かえたら true）。おなじ時間はまえのまま
+function chromaBest(rec,mode,ms,misses,at){
+  const m=chromaMode(mode), b=rec.best[m];
+  if(!Number.isInteger(ms)||ms<=0||(b&&b.ms<=ms)) return false;
+  rec.best[m]={ms,misses,at};
+  return true;
+}
 // </cq-logic>
 const ROM=['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ'];
 // まえの「調号の数（〜つまで）」＝0〜N の調 → 出る調がいちばん近いむずかしさ（ちがう調の数が少ないもの）。
@@ -461,7 +564,8 @@ function stopMic(){
   fitKeyset();
   // れんしゅうの回（しゅるいごと）：リンクに n・step があればその回（おなじリンクのとちゅうならつづき）。なければのこっている回をよむ
   const qz=quizOf(Q.type);
-  sess=linkStep?PA.session(qz,{n:STEP_N,sig:RUN.sig}):LINK.n?PA.session(qz,{n:LINK.n,sig:linkSig(LINK)}):PA.session(qz);
+  // ⏱ 12の調をじゅんばんに は n もんの回をつかわない
+  sess=isTimed(Q.type)?PA.session(qz):linkStep?PA.session(qz,{n:STEP_N,sig:RUN.sig}):LINK.n?PA.session(qz,{n:LINK.n,sig:linkSig(LINK)}):PA.session(qz);
   let st=sess.state();
   if(sess.finished()){ // おわった回：おわってすぐ（「もどる」の読みなおし）かリンクの n のときだけけっかを出す
     const recent=!!st&&st.endedAt!=null&&Date.now()-st.endedAt<AFTER_END;
@@ -572,6 +676,7 @@ function qLabel(){
     case 'lt': return `${kn}の7ばんめの音`;
     case 'mark': return `${kn}の${lab}（7ばんめの記号）`;
     case 'staff': case 'prog': return `${kn}の${lab}（${catOf(Q.type).name}）`;
+    case 'inv': return Q.dr&&Q.dr.cat==='inv'?`${kn}の${lab}・${SHAPES[Q.dr.inv]}（${catOf(Q.type).name}）`:`${kn}の${lab}（${catOf(Q.type).name}）`;
     default: return `${kn}の${lab}（${catOf(Q.type).name}）`;
   }
 }
@@ -776,6 +881,7 @@ const degNo=n=>n.deg||PA.mod(n.k,7)+1; // 音階のなんばんめ（1〜7）
 function optHTML(o){
   if(o.note) return PA.nmH(o.note);
   if(o.ch) return CHORDS[o.ch].label;
+  if(o.inv!=null) return SHAPES[o.inv];
   return `${markGlyph(o.acc)}<span class="cn">${markWord(o.acc)}</span>`;
 }
 // パートごとのといかけ（カードの見出し）
@@ -786,6 +892,7 @@ function partAsk(dr,j){
     case 'fill': return '□に入る音をえらぼう';
     case 'add7': return 'たす音をえらぼう';
     case 'staff': case 'prog': return '和音の名前をえらぼう';
+    case 'inv': return j?`かたちはどれ？<small>いちばん下の音が根音なら基本形、第3音なら第1転回形、第5音なら第2転回形${dr.voice.length>3?'、第7音なら第3転回形':''}</small>`:'和音の名前をえらぼう';
     case 'mark': return '記号をえらぼう';
     case 'fix': {
       if(!j) return '1つだけまちがっている音はどれ？';
@@ -797,7 +904,7 @@ function partAsk(dr,j){
   return '';
 }
 // ヒーローの問題文（HTML）。hide＝こたえるまでは和音の色を出さない（色でこたえがわかるもの）
-const hideCol=cat=>cat==='staff'||cat==='prog';
+const hideCol=cat=>cat==='staff'||cat==='prog'||cat==='inv';
 function drillTitle(key,c,col){
   const kn=`<span class="qkey">${PA.keyName(key)}</span>`, badge=(lab,cl)=>`<span class="badge sm" style="--c:${cl}">${lab}</span>`;
   switch(Q.dr.cat){
@@ -805,6 +912,7 @@ function drillTitle(key,c,col){
     case 'fill': return `${kn}<span>の</span><span class="tg">${badge(c.label,col)}<span>、□は？</span></span>`;
     case 'add7': return `${kn}<span>の</span>${badge('Ⅴ',PA.COL.V)}<span>に、どの音をたすと</span>${badge('Ⅴ7',PA.COL.V7)}<span>？</span>`;
     case 'staff': return `${kn}<span>の、この和音は？</span>`;
+    case 'inv': return `${kn}<span>の、この和音は？かたちは？</span>`;
     case 'fix': return `${kn}<span>の</span>${badge(c.label,col)}<span>をかいたよ。1つだけまちがい！</span>`;
     case 'prog': return `${kn}<span>のならび。「？」の和音は？</span>`;
     case 'lt': return `${kn}<span>の7ばんめの音は？</span>`;
@@ -827,6 +935,7 @@ function drillStaff(key,t0,col,done){
   const dr=Q.dr, ink='#3a3245', t=lowered(t0);
   if(dr.cat==='prog') return '';
   if(dr.cat==='staff'&&!done) return PA.staffSVG(key,[{notes:t,color:ink,accColor:ink}],{maxScale:1.3});
+  if(dr.cat==='inv') return PA.staffSVG(key,[done?{notes:dr.voice,color:col,ltColor:'#d1495b',accColor:'#d1495b',label:CHORDS[Q.q.chord].label,sub:SHAPES[dr.inv],labelColor:col}:{notes:dr.voice,color:ink,accColor:ink}],{maxScale:1.3});
   if(dr.cat==='mark'&&!done) return PA.staffSVG(key,[{notes:t.map(n=>n.raised?respell(n,key.sig[n.letter]):n),color:ink,accColor:ink}],{maxScale:1.3});
   return PA.staffSVG(key,[{notes:done?t:[],color:col,ltColor:'#d1495b',accColor:'#d1495b'}],{maxScale:1.3});
 }
@@ -850,6 +959,7 @@ function drillAnswer(key,c,t){
     case 'fill': return `□は<b>「${PA.nmH(t[dr.blank])}」</b>。${kn}の${lab}は${ns}。`;
     case 'add7': return `Ⅴに<b>「${PA.nmH(t[3])}」</b>をたすとⅤ7（${ns}）。Ⅴのいちばん上「${PA.nmH(t[2])}」から、ひとつとばしでもう1つ。`;
     case 'staff': return `この和音は<b>${lab}</b>（${ns}）。いちばん下の「${PA.nmH(t[0])}」が音階の${c.deg+1}ばんめだから${lab}。`;
+    case 'inv': return `この和音は<b>${lab}の${SHAPES[dr.inv]}</b>。音をひとつとばしにならべると${ns}で、根音は「${PA.nmH(t[0])}」（音階の${c.deg+1}ばんめ）。いちばん下の「${PA.nmH(dr.voice[0])}」は${ROLES[dr.inv]}だから${SHAPES[dr.inv]}。`;
     case 'prog': return `「？」は<b>${lab}</b>（${ns}）。いちばん下の音（根音）「${PA.nmH(t[0])}」が音階の${c.deg+1}ばんめだから${lab}。`;
     case 'fix': return `まちがいは<b>「${PA.nmH(dr.written[dr.wrong])}」</b>。ただしくは「${PA.nmH(t[dr.wrong])}」で、${lab}は${ns}。`;
     case 'lt': return `${kn}の7ばんめは「${PA.nmH(key.natLT)}」。Ⅴ・Ⅴ7では半音上げて<b>「${PA.nmH(key.lt)}」</b>にするよ。`;
@@ -867,8 +977,11 @@ function drillWhy(key,c,t,j,o){
       if(dr.cat==='prog'){const s7=PA.nmH(chordTones(key,'V7')[3]);return `Ⅴ7は、Ⅴに「${s7}」をたした和音。「？」の和音に「${s7}」があるか見てみよう。`;}
       return `音の数を見てみよう。Ⅴは3つ、Ⅴ7は4つの音だよ（いまは${t.length}つ）。`;
     }
+    // 転回形では、いちばん下の音が根音とはかぎらない
+    if(dr.cat==='inv') return (dr.inv?'いちばん下の音が根音とはかぎらないよ。音をひとつとばしにならべなおして、根音（ならべなおしたときのいちばん下の音）を見つけよう。':'この和音は基本形なので、いちばん下の音が根音だよ。')+`${p.label}なら根音は「${PA.nmH(PA.at(key.scale,p.deg))}」。`;
     return `いちばん下の音で見わけよう。${p.label}なら、音階の${p.deg+1}ばんめ「${PA.nmH(PA.at(key.scale,p.deg))}」からだよ。`;
   }
+  if(o.inv!=null) return `いちばん下の「${PA.nmH(dr.voice[0])}」は、${lab}の${ROLES[dr.inv]}だよ。${SHAPES[o.inv]}なら、いちばん下は${ROLES[o.inv]}「${PA.nmH(t[o.inv])}」。`;
   if(dr.cat==='mark'){
     const nl=key.natLT, d=o.acc-(key.sig[nl.letter]||0), cn=PA.nmH({letter:nl.letter,acc:o.acc});
     return (d>=2?`「${cn}」だと主音「${PA.nmH(key.nat[0])}」と同じ高さ（かそれより上）になっちゃう。上げるのは、すぐ上のけんばんまで。`
@@ -905,6 +1018,7 @@ function drillFb(key,c,t){
   if(!drillDone(dr,pk)){
     if(dr.cat==='fix') return `⭕ そう！まちがいは「${PA.nmH(dr.written[dr.wrong])}」。つぎは、なおしかた。`;
     if(dr.cat==='lt') return `⭕ そう！7ばんめは「${PA.nmH(key.natLT)}」。`;
+    if(dr.cat==='inv') return `⭕ そう！${c.label}。つぎは、かたち。`;
     return '⭕ そう！';
   }
   if(drillOk(dr,pk)) return `🎉 正解！${drillAnswer(key,c,t)}`+(Q.wasHint?`<br><small>💡 ヒントを見てできたね。次は見ないでやってみよう</small>`:'');
@@ -942,6 +1056,7 @@ function drillHint(key,c){
     case 'lt': return `7ばんめは、主音「${PA.nmH(key.nat[0])}」のすぐ下の音。調号を見てね。`;
     case 'mark': return '調号の♭がついた音は♮で、何もついていない音は♯で、調号の♯がついた音はダブルシャープ（<span class="ds">x</span>）で上げるよ。';
     case 'staff': case 'prog': return `${PA.keyName(key)}の音階を出したよ。いちばん下の音が、音階のなんばんめか見てみよう。`;
+    case 'inv': return `${PA.keyName(key)}の音階を出したよ。転回形では、いちばん下の音が根音とはかぎらない。音を「ひとつとばし」にならべなおすと、根音（はじまりの音）がわかるよ。`;
     default: return `${PA.keyName(key)}の音階を出したよ。和音は、音階の音をひとつとばしでかさねるよ。`;
   }
 }
@@ -1008,6 +1123,7 @@ function tipsHTML(){
     `そこから、<b>ひとつとばし</b>で3つかさねる。<b>Ⅴ7</b>は、その上にもう1つ、ひとつとばしで音をのせて<b>4つ</b>。`,
     `<b>♯・♭は調号の音だけ</b>。がくふの調号を見て、どの音につくか、たしかめよう。`,
     `<b>短調のⅤ・Ⅴ7</b>は、7ばんめの音を<b>半音上げる</b>。`,
+    `<b>転回形</b>は、いちばん下の音が根音とはかぎらない。音をひとつとばしにならべなおして、根音を見つけよう。`,
     `けんばんのときは、<b>どのオクターブでおさえても OK</b>。`
   ];
   return `<details class="more tips"><summary>💡 とき方のコツ</summary><ol>${li.map(x=>`<li>${x}</li>`).join('')}</ol></details>`;
@@ -1048,25 +1164,29 @@ function renderSteps(){
   const nDone=list.filter(s=>stepDone(rec,s)).length, nextI=list.findIndex(s=>!stepDone(rec,s));
   const items=list.map((s,i)=>{
     const ok=stepDone(rec,s), c=catOf(s.cat), tr=KD.TIERS.find(t=>t.id===s.tier), best=rec[stepKey(s)];
-    const ch=s.cat==='add7'||s.cat==='lt'?'':s.chords.map(k=>CHORDS[k].label).join('・');
-    const info=[`<span aria-hidden="true">${tr.emoji}</span> 調号${tr.min}〜${tr.max}`,ch,s.note,isInt(best,1,STEP_N)&&!ok?`さいこう${best}／${STEP_N}`:''].filter(Boolean).join('・');
+    const ch=s.cat==='add7'||s.cat==='lt'||isTimed(s.cat)?'':s.chords.map(k=>CHORDS[k].label).join('・');
+    const cb=isTimed(s.cat)?crRec().best[s.ks]:null;
+    const info=isTimed(s.cat)?['12の調・Ⅰ→Ⅳ→Ⅴ→Ⅴ7',cb?`ベスト${chromaClock(cb.ms)}`:''].filter(Boolean).join('・')
+      :[`<span aria-hidden="true">${tr.emoji}</span> 調号${tr.min}〜${tr.max}`,ch,s.note,isInt(best,1,STEP_N)&&!ok?`さいこう${best}／${STEP_N}`:''].filter(Boolean).join('・');
     return `<li><button class="stepbtn${ok?' done':''}${i===nextI?' next':''}" data-act="step-go" data-ks="${ks}" data-v="${s.n}">`
       +`<span class="sn" aria-hidden="true">${ok?'✓':s.n}</span>`
       +`<span class="stx"><span class="pa-sr">ステップ${s.n}${ok?'（できた）':i===nextI?'（つぎはここ）':''}</span><span class="stg">${STAGES[c.stage]}</span><b><span aria-hidden="true">${c.emoji}</span> ${c.name}</b><small>${info}</small></span>`
-      +`<span class="sgo" aria-hidden="true">5もん ›</span></button></li>`;
+      +`<span class="sgo" aria-hidden="true">${isTimed(s.cat)?'⏱':'5もん'} ›</span></button></li>`;
   }).join('');
-  const h=`<div class="stack"><section class="card shead"><h2>📋 ステップ<small>やさしいじゅんに1つずつ。1つのステップは5もん。5もん中${STEP_PASS}もんいじょう、じぶんで（ヒントなしで）できたら ✓</small></h2>
+  const h=`<div class="stack"><section class="card shead"><h2>📋 ステップ<small>やさしいじゅんに1つずつ。1つのステップは5もん。5もん中${STEP_PASS}もんいじょう、じぶんで（ヒントなしで）できたら ✓。さいごの⏱は、12の調をさいごまでひけたら ✓</small></h2>
     ${PA.seg('stepks',[['major','<span aria-hidden="true">☀️</span> 長調'],['minor','<span aria-hidden="true">🌙</span> 短調']],ks,'full')}
-    <p class="note">まねる → うめる → つくる → べつの出しかた → ならび。いま${nDone}／${list.length}できた</p></section>
+    <p class="note">まねる → うめる → つくる → べつの出しかた → ならび → すらすら。いま${nDone}／${list.length}できた</p></section>
     <ol class="steps">${items}</ol>
     <div class="row center"><button class="btn" data-act="steps-free">🎈 じぶんで選んでとく</button></div></div>`;
   PA.paint(document.getElementById('view'),h,'steps:'+ks);
   clearActions();
 }
 function render(){
+  if(CR.phase!=='idle'&&!(Q.view==='quiz'&&Q.type==='chromatic')) stopChroma(); // ほかの画面にうつった：はかるのはおしまい
   if(Q.view==='steps'){renderSteps();return;}
   if(Q.view==='summary'&&sess&&sess.finished()){renderSummary();return;}
   Q.view='quiz';
+  if(Q.type==='chromatic'){renderChroma();return;}
   if((MIC.phase==='on'||MIC.phase==='wait')&&(Q.type!=='keys'||Q.checked||MIC.qid!==Q.qid)) stopMic();
   const q=Q.q, key=keyOfQ(q), c=CHORDS[q.chord], col=PA.COL[q.chord], t=chordTones(key,q.chord), done=isDone();
   const drill=isDrill(Q.type)&&!!Q.dr;
@@ -1074,7 +1194,7 @@ function render(){
   const now=`<div class="qnow"><span>いまのれんしゅう：<b>${PA.esc(nowText())}</b></span><button class="btn small" data-act="qsetopen" aria-controls="qsetd" aria-expanded="${Q.openSet?'true':'false'}" aria-label="せっていをかえる">かえる</button></div>`;
   let h=`<div class="stack">${catRowHTML()}`;
   if(drill){
-    const notes=drillNotes(key,t,done), staff=drillStaff(key,t,col,done), wide=Q.dr.cat==='staff'||Q.dr.cat==='mark';
+    const notes=drillNotes(key,t,done), staff=drillStaff(key,t,col,done), wide=Q.dr.cat==='staff'||Q.dr.cat==='mark'||Q.dr.cat==='inv';
     h+=`<section class="card hero" style="--c:${hc}">
       <div class="score">${scoreText(Q)} <span>れんぞく${Q.streak}</span> ${sessHead()}</div>
       <div class="qwrap${wide?' col':''}"><div class="qtext">
@@ -1089,7 +1209,7 @@ function render(){
     if(done) h+=`<div class="fb ${Q.lastOk?'good':'bad'}" id="fb" role="status">${msg}</div>`;
     else if(Q.hint>=1) h+=`<div class="msg" role="status">💡 ヒント：${drillHint(key,c)}</div>`;
     h+=`<div class="row center"><button class="btn small" data-act="qexplain">🐸 つくりかたを見る</button></div>`+(done||Q.result!==null?'':PA.once('hint-rule',`<p class="qsub" style="text-align:center;margin:0">💡 ${PA.esc(PA.HINT_NOTE)}</p>`));
-    if(done) h+=`<section class="card"><h2>🎹 こたえのけんばん<small>${PA.keyName(key)}の${c.label}。下のローマ数字は音階のなんばんめ</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(LO,HI,kbMarks(key,t,col,done))}</div></section>`;
+    if(done) h+=`<section class="card"><h2>🎹 こたえのけんばん<small>${PA.keyName(key)}の${c.label}。下のローマ数字は音階のなんばんめ</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(LO,HI,kbMarks(key,Q.dr.cat==='inv'?Q.dr.voice:t,col,done))}</div></section>`;
   }else{
     h+=`<section class="card hero" style="--c:${col}">
       <div class="score">${scoreText(Q)} <span>れんぞく${Q.streak}</span> ${sessHead()}</div>
@@ -1168,10 +1288,158 @@ function startStep(s){
   Q.only=null; Q.onlyBy=null;
   RUN=stepRun(s);
   Object.assign(Q,settingsOf(RUN)); fitKeyset(); switchQuiz();
-  sess=PA.session(quizOf(Q.type),{n:STEP_N,sig:RUN.sig});
-  if(sess.finished()) sess.start(STEP_N); // おわったばかりの回ではなく、新しい5もん
+  if(isTimed(Q.type)){sess=PA.session(quizOf(Q.type));stopChroma();} // ⏱ は5もんの回ではなく、スタートをおしてはかる
+  else{
+    sess=PA.session(quizOf(Q.type),{n:STEP_N,sig:RUN.sig});
+    if(sess.finished()) sess.start(STEP_N); // おわったばかりの回ではなく、新しい5もん
+  }
   try{history.replaceState({cqLink:RUN.id},'',location.href);}catch(e){}
   Q.view='quiz'; Q.stepsKs=s.ks; newQuestion();
+}
+
+/* ===== ⏱ 12の調をじゅんばんに（画面） =====
+ * CR.phase：idle（スタートまえ）・run（はかっている）・done（おわり）。run＝chromaNew。picked＝画面のけんばんでおさえた音、
+ * wrong＝まちがえたときのようす（つぎにおすまで出す）、stale＝電子ピアノでまえの和音からおさえたままの音、tok＝はかっている回（かわったらタイマーをとめる）
+ * きろく：PA.store 'chord-quiz-chromatic'（chromaRec）、調ごとに keystats-chord-quiz-chromatic（その調を1つもまちがえずにひけたら ○）、
+ *   ステップのときは 'chord-quiz-steps' に STEP_N（12の調をさいごまでひけたら ✓） */
+const CR={phase:'idle',run:null,picked:new Set(),wrong:null,stale:[],tok:0,heldSig:'',result:null};
+const CR_KEY='chord-quiz-chromatic';
+const crRec=()=>chromaRec(PA.store.get(CR_KEY,null));
+const crMode=()=>{const s=curStep();return s?s.ks:Q.keyset==='minor'?'minor':'major';};
+const crKey=cur=>PA.keyOf(cur.minor,cur.keyIdx,60);
+const afterPaint=f=>{if(typeof requestAnimationFrame==='function') requestAnimationFrame(()=>requestAnimationFrame(f)); else setTimeout(f,32);};
+function stopChroma(){CR.tok++;CR.phase='idle';CR.run=null;CR.picked=new Set();CR.wrong=null;CR.result=null;}
+function startChroma(){
+  stopChroma(); PA.stopSound();
+  const my=CR.tok;
+  CR.run=chromaNew(crMode(),crRec().gb); CR.phase='run'; CR.stale=PA.midi.active()?[...PA.midi.held()]:[]; CR.heldSig='';
+  render();
+  // 1つめの和音が画面に出てから、時間をはかりはじめる（描いたあとのつぎのコマ）
+  afterPaint(()=>{if(my!==CR.tok||CR.phase!=='run') return;if(CR.run.startAt==null) CR.run.startAt=Date.now();crTick(my);});
+}
+// 時計の字をかえる（0.1秒ごと）。電子ピアノは、はなした音もここでたしかめる（はなしただけでは知らせがこないので）
+function crTick(my){
+  if(my!==CR.tok||CR.phase!=='run') return;
+  const el=document.getElementById('crtime'); if(el) el.textContent=chromaClock(chromaElapsed(CR.run,Date.now()));
+  if(PA.midi.active()){
+    const held=[...PA.midi.held()].sort((a,b)=>a-b), sig=held.join(',');
+    CR.stale=CR.stale.filter(m=>held.indexOf(m)>=0);
+    if(sig!==CR.heldSig){
+      CR.heldSig=sig;
+      const cur=chromaNow(CR.run);
+      if(cur&&held.length){const use=chromaMidiPick(crKey(cur),cur.chord,held,CR.stale);if(use&&chromaJudge(crKey(cur),cur.chord,use).ok){crAnswer(use,true);render();}}
+    }
+  }
+  setTimeout(()=>crTick(my),100);
+}
+// 答える（ms＝おさえた音）。fromMidi＝電子ピアノ（おさえたままの音をおぼえる）
+function crAnswer(ms,fromMidi){
+  const r=CR.run; if(CR.phase!=='run'||!r) return 'idle';
+  const res=chromaAnswer(r,ms,Date.now());
+  if(res.v==='miss'){CR.wrong={ms:ms.slice(),j:res.j};PA.answerFx(false);}
+  if(res.v!=='ok') return res.v;
+  PA.answerFx(true);
+  CR.picked=new Set(); CR.wrong=null; CR.stale=fromMidi?ms.slice():[];
+  if(res.keyDone) deck.record(res.keyDone.id,res.keyDone.ok);
+  if(res.finished) finishChroma();
+  return 'ok';
+}
+function finishChroma(){
+  const r=CR.run, ms=chromaElapsed(r,Date.now()), rec=crRec(), prev=rec.best[r.mode]||null;
+  const best=chromaBest(rec,r.mode,ms,r.misses,Date.now());
+  if(best) PA.store.set(CR_KEY,rec);
+  const s=curStep();
+  if(s&&s.cat==='chromatic'&&s.ks===r.mode){const sr=stepRec();if(sr[stepKey(s)]!==STEP_N){sr[stepKey(s)]=STEP_N;PA.store.set('chord-quiz-steps',sr);}}
+  CR.phase='done'; CR.tok++; CR.result={ms,misses:r.misses,best,prev,mode:r.mode,gb:r.gb,step:s&&s.cat==='chromatic'?s:null,at:Date.now()};
+  PA.announce(`ぜんぶおわり！${chromaClock(ms)}`);
+}
+// まちがえたわけ（みじかく）
+function crWrongHTML(key,ch,j){
+  const t=chordTones(key,ch);
+  if(j.notesOk) return `音はあっているよ。基本形は、いちばん下を根音「${PA.nmH(t[0])}」にしてね。`;
+  const out=[];
+  if(j.extra.length) out.push(j.extra.map(pc=>`「${PA.nmH(PA.spellMidi(60+pc,key))}」`).join('')+'はちがう音。');
+  if(j.missing.length) out.push(j.missing.map(n=>`「${PA.nmH(n)}」`).join('')+'がたりないよ。');
+  return out.join('');
+}
+// 12の調のならび（いまの調・おわった調）
+function crKeysHTML(ids,ki){
+  return `<ol class="crkeys" aria-label="調のじゅん">`+ids.map((id,i)=>{const cl=i<ki?'done':i===ki?'cur':'';
+    return `<li class="${cl}">${i<ki?'<span aria-hidden="true">✓</span>':''}${keyNameOfId(id)}${i===ki?'<span class="pa-sr">（いまここ）</span>':''}</li>`;}).join('')+`</ol>`;
+}
+const crBestText=b=>b?`${chromaClock(b.ms)}（まちがい${b.misses}）`:'まだなし';
+function renderChroma(){
+  stopMic(); stopProg();
+  const rec=crRec(), mode=crMode(), st=curStep(), ph=CR.phase, r=CR.run;
+  let h=`<div class="stack">${catRowHTML()}`;
+  if(ph==='run'&&r){
+    const cur=chromaNow(r), key=crKey(cur), c=CHORDS[cur.chord], col=PA.COL[cur.chord];
+    h+=`<section class="card hero crhero" style="--c:${col}">
+      <p class="crtime" id="crtime" role="timer" aria-label="かかった時間">${chromaClock(chromaElapsed(r,Date.now()))}</p>
+      <div class="crnow" role="status"><span class="crn">${cur.n}／${cur.of}</span><span class="qkey">${PA.keyName(key)}</span><span>の</span><span class="badge sm" style="--c:${col}">${c.label}</span></div>
+      <div class="crdots" aria-hidden="true">${CHROMA_CHORDS.map((x,i)=>`<span class="${i<r.ci?'ok':i===r.ci?'cur':''}" style="--c:${PA.COL[x]}">${CHORDS[x].label}</span>`).join('')}</div>
+      <p class="qsub" style="text-align:center">${PA.sigLabel(key)}・基本形（いちばん下が根音）</p>
+      ${crKeysHTML(r.ids,r.ki)}</section>`;
+    const msg=CR.wrong?`<div class="fb bad" id="fb" role="alert"><span aria-hidden="true">❌</span>${crWrongHTML(key,cur.chord,CR.wrong.j)}もういちど！</div>`:'';
+    const marks=new Map(), t=chordTones(key,cur.chord), ans=new Set(t.map(pcOf));
+    if(CR.wrong){
+      const low=CR.wrong.j.low;
+      [...CR.picked].forEach(m=>{const ok=ans.has(PA.mod(m,12));marks.set(m,{fill:ok?'#22a06b':'#d1495b',tc:'#fff',label:(ok?'○':'×')+nameOf(m,key),ring:m===low&&!CR.wrong.j.rootOk?'#f4a100':undefined,sr:ok?'選んだ・あっている音':'選んだ・ちがう音'});});
+    }else CR.picked.forEach(m=>marks.set(m,{fill:isBlack(m)?'#e9a800':'#ffd66b',tc:'#3a3245',label:nameOf(m,key),sr:'選んだ'}));
+    h+=msg+`<section class="card"><h2><span aria-hidden="true">🎹</span>ひこう<small>${PA.midi.active()?'つないだ電子ピアノでひいてね（画面のけんばんでも OK）':'けんばんをタップ。音がそろうと、すぐしらべるよ'}</small></h2>
+      <div class="scroll" data-sk="kb">${PA.kbSVG(LO,HI,marks)}</div></section>`;
+  }else if(ph==='done'&&CR.result){
+    const R=CR.result, b=rec.best[R.mode];
+    h+=`<section class="card hero crhero good" style="--c:#15804f">
+      <h2><span aria-hidden="true">🎉</span>12の調、ぜんぶおわり！</h2>
+      <p class="crtime">${chromaClock(R.ms)}</p>
+      <p class="crres">${R.best?'<b><span aria-hidden="true">🏆</span>じぶんのベスト！</b>':`じぶんのベスト：${crBestText(b)}`}　まちがい${R.misses}回</p>
+      ${R.step?`<p class="dok"><span aria-hidden="true">✓</span>ステップ${R.step.n}「${catOf('chromatic').name}」クリア！</p>`:''}
+      <details class="sess-teacher" data-d="cr-teacher"><summary><span aria-hidden="true">👩‍🏫</span>先生に見せる</summary><dl>
+        <dt>れんしゅう</dt><dd>和音クイズ・12の調をじゅんばんに（${KS_NAME[R.mode]}${R.mode==='major'?`・${R.gb?'変ト長調':'嬰ヘ長調'}`:''}）</dd>
+        <dt>時間</dt><dd>${chromaClock(R.ms)}（まちがい${R.misses}回）</dd>
+        <dt>日づけ</dt><dd>${PA.esc(new Date(R.at).toLocaleString('ja-JP'))}</dd></dl>
+        <div class="row">${PA.shareHTML('chord-quiz',{cat:'chromatic',keyset:R.mode},PA.icon('link')+'同じれんしゅうのリンク')}</div></details>
+    </section>`;
+  }else{
+    const ids=chromaIds(mode,rec.gb);
+    h+=`<section class="card hero crhero" style="--c:${PA.COL.V7}">
+      <h2><span aria-hidden="true">⏱</span> 12の調をじゅんばんに<small>ハ${mode==='minor'?'短調':'長調'}から、半音ずつ上の調へ。それぞれの調でⅠ→Ⅳ→Ⅴ→Ⅴ7をひこう</small></h2>
+      <ul class="tips crrule"><li><b>基本形</b>でひく：いちばん下の音を<b>根音</b>（和音のはじまりの音）にする。</li><li>上の音のならべかた・オクターブは、どれでもOK。</li><li>まちがえたら、おなじ和音をもういちど。スタートをおすと、時間をはかりはじめるよ。</li></ul>
+      ${st?`<p class="note"><span aria-hidden="true">📋</span>ステップ${st.n}（${KS_NAME[st.ks]}）：12の調をさいごまでひけたら ✓</p>`:`<div class="opt"><span class="lab">調</span>${PA.seg('crmode',[['major','<span aria-hidden="true">☀️</span> 長調'],['minor','<span aria-hidden="true">🌙</span> 短調']],mode,'full')}</div>`}
+      ${mode==='major'?`<div class="opt"><span class="lab">ファ♯・ソ♭の調</span>${PA.seg('crgb',[['fs','嬰ヘ長調'],['gb','変ト長調']],rec.gb?'gb':'fs','full')}<small>どちらも調号は6つ</small></div>`:''}
+      ${crKeysHTML(ids,-1)}
+      <p class="crres">じぶんのベスト（${KS_NAME[mode]}）：<b>${crBestText(rec.best[mode])}</b></p>
+      ${PA.midi.active()?'<p class="note"><span aria-hidden="true">🎹</span>つないだ電子ピアノでひけるよ</p>':''}</section>`;
+  }
+  h+=`</div>`;
+  PA.paint(document.getElementById('view'),h,'cr:'+ph+':'+(r?r.ki+'.'+r.ci:''));
+  crActions();
+}
+function crActions(){
+  let a;
+  if(CR.phase==='run') a=`<button class="btn" data-act="crclear" ${CR.picked.size?'':'disabled'}>${PA.icon('erase')}けす</button><button class="btn" data-act="crrestart">${PA.icon('retry')}さいしょから</button><button class="btn" data-act="crstop">やめる</button>`;
+  else if(CR.phase==='done') a=`<button class="btn primary" data-act="crstart" data-hot="next">${PA.icon('retry')}もういちど</button>`+(CR.result&&CR.result.step?`<button class="btn" data-act="steps">📋 ステップのいちらん</button>`:`<button class="btn" data-act="crstop">もどる</button>`);
+  else a=`<button class="btn primary" data-act="crstart" data-hot="check"><span aria-hidden="true">⏱</span>スタート</button>`;
+  if(a!==lastActions){PA.paint(document.getElementById('actions'),a,'bar');lastActions=a;}
+}
+// 電子ピアノの和音
+function crMidi(ms){
+  if(CR.phase!=='run') return;
+  const cur=chromaNow(CR.run); if(!cur) return;
+  const fold=m=>{while(m<LO)m+=12;while(m>HI)m-=12;return m;};
+  CR.wrong=null; CR.picked=new Set(ms.map(fold)); CR.heldSig=ms.join(',');
+  const use=chromaMidiPick(crKey(cur),cur.chord,ms,CR.stale);
+  if(use&&crAnswer(use,true)==='miss') CR.picked=new Set(use.map(fold));
+  render();
+}
+// 画面のけんばん（音のなまえが和音の数そろったら、すぐしらべる）
+function crKeyTap(m){
+  if(CR.phase!=='run') return;
+  if(CR.wrong){CR.wrong=null;CR.picked=new Set();}
+  CR.picked.has(m)?CR.picked.delete(m):CR.picked.add(m);
+  crAnswer([...CR.picked],false);
+  render();
 }
 
 /* ===== 操作 ===== */
@@ -1179,6 +1447,7 @@ PA.mountBar({title:'和音クイズ',app:'chord-quiz'});
 PA.onPageShow=()=>{PA.stopSound();stopMic();location.reload();}; // 「もどる」でもどったら読みなおす（べつのページですすめたきろくを古いきろくで上書きしない）
 PA.onSettings=render;
 PA.onKey=m=>{ // 音は core が鳴らす
+  if(Q.view==='quiz'&&Q.type==='chromatic'){crKeyTap(m);return;}
   if(Q.view!=='quiz'||Q.type!=='keys'||Q.checked) return;
   if(MIC.phase==='on'||MIC.phase==='wait') MIC.quietUntil=Date.now()+1500; // 画面のけんばんの音をマイクがひろわないように
   Q.picked.has(m)?Q.picked.delete(m):Q.picked.add(m); render();
@@ -1186,6 +1455,7 @@ PA.onKey=m=>{ // 音は core が鳴らす
 // 🎹 電子ピアノ（MIDI）：和音をひいたら、そのままこたえあわせ（けんばんでおさえて「こたえあわせ」をおしたのとおなじ）。
 // 音のなまえが和音の数そろうまでは、おさえた音を見せるだけ（1つずつおさえても、とちゅうで ×にならない）
 PA.onMidiChord=ms=>{
+  if(Q.view==='quiz'&&Q.type==='chromatic'){crMidi(ms);return;}
   if(Q.view!=='quiz'||Q.type!=='keys'||Q.checked) return;
   if(MIC.phase==='on'||MIC.phase==='wait') stopMic();
   const fold=m=>{while(m<LO)m+=12;while(m>HI)m-=12;return m;}; // 画面のけんばんの高さへ（×の印が見えて、タップでけせるように）
@@ -1194,7 +1464,7 @@ PA.onMidiChord=ms=>{
   checkKeys(); save(); render(); showFeedback();
 };
 PA.onMidiChange=render;
-const quizMidis=()=>chordTones(keyOfQ(Q.q),Q.q.chord).map(n=>n.midi);
+const quizMidis=()=>(Q.dr&&Q.dr.cat==='inv'?Q.dr.voice:chordTones(keyOfQ(Q.q),Q.q.chord)).map(n=>n.midi); // 転回形はがくふの形で鳴らす
 // もんだいのしゅるいをかえる（ステップのとちゅうなら、ステップはおしまい）
 function setCat(v){
   if(Q.type===v||!CAT_IDS.includes(v)) return false;
@@ -1265,6 +1535,17 @@ document.addEventListener('click',e=>{
     case 'qchoose': if(Q.type!=='choice'||Q.chosen!=null) return; choose(+v); save(); render(); showFeedback(); return;
     case 'qdpick': if(!drillChoose(+el.dataset.p,+v)) return; save(); render(); showFeedback(); return;
     case 'qprog': playProg(); return;
+    case 'crstart': if(Q.type!=='chromatic') return; startChroma(); PA.scrollTop(); return;
+    case 'crrestart': if(Q.type!=='chromatic') return; startChroma(); return;
+    case 'crstop': stopChroma(); break;
+    case 'crclear': CR.picked=new Set(); CR.wrong=null; break;
+    case 'crmode': // 長調／短調（ステップのあいだはかえない）
+      if(curStep()||CR.phase==='run'||(v!=='major'&&v!=='minor')||Q.keyset===v) return;
+      Q.keyset=v; CR.result=null; CR.phase='idle'; switchQuiz(); break;
+    case 'crgb': { // 嬰ヘ長調／変ト長調
+      if(CR.phase==='run'||(v!=='fs'&&v!=='gb')) return;
+      const rec=crRec(); rec.gb=v==='gb'; PA.store.set(CR_KEY,rec); break;
+    }
     case 'steps': // ステップのいちらん（いまのステップ・調の長調／短調）
       stopMic(); stopProg(); PA.stopSound();
       Q.view='steps'; Q.stepsKs=curStep()?curStep().ks:Q.keyset==='minor'||catOf(Q.type).minor?'minor':'major';

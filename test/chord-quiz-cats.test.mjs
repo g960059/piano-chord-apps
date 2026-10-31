@@ -47,8 +47,10 @@ function checkNoteOpts(key,part,lab,o={}){
   return ans[0].note;
 }
 
-test('しゅるい：ぜんぶで10。けんばん・えらぶはまえからのきろく、ほかはしゅるいごと',()=>{
-  assert.deepEqual([...CQ.CAT_IDS],['root','fill','add7','choice','keys','staff','fix','prog','lt','mark']);
+test('しゅるい：ぜんぶで12。けんばん・えらぶはまえからのきろく、ほかはしゅるいごと',()=>{
+  assert.deepEqual([...CQ.CAT_IDS],['root','fill','add7','choice','keys','staff','inv','fix','prog','chromatic','lt','mark']);
+  assert.equal(CQ.isDrill('chromatic'),false,'⏱ はえらんでこたえるもんだいではない');
+  assert.equal(CQ.quizOf('chromatic'),'chord-quiz-chromatic','⏱ のきろくはべつ');
   assert.deepEqual(CQ.CATS.filter(c=>c.minor).map(c=>c.id),['lt','mark'],'短調だけ');
   assert.equal(CQ.quizOf('keys'),'chord-quiz'); assert.equal(CQ.quizOf('choice'),'chord-quiz');
   DRILLS.forEach(c=>{assert.equal(CQ.quizOf(c),'chord-quiz-'+c);assert.match(CQ.quizOf(c),/^[a-z0-9][a-z0-9-]{0,40}$/);});
