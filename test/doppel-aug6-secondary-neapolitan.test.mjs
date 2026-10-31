@@ -56,7 +56,7 @@ for(const [file,want] of Object.entries(PAGES)){
 test('secondary.html：Ⅴ7/Ⅴと副属和音だけにしぼる chord（クイズの和音の id）',()=>{
   const m=/chord:'([^']*)'/.exec(scriptOf(read('secondary.html')));
   assert.ok(m);
-  assert.deepEqual(m[1].split(','),['dd','s2','s3','s4','s6']);
+  assert.deepEqual(m[1].split(','),['dd','s2','s3','s4','s6','ddim']);
   const g=/const GROUPS=([^\n]*);/.exec(quiz);
   assert.ok(g,'クイズの GROUPS');
   for(const id of m[1].split(',')) assert.ok(g[1].includes(`'${id}'`),`クイズに${id}がある`);

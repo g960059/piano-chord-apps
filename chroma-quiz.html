@@ -133,13 +133,13 @@
  *
  *   リンクのパラメータ（先生の宿題・学ぶページの「ためしてみる」。しらべかたは linkOf）：
  *     mode＝keys（🎹 おさえる）｜ear（👂 聴きわけ）。mode がなくて step・level・chord・tier のどれか、または key と n のりょうほうがあれば keys
- *     step＝🎹 のステップ1〜7（KLV）：1＝Ⅱ7・ドッペル（ⅤのⅤ9の根音省略も）  2＝副属和音  3＝準固有（○Ⅳ・○Ⅵ）  4＝ナポリの六  5＝増六3しゅるい  6＝ぜんぶ（Ⅴ9の根音省略も）
+ *     step＝🎹 のステップ1〜7（KLV）：1＝Ⅱ7・ドッペル（Ⅱ7とⅤのⅤ7だけ）  2＝副属和音（ⅤのⅤ9の根音省略も）  3＝準固有（○Ⅳ・○Ⅵ）  4＝ナポリの六  5＝増六3しゅるい  6＝ぜんぶ（Ⅴ9の根音省略も）
  *       7＝ドリアのⅣ（あとから足した。リンクの番号はかえない。画面では準固有のつぎ＝4ばんめにならべ、番号もならびのじゅん（KLV_VIEW）で見せる）
  *     level＝👂 は1〜3（EAR_LV）：1＝Ⅱ7・ドッペル  2＝増六3しゅるい  3＝Ⅳ・○Ⅳ・ナポリ（長調だけ）。画面では先生のじゅん（1・3・2）にならべる
  *       🎹 の level（1〜5）はまえのリンク：そのときとおなじ和音（OLD_KLV）にする（ステップとおなじならそのステップ）。step があれば step
- *       学ぶページから：doppel → step 1・ear 1、secondary → chord dd,s2,s3,s4,s6、borrowed → step 3、
+ *       学ぶページから：doppel → step 1・ear 1、secondary → chord dd,s2,s3,s4,s6,ddim、borrowed → step 3、
  *         dorian → chord ivd（ステップ7とおなじ和音）、neapolitan → step 4・ear 3、aug6 → step 5・ear 2、enharmonic → chord vii7（step 6）、enharmonic の 🔥 チャレンジ → chord ger・chal 1
- *         （その和音だけにしたいときは chord：neapolitan → n6、borrowed → ivm,bvi、secondary → s2,s3,s4,s6、enharmonic → vii7）
+ *         （その和音だけにしたいときは chord：neapolitan → n6、borrowed → ivm,bvi、secondary → s2,s3,s4,s6,ddim、enharmonic → vii7）
  *       🔥 チャレンジ（先生：読みかえのクイズに増六が入る問題は「チャレンジ」としてわける）：読みかえの和音（READ_SET＝ⅤのⅤ9の根音省略・Ⅴ9の根音省略）と
  *         ドイツの6だけを「じぶんで選ぶ」で出すとき、ドイツの6の問題に 🔥 チャレンジのしるし（chalOf）。読みかえのチャレンジから来たとき
  *         （chal＝1。enharmonic の chord=ger&chal=1）か、読みかえの和音もいっしょに出すとき（まえのリンクの ger,ddim,vii7 など）だけ。
@@ -190,15 +190,15 @@ const LONG_H={ii7:()=>`${PA.rn(RN.ii7)}（にどしち）`,dd:()=>`ドッペル�
 const longH=(t,key)=>LONG_H[t]?LONG_H[t](key||null):T[t].long;
 // <cq-link>（test/chroma-quiz.test.mjs がここだけ切りだして、レベルのなかみとリンクのしらべかたをたしかめる）
 // 設定でならべるまとまり（TYPES のじゅんばんもこれ。先生のじゅん）
-const GROUPS=[['Ⅱ7・ドッペル',['ii7','dd','ddim']],['副属和音',['s2','s3','s4','s6']],['準固有・ドリア・ナポリ',['ivm','bvi','ivd','n6']],['増六',['it','fr','ger']],['Ⅴ9の根音省略（減七など）',['vii7']]];
+const GROUPS=[['Ⅱ7・ドッペル',['ii7','dd']],['副属和音',['s2','s3','s4','s6','ddim']],['準固有・ドリア・ナポリ',['ivm','bvi','ivd','n6']],['増六',['it','fr','ger']],['Ⅴ9の根音省略（減七など）',['vii7']]];
 const TYPES=GROUPS.flatMap(g=>g[1]), AUG=['it','fr','ger'];
 // 🎹 おさえるのステップ（lv＝ステップの番号。リンクの step）。0＝じぶんでえらぶ（🎛 もんだいのえらびかたの和音のボタン）
 //   先生のじゅん。そのステップでならう和音だけを出す（さきのステップの和音は出さない）。さいごは「ぜんぶ」
 //   学ぶページのリンクがこのばんごうをつかうので、ならびをかえない（ふやすならうしろに）。KLV[lv-1] がそのステップ
 //   画面のならびと見せる番号は KLV_VIEW（先生のじゅん）：ドリアのⅣ（lv 7・あとから足した）は準固有のつぎ（4ばんめ）
 const KLV=[
-  {lv:1,types:['ii7','dd','ddim'],name:'Ⅱ7・ドッペル',desc:'Ⅱ7とドッペルドミナント（ⅤのⅤ9の根音省略も）'},
-  {lv:2,types:['s2','s3','s4','s6'],name:'副属和音',desc:'副属和音（ⅡのⅤ7・ⅣのⅤ7・ⅥのⅤ7など）'},
+  {lv:1,types:['ii7','dd'],name:'Ⅱ7・ドッペル',desc:'Ⅱ7とドッペルドミナント'},
+  {lv:2,types:['s2','s3','s4','s6','ddim'],name:'副属和音',desc:'副属和音（ⅡのⅤ7・ⅣのⅤ7・ⅥのⅤ7など。ⅤのⅤ9の根音省略も）'},
   {lv:3,types:['ivm','bvi'],name:'準固有',desc:'準固有和音（○Ⅳ・○Ⅵ：同じ主音の短調からかりる和音。長調だけ）'},
   {lv:4,types:['n6'],name:'ナポリ',desc:'ナポリの六'},
   {lv:5,types:AUG,name:'増六',desc:'増六の和音（イタリアの6・フランスの6・ドイツの6）'},

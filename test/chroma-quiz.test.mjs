@@ -21,11 +21,13 @@ const W=o=>Object.assign({},NONE,o);
 
 test('ステップのなかみ（先生のじゅん。学ぶページの step= とそろえる）',()=>{
   // Ⅱ7・ドッペル → 副属和音 → 準固有和音 → ドリアのⅣ → ナポリの六 → 増六 → Ⅶ7（異名同音はいちばん最後）
-  eq(L.TYPES,['ii7','dd','ddim','s2','s3','s4','s6','ivm','bvi','ivd','n6','it','fr','ger','vii7']);
+  eq(L.TYPES,['ii7','dd','s2','s3','s4','s6','ddim','ivm','bvi','ivd','n6','it','fr','ger','vii7']);
   eq(L.KLV.map(x=>x.lv),[1,2,3,4,5,6,7],'KLV[lv-1]（リンクの step の番号はかえない）');
   eq(L.KLV_VIEW,[1,2,3,7,4,5,6],'画面のならび：ドリアのⅣ（あとから足した 7）は準固有のつぎ');
-  eq(L.KLV[0].types,['ii7','dd','ddim'],'1：doppel');
-  eq(L.KLV[1].types,['s2','s3','s4','s6'],'2：secondary');
+  eq(L.KLV[0].types,['ii7','dd'],'1：doppel（先生 2026-11-01（2）：Ⅱ7とドッペルドミナントだけ。ⅤのⅤ9の根音省略は入れない）');
+  eq(L.KLV[1].types,['s2','s3','s4','s6','ddim'],'2：secondary（ⅤのⅤ9の根音省略はここ）');
+  assert.ok(!/根音省略/.test(L.KLV[0].desc),'ステップ1の説明に根音省略は出さない');
+  eq(L.GROUPS[0],['Ⅱ7・ドッペル',['ii7','dd']],'🎛 のⅡ7・ドッペルのならびにも入れない');
   eq(L.KLV[2].types,['ivm','bvi'],'3：borrowed');
   eq(L.KLV[3].types,['n6'],'4：neapolitan');
   eq(L.KLV[4].types,['it','fr','ger'],'5：aug6');
@@ -43,7 +45,7 @@ test('ステップのなかみ（先生のじゅん。学ぶページの step= �
   // まえの「レベル」1〜5の和音（まえのリンク・保存をおなじ和音でひらく）
   eq(L.OLD_KLV,{1:['ii7','dd'],2:['ii7','dd','ddim'],3:['it','fr','ger'],4:['it','fr','ger','n6','ivm','bvi'],5:L.TYPES});
   // ヘッダーの chord= の例はどれも40文字（PA.params の上限）いないで、ぜんぶつかえる
-  ['n6','ivm,bvi','ivd','s2,s3,s4,s6','dd,s2,s3,s4,s6','ger,ddim,vii7'].forEach(c=>{
+  ['n6','ivm,bvi','ivd','s2,s3,s4,s6','dd,s2,s3,s4,s6,ddim','ger,ddim,vii7'].forEach(c=>{
     assert.ok(c.length<=40);
     eq(link(PA.parseParams('?chord='+encodeURIComponent(c))).types,L.TYPES.filter(t=>c.split(',').includes(t)),c);
   });
@@ -59,8 +61,8 @@ test('linkOf：mode・step・まえの level',()=>{
   eq(link({step:'0'}),W({mode:'keys'}),'0（じぶんでえらぶ）はリンクでは chord で');
   eq(link({step:'2.5'}),W({mode:'keys'}));
   // まえのリンクの level（🎹）：そのときとおなじ和音。ステップとおなじならそのステップ
-  eq(link({mode:'keys',level:'1'}),W({mode:'keys',types:['ii7','dd']}),'まえの1＝Ⅱ7・ドッペル');
-  eq(link({mode:'keys',level:'2'}),W({mode:'keys',kLv:1}),'まえの2＝ステップ1');
+  eq(link({mode:'keys',level:'1'}),W({mode:'keys',kLv:1}),'まえの1（Ⅱ7・ドッペル）＝ステップ1');
+  eq(link({mode:'keys',level:'2'}),W({mode:'keys',types:['ii7','dd','ddim']}),'まえの2（ⅤのⅤ9の根音省略も）＝おなじ和音を「じぶんで選ぶ」');
   eq(link({mode:'keys',level:'3'}),W({mode:'keys',kLv:5}),'まえの3（増六）＝ステップ5');
   eq(link({level:'4'}),W({mode:'keys',types:['ivm','bvi','n6','it','fr','ger']}),'まえの4（増六＋ナポリ・Ⅳm・♭Ⅵ）');
   eq(link({level:'5'}),W({mode:'keys',kLv:6}),'まえの5（ぜんぶ）＝ステップ6');
@@ -78,7 +80,7 @@ test('linkOf：chord・tier・key・n',()=>{
   eq(link({chord:'it,fr,xx'}),W({mode:'keys',types:['it','fr']}));
   eq(link({chord:'fr,it,it'}),W({mode:'keys',types:['it','fr']}),'じゅんは TYPES・おなじものは1つ');
   eq(link({chord:'<script>',step:'2'}),W({mode:'keys',kLv:2}),'つかえない chord はすてて step');
-  eq(link({chord:'<script>',level:'1'}),W({mode:'keys',types:['ii7','dd']}),'つかえない chord はすてて まえの level');
+  eq(link({chord:'<script>',level:'2'}),W({mode:'keys',types:['ii7','dd','ddim']}),'つかえない chord はすてて まえの level');
   eq(link({chord:'n6',step:'2'}),W({mode:'keys',types:['n6']}),'chord が step よりさき');
   eq(link({chord:'n6',level:'2'}),W({mode:'keys',types:['n6']}),'chord が まえの level よりさき');
   eq(link({mode:'ear',chord:'n6',level:'1'}),W({mode:'ear',earLv:1}),'👂 では chord をつかわない');
@@ -90,7 +92,7 @@ test('linkOf：chord・tier・key・n',()=>{
   eq(link({n:'20'}),W({n:20}));
   ['0','21','-1','5x','1e1'].forEach(n=>assert.equal(link({n}),null,n));
   eq(link(PA.parseParams('?mode=keys&step=1&key=M3&n=5')),W({mode:'keys',kLv:1,key:'M3',n:5}),'doppel.html のためしてみる');
-  eq(link(PA.parseParams('?mode=keys&level=1&key=M3&n=5')),W({mode:'keys',types:['ii7','dd'],key:'M3',n:5}),'まえの doppel.html のリンク');
+  eq(link(PA.parseParams('?mode=keys&level=1&key=M3&n=5')),W({mode:'keys',kLv:1,key:'M3',n:5}),'まえの doppel.html のリンク（Ⅱ7・ドッペル）もステップ1');
   // 文字いがい（ほかのページがまちがえてわたしたとき）はすてる
   eq(link({level:3,key:{},n:5}),null);
   // chal=1（異名同音の読みかえの 🔥 チャレンジから）は chord といっしょのときだけ

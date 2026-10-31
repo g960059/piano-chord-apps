@@ -312,7 +312,7 @@ function termsHTML(key){
   </ul></details>`;
 }
 let lastActions='';
-// 変化和音クイズへ：いまの調で、🎹 おさえるステップ1（Ⅱ7・ドッペル・減七/Ⅴ）を5もん。👂 聴きわけはレベル1
+// 変化和音クイズへ：いまの調で、🎹 おさえるステップ1（Ⅱ7・ドッペルだけ。先生 2026-11-01（2）：ⅤのⅤ9の根音省略は副属和音のステップ2）を5もん。👂 聴きわけはレベル1
 function tryCard(key){
   return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',step:1,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
     sub:`${PA.keyName(key)}で、Ⅱ7とドッペルドミナントをけんばんで5問おさえてみよう。`,btn:PA.icon('target')+'けんばんで5問',

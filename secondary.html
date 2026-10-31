@@ -420,7 +420,9 @@ function resArrows(X,R){
 function heroMsg(key,I){
   const st=stackOrder(I.X), lt=I.X.find(n=>n.tag==='lt'), others=st.filter(n=>n!==lt&&chg(key,n));
   const what=I.k==='V7'?'Ⅴ7':`Ⅴ9の根音省略（${KNAME[I.k]}）`;
-  let m=`<b>${I.lab}</b>は「${ROMAN[I.t-1]}度調の${I.k==='V7'?'Ⅴ7':'Ⅴ9の根音省略'}」と読むよ。上の小さい数字が目標（いっときの調）、下の大きい数字がその調での和音。<br>`;
+  // 目標がⅤ（ⅤのⅤ）のときは、まず名前（ドッペルドミナント）を言う。記号の読みかた（Ⅴ度調の…）はそのあと（先生 2026-11-01（2））
+  let m=I.t===5?(I.k==='V7'?`この和音を<b>ドッペルドミナント</b>（ⅤのⅤ）とよぶよ。<br>`:`この和音は<b>ドッペルドミナント</b>（ⅤのⅤ）の家族だよ。<br>`):'';
+  m+=`${I.t===5?'記号の':''}<b>${I.lab}</b>は「${ROMAN[I.t-1]}度調の${I.k==='V7'?'Ⅴ7':'Ⅴ9の根音省略'}」と読むよ。上の小さい数字が目標（いっときの調）、下の大きい数字がその調での和音。<br>`;
   m+=`<b>その和音をいっときのⅠと考えて、その調${I.vb?'と同じ主音の短調':''}の${what}を前におく。</b><br>`;
   m+=`${I.tl}「${namesW(I.T.slice(1))}」をⅠと考えると<b class="tg">${I.tkName}</b>。`;
   if(I.vb) m+=`${I.tkName}のⅤ9の根音省略は減七にならない（長調の形）ので、同じ主音の短調（<b>${I.pm}</b>）の${what}を使う。それが<b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝${I.lab}。`;
@@ -487,7 +489,7 @@ function staffCard(key,I){
 }
 function doppelCard(key,I){
   if(I.t!==5) return '';
-  const what=I.k==='V7'?`${I.lab}は<b>ドッペルドミナント</b>と同じ和音！`:`${I.lab}はドッペルドミナントの家族（${PA.rn({of:5,deg:5,form:9})}の根音をはぶいた${I.k==='vii7'?'減七の':''}形）だよ。${I.k==='vii7'&&!key.minor?`第9音は同じ主音の短調からかりた音なので、${H.JUN}がつくよ。`:''}`;
+  const what=I.k==='V7'?`${I.lab}＝<b>ドッペルドミナント</b>！`:`${I.lab}はドッペルドミナントの家族（${PA.rn({of:5,deg:5,form:9})}の根音をはぶいた${I.k==='vii7'?'減七の':''}形）だよ。${I.k==='vii7'&&!key.minor?`第9音は同じ主音の短調からかりた音なので、${H.JUN}がつくよ。`:''}`;
   return `<a class="dpl" href="doppel.html" data-go="doppel"><span aria-hidden="true">🔺</span><span>${what}<br><small>「ⅤのためのⅤ7」。Ⅱ7とくらべて見てみよう ›</small></span></a>`;
 }
 function progCard(key,I,prog){
@@ -568,9 +570,9 @@ function termsHTML(key,I){
     <li><b>対斜</b> … 同じ文字の音（たとえば「${F}」と「${Fs}」）が、ちがう声でつづけて出てぶつかること。にごって聞こえるので、さける。同じ声で半音動かせば、だいじょうぶ。</li>
   </ul></details>`;
 }
-// 変化和音クイズへ：chord でⅤ7/Ⅴ（ドッペル）と副属和音（Ⅴ7/Ⅱ・Ⅴ7/Ⅲ・Ⅴ7/Ⅳ・Ⅴ7/Ⅵ）にしぼる（ステップ2の副属和音＋ドッペル）。短調ではクイズのほうでⅤ7/Ⅱが、長調ではⅤ7/Ⅲが出ない
+// 変化和音クイズへ：chord でⅤ7/Ⅴ（ドッペル）と副属和音（Ⅴ7/Ⅱ・Ⅴ7/Ⅲ・Ⅴ7/Ⅳ・Ⅴ7/Ⅵ）とⅤのⅤ9の根音省略（ddim）にしぼる（ステップ2の副属和音＋ドッペル）。短調ではクイズのほうでⅤ7/Ⅱが、長調ではⅤ7/Ⅲが出ない
 function tryCard(key){
-  return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',chord:'dd,s2,s3,s4,s6',key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
+  return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',chord:'dd,s2,s3,s4,s6,ddim',key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
     sub:`${PA.keyName(key)}で、副属和音（${(key.minor?[3,4]:[2,4]).map(t=>PA.rn({of:t,deg:5,form:7})).join('・')}など）をけんばんで5問おさえてみよう。`,btn:PA.icon('target')+'けんばんで5問'});
 }
 // レベルアップのつぎ（先生のじゅん：副属和音 → 準固有和音）をいちばん上に。
