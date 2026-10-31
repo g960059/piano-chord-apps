@@ -325,7 +325,7 @@ function tryCard(key){
 function linksCard(){
   return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>ドッペルドミナント・Ⅴの家族</small></h2></summary><div class="links">
     <button class="btn" data-act="go" data-v="doppel">🔺 Ⅱ7とドッペルドミナント<small>増六のもとになる和音</small></button>
-    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族<small>Ⅴ9の根音をはぶくと減七</small></button>
+    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族<small>短調では、Ⅴ9の根音をはぶくと減七</small></button>
   </div></details>`;
 }
 
@@ -417,7 +417,7 @@ async function runBuild(){
   else A.marks.set(r.midi,{fill:'#efe9e1',tc:GHOST,label:PA.nm(r),sub:'はぶく',subColor:GHOST});
   A.staffCap=T.root?'根音をのこす':'根音をはぶく'; A.kbCap=A.staffCap;
   upd(T.root?`<b>③</b>フランスの6は根音${q(r)}を<b>のこす</b>。4つの音でつくるよ。`
-    :`<b>③</b>根音${q(r)}を<b>はぶく</b>。${t==='ger'?'（Ⅴ9の根音をはぶいた形は減七だったね。ドイツの6は減七/Ⅴの第5音を下げた形。）':'のこった3つの音でつくるよ。'}`);
+    :`<b>③</b>根音${q(r)}を<b>はぶく</b>。${t==='ger'?'（短調のⅤ9の根音をはぶいた形は減七だったね。ドイツの6は減七/Ⅴの第5音を下げた形。）':'のこった3つの音でつくるよ。'}`);
   PA.chord(s3.map(n=>n.midi)); if(!await wait(2200)) return;
   // ④ 下げた音をいちばん下へ
   const fin=aug(key,t), lowF=fin[0], up=fin[fin.length-1];

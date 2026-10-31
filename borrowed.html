@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- meta:start -->
-<meta name="description" content="長調で、同じ主音の短調からかりるⅣ・♭Ⅵなど">
+<meta name="description" content="長調で、同じ主音の短調からかりる○Ⅳ・○Ⅵなど">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ピアノ和音アプリ">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="準固有和音（借用和音）｜ピアノ和音アプリ">
-<meta property="og:description" content="長調で、同じ主音の短調からかりるⅣ・♭Ⅵなど">
+<meta property="og:description" content="長調で、同じ主音の短調からかりる○Ⅳ・○Ⅵなど">
 <meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/borrowed.html">
 <meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -117,10 +117,10 @@ const IDS=['iv','bVI','ii_dim','ii_hdim7','V9_b9','vii_dim7'].filter(i=>H.BORROW
 const SEG={iv:'短三和音',ii_dim:'減三和音',ii_hdim7:'短調のⅡ7',bVI:'長三和音',V9_b9:'短調のⅤ9',vii_dim7:'減七の和音'};
 // 和音の名前（かりた形・ふつうの形）。root＝コードネームの根音（主音からなん文字め）
 const INFO={
-  iv:{bn:'Ⅳm（短調のⅣ）',dn:'Ⅳ（長三和音）',root:3},
+  iv:{bn:'○Ⅳ（短調のⅣ）',dn:'Ⅳ（長三和音）',root:3},
   ii_dim:{bn:'Ⅱ6（減三和音。第3音がいちばん下）',dn:'Ⅱ6（第3音がいちばん下）',root:1},
   ii_hdim7:{bn:'Ⅱ7（短調のⅡ7の形）',dn:'Ⅱ7（Ⅱの七の和音）',root:1},
-  bVI:{bn:'♭Ⅵ（長三和音）',dn:'Ⅵ（短三和音）',root:5},
+  bVI:{bn:'○Ⅵ（長三和音）',dn:'Ⅵ（短三和音）',root:5},
   V9_b9:{bn:'Ⅴ9（短調の形）',dn:'Ⅴ9（長調の形）',root:4},
   vii_dim7:{bn:'Ⅶ7（減七の和音）',dn:'Ⅶ7（長調の形。減七ではない）',root:6}
 };
@@ -398,10 +398,10 @@ function cadStaff(key,seq){
 
 /* ===== 画面 ===== */
 const ID_LINE={
-  iv:(key,c)=>`Ⅳの第3音が下がって<b>短三和音（Ⅳm）</b>に。やわらかく、すこしさみしいひびき。${q(c[0].b)}は半音下の${q(H.nextOf(key,'iv')[3])}へすすみたがるよ（Ⅰの第5音）。`,
+  iv:(key,c)=>`Ⅳの第3音が下がって<b>短三和音（○Ⅳ）</b>に。やわらかく、すこしさみしいひびき。${q(c[0].b)}は半音下の${q(H.nextOf(key,'iv')[3])}へすすみたがるよ（Ⅰの第5音）。`,
   ii_dim:key=>`Ⅱの第5音が下がって<b>減三和音</b>に。減三和音なので、いちばん下に第3音${q(H.borrowed(key,'ii_dim')[0])}をおいた<b>第1転回形（Ⅱ6）</b>で使うよ。`,
   ii_hdim7:()=>`Ⅱ7の第5音が下がって、<b>短調のⅡ7と同じ形</b>に。Ⅴ7の前でくもった色になるよ。`,
-  bVI:()=>`Ⅵの根音と第5音をかりると、短三和音だったⅥが<b>長三和音（♭Ⅵ）</b>に。Ⅴの前で使うと、ドラマチックなひびき。第3音（調の主音）を2つにするよ。`,
+  bVI:()=>`Ⅵの根音と第5音をかりると、短三和音だったⅥが<b>長三和音（○Ⅵ）</b>に。Ⅴの前で使うと、ドラマチックなひびき。第3音（調の主音）を2つにするよ。`,
   V9_b9:()=>`Ⅴ9の第9音をかりると、<b>短調のⅤ9</b>と同じ形。こくて、ドキッとするひびき（第5音ははぶいて4つの音に）。`,
   vii_dim7:()=>`Ⅴ9の第9音をかりると、短調のⅤ9から根音をはぶいた形と同じ<b>減七の和音</b>になるよ。`
 };
@@ -449,7 +449,7 @@ function scaleCard(key,id){
     <p class="slab">🌙 ${PA.keyName(pm)}の音階（調号のとおり）</p>
     <div class="scl">${nat.map((n,i)=>cell(n,i,true)).join('')}</div>
     ${pm.enh?`<p class="note">${PA.keyName(pm)}は、ふつうは<b>${PA.keyName(PA.minorKey(pm.idx))}</b>と書く調（同じけんばん）。準固有和音では主音の文字をかえずにかりるので、${PA.keyName(pm)}として見るよ。</p>`:''}
-    <p class="note" style="color:var(--ink)">ちがうのは<b>3・6・7ばんめ</b>。準固有和音（短調からかりた和音）でかりるのはおもに<b class="bo">6ばんめ${q(nat[5])}</b>（♭Ⅵでは3ばんめ${q(nat[2])}も）。${c.length?`いまの和音でかりているのは${c.map(x=>q(x.b)).join('と')}（下線）。`:''}</p>
+    <p class="note" style="color:var(--ink)">ちがうのは<b>3・6・7ばんめ</b>。準固有和音（短調からかりた和音）でかりるのはおもに<b class="bo">6ばんめ${q(nat[5])}</b>（○Ⅵでは3ばんめ${q(nat[2])}も）。${c.length?`いまの和音でかりているのは${c.map(x=>q(x.b)).join('と')}（下線）。`:''}</p>
     <div class="rule" style="margin-top:10px">調号は${PA.keyName(key)}のまま。かりた音には<b>臨時記号</b>をつける。<br><span style="font-weight:400">長調の明るさの中に、短調のかげが、すっとさすよ。</span></div>
   </details>`;
 }
@@ -488,7 +488,7 @@ function linksCard(key){
 function tryCard(){
   const key=PA.keyDeck.id(false,state.keyIdx);
   return PA.tryHTML({to:'chroma-quiz',params:{key,mode:'keys',step:3,n:5},
-    sub:'けんばんで、Ⅳm・♭Ⅵ（短調からかりる和音）をおさえてみよう。いまの調で5問。',
+    sub:'けんばんで、○Ⅳ・○Ⅵ（短調からかりる和音）をおさえてみよう。いまの調で5問。',
     btn:PA.icon('target')+'5問ためしてみる'});
 }
 // この調でかりた音にダブルフラットがつく音（なければ null）

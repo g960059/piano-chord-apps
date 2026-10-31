@@ -231,7 +231,7 @@ function famButtons(){
 function staticMsg(r){
   const key=r.key, t=tonicOf(key), root=PA.at(key.harm,4);
   let m=`<b>${PA.keyName(key)}</b>として読むと、${q(r.lt)}が<b class="up">導音</b>。導音は半音上の${q(t)}へすすむから、行き先は<b>${PA.keyName(key)}</b>。`;
-  m+=`<br>減七はⅤ9から根音（和音の土台の音）をはぶいた和音。${PA.keyName(key)}なら、かくれた根音は${q(root)}だよ。`;
+  m+=`<br>減七は、短調のⅤ9から根音（和音の土台の音）をはぶいた和音。${PA.keyName(key)}なら、かくれた根音は${q(root)}だよ。`;
   if(r.ninthInBass) m+=`<br>※ この読みかたは、第9音${q(r.spelling[0])}がいちばん下になる形。ふつうはあまり使わない形だけれど、同じけんばんのまま、くらべるために鳴らしているよ。${I64H} → Ⅴ → Ⅰとすすんで、さいごのⅠにおちつくよ。`;
   return m;
 }

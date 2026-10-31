@@ -42,7 +42,6 @@
 .side .st{font-size:clamp(19px,5.6vw,24px);font-weight:800;color:var(--c);line-height:1.25}
 .side .st small{display:block;font-size:13px;font-weight:700}
 .side .sn{font-size:clamp(16px,4.6vw,19px);font-weight:800;line-height:1.35;margin-top:2px}
-.side .sy{font-size:13px;color:var(--sub);line-height:1.4}
 .side .btn{margin-top:6px;width:100%;padding-left:6px;padding-right:6px;background:var(--card);border:2px solid var(--c);color:var(--c)}
 .side.on .btn{background:var(--c);color:#fff}
 .msg{margin-top:10px}
@@ -315,7 +314,7 @@ function resStaff(s){
 // つくるじゅんの説明（設定で音の名前をかえてもいまの名前で出るように、そのつどつくる）
 function stepMsg(P,i){
   const N=P.min, st=N.stack, r=N.root, k=kn(N.k);
-  if(i===0) return `<b>①</b> ${k}の音階の5ばんめ${q(r)}から、ひとつとばしに3つ。7ばんめ${q(st[0])}は、短調では半音上げる（<span class="up">導音</span>）ので臨時記号がつくよ。これが<b>Ⅴ</b>。`;
+  if(i===0) return `<b>①</b> ${k}の音階の5ばんめ${q(r)}から、ひとつとばしに3つ。7ばんめ${q(N.k.natLT)}は、短調では半音上げて<span class="up">${q(st[0])}</span>にする（<span class="up">導音</span>）ので臨時記号がつくよ。これが<b>Ⅴ</b>。`;
   if(i===1) return `<b>②</b> もうひとつとばして${q(st[2])}をのせると<b>Ⅴ7</b>（4つの音）。`;
   if(i===2) return `<b>③</b> さらにひとつとばして${q(st[3])}をのせると<b>Ⅴ9</b>（5つの音）。${q(st[3])}は音階の6ばんめ（調号のとおりの音）で、<b class="dn">第9音</b>というよ。`;
   if(i===3) return `<b>④</b> いちばん下の根音${q(r)}を<b>省略する（はぶく）</b>と… <b class="big">${namesW(st)}</b><br>4つの音のとなりどうしが、ぜんぶ同じ間かく。これが<b>減七の和音</b>！短調では、Ⅴ9の根音省略は減七になるよ。`;
@@ -366,7 +365,6 @@ function sideCard(s,icon,small){
     <div class="sk"><span aria-hidden="true">${icon}</span> ${kn(s.k)}</div>
     <div class="st">${s.name}<small>${small}</small></div>
     <div class="sn">${namesD(s)}</div>
-    <div class="sy">${s.sym}</div>
     <button class="btn small" data-act="side" data-v="${s.id}" aria-pressed="${state.play===s.id}">${PA.icon('listen')}きく</button>
   </div>`;
 }
@@ -489,6 +487,7 @@ function moreHTML(P){
     <li>根音をはぶいたⅤ9は、導音からひとつとばしに4つつんだ形なので、<b>Ⅶ7</b>と書く本もあるよ。でもはたらきはⅤのなかま。だからⅤと同じようにⅠへすすむよ。</li>
     <li><b>長調で減七を使う</b>こともあるよ。${kn(N.k)}（同じ主音の短調）から第9音${q(N.six)}をかりた和音で、準固有和音（記号は${H.label(P.majK,'borrowed','vii_dim7')}）。<a href="borrowed.html">🎁 準固有和音</a></li>
     <li><b>短調で${q(M.six)}？</b>：短調で${q(M.six)}を使うには、6ばんめを半音上げることになる。短調のⅤ9としてはふつう使わないよ。</li>
+    <li><b>コードネーム</b>（ポピュラー音楽などで使う、アルファベットの名前）では、${kn(N.k)}の減七は「${N.sym}」、${kn(M.k)}の形は「${M.sym}」と書くよ。和音記号（Ⅴ9など）とはべつの書きかただよ。</li>
     <li>ダブルシャープは「<span class="ds">x</span>」、ダブルフラットは「${PA.H('𝄫')}」と書くよ。</li>
     <li>けんばんと「がくふでくらべる」は、根音から上へひとつとばしにつんだ形で、「Ⅰへすすむ」は4つの声（左手1つ・右手3つ）の形で鳴らしているよ。</li>
     <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と基準の音（ラ＝440〜443Hz）を選べるよ。</li>

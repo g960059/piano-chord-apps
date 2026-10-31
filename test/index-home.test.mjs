@@ -79,6 +79,9 @@ test('index.html：はじめての人には「長調の4つの和音から始め
   assert.ok(h.indexOf('class="card hero"')<h.indexOf('class="card plaza"'));
   assert.match(h,/class="today" href="ear\.html\?n=5"/);
   assert.match(h,/href="progression\.html"/);
+  // 2列のボタンは、ことばのとちゅうで折りかえさない（「の」のあとだけ）
+  assert.match(h,/和音の<wbr>聴きわけ/); assert.match(h,/ならびの<wbr>聴きわけ/);
+  assert.match(page,/\.plaza \.ways a\{[^}]*word-break:keep-all/);
   assert.match(h,/href="ear\.html\?mode=challenge"/);
   assert.match(h,/まだきろくはないよ/);
   // レベルアップの地図は地図の下で、はじめはとじている。先生のじゅん
@@ -92,7 +95,7 @@ test('index.html：はじめての人には「長調の4つの和音から始め
   assert.match(h,/support\.html/); assert.match(h,/privacy\.html/); assert.match(h,/ホーム画面に追加/); assert.match(h,/ランキング/);
 });
 
-test('index.html：★ は開いただけでは1つ。問題をやって★★、できた調が半分で★★★',()=>{
+test('index.html：★ は開いただけでは1つ。その調で5もんやって★★、ステップぜんぶ✓かぜんぶの調ができて★★★',()=>{
   const mem=new Map();
   let PA=renderHome(mem);
   PA.store.set('visited',{'chord-build':1,'chord-quiz':2,'cadence':3,'chord-table':4,'diatonic':5});
@@ -104,22 +107,71 @@ test('index.html：★ は開いただけでは1つ。問題をやって★★�
   assert.match(stageOf(h,'major'),/aria-label="ほし9こ中4こ"/);   // 島ぜんぶ（3＋2＋2＋2）
   // 練習の問題がないページ（7つの和音）は★まで
   assert.match(stageOf(h,'more'),/href="diatonic\.html"[\s\S]*?aria-label="ほし1こ中1こ"/);
-  // 長調で1もんこたえた → ①の和音クイズ・しくみ・カデンツ・いちらん表が★★、①はクリア。②の和音クイズ（短調）は★のまま
-  PA.store.set('keystats-chord-quiz',triedStats(['M0']));
+  // 長調で4もんだけ → まだ★（★★は5もんやったとき）
+  PA.store.set('keystats-chord-quiz',triedStats(ids('M',4)));
+  h=renderHome(mem).__html;
+  assert.ok(!/done/.test(cls(h,'major')));
+  assert.match(stageOf(h,'major'),/aria-label="ほし9こ中4こ"/);
+  // 短調で5もん → ①のしくみ・カデンツ・いちらん表は★のまま（島の調＝長調の記録だけ）
+  PA.store.set('keystats-chord-quiz',triedStats(ids('m',5)));
+  h=renderHome(mem).__html;
+  assert.ok(!/done/.test(cls(h,'major')));
+  assert.match(stageOf(h,'major'),/href="chord-build\.html"[\s\S]*?aria-label="ほし2こ中1こ"/);
+  // 長調で5もんこたえた → ①の和音クイズ・しくみ・カデンツ・いちらん表が★★、①はクリア。②の和音クイズ（短調）はひらいていない（☆）
+  PA.store.set('keystats-chord-quiz',triedStats(ids('M',5)));
+  PA.store.set('chord-quiz',{keyset:'major',q:{minor:false,keyIdx:0,chord:'I'}});
   h=renderHome(mem).__html;
   assert.match(cls(h,'major'),/done/);
   assert.match(stageOf(h,'major'),/クリア！/);
   assert.match(stageOf(h,'major'),/aria-label="ほし9こ中8こ"/);
-  assert.match(stageOf(h,'minor'),/href="chord-quiz\.html\?keyset=minor"[\s\S]*?aria-label="ほし3こ中1こ"/);
-  // 長調の6調が「できた」→ ①の和音クイズは★★★（12調の半分）
+  assert.match(stageOf(h,'minor'),/href="chord-quiz\.html\?keyset=minor"[\s\S]*?aria-label="ほし3こ中0こ"/,'長調しかひらいていない → ②の和音クイズに★はつかない');
+  // 長調の6調が「できた」→ まだ★★（先生の目標は全部の調）
   PA.store.set('keystats-chord-quiz',goodStats(ids('M',6)));
   h=renderHome(mem).__html;
-  assert.match(stageOf(h,'major'),/href="chord-quiz\.html\?keyset=major"[\s\S]*?aria-label="ほし3こ中3こ"[\s\S]*?できた調6／12/);
-  assert.match(stageOf(h,'major'),/aria-label="ほし9こ中9こ"/);
-  // 5調だけなら★★
-  PA.store.set('keystats-chord-quiz',goodStats(ids('M',5)));
+  assert.match(stageOf(h,'major'),/href="chord-quiz\.html\?keyset=major"[\s\S]*?aria-label="ほし3こ中2こ"[\s\S]*?できた調6／12/);
+  // 長調のぜんぶの調が「できた」→ ★★★
+  PA.store.set('keystats-chord-quiz',goodStats(ids('M',13)));
   h=renderHome(mem).__html;
-  assert.match(stageOf(h,'major'),/href="chord-quiz\.html\?keyset=major"[\s\S]*?aria-label="ほし3こ中2こ"/);
+  assert.match(stageOf(h,'major'),/href="chord-quiz\.html\?keyset=major"[\s\S]*?aria-label="ほし3こ中3こ"[\s\S]*?できた調12／12/);
+  assert.match(stageOf(h,'major'),/aria-label="ほし9こ中9こ"/);
+  // ステップ：1つおえたら★★（こたえの数が5より少なくても）。ステップがぜんぶ ✓ なら★★★。ホームにステップの数も出す
+  PA.store.set('keystats-chord-quiz',{});
+  PA.store.set('chord-quiz-steps',{'major:root-easy':3});
+  h=renderHome(mem).__html;
+  assert.match(stageOf(h,'major'),/href="chord-quiz\.html\?keyset=major"[\s\S]*?aria-label="ほし3こ中2こ"[\s\S]*?ステップ✓0／11/);
+  const all=Object.fromEntries(Array.from({length:PA.STEP_INFO['chord-quiz'].major},(_,i)=>['major:s'+i+'-easy',4]));
+  PA.store.set('chord-quiz-steps',all);
+  h=renderHome(mem).__html;
+  assert.match(stageOf(h,'major'),/href="chord-quiz\.html\?keyset=major"[\s\S]*?aria-label="ほし3こ中3こ"[\s\S]*?ステップ✓11／11/);
+  assert.match(stageOf(h,'minor'),/href="chord-quiz\.html\?keyset=minor"[\s\S]*?aria-label="ほし3こ中0こ"/,'長調のステップは②に入れない');
+});
+
+test('index.html：和音クイズの短調だけをやった子 → 🐸 は②。①の和音クイズに★★はつかない',()=>{
+  const mem=new Map();
+  let PA=renderHome(mem);
+  const now=Date.now();
+  // ホームの②から ?keyset=minor&step=3 だけをといた（ほぞんの keyset は長調のまま・とちゅうの回は短調）
+  PA.store.set('visited',{'chord-quiz':now});
+  PA.store.set('last-practice',{app:'chord-quiz',t:now});
+  PA.store.set('keystats-chord-quiz-fill',triedStats(ids('m',3)));
+  PA.store.set('chord-quiz',{keyset:'major',view:'quiz',run:{keyset:'minor',step:'minor:fill-easy'},q:{minor:true,keyIdx:0,chord:'I'}});
+  let h=renderHome(mem).__html;
+  assert.match(cls(h,'minor'),/here/); assert.ok(!/here/.test(cls(h,'major')));
+  assert.match(stageOf(h,'minor'),/href="chord-quiz\.html\?keyset=minor"[\s\S]*?aria-label="ほし3こ中1こ"/);
+  assert.match(stageOf(h,'major'),/href="chord-quiz\.html\?keyset=major"[\s\S]*?aria-label="ほし3こ中1こ"/,'ほぞんの keyset が長調なので①は★（見た）だけ');
+  // いちらんで短調を見ている（view＝steps）→ ②
+  PA.store.set('chord-quiz',{keyset:'major',view:'steps',stepsKs:'minor'});
+  h=renderHome(mem).__html;
+  assert.match(cls(h,'minor'),/here/);
+  // ほぞんにてがかりがないときは、さいごにこたえた調（keystats の last）
+  PA.store.set('chord-quiz',{});
+  PA.store.set('keystats-chord-quiz',{M0:{right:1,wrong:0,hint:0,last:now-9e5,recent:'o'}});
+  PA.store.set('keystats-chord-quiz-fill',{m0:{right:1,wrong:0,hint:0,last:now-1e3,recent:'o'}});
+  h=renderHome(mem).__html;
+  assert.match(cls(h,'minor'),/here/);
+  PA.store.set('keystats-chord-quiz',{M0:{right:1,wrong:0,hint:0,last:now,recent:'o'}});
+  h=renderHome(mem).__html;
+  assert.match(cls(h,'major'),/here/);
 });
 
 test('index.html：🐸 はさいごにやった島。クリアした島からは先へ。とじた島・ゴール',()=>{
@@ -138,7 +190,7 @@ test('index.html：🐸 はさいごにやった島。クリアした島から�
   PA.store.set('visited',{'chord-build':now-5e3,'chord-quiz':now-2e3,'cadence':now-4e3,'chord-table':now-3e3});
   PA.store.set('last-learn',null);
   PA.store.set('last-practice',{app:'chord-quiz',t:now-2e3});
-  PA.store.set('keystats-chord-quiz',triedStats(['M0']));
+  PA.store.set('keystats-chord-quiz',triedStats(ids('M',5)));
   h=renderHome(mem).__html;
   assert.match(cls(h,'major'),/done/);
   assert.match(cls(h,'minor'),/here/);
@@ -168,9 +220,9 @@ test('index.html：🐸 はさいごにやった島。クリアした島から�
   // ぜんぶの島をクリア → 🐸 はゴール
   const all={}; PA.APPS.forEach(a=>{all[a.id]=now;});
   PA.store.set('visited',all);
-  PA.store.set('keystats-chord-quiz',triedStats(['M0','m0']));
-  PA.store.set('keystats-minor-quiz',triedStats(['m0']));
-  PA.store.set('keystats-ending-quiz',triedStats(['M0']));
+  PA.store.set('keystats-chord-quiz',triedStats([...ids('M',5),...ids('m',5)]));
+  PA.store.set('keystats-minor-quiz',triedStats(ids('m',5)));
+  PA.store.set('keystats-ending-quiz',triedStats(ids('M',5)));
   PA.store.set('accompaniment',{choices:{mary:['I',null]}});
   h=renderHome(mem).__html;
   for(const u of PA.UNITS.filter(u=>u.kind==='basic')) assert.match(cls(h,u.id),/done/,u.id);

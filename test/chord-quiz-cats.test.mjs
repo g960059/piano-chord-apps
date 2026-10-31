@@ -322,14 +322,80 @@ test('ページ：ステップの5もんを4もんいじょうじぶんででき
   assert.ok(mem.has('pianoapps.session-chord-quiz-fill'));
 });
 
-test('ホーム：和音クイズのほかのしゅるいでといても ★★（その課題の調で）',()=>{
+test('ホーム：和音クイズのほかのしゅるいでといても ★★（その課題の調で5もん）',()=>{
   const page=fs.readFileSync(path.join(root,'index.html'),'utf8');
   const js=page.match(/<script>([\s\S]*?)<\/script>/)[1];
   const stub='document.getElementById=function(){return {innerHTML:"",parentNode:null,addEventListener:function(){}};};document.querySelector=function(){return {};};\n';
   const core=fs.readFileSync(path.join(root,'assets','core.js'),'utf8');
-  const mem=new Map([['pianoapps.visited',JSON.stringify({'chord-quiz':1})],['pianoapps.keystats-chord-quiz-root',JSON.stringify({m0:{right:1,wrong:0,hint:0,last:1,recent:'o'}})]]);
+  const mem=new Map([['pianoapps.visited',JSON.stringify({'chord-quiz':1})],['pianoapps.keystats-chord-quiz-root',JSON.stringify({m0:{right:3,wrong:2,hint:0,last:1,recent:'ooxox'}})]]);
   const H=loadPA(stub+core+'\nPA.paint=function(el,h){PA.__html=h;};\n'+js,{storage:mem}).__html;
   const st=id=>(H.match(new RegExp(`<details class="stage [^"]*" data-d="stage-${id}"[\\s\\S]*?</details>`))||[''])[0];
-  assert.match(st('minor'),/href="chord-quiz\.html\?keyset=minor"[\s\S]*?aria-label="ほし3こ中2こ"/,'短調でといた → ②は★★');
+  assert.match(st('minor'),/href="chord-quiz\.html\?keyset=minor"[\s\S]*?aria-label="ほし3こ中2こ"/,'短調で5もんといた → ②は★★');
   assert.match(st('major'),/href="chord-quiz\.html\?keyset=major"[\s\S]*?aria-label="ほし3こ中1こ"/,'長調はまだ★');
+});
+
+// ページをひらく（クリックの関数・render もとりだす）。click(act,v) でボタンをおしたことに
+function openPageUI(search,mem=new Map()){
+  const js=html.match(/<script>\n(\/\* 和音クイズ[\s\S]*?)<\/script>/)[1];
+  const stub='document.getElementById=function(){return {innerHTML:"",parentNode:null,addEventListener:function(){},querySelectorAll:function(){return [];}};};document.querySelector=function(){return null;};\n';
+  const core=fs.readFileSync(path.join(root,'assets','core.js'),'utf8');
+  const PA=loadPA(stub+core+'\nwindow.scrollTo=function(){};PA.paint=function(el,h,sig){if(sig!=="bar"){PA.__html=h;PA.__sig=sig;}};'
+    +'document.addEventListener=function(t,f){if(t==="click")PA.__click=f;};\n'+js
+    +'\nPA.__Q=Q;PA.__run=function(){return RUN;};PA.__sess=function(){return sess;};PA.__choose=drillChoose;PA.__next=newQuestion;PA.__render=render;PA.__cur=curStep;',{storage:mem,search});
+  PA.click=(act,v)=>PA.__click({target:{closest:()=>({dataset:{act,v},disabled:false})}});
+  return PA;
+}
+
+test('ステップの数は core の PA.STEP_INFO（ホームの★★★）とおなじ',()=>{
+  const info=PA.STEP_INFO['chord-quiz'];
+  assert.equal(info.major,CQ.STEPS.major.length); assert.equal(info.minor,CQ.STEPS.minor.length); assert.equal(info.pass,CQ.STEP_PASS);
+  // いちらんの説明は、むずかしさの名前（調号の数）とおなじことを2回書かない
+  for(const ks of ['major','minor']) CQ.STEPS[ks].forEach(s=>assert.ok(!/調号|ぜんぶの調|なかまいり/.test(s.note),ks+':'+s.id+' '+s.note));
+});
+
+test('まえの形のリンク（mode も cat もない）は、ほぞんのしゅるいが新しくても、けんばんで出して keystats-chord-quiz に',()=>{
+  const mem=new Map([['pianoapps.chord-quiz',JSON.stringify({type:'fix',tier:'easy',keyset:'major',chords:{I:true,IV:true,V:true,V7:true}})]]);
+  let P=openPageUI('?key=M2&n=3',mem);
+  assert.equal(P.__Q.type,'keys'); assert.equal(P.__Q.only,'M2'); assert.equal(P.__sess().n(),3);
+  assert.equal(P.__sess().state().sig.includes('key=M2'),true);
+  assert.ok(mem.has('pianoapps.session-chord-quiz')&&!mem.has('pianoapps.session-chord-quiz-fix'),'まえからの回のきろくに');
+  // ほぞんのしゅるいはかえない（BASE）
+  assert.equal(JSON.parse(mem.get('pianoapps.chord-quiz')).type,'fix');
+  // まえからの「えらぶ」がほぞんなら、えらぶのまま
+  const mem2=new Map([['pianoapps.chord-quiz',JSON.stringify({type:'choice',tier:'easy',keyset:'major',chords:{I:true,IV:true,V:true,V7:true}})]]);
+  P=openPageUI('?chord=V7&n=5',mem2);
+  assert.equal(P.__Q.type,'choice'); assert.equal(P.__Q.q.chord,'V7');
+  // keyset だけのリンクは、ステップのいちらん（しゅるいはほぞんのまま）
+  P=openPageUI('?keyset=minor',mem);
+  assert.equal(P.__Q.view,'steps');
+});
+
+test('ステップのあと、いちらんの「じぶんで選んでとく」：ステップはおわり（しるしが消える）',()=>{
+  const mem=new Map();
+  const P=openPageUI('?keyset=major&step=2',mem), Q=P.__Q;
+  assert.equal(P.__cur().id,'fill-easy');
+  for(let i=0;i<5;i++){Q.dr.parts.forEach((p,j)=>P.__choose(j,p.opts.findIndex(o=>o.ok)));if(i<4) P.__next();}
+  assert.equal(P.__sess().finished(),true);
+  P.click('steps'); assert.equal(Q.view,'steps');
+  P.click('steps-free');
+  assert.equal(Q.view,'quiz'); assert.equal(P.__cur(),null); assert.equal(P.__run(),null);
+  assert.ok(!/ステップをやめる/.test(P.__html)); assert.ok(!/ステップ2（長調）/.test(P.__html));
+  assert.equal(JSON.parse(mem.get('pianoapps.chord-quiz')).run,null);
+  assert.equal(P.__sess().finished(),false,'おわったステップの回はのこさない');
+});
+
+test('ならびの「？」で Ⅴ と Ⅴ7 をまちがえた：音の数ではなく、Ⅴ7 でたす音で見わける',()=>{
+  let seen=0;
+  for(let tries=0;tries<200&&seen<2;tries++){
+    const P=openPageUI('?cat=prog&keyset='+(tries%2?'minor':'major')), Q=P.__Q;
+    if(Q.q.chord!=='V'&&Q.q.chord!=='V7') continue;
+    const other=Q.q.chord==='V'?'V7':'V', i=Q.dr.parts[0].opts.findIndex(o=>o.ch===other);
+    if(i<0) continue;
+    P.__choose(0,i); P.__render();
+    const key=PA.keyOf(Q.q.minor,Q.q.keyIdx,60), s7=PA.nmH(CQ.chordTones(key,'V7')[3]);
+    assert.ok(P.__html.includes(`Ⅴ7は、Ⅴに「${s7}」をたした和音`),PA.keyName(key));
+    assert.ok(!/Ⅴは3つ、Ⅴ7は4つ/.test(P.__html));
+    seen++;
+  }
+  assert.ok(seen>0,'Ⅴ・Ⅴ7 のもんだいが出なかった');
 });

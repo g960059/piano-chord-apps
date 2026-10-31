@@ -98,3 +98,40 @@ test('変化和音クイズ：まえの保存（kLv レベル1〜5）は、そ�
   assert.ok(!/PA\.store\.set\('chroma-quiz',\{[^}]*\bkLv:/.test(js),'kLv（まえの番号）ではほぞんしない');
   assert.match(js,/if\(Q\.kLv\) p\.step=Q\.kLv;/,'先生へのリンクは step');
 });
+
+// dim-halfdim.html の<script>を core のあとにうごかして、中の関数をとりだす
+function dimPage(){
+  const js=scriptOf(read('dim-halfdim.html'));
+  const stub='document.getElementById=function(){return {innerHTML:"",parentNode:null,addEventListener:function(){},querySelectorAll:function(){return [];}};};document.querySelector=function(){return null;};\n';
+  return loadPA(stub+read('assets/core.js')+'\nwindow.scrollTo=function(){};PA.paint=function(el,h){PA.__html=h;};\n'+js+'\nPA.__stepMsg=stepMsg;PA.__pairOf=pairOf;PA.__side=sideCard;PA.__more=moreHTML;');
+}
+const plainText=h=>h.replace(/<[^>]+>/g,'');
+
+test('Ⅴ9の根音省略のつくるじゅん①：調号どおりの7ばんめ → 半音上げた音（イ短調「ソ」→「ソ♯」、ハ短調「シ♭」→「シ」）',()=>{
+  const PA=dimPage();
+  for(const minor of [true,false]) for(let i=0;i<PA.keyCount(minor);i++){
+    const P=PA.__pairOf(PA.keyOf(minor,i)), N=P.min, t=plainText(PA.__stepMsg(P,0)), lab=PA.keyName(N.k);
+    const nat=plainText(PA.nmH(N.k.natLT)), lt=plainText(PA.nmH(N.stack[0]));
+    assert.notEqual(nat,lt,lab);
+    assert.ok(t.includes(`7ばんめ「${nat}」は、短調では半音上げて「${lt}」にする`),lab+'：'+t);
+    assert.equal(N.stack[0].letter,N.k.natLT.letter,lab+'：おなじ文字');
+    assert.equal(N.stack[0].acc,N.k.natLT.acc+1,lab+'：半音上げる');
+  }
+  const a=plainText(PA.__stepMsg(PA.__pairOf(PA.minorKey(0)),0)), c=PA.__pairOf(PA.minorKey(PA.MINOR_KEYS.findIndex(([l,acc])=>l===0&&acc===0)));
+  assert.match(a,/7ばんめ「ソ」は、短調では半音上げて「ソ♯」/);
+  assert.match(plainText(PA.__stepMsg(c,0)),/7ばんめ「シ♭」は、短調では半音上げて「シ」/);
+});
+
+test('Ⅴ9の根音省略：くらべるカードにコードネーム（Bm7(♭5) など）は出さず、「もっとくわしく」に',()=>{
+  const PA=dimPage(), P=PA.__pairOf(PA.majorKey(0));
+  assert.ok(!/m7\(♭5\)|dim7/.test(PA.__side(P.maj,'☀️','')+PA.__side(P.min,'🌙','')));
+  assert.match(PA.__more(P),/コードネーム/);
+});
+
+test('「Ⅴ9の根音省略＝減七」は、短調の話だとはっきり書く（Ⅴの家族へのボタン・音のへだたり・異名同音の読みかえ）',()=>{
+  for(const f of ['aug6.html','interval.html','enharmonic.html','minor-family.html']){
+    const s=screenOf(read(f));
+    // 「Ⅴ9…根音…減七」の1つの文（。で区切る）には「短調」も入れる
+    s.split(/[。\n]/).filter(x=>/Ⅴ9[^。]*根音[^。]*減七/.test(x)&&!/長調/.test(x)).forEach(x=>assert.match(x,/短調/,f+'：'+x.trim().slice(0,80)));
+  }
+});

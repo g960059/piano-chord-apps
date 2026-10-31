@@ -191,18 +191,22 @@ details.xmap[open]>summary::after{transform:rotate(180deg)}
  *   島・レベルアップの地図のひらく／とじる：PA.store 'home-units'＝{unit の id: true/false}（じぶんでおしたときだけほぞん）
  *   耳のひろばのきろく（よむだけ）：'ear'（right・total・ch.best）、'progression'（rec[ステップ].best）、'session-ear'（とちゅうの5もん）
  *
- * ★ のきまり（課題ごと。開いただけでは ★1つ）
- *   ★　　＝ひらいた（見た）
- *   ★★　＝そこで問題をやった
- *          クイズ：その課題の調（和音クイズは①が長調・②が短調。href の keyset）で1もんでもこたえた（keystats）。
- *            keyset のないクイズは、のこっている5もんの回（PA.session）でこたえたのも入れる（聴きわけのもんだいは keystats にのこらないので）
- *          しくみ・れんしゅう・いちらんのページ：そのページの練習クイズ（app.practice）で1もんでもこたえた。伴奏づけ：曲に和音を1つでもつけた
+ * ★ のきまり（課題ごと。開いただけでは ★1つ）。島の調＝課題の href の keyset（和音クイズは①が長調・②が短調）。
+ *   島にその課題がないときはクイズの調（TALLY_MODES。なければ長調・短調）
+ *   ★　　＝ひらいた（見た）。keyset つきの課題（和音クイズ）は、その調でひらいたしるし（その調のこたえ・ステップのきろく・
+ *          ほぞんした keyset／stepsKs／とちゅうの回の keyset／さいごのもんだいの調）があるときだけ
+ *   ★★　＝5もんやった
+ *          クイズ：その課題の調で、あわせて5もんいじょうこたえた（keystats。もんだいのしゅるいのきろく 'keystats-chord-quiz-root' なども）か、
+ *            ステップを1つおえた（'chord-quiz-steps' にその調のきろく）。のこっている回（PA.session）で5もんこたえたのも入れる（聴きわけのもんだいは keystats にのこらないので）
+ *          しくみ・れんしゅう・いちらんのページ：そのページの練習クイズ（app.practice）で、島の調の5もん（おなじきまり）。伴奏づけ：曲に和音を1つでもつけた
  *          耳：れんしゅう・チャレンジで1もんでもこたえた
- *   ★★★＝クイズのページのみ：その課題の調の半分いじょうが「できた」（PA.keyDeck.tally の good。チェック表の ✓ とおなじ）
+ *   ★★★＝クイズのページのみ。ステップのあるクイズ（和音クイズ）：その調のステップがぜんぶ ✓ か、その調のぜんぶの調が「できた」（先生の目標は「全部の調」）
+ *          ほかのクイズ：その課題の調の半分いじょうが「できた」（PA.keyDeck.tally の good。チェック表の ✓ とおなじ）
  *   練習の問題がないページ（7つの和音・和音のかたち・音のへだたり）は ★ まで。
  *   島のクリア＝どの課題も ★★ いじょう（★ までのページは ★）。
  * 🐸 のいる島＝基本の島のうち、さいごにやったページ（'visited' の時こく・'last-…'）がある島。
- *   和音クイズのように2つの島にあるときは、まだクリアしていないほう。その島がもうクリアなら、そのつぎのまだクリアしていない島。
+ *   和音クイズのように2つの島にあるときは、さいごにやった調（quizMode）の島。わからなければ、まだクリアしていないほう。
+ *   その島がもうクリアなら、そのつぎのまだクリアしていない島。
  *   基本の島をまだなにもひらいていなければ、さいしょのまだクリアしていない島。ぜんぶクリアならゴール */
 const T=PA.APP_TYPES, ESC=PA.esc;
 const TALLY_MODES={'minor-quiz':['minor']}; // 短調クイズは短調だけ（12）。ほかは長調・短調（24）
@@ -278,14 +282,48 @@ function modesOf(t){
 }
 // 和音クイズの「もんだいのしゅるい」のきろく（'keystats-chord-quiz-root' など）。★★（やった）には入れる。★★★（できた調）は前からのきろくだけ
 const subQuizzes=id=>PA.store.keys().map(k=>/^keystats-(.+)$/.exec(k)).filter(r=>r&&r[1].indexOf(id+'-')===0&&/^[a-z0-9-]+$/.test(r[1])).map(r=>r[1]);
-function quizStat(id,modes){
-  const md=modes||TALLY_MODES[id]||['major','minor'], t=PA.keyDeck.tally(id,{modes:md});
-  const tried=t.total-t.none>0||subQuizzes(id).some(q=>{const u=PA.keyDeck.tally(q,{modes:md});return u.total-u.none>0;});
-  return {good:t.good,total:t.total,tried};
+const DONE_N=5; // ★★＝5もんやった
+const modeOfId=id=>{const p=PA.keyDeck.parse(id);return p?(p.minor?'minor':'major'):null;};
+// その調（md）でこたえた数（まえからのきろく＋もんだいのしゅるいのきろく）
+function answeredIn(id,md){
+  let n=0;
+  [id].concat(subQuizzes(id)).forEach(q=>{const s=PA.keyDeck.stats(q);Object.keys(s).forEach(k=>{if(md.includes(modeOfId(k))) n+=s[k].right+s[k].wrong+s[k].hint;});});
+  return n;
 }
-const sessTried=id=>{const st=sessOf(id);return !!st&&st.done.length>0;};
-// 練習クイズでこたえたことがある（調はとわない）
-const quizTried=id=>quizStat(id).tried||sessTried(id);
+// ステップ（和音クイズの 'chord-quiz-steps'＝{'major:root-easy':5もん中じぶんでできた数}）。数とパスは core の PA.STEP_INFO
+function stepStat(id,md){
+  const info=PA.STEP_INFO&&PA.STEP_INFO[id]; if(!info) return null;
+  const d=PA.store.get(id+'-steps',{}), r=isObj(d)?d:{};
+  let tried=false, done=0, total=0;
+  md.forEach(m=>{
+    total+=info[m]||0;
+    Object.keys(r).forEach(k=>{const x=/^(major|minor):/.exec(k);if(!x||x[1]!==m||!isInt(r[k],0,5)) return;tried=true;if(r[k]>=info.pass) done++;});
+  });
+  return {tried,done,total};
+}
+const sessN=id=>{const st=sessOf(id);return st?st.done.length:0;};
+function quizStat(id,modes){
+  const md=modes||TALLY_MODES[id]||['major','minor'], t=PA.keyDeck.tally(id,{modes:md}), sp=stepStat(id,md);
+  const n=answeredIn(id,md), tried=n>0||!!(sp&&sp.tried);
+  return {good:t.good,total:t.total,tried,five:n>=DONE_N||!!(sp&&sp.tried),steps:sp};
+}
+// さいごにやった調（和音クイズのように、長調・短調で島がわかれるクイズ）。ほぞんしたさいごのようす → こたえのさいごの時こく
+function quizMode(id){
+  const d=PA.store.get(id,{}), o=isObj(d)?d:{}, ks=v=>v==='major'||v==='minor'?v:null;
+  if(o.view==='steps'&&ks(o.stepsKs)) return o.stepsKs;
+  if(isObj(o.run)&&ks(o.run.keyset)) return o.run.keyset;
+  if(isObj(o.q)&&typeof o.q.minor==='boolean') return o.q.minor?'minor':'major';
+  let best=0, mode=null;
+  [id].concat(subQuizzes(id)).forEach(q=>{const s=PA.keyDeck.stats(q);Object.keys(s).forEach(k=>{const t=s[k].last||0;if(t>best&&modeOfId(k)){best=t;mode=modeOfId(k);}});});
+  return mode||ks(o.keyset);
+}
+// その調でひらいたしるし（keyset つきの課題の ★）
+function seenIn(id,md){
+  if(quizStat(id,md).tried) return true;
+  const d=PA.store.get(id,{}), o=isObj(d)?d:{}, has=v=>v==='both'||md.includes(v);
+  // keyset がない（ほぞんがない）ときは、はじめての人とおなじ長調
+  return has(o.keyset||'major')||md.includes(o.stepsKs)||(isObj(o.run)&&has(o.run.keyset))||(isObj(o.q)&&md.includes(o.q.minor?'minor':'major'));
+}
 function earTried(id){
   const d=PA.store.get(id,{}), o=isObj(d)?d:{};
   if(id==='ear') return (isInt(o.total,1,1e9))||(isObj(o.ch)&&isInt(o.ch.best,1,99))||sessTried(id);
@@ -303,24 +341,32 @@ function maxStars(a){
   return 1;
 }
 // → {n（いまのほし）, max, q（クイズの「できた調」。クイズでなければ null）}
-function taskStars(t,vis){
-  const a=PA.app(t.app), max=maxStars(a);
-  const q=a.type==='quiz'?quizStat(a.id,modesOf(t)):null;
-  if(!vis.has(a.id)) return {n:0,max,q};
+// 島の調：島の中の keyset つきの課題の調（①長調・②短調）。なければ null（課題ごとの調）
+function islandModes(s){
+  const t=(s.tasks||[]).find(x=>/[?&]keyset=(major|minor)(?:&|$)/.test(x.href||''));
+  return t?modesOf(t):null;
+}
+function taskStars(t,vis,im){
+  const a=PA.app(t.app), max=maxStars(a), ks=/[?&]keyset=/.test(t.href||''), md=modesOf(t);
+  const q=a.type==='quiz'?quizStat(a.id,md):null;
+  if(!vis.has(a.id)||(ks&&!seenIn(a.id,md))) return {n:0,max,q};
   let n=1;
   if(q){
-    if(q.tried||(!/[?&]keyset=/.test(t.href||'')&&sessTried(a.id))) n=2;
-    if(q.total&&q.good*2>=q.total) n=3;
+    if(q.five||(!ks&&sessN(a.id)>=DONE_N)) n=2;
+    if(q.steps?(q.steps.total&&q.steps.done>=q.steps.total)||(q.total&&q.good>=q.total):(q.total&&q.good*2>=q.total)) n=3;
   }
   else if(a.type==='ear'){if(earTried(a.id)) n=2;}
-  else if(a.practice&&PA.app(a.practice)){if(quizTried(a.practice)) n=2;}
+  else if(a.practice&&PA.app(a.practice)){
+    const p=a.practice, pm=im||TALLY_MODES[p]||['major','minor'];
+    if(quizStat(p,pm).five||(!im&&sessN(p)>=DONE_N)) n=2;
+  }
   else if(a.id==='accompaniment'){if(accompTried()) n=2;}
   return {n:Math.min(n,max),max,q};
 }
 const taskDone=s=>s.n>=Math.min(2,s.max);
 // 島ごと：{tasks:[★], got, max, clear}
 function islandStars(s,vis){
-  const ts=s.tasks.map(t=>taskStars(t,vis));
+  const im=islandModes(s), ts=s.tasks.map(t=>taskStars(t,vis,im));
   return {tasks:ts,got:ts.reduce((a,x)=>a+x.n,0),max:ts.reduce((a,x)=>a+x.max,0),clear:ts.every(taskDone)};
 }
 const starsHTML=(n,max)=>`<span class="stars" role="img" aria-label="ほし${max}こ中${n}こ">`
@@ -333,7 +379,12 @@ function hereId(stars,times){
   let app=null, bt=0;
   BASIC.forEach(s=>s.apps.forEach(id=>{const t=times[id]||0;if(t>bt){bt=t;app=id;}}));
   if(!app) return firstOpen(0);
-  const idx=[]; BASIC.forEach((s,i)=>{if(s.apps.indexOf(app)>=0) idx.push(i);});
+  let idx=[]; BASIC.forEach((s,i)=>{if(s.apps.indexOf(app)>=0) idx.push(i);});
+  // 2つの島にあるクイズ（和音クイズ）：さいごにやった調の島（短調をやっているのに①へもどさない）
+  if(idx.length>1){
+    const md=quizMode(app), m=md?idx.filter(i=>BASIC[i].tasks.some(t=>t.app===app&&modesOf(t).join()===md)):[];
+    if(m.length) idx=m;
+  }
   for(let k=0;k<idx.length;k++) if(!stars[BASIC[idx[k]].id].clear) return BASIC[idx[k]].id;
   return firstOpen(idx[idx.length-1]+1)||firstOpen(0);
 }
@@ -406,7 +457,7 @@ function plazaHTML(){
       +`<small>${mid?`とちゅうから（${st.done.length} / ${st.n}）`:'和音を聴いて、明るい？さびしい？'}</small></span></a>`;
   }
   h+=`<div class="ways">`+tasks.map(t=>{const a=PA.app(t.app);
-      return `<a href="${ESC(t.href)}"><span aria-hidden="true">${a.ic}</span>${ESC(t.title)}</a>`;}).join('');
+      return `<a href="${ESC(t.href)}"><span aria-hidden="true">${a.ic}</span><span>${ESC(t.title).replace(/の(?=.)/g,'の<wbr>')}</span></a>`;}).join('');
   if(ear) h+=`<a class="wide" href="${ESC(PA.url('ear',{mode:'challenge'}))}"><span aria-hidden="true">🏆</span><span>チャレンジ<small>${PA.native?'ライフ3つで、どこまで行けるかな？':'ライフ3つで、どこまで行けるかな？ランキングにものせられるよ'}</small></span></a>`;
   h+=`</div>`;
   const rs=earRecs();
@@ -416,10 +467,11 @@ function plazaHTML(){
 }
 
 /* ----- 島の中のページ ----- */
-// 行は アイコン＋名前＋ほし だけ。説明は まだひらいていない行だけ1行で（ひらいたことがあれば中身はわかっているので）
+// 行は アイコン＋名前＋ほし だけ。説明は まだひらいていない行（★なし。keyset つきの課題はその調で）だけ1行で（ひらいたことがあれば中身はわかっているので）
 function rowHTML(t,s,vis){
-  const app=PA.app(t.app), seen=vis.has(app.id), ty=typeOf(app), game=isGame(app);
-  const kd=s.q&&seen?`<span class="kd">できた調${s.q.good}／${s.q.total}</span>`:'';
+  const app=PA.app(t.app), seen=s.n>0, ty=typeOf(app), game=isGame(app);
+  const kd=(s.q&&s.q.steps&&s.n?`<span class="kd">ステップ✓${s.q.steps.done}／${s.q.steps.total}</span>`:'')
+    +(s.q&&s.n?`<span class="kd">できた調${s.q.good}／${s.q.total}</span>`:'');
   return `<a class="arow${game?' game':''}" href="${ESC(t.href)}"${game?` style="--tc:${ty.c};--tl:${ty.l};--td:${ty.dk}"`:''}><span class="ic" aria-hidden="true">${app.ic}</span>`
     +`<span class="tx">${game?`<span class="ty">${ESC(ty.label)}</span>`:''}<b>${ESC(t.title)}</b>${seen?'':`<span class="d">${app.d}</span>`}</span>`
     +`<span class="st">${starsHTML(s.n,s.max)}${kd}</span></a>`;
@@ -431,7 +483,7 @@ function mapHTML(vis,stars,here){
   if(!BASIC.length) return '';
   const sv=savedOpen();
   let h=`<section class="card map" aria-labelledby="map-h"><h2 id="map-h"><span aria-hidden="true">🗺️ </span>ぼうけんの地図<small>①〜⑥が基本の島。🐸のいる島が、いまやっているところ。島をおすとページが出てくるよ</small></h2>`
-    +`<p class="legend"><span><b aria-hidden="true">★</b>見た</span><span><b aria-hidden="true">★★</b>問題をやった</span><span><b aria-hidden="true">★★★</b>自分でできた</span></p>`
+    +`<p class="legend"><span><b aria-hidden="true">★</b>見た</span><span><b aria-hidden="true">★★</b>5もんやった</span><span><b aria-hidden="true">★★★</b>自分でできた</span></p>`
     +`<div class="trail"><div class="start"><span aria-hidden="true">🚩</span>スタート</div>`;
   BASIC.forEach((s,i)=>{
     const st=stars[s.id], done=st.clear, isHere=s.id===here, side=i%2?'r':'l';

@@ -91,3 +91,23 @@ test('linkOf：chord・tier・key・n',()=>{
   // 文字いがい（ほかのページがまちがえてわたしたとき）はすてる
   eq(link({level:3,key:{},n:5}),null);
 });
+
+test('準固有和音は ○Ⅳ・○Ⅵ と書く（先生：♭Ⅵ・Ⅳm はつかわない）。画面・目次・聴きわけの名前',()=>{
+  const dir=path.join(path.dirname(fileURLToPath(import.meta.url)),'..');
+  const screen=f=>fs.readFileSync(path.join(dir,f),'utf8').replace(/<!--[\s\S]*?-->/g,'').replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm,'');
+  for(const f of fs.readdirSync(dir).filter(f=>/\.html$/.test(f))) assert.ok(!/Ⅳm|♭Ⅵ|♭Ⅲ|♭Ⅶ/.test(screen(f)),f);
+  PA.APPS.forEach(a=>assert.ok(!/Ⅳm|♭Ⅵ/.test(a.title+a.d),a.id));
+  assert.match(PA.app('borrowed').d,/○Ⅳ・○Ⅵ/);
+  assert.match(L.EAR_NAME[3],/○Ⅳ/);
+  assert.match(html,/ivm: \{label:'○Ⅳ'/); assert.match(html,/bvi: \{label:'○Ⅵ'/);
+});
+
+test('Ⅶ7のヒント：おさえかた（転回）で上下がかわらない名前「第9音（音階の6ばんめ）」で',()=>{
+  const fn=s=>(html.match(new RegExp(`function ${s}\\(key,t,[^)]*\\)\\{[\\s\\S]*?\\n\\}`))||[''])[0];
+  const h=fn('hintsNew'), o=fn('okExtraNew');
+  assert.ok(h&&o);
+  const v=h.slice(h.indexOf("if(t==='vii7')")), w=o.slice(o.indexOf("if(t==='vii7')"));
+  assert.ok(!/いちばん上の音/.test(v+w));
+  assert.equal((v.match(/第9音（音階の6ばんめ）/g)||[]).length,2);
+  assert.equal((w.match(/第9音（音階の6ばんめ）/g)||[]).length,2,'長調・短調おなじことば');
+});

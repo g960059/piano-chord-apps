@@ -167,12 +167,12 @@ const STAGES={copy:'まねる',fill:'うめる',make:'つくる',other:'べつ�
 const ST=(cat,tier,chords,note)=>({id:cat+'-'+tier,cat,tier,chords:chords.split(','),note:note||''});
 const ALL4='I,IV,V,V7';
 const STEPS={
-  major:[ST('root','easy','I,IV,V'),ST('fill','easy','I,IV,V'),ST('add7','easy','V7','Ⅴ7のなかまいり'),ST('choice','easy',ALL4),ST('keys','easy',ALL4),
-    ST('keys','normal',ALL4,'調号の多い調も'),ST('staff','easy',ALL4),ST('fix','easy',ALL4),ST('prog','easy',ALL4),
-    ST('keys','hard',ALL4,'調号4〜5つ'),ST('keys','all',ALL4,'ぜんぶの調')],
+  major:[ST('root','easy','I,IV,V'),ST('fill','easy','I,IV,V'),ST('add7','easy','V7','Ⅴに1つたしてⅤ7'),ST('choice','easy',ALL4),ST('keys','easy',ALL4),
+    ST('keys','normal',ALL4),ST('staff','easy',ALL4),ST('fix','easy',ALL4),ST('prog','easy',ALL4),
+    ST('keys','hard',ALL4),ST('keys','all',ALL4)],
   minor:[ST('lt','easy','V'),ST('root','easy','I,IV,V'),ST('fill','easy','I,IV,V'),ST('add7','easy','V7'),
-    ST('mark','normal','V,V7','♮をつける調も出るよ'),ST('choice','easy',ALL4),ST('keys','easy',ALL4),ST('keys','normal',ALL4,'調号の多い調も'),
-    ST('staff','easy',ALL4),ST('fix','easy',ALL4),ST('prog','easy',ALL4),ST('mark','hard','V,V7','ダブルシャープ（x）の調も出るよ'),ST('keys','all',ALL4,'ぜんぶの調')]
+    ST('mark','normal','V,V7','♮をつける調も出るよ'),ST('choice','easy',ALL4),ST('keys','easy',ALL4),ST('keys','normal',ALL4),
+    ST('staff','easy',ALL4),ST('fix','easy',ALL4),ST('prog','easy',ALL4),ST('mark','hard','V,V7','ダブルシャープ（x）の調も出るよ'),ST('keys','all',ALL4)]
 };
 const STEP_N=5, STEP_PASS=4; // 5もん中4もんいじょう、じぶんでできたら ✓
 const stepOf=(ks,n)=>STEPS[ks]&&Number.isInteger(n)&&n>=1&&n<=STEPS[ks].length?Object.assign({ks,n},STEPS[ks][n-1]):null;
@@ -442,7 +442,10 @@ function stopMic(){
   if(linkStep){ // ステップのリンク：そのステップの5もん（おなじステップのとちゅうならつづき）
     RUN=stepRun(linkStep);
   }else if(Object.keys(LINK).length){
-    RUN={type:LINK.type||BASE.type,tier:LINK.tier||BASE.tier,keyset:LINK.keyset||BASE.keyset,chords:Object.assign({},LINK.chords||BASE.chords),
+    // mode も cat もないリンク（ホームの「にがてを3もん」・まえの先生のリンク）は、まえからのしゅるい（けんばん・えらぶ）で出す。
+    // きろくはまえからの keystats-chord-quiz に入る（ほかのしゅるいの記録に入れると、ホームがおなじ調をすすめつづける）
+    const ltype=LINK.type||(onlyKs||OLD_TYPES.includes(BASE.type)?BASE.type:'keys');
+    RUN={type:ltype,tier:LINK.tier||BASE.tier,keyset:LINK.keyset||BASE.keyset,chords:Object.assign({},LINK.chords||BASE.chords),
       key:LINK.key||null,sig:LINK.n?linkSig(LINK):'',id:String(Date.now()),step:null};
   }else{
     const R=readRun(d.run), ls=R&&R.sig?liveState(PA.session(quizOf(R.type))):null;
@@ -859,7 +862,11 @@ function drillWhy(key,c,t,j,o){
   const dr=Q.dr, kn=PA.keyName(key), lab=c.label;
   if(o.ch&&!o.note){ // 和音の名前をえらんだ
     const p=CHORDS[o.ch];
-    if(p.deg===c.deg) return `音の数を見てみよう。Ⅴは3つ、Ⅴ7は4つの音だよ（いまは${t.length}つ）。`;
+    if(p.deg===c.deg){
+      // ならびの「？」は、どの和音も4つの音（右手3つ＋左手1つ）でかくので、数ではなく Ⅴ7 でたす音で見わける
+      if(dr.cat==='prog'){const s7=PA.nmH(chordTones(key,'V7')[3]);return `Ⅴ7は、Ⅴに「${s7}」をたした和音。「？」の和音に「${s7}」があるか見てみよう。`;}
+      return `音の数を見てみよう。Ⅴは3つ、Ⅴ7は4つの音だよ（いまは${t.length}つ）。`;
+    }
     return `いちばん下の音で見わけよう。${p.label}なら、音階の${p.deg+1}ばんめ「${PA.nmH(PA.at(key.scale,p.deg))}」からだよ。`;
   }
   if(dr.cat==='mark'){
@@ -1267,7 +1274,15 @@ document.addEventListener('click',e=>{
       const s=stepOf(el.dataset.ks==='minor'?'minor':'major',+v); if(!s) return;
       startStep(s); save(); render(); PA.scrollTop(); return;
     }
-    case 'steps-free': Q.view='quiz'; ensureQuestion(); save(); render(); PA.scrollTop(); return; // ステップでなく、じぶんで選んで
+    case 'steps-free': // ステップでなく、じぶんで選んで：ステップの回はおわりにして、じぶんのせってい（BASE）にもどす
+      Q.view='quiz';
+      if(curStep()){
+        if(sess&&sess.active()) sess.clear();
+        endRun(); // しゅるいのきろくの名前がおなじだと sess はそのままなので、ここでつくりなおす
+        sess=PA.session(quizOf(Q.type)); if(sess.finished()) sess.clear();
+        newQuestion();
+      }else ensureQuestion();
+      save(); render(); PA.scrollTop(); return;
     case 'qstepoff': if(sess&&sess.active()) sess.clear(); endRun(); newQuestion(); break; // ステップをやめる：じぶんのせっていにもどる
     case 'qexplain': {
       if(!isDone()&&Q.result===null) Q.peeked=true; // こたえるまえに見た：できたら「ヒントでできた」（×にはしない）
