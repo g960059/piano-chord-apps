@@ -114,7 +114,9 @@ const LIGHT={[SUN]:'#f6d9b5',[NIGHT]:'#c9d0f0',[ICOL]:'#f8c9bd'}, DARK={[SUN]:'#
 // H.vii7のならび [導音 | 4, 6, 2] を、下からひとつとばしのじゅん（導音・2・4・6）に
 const ORDER=[0,3,1,2];
 // つくるじゅん（短調）。staff＝がくふの下の名前
-const STEPS=[{label:'Ⅴ',staff:'Ⅴ'},{label:'Ⅴ7',staff:'Ⅴ7'},{label:'Ⅴ9',staff:'Ⅴ9'},{label:'省略',staff:'減七'},{label:'Ⅰへ',staff:'Ⅰ'}];
+// staff：がくふの和音記号（藝大式）。根音省略は斜線・右下9。いちばん下が導音（第3音）なので右上に1（はぶいた根音を入れて数える）
+const OMIT9={deg:5,form:9,omit:true,inv:1};
+const STEPS=[{label:'Ⅴ',staff:'Ⅴ'},{label:'Ⅴ7',staff:'Ⅴ7'},{label:'Ⅴ9',staff:'Ⅴ9'},{label:'省略',staff:OMIT9},{label:'Ⅰへ',staff:'Ⅰ'}];
 const C_MINOR=PA.MINOR_KEYS.findIndex(([l,a])=>l===0&&a===0); // はじめての人はハ短調（ハ長調とくらべる）
 
 const saved=PA.store.get('dim-halfdim',null), sv=saved&&typeof saved==='object'&&!Array.isArray(saved)?saved:{};
@@ -300,7 +302,7 @@ function cmpStaff(P){
 function resStaff(s){
   const k=s.k, noSig=!sigOK(k);
   const col=(ns,o)=>({notes:ns.slice(1).map(n=>({...n,raised:n.tag==='lt'})),lh:[{...ns[0],raised:ns[0].tag==='lt'}],color:o.color,ltColor:LT,accColor:LT,label:o.label,sub:o.sub,labelColor:o.color});
-  const cols=[col(s.ch,{color:s.col,label:'Ⅴ9',sub:'根音省略'}),col(s.res,{color:ICOL,label:'Ⅰ'})];
+  const cols=[col(s.ch,{color:s.col,label:OMIT9,sub:'根音省略'}),col(s.res,{color:ICOL,label:'Ⅰ'})];
   const o={grand:true,autoCarry:true,colW:150,minW:340,noSig,arrows:[
     {c1:0,i1:0,c2:1,i2:0,color:s.col},
     {c1:0,i1:1,c2:1,i2:1,color:DIFF},
@@ -332,7 +334,7 @@ function heroCard(P){
   return `<section class="card hero">
     <h2><span aria-hidden="true">🌙</span> 短調で、Ⅴ9の根音を省略すると？<small>${kn(N.k)}で、Ⅴ→Ⅴ7→Ⅴ9→根音を省略→Ⅰ</small></h2>
     ${wordBox(P)}
-    ${PA.seg('step',STEPS.map((s,j)=>[j,s.label]),A?-1:state.step,'full steps')}
+    ${PA.seg('step',STEPS.map((s,j)=>[j,PA.rnH(s.label)]),A?-1:state.step,'full steps')}
     ${stepStaff(P,cur)}
     <div class="msg" aria-live="polite">${msg}</div>
   </section>`;
@@ -376,8 +378,8 @@ function cmpCard(P){
     const same=a.length===b.length&&a.every((n,i)=>sameName(n,b[i]));
     return `<tr class="${same?'':'d'} ${cls||''}"><th>${lab}</th><td>${namesC(a,a.includes(M.six)?M.six:null)}</td><td>${namesC(b,b.includes(N.six)?N.six:null)}<span class="eq">${same?'同じ':'ちがう！'}</span></td></tr>`;
   };
-  const rows=[0,1,2].map(i=>row(STEPS[i].label,stepNotes(M,i),stepNotes(N,i))).join('')
-    +`<tr class="d"><th>根音省略</th><td>${namesD(M)}<small>減七にならない</small></td><td>${namesD(N)}<small>減七</small><span class="eq">ちがう！</span></td></tr>`;
+  const rows=[0,1,2].map(i=>row(PA.rnH(STEPS[i].label),stepNotes(M,i),stepNotes(N,i))).join('')
+    +`<tr class="d"><th>${PA.rn({deg:5,form:9,omit:true})}<small>根音省略</small></th><td>${namesD(M)}<small>減七にならない</small></td><td>${namesD(N)}<small>減七</small><span class="eq">ちがう！</span></td></tr>`;
   return `<section class="card" id="cmp"><h2><span aria-hidden="true">☀️</span> 長調では、どうなる？<small>同じ主音の${kn(M.k)}と${kn(N.k)}でくらべる</small></h2>
     <table class="cmpt"><thead><tr><th></th><th style="color:${SUN}"><span aria-hidden="true">☀️</span> ${kn(M.k)}</th><th style="color:${NIGHT}"><span aria-hidden="true">🌙</span> ${kn(N.k)}</th></tr></thead><tbody>${rows}</tbody></table>
     <p class="msg">Ⅴ・Ⅴ7は、長調も短調も<b>まったく同じ音</b>（短調も7ばんめを上げるから）。ちがうのは、Ⅴ9でのせる<b class="dn">第9音</b>だけ。長調は${q(M.six)}、短調は${q(N.six)}（どちらも音階の6ばんめ）。<br>だから根音を省略すると、短調は4つの音の間かくがぜんぶそろって<b style="color:${NIGHT}">減七</b>になる。長調は、いちばん上の音が高いぶん間かくがそろわないので、<b style="color:${SUN}">減七にならない</b>よ。</p>
@@ -486,7 +488,7 @@ function moreHTML(P){
   return `<details class="more" data-d="more"><summary>💡 もっとくわしく</summary><ul>
     <li><b>減七の名前のわけ</b>：いちばん下といちばん上のはばが、ふつうの7度よりせまい（けんばんでは6度と同じはば）ので「減七」とよぶよ。</li>
     <li>根音をはぶいたⅤ9は、導音からひとつとばしに4つつんだ形なので、<b>Ⅶ7</b>と書く本もあるよ。でもはたらきはⅤのなかま。だからⅤと同じようにⅠへすすむよ。</li>
-    <li><b>長調で減七を使う</b>こともあるよ。${kn(N.k)}（同じ主音の短調）から第9音${q(N.six)}をかりた和音で、準固有和音（記号は${H.label(P.majK,'borrowed','vii_dim7')}）。<a href="borrowed.html">🎁 準固有和音</a></li>
+    <li><b>長調で減七を使う</b>こともあるよ。${kn(N.k)}（同じ主音の短調）から第9音${q(N.six)}をかりた和音で、準固有和音（記号は${H.rn(P.majK,'borrowed','vii_dim7')}）。<a href="borrowed.html">🎁 準固有和音</a></li>
     <li><b>短調で${q(M.six)}？</b>：短調で${q(M.six)}を使うには、6ばんめを半音上げることになる。短調のⅤ9としてはふつう使わないよ。</li>
     <li><b>コードネーム</b>（ポピュラー音楽などで使う、アルファベットの名前）では、${kn(N.k)}の減七は「${N.sym}」、${kn(M.k)}の形は「${M.sym}」と書くよ。和音記号（Ⅴ9など）とはべつの書きかただよ。</li>
     <li>ダブルシャープは「<span class="ds">x</span>」、ダブルフラットは「${PA.H('𝄫')}」と書くよ。</li>
@@ -517,7 +519,7 @@ function render(){
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}・${with_}くらべる</span></div>`;
   // いつもひらいているのは、主役（短調でつくる・けんばん・長調とくらべる・がくふ・ためしてみる）だけ。ほかはたたんで下に
-  h+=heroCard(P)+kbCard(P)+cmpCard(P)+staffCmpCard(P)+tryCard(P)+resCard(P)+abCard(P)+tableCard(P)+shapeCard(P)+linksCard(P)+moreHTML(P)+termsHTML(P);
+  h+=heroCard(P)+kbCard(P)+cmpCard(P)+staffCmpCard(P)+tryCard(P)+resCard(P)+abCard(P)+tableCard(P)+shapeCard(P)+linksCard(P)+moreHTML(P)+termsHTML(P)+PA.rnHelp();
   h+=`</div>`;
   PA.paint(document.getElementById('view'),h,'dh:'+state.minor+':'+state.keyIdx);
   PA.follow(document.getElementById('view')); // 光る鍵が見えるように（見えていれば動かさない。鳴らしおわってもとの形にもどったときも）

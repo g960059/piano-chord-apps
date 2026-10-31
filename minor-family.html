@@ -97,6 +97,8 @@ const curKey=()=>KEYS[state.keyIdx];
 const famShift=key=>key.tonicMidi+7>70?-7:0;
 const famTones=(key,f)=>FAM[f].ks.map(k=>PA.at(key.harm,k+famShift(key)));
 const resolution=(key,f)=>FAM[f].ks.map(k=>PA.at(key.harm,RESOLVE[f][k]+famShift(key)));
+// がくふの減七の記号（藝大式）：Ⅴ9の根音省略。いちばん下が導音（第3音）なので第1転回形
+const DIM_RN={deg:5,form:9,omit:true,inv:1};
 const bassOf=(key,f,which)=>{ // 「Ⅰへ解決」の左手（Ⅴの根音／Ⅰの主音を1オクターブ下で）
   if(which==='V'){if(f==='DIM')return [];const n=PA.at(key.harm,4+famShift(key));return [{...n,midi:n.midi-12}];}
   const n=key.harm[0]; return [{...n,midi:key.tonicMidi-12}];
@@ -233,9 +235,9 @@ function render(){
   const shownKs=A?A.ks:FAM[f].ks, shown=shownKs.map(k=>PA.at(key.harm,k+famShift(key)));
   let h=`<div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}・7ばんめを上げた短音階</span></div>
-    <div class="fams">`+FAM_KEYS.map(k=>`<button class="fbtn ${k===f?'on':''}" data-act="fam" data-v="${k}" aria-pressed="${k===f}"><span class="num">${FAM[k].label}</span><span class="nm">${PA.namesH(famTones(key,k))}</span></button>`).join('')+`</div>
+    <div class="fams">`+FAM_KEYS.map(k=>`<button class="fbtn ${k===f?'on':''}" data-act="fam" data-v="${k}" aria-pressed="${k===f}"><span class="num">${PA.rnH(FAM[k].label)}</span><span class="nm">${PA.namesH(famTones(key,k))}</span></button>`).join('')+`</div>
     <section class="card hero">
-      <div class="hero-top"><span class="badge" style="--c:${NIGHT}">${FAM[f].label}</span>
+      <div class="hero-top"><span class="badge" style="--c:${NIGHT}">${PA.rnH(FAM[f].label)}</span>
         <div style="min-width:0"><div class="hk">${PA.keyName(key)}の${FAM[f].title}</div><div class="hn">${info.t.map(n=>`<span style="white-space:nowrap">${ltH(n)}</span>`).join('・')}</div>
         <div class="hs">コードネーム<b>${famSym(key,f)}</b>　/　<span style="color:${LT}">赤い音＝導音</span>（7ばんめを上げた音）</div></div></div>
       <div class="chips">${shapeChain(key)}</div>
@@ -253,7 +255,7 @@ function render(){
     shown.forEach(n=>marks.set(n.midi,{fill:n.raised?LT:NIGHT,label:PA.nm(n),focus:true}));
     if(R) bassOf(key,f,'V').forEach(n=>marks.set(n.midi,{fill:'#c9d0f0',tc:'#24316f',label:PA.nm(n),sub:'左手',subColor:NIGHT}));
   }
-  const kbCap=R&&state.res===2?'Ⅰ（おちついた和音）・左手のベースは左のほう（←）':R?`${FAM[f].label}${f==='DIM'?'':'・左手のベースは左のほう（←）'}`:'赤＝導音'+PA.once('tap-sound','。さわると音が出るよ');
+  const kbCap=R&&state.res===2?'Ⅰ（おちついた和音）・左手のベースは左のほう（←）':R?`${PA.rnH(FAM[f].label)}${f==='DIM'?'':'・左手のベースは左のほう（←）'}`:'赤＝導音'+PA.once('tap-sound','。さわると音が出るよ');
   h+=`<section class="card"><h2>🎹 けんばん<small>${kbCap}　<span style="color:#8f5a00">オレンジの印＝ミファ・シド（白鍵どうしがとなり）</span></small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(45,89,marks)}</div></section>`;
 
   // がくふ（Ⅴの家族 → Ⅰの解決）
@@ -266,8 +268,8 @@ function render(){
   });
   // ヘ音記号に左手のベース（「Ⅰへ解決」でいっしょに鳴らす音）
   const cols=A?[{notes:shown,lh:[],color:NIGHT,ltColor:LT,accColor:LT,accRing:true}]
-    :[{notes:info.t,lh:bassOf(key,f,'V'),color:NIGHT,ltColor:LT,accColor:LT,accRing:true,label:FAM[f].label,labelColor:NIGHT},{notes:res,lh:bassOf(key,f,'I'),color:ICOL,label:'Ⅰ',labelColor:ICOL}];
-  h+=`<section class="card"><h2>🎼 がくふ<small>${A?'':'左：'+FAM[f].label+'　右：Ⅰ（おちつく和音）'}</small></h2>${staffBox(PA.staffSVG(key,cols,{grand:true,autoCarry:true,colW:150,minW:340,arrows}),'staff')}
+    :[{notes:info.t,lh:bassOf(key,f,'V'),color:NIGHT,ltColor:LT,accColor:LT,accRing:true,label:f==='DIM'?DIM_RN:FAM[f].label,labelColor:NIGHT},{notes:res,lh:bassOf(key,f,'I'),color:ICOL,label:'Ⅰ',labelColor:ICOL}];
+  h+=`<section class="card"><h2>🎼 がくふ<small>${A?'':'左：'+PA.rnH(FAM[f].label)+'　右：Ⅰ（おちつく和音）'}</small></h2>${staffBox(PA.staffSVG(key,cols,{grand:true,autoCarry:true,colW:150,minW:340,arrows}),'staff')}
     ${A?'':`<p class="note"><b style="color:${LT}">導音は半音上へ</b>（主音へ）、<b style="color:${NIGHT}">第7音・第9音は下へ</b>すすむと、きれいにおわるよ。「Ⅰへすすむ」では左手のベース（ヘ音記号の音）もいっしょに鳴らすよ。</p>`}</section>`;
 
   h+=`<section class="card">${shapeCard(key,f)}</section>`;
@@ -275,9 +277,9 @@ function render(){
   // 1つの和音だけだと3もんともおなじもんだいになるので、2つをかわりばんこに）
   const pair=TRY_PAIR[f]||['V','V7'];
   h+=PA.tryHTML({to:'minor-quiz',params:{mode:'chord',key:PA.keyDeck.id(true,state.keyIdx),chord:pair.join(','),n:3},
-    sub:`けんばんで${PA.keyName(key)}の${pair.map(x=>FAM[x].label).join('と')}をおさえてみよう（3問）`,btn:PA.icon('target')+'3問ためしてみる',
+    sub:`けんばんで${PA.keyName(key)}の${pair.map(x=>PA.rnH(FAM[x].label)).join('と')}をおさえてみよう（3問）`,btn:PA.icon('target')+'3問ためしてみる',
     links:f==='V9'||f==='DIM'?[{to:'dim-halfdim',params:{key:PA.keyDeck.id(true,state.keyIdx)},label:'<span aria-hidden="true">⚖️</span>長調とくらべる（Ⅴ9の根音省略）'}]:[]});
-  h+=termsHTML(key);
+  h+=termsHTML(key)+PA.rnHelp();
   h+=`<p class="note">※ 和音は、7ばんめの音を半音上げた短音階でつくっています。<span class="ds">x</span>はダブルシャープの楽譜での書き方です。</p></div>`;
   PA.paint(document.getElementById('view'),h,state.keyIdx+':'+f);
   if(state.anim) PA.follow(document.getElementById('view')); // アニメで光る鍵が見えるように

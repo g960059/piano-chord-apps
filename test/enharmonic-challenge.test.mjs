@@ -49,7 +49,7 @@ test('変化和音クイズ：🔥 チャレンジになるのは、読みかえ
 
 test('変化和音クイズ：ステップの名前とならびは先生のじゅん（異名同音の読みかえはいちばん最後）',()=>{
   assert.deepEqual(L.KLV.map(x=>x.name),['Ⅱ7・ドッペル','副属和音','準固有','ナポリ','増六','ぜんぶ']);
-  assert.match(L.KLV[5].desc,/ステップ1〜5と、異名同音の読みかえで出てくるⅦ7/);
+  assert.match(L.KLV[5].desc,/ステップ1〜5と、異名同音の読みかえで出てくるⅤ9の根音省略/);
   assert.match(cq,/Ⅱ7・ドッペル → 副属和音 → 準固有和音 → ナポリの六 → 増六 → 異名同音/);
 });
 
@@ -149,7 +149,7 @@ test('異名同音の読みかえ：🔥 チャレンジ問題（ドイツの6 �
   assert.ok(S.gq&&['ger','v7'].includes(S.gq.ans)); assert.equal(S.gq.pick,null);
   assert.match(P.__html,/data-act="gqchoose" data-v="ger"[^>]*>ドイツの6/);
   assert.match(P.__html,/data-act="gqchoose" data-v="v7"[^>]*>[^<]*（ナポリの和音のためのⅤ7）<small>→ [^<]*（ナポリの和音）/);
-  assert.match(P.__html,/data-act="gqchoose" data-v="ger"[^>]*>ドイツの6<small>→ Ⅰ/);
+  assert.match(P.__html,/data-act="gqchoose" data-v="ger"[^>]*>ドイツの6<small>→ <span class="rnum" role="img" aria-label="Ⅰ、第2転回形">/);
   // ちがう答え → おしい・せいかいは0
   const wrong=S.gq.ans==='ger'?'v7':'ger';
   P.click('gqchoose',wrong);
@@ -161,7 +161,7 @@ test('異名同音の読みかえ：🔥 チャレンジ問題（ドイツの6 �
   for(let i=0;i<20;i++){
     P.click('gqnext'); const a=S.gq.ans; P.click('gqchoose',a);
     assert.match(P.__html,/🎉 そのとおり！/);
-    assert.match(plain(P.__html),a==='ger'?/Ⅴへの導音。半音上へすすんで、Ⅰ64へ行ったね。このあとⅤへすすむよ/:/第7音。半音下へすすんで、ナポリの和音の/);
+    assert.match(plain(P.__html),a==='ger'?/Ⅴへの導音。半音上へすすんで、Ⅰ?2?へ行ったね。このあとⅤへすすむよ/:/第7音。半音下へすすんで、ナポリの和音の/);
   }
   assert.equal(S.gN,21); assert.equal(S.gOk,20);
   assert.match(P.__html,/20 \/ 21問正解/);
@@ -217,7 +217,7 @@ test('レベルアップの順番：地図・ページの「次は」も先生�
   assert.match(scriptOf(read('doppel.html')),/PA\.store\.set\('secondary',\{minor:state\.minor,keyIdx:state\.keyIdx,target:5,kind:'V7'\}\)/);
   // 副属和音 → 次は準固有和音（どの目標でも）、準固有 → 次はナポリの六、ナポリ → 次は増六
   const sc=read('secondary.html');
-  assert.match(sc,/<a class="btn" href="borrowed\.html" data-go="borrowed"><span aria-hidden="true">🎁<\/span> <span>次は準固有和音 ›<small>同じ主音の短調からかりる○Ⅳ・○Ⅵ<\/small><\/span><\/a>/);
+  assert.match(sc,/<a class="btn" href="borrowed\.html" data-go="borrowed"><span aria-hidden="true">🎁<\/span> <span>次は準固有和音 ›<small>同じ主音の短調からかりる\$\{PA\.rn\(\{deg:4,borrowed:true\}\)\}・\$\{PA\.rn\(\{deg:6,borrowed:true\}\)\}<\/small><\/span><\/a>/);
   assert.ok(!/if\(I\.t===5\) return '';/.test(sc),'目標がⅤのときもつながるアプリを出す');
   assert.match(scriptOf(sc),/g\.dataset\.go==='borrowed'&&!state\.minor/);
   assert.doesNotThrow(()=>new Function(scriptOf(sc)));

@@ -122,6 +122,14 @@ svg text{pointer-events:none}
 details.more{border-radius:14px;background:var(--soft2);padding:0 14px}
 details.more>summary{min-height:48px;display:flex;align-items:center;font-weight:700;cursor:pointer}
 details.more[open]{padding-bottom:12px}
+/* 和音記号（藝大式・PA.rn）：字の大きさにあわせてのびちぢみ。色はまわりの字とおなじ */
+.rnum{white-space:nowrap}
+svg.rnum-svg{display:inline-block;overflow:visible}
+.rnum-k{margin-right:.25em;font-weight:700}
+.rnum-nat{font-size:.7em;font-weight:700}
+.rnh{margin:6px 0 0;padding:0;list-style:none}
+.rnh li{display:flex;gap:10px;align-items:center;margin:6px 0;line-height:1.5;font-size:15px}
+.rnh-ex{flex:none;min-width:3.2em;text-align:center;font-size:24px;font-weight:800}
 
 @keyframes pop{0%{transform:scale(.95)}60%{transform:scale(1.03)}100%{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.fb.good{animation:none}}

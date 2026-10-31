@@ -330,9 +330,9 @@ function scoreHTML(key,data,labels){
   const nmS=c=>`<span class="lh">${PA.nmH(c.lh[0])}</span>`+c.rh.map(n=>`<span>${PA.nmH(n)}</span>`).join('');
   let h=`<section class="card"><h2>🎼 4つの和音${labels?PA.once('tap-sound','<small>タップすると、その和音が鳴るよ</small>'):`<small>ローマ数字はかくしてあるよ。${PA.once('tap-sound','タップすると、その和音が鳴るよ')}</small>`}</h2><div class="seq">`+data.map((c,i)=>{
     const cc=labels?PA.COL[c.ch]:ink, ll=labels?PA.LCOL[c.ch]:light;
-    return `<button class="scard ${i===step?'on':''}" style="--c:${cc};--l:${ll}" data-act="qstep" data-v="${i}" aria-pressed="${i===step}" aria-label="${i+1}つめ${labels?E.labelText(c):''}"><span class="num">${labels?c.label:i+1}</span>${labels&&c.inv?'<span class="inv">てんかい</span>':''}<span class="nm">${nmS(c)}</span></button>`;
+    return `<button class="scard ${i===step?'on':''}" style="--c:${cc};--l:${ll}" data-act="qstep" data-v="${i}" aria-pressed="${i===step}" aria-label="${i+1}つめ${labels?E.labelText(c):''}"><span class="num">${labels?PA.rnH(c.label):i+1}</span>${labels&&c.inv?'<span class="inv">てんかい</span>':''}<span class="nm">${nmS(c)}</span></button>`;
   }).join('')+`</div>`;
-  const cols=data.map((c,i)=>({notes:c.rh,lh:c.lh,color:labels?PA.COL[c.ch]:ink,accColor:'#d1495b',op:i===step?1:0.35,label:labels?c.label:String(i+1),sub:labels&&c.inv?'てんかい':'',labelColor:labels?PA.COL[c.ch]:'#a99f93'}));
+  const cols=data.map((c,i)=>({notes:c.rh,lh:c.lh,color:labels?PA.COL[c.ch]:ink,accColor:'#d1495b',op:i===step?1:0.35,label:labels?E.rnOf(c):String(i+1),sub:labels&&c.inv?'てんかい':'',labelColor:labels?PA.COL[c.ch]:'#a99f93'}));
   const ns=PA.sigInfo(key).letters.length, W=50+ns*10+(ns?24:14)+4*66+8;
   h+=`<div class="scroll" data-sk="staff" style="margin-top:12px"><div class="staffw" style="min-width:${Math.round(W*0.64)}px">${PA.staffSVG(key,cols,{grand:true,colW:66})}</div></div>`;
   const rm=new Map(), lm=new Map();

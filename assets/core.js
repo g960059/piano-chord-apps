@@ -578,10 +578,11 @@ PA.wholeNote=(x,y,col,o={})=>{
 };
 PA.gClef=(x,y0)=>`<g transform="translate(${x} ${y0})" fill="none" stroke="#3a3245" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3 C8 3 7 -5 13 -7 C21 -9 25 0 20 7 C14 14 2 10 2 0 C2 -10 12 -17 17 -27 C20 -34 19 -44 15 -44 C10 -44 8 -34 10 -24 L16 24 C17 31 11 33 8 29"/><circle cx="9.5" cy="27.5" r="3.2" fill="#3a3245" stroke="none"/></g>`;
 PA.fClef=(x,y0)=>`<g transform="translate(${x} ${y0})"><circle cx="5" cy="0" r="4" fill="#3a3245"/><path d="M3 -2 C4 -10 14 -12 19 -7 C25 -1 22 10 14 17 C9 21 4 24 -1 26" fill="none" stroke="#3a3245" stroke-width="2.8" stroke-linecap="round"/><circle cx="27" cy="-5" r="2.2" fill="#3a3245"/><circle cx="27" cy="5" r="2.2" fill="#3a3245"/></g>`;
-/* cols: [{notes:[...ト音記号], lh:[...ヘ音記号], color, ltColor(導音の色), accColor, accRing, label, sub(和音名の下の小さな字), labelColor, op, noAcc, carry:{文字:変化記号},
+/* cols: [{notes:[...ト音記号], lh:[...ヘ音記号], color, ltColor(導音の色), accColor, accRing, label（文字か、PA.rn の部品）, sub(和音名の下の小さな字), labelColor, op, noAcc, carry:{文字:変化記号},
  *         hl(その列のうしろをぬる色), lhRing(ヘ音記号の音をかこむ色)}]
  * opts: {grand, colW, minW, arrows:[{c1,i1,c2,i2,color,text,dash,dy}], sigOverride:{letter,acc}, noSig, maxScale, autoCarry}
  * autoCarry：ぜんぶの列を1つの小節とみて、前の臨時記号をもどす音に♮など（おなじ段・高さはきまりどおり、音名がおなじならねんのためも。c.carry はつかわない） */
+const RNPX=16; // がくふの和音名の記号の数字の高さ（17px の太字よりすこし大きめ。2段の小さい数字も読めるように）
 PA.staffSVG=(key,cols,o={})=>{
   const sig=o.noSig?{type:1,letters:[]}:PA.sigInfo(key), ov=o.sigOverride, grand=!!o.grand;
   const TSs=[38,35,39,36,33,37,34], TSf=[34,37,33,36,32,35,31];
@@ -601,9 +602,13 @@ PA.staffSVG=(key,cols,o={})=>{
     (c.notes||[]).forEach(n=>{lowY=Math.max(lowY,ty(PA.stepOf(n)));});
     if(grand)(c.lh||[]).forEach(n=>{lowY=Math.max(lowY,by(PA.stepOf(n)));});
   });
-  const baseH=grand?BT+48:TB+48, labelY=Math.max(baseH+16,lowY+30);
+  // 和音名：parts（オブジェクト）か、Ⅰ〜Ⅶ（＋7／9）だけの文字は藝大式の記号（PA.rn）で描く。2段の記号は上に高いので、名前を下げる
+  const rnp=cols.map(c=>c.label?(typeof c.label==='object'?c.label:PA.rnOf(c.label)):null);
+  const rise=Math.max(0,...rnp.map(p=>p?PA.rnRise(p,RNPX)-20:0));
+  const baseH=grand?BT+48:TB+48, labelY=Math.max(baseH+16,lowY+30)+Math.ceil(rise);
   const hasSub=hasLabel&&cols.some(c=>c.sub); // c.sub＝和音名の下の小さな字（なければ前とおなじ図）
-  const W=Math.max(nx+cols.length*cw+8,o.minW||0), H=hasLabel?labelY+6+(hasSub?15:0):Math.max(baseH,lowY+16);
+  const fdy=rnp.some(p=>p&&p.form)?7:0; // 記号の右下の7・9のぶん、下の小さな字とその下のあきをさげる
+  const W=Math.max(nx+cols.length*cw+8,o.minW||0), H=hasLabel?labelY+6+fdy+(hasSub?15:0):Math.max(baseH,lowY+16);
   let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="がくふ" style="max-width:${Math.round(W*(o.maxScale||1.5))}px;margin:0 auto">`;
   // c.hl：列のうしろの色は、五線より先にぬる（五線が見えるように）
   cols.forEach((c,ci)=>{if(c.hl) svg+=`<rect x="${nx+ci*cw+3}" y="4" width="${cw-6}" height="${H-8}" rx="12" fill="${c.hl}"/>`;});
@@ -666,8 +671,9 @@ PA.staffSVG=(key,cols,o={})=>{
   cols.forEach((c,ci)=>{
     const x=nx+ci*cw+cw/2;
     svg+=`<g data-col="${ci}" opacity="${c.op==null?1:c.op}">`+drawNotes(ci,c,c.notes,ty,30,38)+(grand?drawNotes(ci,c,c.lh,by,18,26):'');
-    if(c.label) svg+=`<text x="${x}" y="${labelY}" text-anchor="middle" font-size="17" font-weight="800" fill="${c.labelColor||'#3a3245'}">${PA.Svg(c.label)}</text>`;
-    if(c.label&&c.sub) svg+=`<text x="${x}" y="${labelY+15}" text-anchor="middle" font-size="11.5" font-weight="700" fill="${c.labelColor||'#3a3245'}">${PA.Svg(c.sub)}</text>`;
+    if(rnp[ci]) svg+=PA.rnSvgAt(rnp[ci],x,labelY,RNPX,`color="${c.labelColor||'#3a3245'}" role="img" aria-label="${PA.esc(PA.rnAria(rnp[ci]))}"`);
+    else if(c.label) svg+=`<text x="${x}" y="${labelY}" text-anchor="middle" font-size="17" font-weight="800" fill="${c.labelColor||'#3a3245'}">${PA.Svg(c.label)}</text>`;
+    if(c.label&&c.sub) svg+=`<text x="${x}" y="${labelY+15+fdy}" text-anchor="middle" font-size="11.5" font-weight="700" fill="${c.labelColor||'#3a3245'}">${PA.Svg(c.sub)}</text>`;
     svg+=`</g>`;
   });
   (o.arrows||[]).forEach(a=>{
@@ -679,6 +685,155 @@ PA.staffSVG=(key,cols,o={})=>{
   if(cs.length) svg+=`<defs>${cs.map(c=>`<marker id="ar-${c.slice(1)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${c}"/></marker>`).join('')}</defs>`;
   return svg+'</svg>';
 };
+
+/* ===== 和音記号（藝大式）：PA.rn =====
+ * 先生の決め（docs/TEACHER-FEEDBACK.md 2026-10-31）：アプリ全体を藝大式（島岡『和声 理論と実習』の書きかた）にそろえる。
+ * 記号は文字から作らず、かならず部品（parts）から描く：
+ *   {deg:1〜7（Ⅰ〜Ⅶ）, form:7|9（右下の小さい数字）, inv:1〜3（右上の小さい数字＝転回形。根音省略の和音は、はぶいた根音を入れて数える）,
+ *    omit:true（根音省略＝斜線。大きい数字だけにかける）, borrowed:true（準固有＝前に小さい○）,
+ *    of:1〜7（2段の上の小さい数字。「ⅤのⅤ」の上のⅤ。下の大きい数字が和音そのもので、7・9・転回・斜線・変位の印はぜんぶ下につける）,
+ *    ofDown:true（上の小さい数字の根音下方変位。ナポリの調＝下げたⅡ度調）,
+ *    alt5:'down'（第5音下方変位：下の大きい数字の、上の横棒の左はしに左むきのチョン。先生の写真のとおり）,
+ *    rootDown:true（根音下方変位：ナポリの和音。印の形は先生に確認まち。いまは下の横棒の左はしにチョン）,
+ *    natural:true（短調のⅢ・Ⅶ＝自然的短音階の長三和音。記号のあとに「（自然）」）, name:'it6'|'fr6'|'ger6'|'n6'（読み上げで名前をそえるとき）}
+ * PA.rn(parts,{key, name}) → HTML（<span class="rnum" role="img" aria-label="…"><svg>…</svg></span>）。字の大きさにあわせてのびちぢみする（em）。色は currentColor
+ * PA.rnText(parts) → ただの文字（Ⅴ₇²（第5音下方変位・根音省略）など。title・きろく用）
+ * PA.rnAria(parts) → 読み上げのことば（「ⅤのⅤ、7の和音、第2転回形、第5音下方変位、根音省略」）
+ * PA.rnKey(key) → 調のしるし（C: c: Es: fis: …。大文字＝長調、小文字＝短調。ドイツ語の音名）
+ * PA.rnSvgAt(parts,cx,baseY,px,attrs) → SVG の中にそのまま入れる（がくふの和音名。baseY＝数字の下のはし、px＝数字の高さ）
+ * PA.staffSVG の列の label に parts（オブジェクト）をわたすと、この記号で描く。
+ *   文字の label でも「Ⅰ〜Ⅶ」だけか「Ⅴ7・Ⅴ9」のような1文字＋7／9だけのときは、この記号（右下の小さい数字）で描く。
+ * 副属和音（Ⅱ度調のⅤ7 など）は「ⅤのⅤ」とおなじ2段で書く（上の小さい数字＝何度調か、下の大きい数字＝その調での和音）。
+ *   ネットでは藝大式の副属和音の記号の決まった説明が見つからなかった（2026-11-01 しらべ）。ⅤのⅤの書きかた（先生の写真）にそろえた。先生に確認まち。 */
+PA.RN=['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ'];
+(function(){
+  const CELLS=['I','II','III','IV','V','VI','VII'], SUP=['','¹','²','³'], SUB={7:'₇',9:'₉'};
+  const r2=v=>Math.round(v*100)/100;
+  const okDeg=d=>Number.isInteger(d)&&d>=1&&d<=7;
+  // 部品をたしかめる（へんな値は描かない）
+  const norm=p=>{
+    p=p||{};
+    const q={deg:okDeg(p.deg)?p.deg:1};
+    if(p.form===7||p.form===9) q.form=p.form;
+    if(Number.isInteger(p.inv)&&p.inv>=1&&p.inv<=3) q.inv=p.inv;
+    if(p.omit) q.omit=true;
+    if(p.borrowed) q.borrowed=true;
+    if(okDeg(p.of)) q.of=p.of;
+    if(q.of&&p.ofDown) q.ofDown=true;
+    if(p.alt5==='down') q.alt5='down';
+    if(p.rootDown) q.rootDown=true;
+    if(p.natural) q.natural=true;
+    if(p.name) q.name=String(p.name);
+    return q;
+  };
+  // ローマ数字を線で描く（高さ20）。たて棒（Ⅰ）は上下の横棒つき（Ⅱ・Ⅲはつながった横棒）、Ⅴは2本の腕の上に小さい横棒。x,y＝左上
+  //   「上の横棒の左はし」＝いちばん左の上の横棒の左はし（x＝-1.2）。第5音下方変位のチョンはここにつける
+  const glyph=(deg,x,y,s)=>{
+    let cx=0; const stem=[], diag=[], runs=[], ser=[];
+    CELLS[deg-1].split('').forEach(c=>{
+      if(c==='I'){stem.push(`M${r2(cx+3.25)} 0V20`);const L=runs[runs.length-1];if(L&&L[1]===cx)L[1]=cx+6.5;else runs.push([cx,cx+6.5]);cx+=6.5;}
+      else{diag.push(`M${r2(cx+1.6)} 0L${r2(cx+7.5)} 20L${r2(cx+13.4)} 0`);ser.push([cx-.6,cx+4.4],[cx+10.8,cx+15.2]);cx+=15;}
+    });
+    const bars=runs.map(([a,b])=>`M${r2(a-.6)} 0H${r2(b+.6)}M${r2(a-.6)} 20H${r2(b+.6)}`).join('')+ser.map(([a,b])=>`M${r2(a)} 0H${r2(b)}`).join('');
+    const svg=`<g transform="translate(${r2(x)} ${r2(y)})${s!==1?` scale(${s})`:''}" fill="none" stroke="currentColor">${stem.length?`<path d="${stem.join('')}" stroke-width="2.7"/>`:''}${diag.length?`<path d="${diag.join('')}" stroke-width="2.5" stroke-linejoin="round"/>`:''}<path d="${bars}" stroke-width="1.9"/></g>`;
+    return {w:cx*s,h:20*s,svg};
+  };
+  // 部品 → {svg（中身）, W, y0（上のはし）, H, base（大きい数字の下のはし）}
+  const layout=p=>{
+    const SM=.66, top=p.of?Math.round(20*SM+3.5):0, big=glyph(p.deg,0,0,1); // SM＝2段の上の小さい数字の大きさ
+    let x=0, s='';
+    if(p.borrowed){s+=`<circle cx="3.4" cy="${top+3.6}" r="3" fill="none" stroke="currentColor" stroke-width="1.4"/>`;x+=8;}
+    if(p.alt5||p.rootDown) x+=6.5;
+    const W0=big.w, sw=p.of?glyph(p.of,0,0,SM).w:0;
+    x=Math.max(x,(sw-W0)/2+1); // 上の小さい数字が下の数字より広いとき（Ⅶ など）も左がきれないように
+    const gx=x;
+    if(p.of){
+      const sx=gx+W0/2-sw/2;
+      s+=glyph(p.of,sx,0,SM).svg;
+      if(p.ofDown) s+=`<path d="M${r2(sx-.5)} ${r2(20*SM)}L${r2(sx-4)} ${r2(20*SM-1.2)}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>`;
+    }
+    s+=glyph(p.deg,gx,top,1).svg;
+    // 第5音下方変位：上の横棒の左はしから左へ、ちょっと下がる「チョン」
+    if(p.alt5==='down') s+=`<path class="rn-alt5" d="M${r2(gx-1.2)} ${top+.3}L${r2(gx-6.2)} ${top+2.2}" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>`;
+    // 根音下方変位：下の横棒の左はしから左へ（先生に確認まち）
+    if(p.rootDown) s+=`<path class="rn-root" d="M${r2(gx-1.2)} ${top+19.7}L${r2(gx-6.2)} ${top+17.8}" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>`;
+    // 根音省略：大きい数字だけにかける斜線
+    if(p.omit) s+=`<path class="rn-omit" d="M${r2(gx-2.5)} ${top+23}L${r2(gx+W0+2.5)} ${top-3}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>`;
+    let W=gx+W0+1;
+    const dx=gx+W0+2.4;
+    if(p.inv||p.form){
+      const t=(y,v,c)=>`<text class="${c}" x="${r2(dx)}" y="${y}" font-size="14" font-weight="700" fill="currentColor" stroke="none" font-family="Arial,Helvetica,sans-serif">${v}</text>`;
+      if(p.inv) s+=t(top+10,p.inv,'rn-inv');
+      if(p.form) s+=t(top+27.5,p.form,'rn-form');
+      W=dx+8.5;
+    }
+    W=Math.max(W,gx+W0/2+sw/2+1);
+    const y0=p.of?-1:-4;
+    return {svg:s,W:r2(W),y0,H:top+29-y0,base:top+20};
+  };
+  PA.rnKey=key=>{
+    if(!key) return '';
+    const L=['C','D','E','F','G','A','H'][key.l], a=key.a||0;
+    let n=L;
+    if(a===1) n=L+'is';
+    else if(a===-1) n=L==='H'?'B':L==='E'?'Es':L==='A'?'As':L+'es';
+    return (key.minor?n.toLowerCase():n)+':';
+  };
+  const base=p=>(p.of?(p.ofDown?'（下げた）':'')+PA.RN[p.of-1]+'の':'')+PA.RN[p.deg-1];
+  PA.rnText=p=>{
+    p=norm(p);
+    const fl=[p.rootDown&&'根音下方変位',p.alt5&&'第5音下方変位',p.omit&&'根音省略'].filter(Boolean);
+    return (p.borrowed?'○':'')+base(p)+(p.form?SUB[p.form]:'')+(p.inv?SUP[p.inv]:'')+(p.natural?'（自然）':'')+(fl.length?'（'+fl.join('・')+'）':'');
+  };
+  PA.rnAria=p=>{
+    p=norm(p);
+    return [(p.borrowed?'準固有の':'')+base(p)+(p.natural?'（自然）':''),p.form&&p.form+'の和音',p.inv&&'第'+p.inv+'転回形',
+      p.rootDown&&'根音下方変位',p.alt5&&'第5音下方変位',p.omit&&'根音省略'].filter(Boolean).join('、');
+  };
+  const EM=22; // 22 単位＝1em（数字の高さ20＝0.9em。2段の小さい数字も読めるように、まわりの字より少し大きめ）
+  PA.rnSvg=p=>{
+    p=norm(p); const L=layout(p);
+    return `<svg class="rnum-svg" viewBox="0 ${L.y0} ${L.W} ${L.H}" style="width:${r2(L.W/EM)}em;height:${r2(L.H/EM)}em;vertical-align:${r2(-(L.y0+L.H-L.base)/EM)}em" aria-hidden="true" focusable="false">${L.svg}</svg>`;
+  };
+  PA.rn=(p,o={})=>{
+    p=norm(p);
+    const k=o.key?PA.rnKey(o.key):'', nm=o.name||'';
+    const aria=(o.key?PA.keyName(o.key)+'、':'')+(nm?nm+'、':'')+PA.rnAria(p);
+    return `<span class="rnum" role="img" aria-label="${PA.esc(aria)}">${k?`<span class="rnum-k">${k}</span>`:''}${PA.rnSvg(p)}${p.natural?'<span class="rnum-nat">（自然）</span>':''}</span>`;
+  };
+  // SVG の中に置く（cx＝まんなか、baseY＝大きい数字の下のはし、px＝大きい数字の高さ）
+  PA.rnSvgAt=(p,cx,baseY,px,attrs='')=>{
+    p=norm(p); const L=layout(p), f=px/20, w=L.W*f, h=L.H*f;
+    return `<svg x="${r2(cx-w/2)}" y="${r2(baseY-(L.base-L.y0)*f)}" width="${r2(w)}" height="${r2(h)}" viewBox="0 ${L.y0} ${L.W} ${L.H}" overflow="visible" ${attrs}>${L.svg}</svg>`;
+  };
+  // 大きい数字の上にどれだけ出るか（数字の高さ px のとき）。2段や右上の数字のぶん、がくふの名前を下げる
+  PA.rnRise=(p,px)=>{p=norm(p);const L=layout(p);return (L.base-L.y0)*px/20;};
+  // 文字の label のうち、Ⅰ〜Ⅶ・Ⅰ〜Ⅶ＋7／9 だけは記号の部品にする（それ以外の文字は null＝文字のまま描く）
+  PA.rnOf=s=>{
+    const m=/^([ⅠⅡⅢⅣⅤⅥⅦ])([79])?$/.exec(String(s==null?'':s));
+    return m?{deg:PA.RN.indexOf(m[1])+1,...(m[2]?{form:+m[2]}:{})}:null;
+  };
+  PA.rnNorm=norm;
+  // 和音名（文字か部品）→ HTML。部品と「Ⅴ7」のような文字は記号、ほかの文字（ドイツ・？など）はそのまま
+  PA.rnH=l=>{if(l&&typeof l==='object') return PA.rn(l);const p=PA.rnOf(l);return p?PA.rn(p):PA.H(String(l==null?'':l));};
+  // 和音名（文字か部品）→ 読み上げ・title 用のことば
+  PA.rnA=l=>{if(l&&typeof l==='object') return PA.rnAria(l);const p=PA.rnOf(l);return p?PA.rnAria(p):String(l==null?'':l);};
+  // 「記号のみかた」：記号をつかうページの下におく、とじた説明
+  PA.rnHelp=(o={})=>{
+    const ex=(p,t)=>`<li><span class="rnh-ex">${PA.rn(p)}</span><span>${t}</span></li>`;
+    return `<details class="more rnhelp" data-d="rnhelp"${o.open?' open':''}><summary><span aria-hidden="true">🔤</span> 記号のみかた</summary>
+      <p class="note" style="margin-top:0">和音の記号は、音楽大学（藝大）でつかう書きかたにそろえているよ。大きい数字が、何ばんめの音の上の和音か。</p>
+      <ul class="rnh">
+        ${ex({deg:1,inv:2},'<b>右上の小さい数字</b>＝転回形。1は第1転回形、2は第2転回形、3は第3転回形。数字がなければ基本形')}
+        ${ex({deg:5,form:7},'<b>右下の小さい数字</b>＝7の和音・9の和音（Ⅴ7・Ⅴ9）')}
+        ${ex({deg:5,form:9,omit:true},'<b>ななめの線</b>＝根音省略（和音のもとになる音＝根音を、はぶいた形）')}
+        ${ex({deg:4,borrowed:true},'<b>前の小さい○</b>＝準固有和音（同じ主音の短調からかりた和音）')}
+        ${ex({of:5,deg:5,form:7},'<b>2だん</b>＝ⅤのⅤ。上の小さい数字の調（Ⅴの調）で、下の大きい数字の和音。7などの数字や線は、下の大きい数字につける')}
+        ${ex({of:5,deg:5,form:7,inv:2,alt5:'down'},'<b>左上のチョン</b>＝第5音下方変位（和音の第5音を半音下げた）。大きい数字の上の横棒の左はしにつける')}
+      </ul>
+      <p class="note">記号の前の <b>C:</b> や <b>c:</b> は調。大文字は長調、小文字は短調（C:＝ハ長調、c:＝ハ短調）。</p></details>`;
+  };
+})();
 
 /* ===== アプリの目次（ホーム・もどる・つぎへのリンク） ===== */
 // c＝目じるしの色、l＝うすい色、dk＝白い字をのせても読めるこい色（4.5:1いじょう）
@@ -727,7 +882,7 @@ PA.APPS=[
   {id:'doppel',ic:'🔺',title:'Ⅱ7とドッペルドミナント',d:'Ⅱ7の第3音を上げると「ⅤのためのⅤ7」になる',type:'learn',practice:'chroma-quiz'},
   {id:'secondary',ic:'🧭',title:'副属和音',d:'Ⅱ・Ⅲ・Ⅳ・Ⅵを、いっときⅠにみたてる「その和音のためのⅤ7」',type:'learn',practice:'chroma-quiz'},
   {id:'borrowed',ic:'🎁',title:'準固有和音（借用和音）',d:'長調で、同じ主音の短調からかりる○Ⅳ・○Ⅵなど',type:'learn',practice:'chroma-quiz'},
-  {id:'neapolitan',ic:'🌋',title:'ナポリの六',d:'2ばんめを半音下げた♭Ⅱ。いちばん下の音とⅤへのすすみかた',type:'learn',practice:'chroma-quiz'},
+  {id:'neapolitan',ic:'🌋',title:'ナポリの六',d:'2ばんめを半音下げたナポリの和音。いちばん下の音とⅤへのすすみかた',type:'learn',practice:'chroma-quiz'},
   {id:'aug6',ic:'↔️',title:'増六の和音',d:'イタリア・フランス・ドイツの6。外へひらいてⅤへ',type:'learn',practice:'chroma-quiz'},
   {id:'enharmonic',ic:'🔀',title:'異名同音の読みかえ',d:'同じけんばんでも、書き方とすすむ先で役わりがかわる',type:'learn',practice:'chroma-quiz'},
   {id:'chroma-quiz',ic:'🎯',title:'変化和音クイズ',d:'Ⅱ7・ドッペルから順に、けんばんでおさえる／耳で聴きわける',type:'quiz'},
@@ -1387,7 +1542,7 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
   };
   // ベース（Ⅱ・Ⅴ/Ⅴの根音）をラ2〜ソ♯3におく
   const rootBase=key=>{const r=PA.mod(key.tpc+2,12);return 45+PA.mod(r-45,12)-2;}; // 主音の高さ（根音＝主音＋2が45〜56）
-  C.TYPES={ii7:'Ⅱ7',dd:'ドッペルドミナント',dd9:'Ⅴ9/Ⅴ',ddim:'減七/Ⅴ',it:'イタリアの6',fr:'フランスの6',ger:'ドイツの6'};
+  C.TYPES={ii7:'Ⅱ7',dd:'ドッペルドミナント',dd9:'ⅤのⅤ9',ddim:'ⅤのⅤ9の根音省略',it:'イタリアの6',fr:'フランスの6',ger:'ドイツの6'};
   // ----- Ⅱ7とドッペルドミナント（根音をベースに、上に5音・7音・3音の形） -----
   C.ii7=key=>{
     const b=rootBase(key), fifth=key.minor?8:9;
@@ -1571,14 +1726,17 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
   H.BORROWED_IDS=['iv','ii_dim','ii_hdim7','bVI','V9_b9','vii_dim7'];
   // label：芸大の和音記号（○＝準固有）。ii_dim は第1転回形（ベース＝第3音）で鳴らすのでⅡ6
   H.JUN='○';
+  // rn：記号の部品（藝大式。PA.rn）。ii_dim は第1転回形（ベース＝第3音）で鳴らすので inv:1。vii_dim7 はⅤ9の根音省略（斜線）
+  //   label・diatonic：ただの文字（PA.rnText とおなじ。前のバージョンの呼び名のかわり）
   H.BORROWED={
-    iv:{label:'○Ⅳ',diatonic:'Ⅳ',next:'Ⅰ'},
-    ii_dim:{label:'○Ⅱ6',diatonic:'Ⅱ6',next:'Ⅴ',inv:1},
-    ii_hdim7:{label:'○Ⅱ7',diatonic:'Ⅱ7',next:'Ⅴ7'},
-    bVI:{label:'○Ⅵ',diatonic:'Ⅵ',next:'Ⅴ'},
-    V9_b9:{label:'○Ⅴ9',diatonic:'Ⅴ9',next:'Ⅰ'},
-    vii_dim7:{label:'○Ⅶ7',diatonic:'Ⅶ7',next:'Ⅰ'}
+    iv:{rn:{deg:4},next:'Ⅰ'},
+    ii_dim:{rn:{deg:2,inv:1},next:'Ⅴ',inv:1},
+    ii_hdim7:{rn:{deg:2,form:7},next:'Ⅴ7'},
+    bVI:{rn:{deg:6},next:'Ⅴ'},
+    V9_b9:{rn:{deg:5,form:9},next:'Ⅰ'},
+    vii_dim7:{rn:{deg:5,form:9,omit:true},next:'Ⅰ'}
   };
+  Object.values(H.BORROWED).forEach(B=>{B.label=PA.rnText({...B.rn,borrowed:true});B.diatonic=PA.rnText(B.rn);});
   // b＝true でかりた形、false で長調のふつうの形（6・3のほかはおなじならび・おなじ高さ）
   const BSPEC={
     iv:b=>[V(3,5,'根音'),V(0,0,'第5音'),V(3,5,'根音'),b?V(5,8,'第3音（下げた第6音）','borrowed'):V(5,9,'第3音')],
@@ -1830,16 +1988,16 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
     const ger=low(raw);
     const v7=[
       {...sp(key,5,8),midi:ger[0].midi,role:'根音',tag:null},
-      {...sp(key,0,0),midi:ger[1].midi,role:'第3音（♭Ⅱへの導音）',tag:'lt'},
+      {...sp(key,0,0),midi:ger[1].midi,role:'第3音（ナポリの和音への導音）',tag:'lt'},
       {...sp(key,2,3),midi:ger[2].midi,role:'第5音',tag:null},
       {...sp(key,4,6),midi:ger[3].midi,role:'第7音','tag':'seventh'}
     ];
     const tn=(lo,so,from,mv,role)=>{const s=sp(key,lo,so);return {...s,midi:move(s,from,mv,B_C),role,tag:null};};
     const v7Res=[
-      tn(1,1,v7[0].midi,'leap','♭Ⅱの根音'),
-      tn(1,1,v7[1].midi,'up','♭Ⅱの根音'),
-      tn(1,1,v7[2].midi,'down','♭Ⅱの根音'),
-      tn(3,5,v7[3].midi,'down','♭Ⅱの第3音')
+      tn(1,1,v7[0].midi,'leap','ナポリの和音の根音'),
+      tn(1,1,v7[1].midi,'up','ナポリの和音の根音'),
+      tn(1,1,v7[2].midi,'down','ナポリの和音の根音'),
+      tn(3,5,v7[3].midi,'down','ナポリの和音の第3音')
     ];
     return {ger,gerRes:[low(C.gerToI64(key)),low(C.aug6ToV(key,'ger'))],v7,v7Res,diff:3,bassShift:sh};
   };
@@ -1873,25 +2031,38 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
     if(what==='v7bII') return cs(d(key,5,8),'7');
     return '';
   };
-  // 和音記号（ローマ数字。芸大の書きかた：○＝準固有、和音の種類（減・半減）は書かない）
-  //   target：短調のⅢ・Ⅶは「Ⅲ（自然）」「Ⅶ（自然）」（自然的短音階の長三和音）
-  //   secondary：'V7'＝Ⅴ7/x、'vii7'＝Ⅶ7/x（目標が長三和音で短9度が調にない音なら目標の同主短調からかりた形なので ○Ⅶ7/x）、'vii7h'＝Ⅶ7/x
-  //   vii7：長調・短調ともその調のⅦ7（＝Ⅴ9の根音省略）。長調でかりた減七は label(key,'borrowed','vii_dim7')＝○Ⅶ7
-  const tName=(T,a)=>ROMAN[a-1]+(T.natural?'（自然）':'');
-  H.label=(key,what,a,b)=>{
-    if(what==='N6') return 'N6（♭Ⅱ6）';
-    if(what==='borrowed') return !key.minor&&H.BORROWED[a]?H.BORROWED[a].label:'';
-    if(what==='diatonic') return !key.minor&&H.BORROWED[a]?H.BORROWED[a].diatonic:'';
-    if(what==='target'){const T=tgt(key,a);return T?tName(T,a):'';}
-    if(what==='secondary'){
-      const T=tgt(key,a), k=b||'V7'; if(!T||!secSpec(T,k)) return '';
-      return (k==='V7'?'Ⅴ7':(k==='vii7'&&!T.minor&&!T.min9InKey?H.JUN:'')+'Ⅶ7')+'/'+tName(T,a);
+  // 和音記号（藝大式・PA.rn の部品。○＝準固有、和音の種類（減・半減）は書かない）
+  //   N6：ナポリの六＝Ⅱの根音下方変位・第1転回形（長調では下げた第6音をかりるので ○ もつける。先生に確認まち）。bII：その基本形
+  //   target：短調のⅢ・Ⅶは natural（「（自然）」。自然的短音階の長三和音）
+  //   secondary：'V7'＝○度調のⅤ7（2段：上の小さい数字＝目標、下の大きい数字＝Ⅴ）、'vii7'・'vii7h'＝○度調のⅤ9の根音省略
+  //     （'vii7' は短9度。目標が長三和音で短9度が調にない音なら、目標の同主短調からかりた形なので ○）
+  //   vii7：その調のⅤ9の根音省略（減七・長調の形）。v9：Ⅴ9。v7bII：ナポリの調（下げたⅡ度調）のⅤ7
+  //   o.voiced：このアプリのならび（いちばん下が導音）で鳴らす和音の記号。根音省略のⅤ9は第3音がいちばん下なので第1転回形（¹）をつける
+  H.rnParts=(key,what,a,b,o={})=>{
+    const v1=o.voiced?{inv:1}:{};
+    if(what==='N6') return {deg:2,rootDown:true,inv:1,...(key.minor?{}:{borrowed:true}),name:'n6'};
+    if(what==='bII') return {deg:2,rootDown:true,...(key.minor?{}:{borrowed:true})};
+    if(what==='borrowed'||what==='diatonic'){
+      const B=!key.minor&&H.BORROWED[a]; if(!B) return null;
+      const p={...B.rn,...(B.rn.omit?v1:{})};
+      return what==='borrowed'?{...p,borrowed:true}:p;
     }
-    if(what==='vii7') return 'Ⅶ7';
-    if(what==='v9') return 'Ⅴ9';
-    if(what==='v7bII') return 'Ⅴ7/♭Ⅱ';
-    return '';
+    if(what==='target'){const T=tgt(key,a);return T?{deg:a,...(T.natural?{natural:true}:{})}:null;}
+    if(what==='secondary'){
+      const T=tgt(key,a), k=b||'V7'; if(!T||!secSpec(T,k)) return null;
+      const nat=T.natural?{natural:true}:{};
+      if(k==='V7') return {of:a,deg:5,form:7,...nat};
+      return {of:a,deg:5,form:9,omit:true,...v1,...(k==='vii7'&&!T.minor&&!T.min9InKey?{borrowed:true}:{}),...nat};
+    }
+    if(what==='vii7') return {deg:5,form:9,omit:true,...v1};
+    if(what==='v9') return {deg:5,form:9};
+    if(what==='v7bII') return {of:2,ofDown:true,deg:5,form:7};
+    return null;
   };
+  // ただの文字（○Ⅳ、ⅡのⅤ₇ など）。画面の記号は H.rn（PA.rn）で描く
+  H.label=(key,what,a,b,o)=>{const p=H.rnParts(key,what,a,b,o);return p?PA.rnText(p):'';};
+  H.rn=(key,what,a,b,o)=>{const p=H.rnParts(key,what,a,b,o);return p?PA.rn(p):'';};
+  H.aria=(key,what,a,b,o)=>{const p=H.rnParts(key,what,a,b,o);return p?PA.rnAria(p):'';};
 })();
 /* ===== 調の出しかた（クイズ用の調のふくろ）と24調チェック表 =====
  * 調の id：'M0'〜'M12'＝PA.MAJOR_KEYS の番号、'm0'〜'm12'＝PA.MINOR_KEYS の番号（26こ。嬰ヘ長調／変ト長調・嬰ニ短調／変ホ短調は
@@ -2435,6 +2606,8 @@ PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
   };
   // 和音の名前（てんかい＝いちばん下が根音ではない形）
   E.labelText=c=>c.label+(c.inv?'（てんかい）':'');
+  // がくふの和音記号（藝大式・PA.rn の部品）：右上に転回形の数字（Ⅴ₇¹ など）
+  E.rnOf=c=>{const p=PA.rnOf(c.label);return p?{...p,...(c.inv?{inv:c.inv}:{})}:c.label;};
   // さいごの2つの和音で名前がきまるわけ（だから ○○終止、のまえのところ）
   E.why=(key,typeId,variant)=>{
     const d=E.build(key,typeId,variant); if(!d) return '';

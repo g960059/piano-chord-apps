@@ -178,9 +178,15 @@ const DIM_RANGE=kbRange([0,1,2].flatMap(f=>H.dimReadings(famPcs(f)).flatMap(r=>[
 const nH=n=>{const c=n.tag==='lt'?'up':n.tag==='low'?'lo':'';return `<span class="nw ${c}">${PA.nmH(n)}</span>`;};
 const q=n=>`「${nH(n)}」`;
 const namesC=(ns,sep='・')=>ns.map(nH).join(sep);
-const I64H='Ⅰ<span class="fig"><span>6</span><span>4</span></span>';
-const I64S='Ⅰ<tspan font-size="11" dy="-7">6</tspan><tspan font-size="11" dx="-6.5" dy="11">4</tspan>';
-const resLabel=(r,svg)=>r.resInv===2?(svg?I64S:I64H):r.resInv===1?'Ⅰ6':'Ⅰ';
+// 和音記号（藝大式・PA.rn）：Ⅰ²＝Ⅰの第2転回形、Ⅰ¹＝第1転回形
+const I64S={deg:1,inv:2}, I64H=PA.rn(I64S);
+const resP=r=>r.resInv===2?I64S:r.resInv===1?{deg:1,inv:1}:{deg:1};
+const resLabel=(r,svg)=>svg?resP(r):PA.rn(resP(r));
+// 減七＝Ⅴ9の根音省略（斜線・右下9）。右上はいちばん下の音（はぶいた根音を入れて数える）：導音＝第3音→1、第5音→2、第7音→3。
+//   第9音がいちばん下の形は記号の数字がないので、ことばの「減七」のまま
+const dimP=r=>{const b=r.spelling[0];return b.tag==='b9'?'減七':{deg:5,form:9,omit:true,inv:b.tag==='lt'?1:b.tag==='seventh'?3:2};};
+// ドイツの6（増六の記号。先生の写真のとおり：ⅤのⅤ・第5音下方変位・根音省略・右下9・右上2、長調は○）
+const gerP=key=>({of:5,deg:5,form:9,inv:2,alt5:'down',omit:true,...(key.minor?{}:{borrowed:true})});
 const tonicOf=key=>key.nat[0];
 const sigAcc=(key,L)=>key.sig[L]||0;
 // C♭・F♭・E♯・B♯・重変・重嬰：けんばんのふつうの名前もそえる（ハ長調の名前＝♯）
@@ -302,7 +308,7 @@ function staffCard(){
   const {si,r,res}=view(), rc=RCOL[si], key=r.key;
   const op=i=>state.anim||state.play||res>0?(i===res?1:.4):1;
   // 和音記号：減七（＝Ⅴ9の根音省略。Ⅴの家族のページとおなじよびかた）
-  const cols=[{notes:r.spelling,color:NIGHT,label:'減七',op:op(0)},{notes:r.resolution,color:rc,label:resLabel(r,true),op:op(1)}];
+  const cols=[{notes:r.spelling,color:NIGHT,label:dimP(r),op:op(0)},{notes:r.resolution,color:rc,label:resLabel(r,true),op:op(1)}];
   if(r.next) cols.push({notes:r.next,color:VCOL,label:'Ⅴ',op:op(2)},{notes:r.fin,color:rc,label:'Ⅰ',op:op(3)});
   const arrows=r.spelling.map((n,i)=>{
     const to=r.resolution[i];
@@ -375,7 +381,7 @@ function gerCard(){
     <p class="note" style="margin-top:0;color:var(--ink)"><b>ドイツの6と、ナポリの和音のためのⅤ7</b>（${PA.keyName(key)}で）。同じけんばん、ちがう名前、ちがう行き先。</p>
     <p class="note" style="color:var(--ink)">ドイツの6は増六の和音（Ⅴへひろがってすすむ和音）の1つ。${PA.keyName(key)}の${how}、<b style="color:${V7C}">${v7Name}</b>（ナポリの和音＝${bII}のためのⅤ7）とまったく同じけんばん。耳で聴くとまったく同じ和音だね。でも名前がちがうと、すすむ方向がぎゃくになるよ。</p>
     <div class="vs">
-      <div style="--c:${GER}"><h3>ドイツの6</h3><div class="ns">${namesC(g.ger)}</div>
+      <div style="--c:${GER}"><h3>ドイツの6 ${PA.rn(gerP(key))}</h3><div class="ns">${namesC(g.ger)}</div>
         <p class="to">${q(gn)}（Ⅴへの導音）は<b>半音上へ</b> → ${I64H} → <b>Ⅴ</b></p>
         <button class="btn small" data-act="gplay" data-v="ger">${PA.icon('listen')}ドイツの6 → Ⅴ</button></div>
       <div style="--c:${V7C}"><h3>${v7Name}（ナポリの和音のためのⅤ7）</h3><div class="ns">${g.v7.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}</div>
@@ -385,7 +391,7 @@ function gerCard(){
     ${odds.length?`<p class="note">${odds.map(n=>`${q(n)}は${q(plainOf(n))}`).join('、')}のけんばんだよ。</p>`:''}
     <div class="scroll" data-sk="gkb" style="margin-top:8px">${PA.kbSVG(lo,hi,mk)}</div>
     <p class="note" style="margin-top:2px">${cap}${PA.once('tap-sound','　さわると音が出るよ')}</p>
-    ${staff(key,[{notes:g.ger,color:GER,label:'ドイツ'},{notes:i64,color:ICOL,label:I64S},{notes:V,color:VCOL,label:'Ⅴ'}],
+    ${staff(key,[{notes:g.ger,color:GER,label:gerP(key)},{notes:i64,color:ICOL,label:I64S},{notes:V,color:VCOL,label:'Ⅴ'}],
       [{c1:0,n1:gn,c2:1,n2:i64[d],color:LT,text:'半音↑'},{c1:0,n1:g.ger[0],c2:1,n2:i64[0],color:LOW,text:'半音↓'}],{sk:'g1',cw:100})}
     ${staff(key,[{notes:g.v7,color:V7C,label:v7Name},{notes:g.v7Res,color:V7C,label:bII}],
       [{c1:0,n1:vn,c2:1,n2:g.v7Res[d],color:V7C,text:'半音↓'},{c1:0,n1:g.v7[1],c2:1,n2:g.v7Res[1],color:LT,text:'半音↑',dy:-14}],{sk:'g2',cw:110})}
@@ -470,7 +476,7 @@ function render(){
     ${quizCard()}
     ${gerCard()}
     ${linksCard()}
-    ${termsHTML()}`;
+    ${termsHTML()}${PA.rnHelp()}`;
   // この画面に出てくる記号だけ、音の名前の表の下で説明する（出てこないときは出さない）
   const ds=h.includes('class="ds"'), df=h.includes('class="df"');
   h=h.replace('<!--sym-->',(ds?'<span><span class="ds">x</span>＝ダブルシャープ（楽譜での書き方）</span>':'')+(df?'<span><span class="df" style="letter-spacing:-.12em">♭♭</span>＝ダブルフラット（楽譜での書き方）</span>':''));

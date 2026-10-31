@@ -41,7 +41,6 @@
 .hs b{color:var(--ink)}
 .lowline{margin-top:8px;font-size:17px}
 .lowline .lo{display:inline-block;padding:0 6px;border-radius:8px;background:#ffe6a8;color:#7a4b00;font-weight:800}
-.fig{display:inline-flex;flex-direction:column;font-size:.62em;line-height:.95;vertical-align:middle;margin-left:1px;text-align:center}
 .nw{white-space:nowrap}
 /* 3つ（Ⅴ7は4つ）のかたちをならべる。下がひくい音 */
 .shps{display:grid;gap:6px}
@@ -53,10 +52,6 @@
 .shp .nm>span.lo{background:#ffe6a8;color:#7a4b00}
 .shp.on{background:var(--c);color:#fff;transform:translateY(-3px);box-shadow:0 4px 10px rgba(40,30,50,.15)}
 .shplabel{margin:0 0 -4px;font-size:14px;color:var(--sub)}
-/* 数字の数えかた */
-.cnt{margin:8px 0 0;padding:0;list-style:none}
-.cnt li{margin:6px 0;padding:8px 12px;border-radius:12px;background:var(--soft2);font-size:15px;line-height:1.5}
-.cnt li b.n{font-size:20px;color:var(--t,var(--c))}
 .figtbl td,.figtbl th{background:var(--soft2)}
 .figtbl tr.on td{background:var(--l);color:var(--t,var(--c));font-weight:800}
 .figtbl th{font-size:12.5px;color:var(--sub);font-weight:700}
@@ -122,11 +117,9 @@ const INV=(function(PA){
   const ROLE=['根音','第3音','第5音','第7音'];
   const NAME=['基本のかたち','第1転回形','第2転回形','第3転回形'];
   const SHORT=['基本','第1転回','第2転回','第3転回'];
-  // 数字のしるし：all＝いちばん下から数えたへだたりぜんぶ、fig＝書く数（大きいほうが上）、alt＝べつの書きかた
-  const FIG3=[{all:[3,5],fig:[]},{all:[3,6],fig:[6]},{all:[4,6],fig:[6,4],alt:'46'}];
-  const FIG7=[{all:[3,5,7],fig:[7]},{all:[3,5,6],fig:[6,5],alt:'65'},{all:[3,4,6],fig:[4,3],alt:'43'},{all:[2,4,6],fig:[2],alt:'4/2'}];
-  const fig=(ch,i)=>(CHORDS[ch].n===4?FIG7:FIG3)[i];
-  const labelText=(ch,i)=>CHORDS[ch].base+fig(ch,i).fig.join('/');
+  // 和音記号（藝大式・PA.rn の部品）：右上の小さい数字＝転回形（1・2・3）、右下の7＝7の和音（Ⅴ7）
+  const rnOf=(ch,i)=>Object.assign({deg:CHORDS[ch].deg+1},CHORDS[ch].n===4?{form:7}:{},i?{inv:i}:{});
+  const labelText=(ch,i)=>PA.rnText(rnOf(ch,i)); // ただの文字（Ⅰ²・Ⅴ₇¹ など）
   // 根音の高さはラ3〜ソ♯4（57〜68）：いちばん上のかたちでも高くなりすぎない
   const rootK=(key,ch)=>{const d=CHORDS[ch].deg;return PA.at(key.scale,d).midi<=68?d:d-7;};
   // 基本のかたち（下から根音・第3音・第5音・第7音）。role＝0〜3
@@ -157,7 +150,7 @@ const INV=(function(PA){
     for(let i=1;i<seq.length;i++) kept+=seq[i].rh.filter(n=>seq[i-1].rh.some(p=>p.midi===n.midi)).length;
     return {kept,thumb:seq.map(c=>c.rh[0])};
   };
-  return {CHORDS,ROLE,NAME,SHORT,fig,labelText,tones,shape,shapes,span,nums,symbol,SEQ,cadence,handStats};
+  return {CHORDS,ROLE,NAME,SHORT,rnOf,labelText,tones,shape,shapes,span,nums,symbol,SEQ,cadence,handStats};
 })(PA);
 /* </inv-logic> */
 
@@ -177,8 +170,7 @@ const save=()=>PA.store.set('inversion',{minor:state.minor,keyIdx:state.keyIdx,c
 const curKey=()=>PA.keyOf(state.minor,state.keyIdx,60); // 主音はド4〜シ4
 const yomi=(w,y)=>`<ruby>${w}<rt>${y}</rt></ruby>`; // ふりがな
 const q=n=>`「${PA.nmH(n)}」`;
-const figH=f=>f.length===2?`<span class="fig"><span>${f[0]}</span><span>${f[1]}</span></span>`:(f.length?String(f[0]):'');
-const labelH=(ch,i)=>INV.CHORDS[ch].base+figH(INV.fig(ch,i).fig);
+const labelH=(ch,i)=>PA.rn(INV.rnOf(ch,i)); // 和音記号の HTML（藝大式）
 const isWhite=m=>!PA.BLACK.has(PA.mod(m,12));
 const whiteCount=(lo,hi)=>{let c=0;for(let m=lo;m<=hi;m++) if(isWhite(m)) c++;return c;};
 // けんばんのはんい：かたちぜんぶが入る（かたちをかえてもけんばんがうごかない）
@@ -202,26 +194,15 @@ function staticMsg(key,ch,i,s){
   if(i===0) return `根音${q(s[0])}（和音のもとになる音）が<b>いちばん下</b>。ひとつとばしで、きれいにつんだ基本のかたちだよ。`;
   return `基本のかたちから、いちばん下の音を<b>1オクターブ上へ</b>${i}回うつしたかたち。いちばん下が${INV.ROLE[i]}${q(s[0])}になったよ。音はどれも同じ${PA.namesH(INV.tones(key,ch))}。`;
 }
-// 🔢 数字のしるし：いまのかたちで数えてみせる
+// 🔢 和音の記号：右上の小さい数字が転回形（藝大式。いちばん下の音できまる）
 function figCard(key,ch,i,s,col){
-  const f=INV.fig(ch,i), lo=s[0];
-  const rows=s.slice(1).map(n=>{
-    const k=INV.span(lo,n), ls=Array.from({length:k},(_,j)=>PA.nmH(j===0?lo:j===k-1?n:{letter:(lo.letter+j)%7,acc:0})); // はしは本当の音（♯・♭つき）
-    return `<li>${q(n)}まで：${ls.join('・')} <span class="nw">→ ${k}つ → <b class="n">${k}</b></span></li>`;
-  }).join('');
-  const all=f.all.slice().reverse(), drop=f.all.filter(x=>f.fig.indexOf(x)<0).reverse();
-  let end;
-  if(!f.fig.length) end=`${all.join('と')}は、いつもの数なので<b>書かない</b>。だから、ただの<b>${labelH(ch,i)}</b>`;
-  else if(!drop.length) end=`${f.fig.join('と')}を書いて<b>${labelH(ch,i)}</b>`;
-  else end=`${drop.join('と')}ははぶいて、${f.fig.join('と')}だけ書く → <b>${labelH(ch,i)}</b>`;
-  if(f.alt) end+=`（${INV.CHORDS[ch].base}${f.alt}とも書く）`;
-  const tbl=INV.shapes(key,ch).map((sh,j)=>`<tr class="${j===i?'on':''}"><td>${INV.NAME[j]}</td><td>${INV.ROLE[j]}</td><td>${INV.nums(sh).slice().reverse().join('・')}</td><td style="font-size:17px;font-weight:800">${labelH(ch,j)}</td></tr>`).join('');
-  return `<section class="card" style="--c:${col};--l:${PA.LCOL[ch]};--t:${TCOL[ch]}"><h2>🔢 和音の数字（Ⅰ6・Ⅰ6/4など）<small>小さな数字は「いちばん下の音から数えたへだたりの数」</small></h2>
-    <p class="note" style="margin-top:0;color:var(--ink)">いちばん下の音を<b>1</b>として、音の名前（${PA.namesH([0,1,2].map(L=>({letter:L,acc:0})))}…）を上へ数えるよ。♯・♭は数に入れない。いまの${INV.NAME[i]}（下から${PA.namesH(s)}）で数えると…</p>
-    <ul class="cnt">${rows}</ul>
-    <div class="rule" style="margin-top:8px">${end}</div>
-    <table class="tbl figtbl" style="margin-top:10px"><thead><tr><th>かたち</th><th>いちばん下</th><th>へだたり</th><th>しるし</th></tr></thead><tbody>${tbl}</tbody></table>
-    <p class="note">ほかのページで見るしるしも同じ。<b>Ⅱ6</b>・<b>N6</b>（ナポリの六）は第1転回形、<b>Ⅰ6/4</b>は第2転回形、<b>Ⅴ6/5</b>はⅤ7の第1転回形だよ。</p></section>`;
+  const n=INV.CHORDS[ch].n;
+  const tbl=INV.shapes(key,ch).map((sh,j)=>`<tr class="${j===i?'on':''}"><td>${INV.NAME[j]}</td><td>${INV.ROLE[j]}${q(sh[0])}</td><td style="font-size:22px;font-weight:800">${labelH(ch,j)}</td></tr>`).join('');
+  return `<section class="card" style="--c:${col};--l:${PA.LCOL[ch]};--t:${TCOL[ch]}"><h2>🔢 和音の記号（${PA.rn({deg:1,inv:1})}・${PA.rn({deg:1,inv:2})}など）<small>右上の小さい数字＝転回形の番号</small></h2>
+    <p class="note" style="margin-top:0;color:var(--ink)">いちばん下の音で、右上の数字がきまるよ。根音なら<b>数字なし</b>、第3音なら<b>1</b>、第5音なら<b>2</b>${n===4?'、第7音なら<b>3</b>':''}。${n===4?`Ⅴ7の<b>7</b>は、右下に小さく書くよ（${labelH(ch,0)}）。`:''}</p>
+    <div class="rule" style="margin-top:8px">いまの${INV.NAME[i]}は、いちばん下が${INV.ROLE[i]}${q(s[0])}。だから <b style="font-size:1.3em">${labelH(ch,i)}</b></div>
+    <table class="tbl figtbl" style="margin-top:10px"><thead><tr><th>かたち</th><th>いちばん下</th><th>記号</th></tr></thead><tbody>${tbl}</tbody></table>
+    <p class="note">ほかのページで見る記号も同じ。${PA.rn({deg:2,inv:1})}はⅡの第1転回形、${PA.rn({deg:1,inv:2})}はⅠの第2転回形、${PA.rn({deg:5,form:7,inv:1})}はⅤ7の第1転回形だよ。</p></section>`;
 }
 // 🤲 なぜかたちをかえるの？
 function handCard(key){
@@ -229,10 +210,9 @@ function handCard(key){
   const inv=INV.handStats(INV.cadence(key,'inv')), root=INV.handStats(INV.cadence(key,'root'));
   const cards=seq.map((c,i)=>{
     const keep=i>0?c.rh.filter(n=>seq[i-1].rh.some(p=>p.midi===n.midi)).map(n=>n.midi):[];
-    const lab=INV.labelText(c.ch,c.bass);
-    return `<button class="scard ${i===state.cmpStep?'on':''}" style="--c:${PA.COL[c.ch]};--l:${PA.LCOL[c.ch]};--t:${TCOL[c.ch]}" data-act="cstep" data-v="${i}" aria-label="${i+1}つめ${lab}"><span class="num">${labelH(c.ch,c.bass)}</span><span class="nm">${c.rh.map(n=>`<span class="${keep.indexOf(n.midi)>=0?'keep':''}">${PA.nmH(n)}</span>`).join('')}</span></button>`;
+    return `<button class="scard ${i===state.cmpStep?'on':''}" style="--c:${PA.COL[c.ch]};--l:${PA.LCOL[c.ch]};--t:${TCOL[c.ch]}" data-act="cstep" data-v="${i}" aria-label="${i+1}つめ、${PA.rnAria(INV.rnOf(c.ch,c.bass))}"><span class="num">${labelH(c.ch,c.bass)}</span><span class="nm">${c.rh.map(n=>`<span class="${keep.indexOf(n.midi)>=0?'keep':''}">${PA.nmH(n)}</span>`).join('')}</span></button>`;
   }).join('');
-  const cols=seq.map((c,i)=>staffCol(!playing||i===state.cmpStep,c.ch,{notes:c.rh,label:INV.labelText(c.ch,c.bass)}));
+  const cols=seq.map((c,i)=>staffCol(!playing||i===state.cmpStep,c.ch,{notes:c.rh,label:INV.rnOf(c.ch,c.bass)}));
   const th=s=>s.thumb.map(n=>PA.nmH(n)).join(' → ');
   const w=(a,b)=>a>b?' class="win"':'';
   return `<section class="card"><h2>🤲 なぜ、かたちをかえるの？<small>ピアノでひくⅠ → Ⅳ → Ⅴ7 → Ⅰ（右手）</small></h2>
@@ -242,7 +222,7 @@ function handCard(key){
     <table class="tbl cmptbl" style="margin-top:8px"><thead><tr><th></th><th>🤲 かえる</th><th>🧱 基本だけ</th></tr></thead><tbody>
       <tr><td>そのままのこる音</td><td${w(inv.kept,root.kept)}>${inv.kept}つ</td><td${w(root.kept,inv.kept)}>${root.kept}つ</td></tr>
       <tr><td>親指の音</td><td class="win">${th(inv)}</td><td>${th(root)}</td></tr></tbody></table>
-    <p class="note">${form==='inv'?`<span style="color:#8f5a00">オレンジのわく</span>＝前の和音と同じけんばん（そのまま）。ほかの音も、となりへ動くだけ。だから手がほとんど動かないよ。Ⅴ6/5は${q(PA.at(key.scale,1))}をはぶいているよ。`:'ぜんぶ基本のかたちだと、和音がかわるたびに、手ごと大きくとぶ。ひびきもブツブツ切れやすいね。'}</p>
+    <p class="note">${form==='inv'?`<span style="color:#8f5a00">オレンジのわく</span>＝前の和音と同じけんばん（そのまま）。ほかの音も、となりへ動くだけ。だから手がほとんど動かないよ。${labelH('V7',1)}は${q(PA.at(key.scale,1))}をはぶいているよ。`:'ぜんぶ基本のかたちだと、和音がかわるたびに、手ごと大きくとぶ。ひびきもブツブツ切れやすいね。'}</p>
     <div class="row" style="margin-top:8px">${playing?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="cplay">${PA.icon('play')}ながして聴く</button>`}<a class="btn small" href="cadence.html">${PA.icon('piano')}カデンツ（左手つき）</a></div></section>`;
 }
 // 🎯 たしかめよう（答えは保存しない）
@@ -285,7 +265,7 @@ function tipsHTML(key){
     <li>見わけかた：音を<b>「ひとつとばし」</b>にならべなおす（だんご 🍡）。いちばん下にきた音が根音。</li>
     <li>がくふで：基本のかたちは<b>線・線・線</b>か<b>間・間・間</b>。三和音の転回形には<b>1か所だけ広いすきま</b>があって、そのすきまの<b>すぐ上の音が根音</b>。</li>
     <li>Ⅴ7の転回形には、<b>となりあう2つの音</b>がある（がくふでくっついて見える）。その<b>上のほう</b>が根音。</li>
-    <li>数字に<b>6</b>があったら転回形（Ⅴ7は6/5・4/3・2）。</li>
+    <li>記号の<b>右上に小さい数字</b>（1・2・3）があったら転回形。数字がなければ基本形。</li>
     <li>ピアノの伴奏では、手が動かないように、かたちをかえて和音をつなぐよ（🤲 のカード）。</li>
   </ul></details>`;
 }
@@ -299,13 +279,13 @@ function termsHTML(key,ch,i){
     <dt>${yomi('転回形','てんかいけい')}（第1・第2・第3転回形）</dt>
     <dd>いちばん下の音を上へうつして（${yomi('転回','てんかい')}＝ころがす）、根音いがいの音がいちばん下になったかたち。いちばん下が第3音なら<b>第1転回形</b>、第5音なら<b>第2転回形</b>、第7音なら<b>第3転回形</b>。</dd>
     <dt>${yomi('六の和音','ろくのわおん')}・${yomi('四六の和音','しろくのわおん')}</dt>
-    <dd>第1転回形（Ⅰ6）と第2転回形（Ⅰ6/4）のべつのよびかた。数字のしるしから来ているよ。Ⅰ¹・Ⅰ²のように書く本もある。</dd>
+    <dd>第1転回形（${PA.rn({deg:1,inv:1})}）と第2転回形（${PA.rn({deg:1,inv:2})}）のべつのよびかた。むかしの楽譜の数字のしるしから来た名前だよ。</dd>
     <dt>${yomi('五六の和音','ごろくのわおん')}・${yomi('三四の和音','さんしのわおん')}・${yomi('二の和音','にのわおん')}</dt>
-    <dd>Ⅴ7の第1転回形（Ⅴ6/5）・第2転回形（Ⅴ4/3）・第3転回形（Ⅴ2。Ⅴ4/2とも）のよびかた。</dd>
+    <dd>Ⅴ7の第1転回形（${labelH('V7',1)}）・第2転回形（${labelH('V7',2)}）・第3転回形（${labelH('V7',3)}）のべつのよびかた。</dd>
     <dt>${yomi('度','ど')}（へだたりの数）</dt>
     <dd>2つの音のへだたりを、音の名前で数えた数。${q({letter:0,acc:0})}から${q({letter:2,acc:0})}は${PA.namesH([0,1,2].map(L=>({letter:L,acc:0})))}と3つなので<b>3度</b>。♯・♭がついても数はかわらない。（${yomi('音程','おんてい')}ともいう）</dd>
     <dt>${yomi('数字付き低音','すうじつきていおん')}</dt>
-    <dd>むかし（バロックのころ）の楽譜で、ベースの音の上に数字を書いて、上にのせる音をあらわしたしるし。Ⅰ6・Ⅰ6/4の数字はここから来ているよ。</dd>
+    <dd>むかし（バロックのころ）の楽譜で、ベースの音の上に数字を書いて、上にのせる音をあらわしたしるし。「六の和音」「四六の和音」という名前はここから来ているよ。このアプリの記号では、かわりに右上の1・2・3で転回形をあらわすよ。</dd>
     <dt>コードネームの「/」</dt>
     <dd>${PA.H(INV.symbol(key,ch,1))}のように、/ の右にいちばん下の音を書く。いまのかたちは<b>${PA.H(INV.symbol(key,ch,i))}</b>。</dd>
     <dt>${yomi('共通音','きょうつうおん')}</dt>
@@ -344,11 +324,11 @@ function render(){
   }
   const [lo,hi]=chordRange(key,ch);
   h+=`<section class="card"><h2>🎹 けんばん<small><span style="color:#8f5a00">オレンジのわく</span>＝いちばん下の音${PA.once('tap-sound','。さわると音が出るよ')}</small></h2>${kbBox(lo,hi,marks,'kb')}</section>`;
-  const cols=all.map((sh,j)=>staffCol(j===i||!!(mv&&j===i+1),ch,{notes:sh,label:INV.labelText(ch,j),sub:INV.SHORT[j]}));
+  const cols=all.map((sh,j)=>staffCol(j===i||!!(mv&&j===i+1),ch,{notes:sh,label:INV.rnOf(ch,j),sub:INV.SHORT[j]}));
   const arrows=mv&&i+1<n?[{c1:i,i1:0,c2:i+1,i2:n-1,color:'#f4a100',dash:'5 4'}]:[];
   const raised=s.some(x=>x.raised);
   h+=`<section class="card"><h2>🎼 がくふ<small>いまのかたちがこい色。${raised?'<span style="color:#d1495b">赤い音</span>＝短調で半音上げた7ばんめの音':'左から基本 → 第1転回 → …'}</small></h2>${staffBox(PA.staffSVG(key,cols,{colW:66,arrows}),'staff')}</section>`;
-  h+=figCard(key,ch,i,s,col)+handCard(key)+quizCard(key)+tipsHTML(key)+termsHTML(key,ch,i)+`</div>`;
+  h+=figCard(key,ch,i,s,col)+handCard(key)+quizCard(key)+tipsHTML(key)+termsHTML(key,ch,i)+PA.rnHelp()+`</div>`;
   const view=document.getElementById('view'), sig=state.minor+':'+state.keyIdx+':'+ch;
   PA.paint(view,h,sig);
   if(i!==lastShape||sig!==lastSig||mv) PA.follow(view); // 色のついた鍵が見えるように

@@ -252,7 +252,7 @@ test('Ⅶ7：長調は半減七、短調は減七。Ⅴ9の根音省略とおな
     // 2 → 主音（根音を重ねる）。6は2の下（4度）なので連続5度にならない
     assert.ok(v[2].midi<v[3].midi&&mod(v[3].midi-v[2].midi,12)<=6,w+': 6は2の下');
     assert.equal(r.filter(x=>x.letter===k.l).length,2,w+': Ⅰの根音を重ねる');
-    assert.equal(H.label(k,'vii7'),'Ⅶ7',w);
+    assert.equal(H.label(k,'vii7'),'Ⅴ₉（根音省略）',w);
     chordIs(v9,R(k,4,7),[...DOM7,[1,k.minor?1:2]],'V9 '+kn(k),[[4,7]]);
     // Ⅴ9の上の3声（導音・第7音・第9音）はⅦ7の音
     v9.slice(1).forEach(x=>assert.ok(v.some(y=>y.letter===x.letter&&y.acc===x.acc),w+': Ⅴ9の上の声はⅦ7の音'));
@@ -449,26 +449,38 @@ test('おなじ音にはおなじ tag（Ⅶ7・根音省略のⅤ9・準固有�
     eq(tagOf(r.spelling),st,kn(k)+': Ⅶ7/Ⅴ');
   }
 });
-test('和音記号：芸大の書きかた（○＝準固有、Ⅱ6、短調のⅢ・Ⅶは（自然））',()=>{
+test('和音記号：藝大式（○＝準固有、2段＝○度調のⅤ、斜線＝根音省略、右上＝転回形、短調のⅢ・Ⅶは（自然））',()=>{
+  const O='（根音省略）';
   for(const k of MAJ){
-    eq(H.BORROWED_IDS.map(id=>H.label(k,'borrowed',id)),['○Ⅳ','○Ⅱ6','○Ⅱ7','○Ⅵ','○Ⅴ9','○Ⅶ7'],kn(k));
-    eq(H.BORROWED_IDS.map(id=>H.label(k,'diatonic',id)),['Ⅳ','Ⅱ6','Ⅱ7','Ⅵ','Ⅴ9','Ⅶ7'],kn(k));
+    eq(H.BORROWED_IDS.map(id=>H.label(k,'borrowed',id)),['○Ⅳ','○Ⅱ¹','○Ⅱ₇','○Ⅵ','○Ⅴ₉','○Ⅴ₉'+O],kn(k));
+    eq(H.BORROWED_IDS.map(id=>H.label(k,'diatonic',id)),['Ⅳ','Ⅱ¹','Ⅱ₇','Ⅵ','Ⅴ₉','Ⅴ₉'+O],kn(k));
+    eq(H.BORROWED_IDS.map(id=>H.label(k,'borrowed',id,null,{voiced:true})),['○Ⅳ','○Ⅱ¹','○Ⅱ₇','○Ⅵ','○Ⅴ₉','○Ⅴ₉¹'+O],kn(k)+' ならべた形');
     eq(H.targets(k).map(t=>H.label(k,'target',t)),['Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ'],kn(k));
-    eq(H.targets(k).map(t=>H.label(k,'secondary',t,'vii7')),['Ⅶ7/Ⅱ','Ⅶ7/Ⅲ','○Ⅶ7/Ⅳ','○Ⅶ7/Ⅴ','Ⅶ7/Ⅵ'],kn(k));
-    eq(H.targets(k).map(t=>H.label(k,'secondary',t,'vii7h')),['','','Ⅶ7/Ⅳ','Ⅶ7/Ⅴ',''],kn(k));
+    eq(H.targets(k).map(t=>H.label(k,'secondary',t,'V7')),['ⅡのⅤ₇','ⅢのⅤ₇','ⅣのⅤ₇','ⅤのⅤ₇','ⅥのⅤ₇'],kn(k));
+    eq(H.targets(k).map(t=>H.label(k,'secondary',t,'vii7')),['ⅡのⅤ₉'+O,'ⅢのⅤ₉'+O,'○ⅣのⅤ₉'+O,'○ⅤのⅤ₉'+O,'ⅥのⅤ₉'+O],kn(k));
+    eq(H.targets(k).map(t=>H.label(k,'secondary',t,'vii7h')),['','','ⅣのⅤ₉'+O,'ⅤのⅤ₉'+O,''],kn(k));
+    eq(H.targets(k).map(t=>H.label(k,'secondary',t,'vii7',{voiced:true})),['ⅡのⅤ₉¹'+O,'ⅢのⅤ₉¹'+O,'○ⅣのⅤ₉¹'+O,'○ⅤのⅤ₉¹'+O,'ⅥのⅤ₉¹'+O],kn(k));
+    // ナポリの六：Ⅱの根音下方変位・第1転回形（長調は下げた第6音をかりるので○）
+    assert.equal(H.label(k,'N6'),'○Ⅱ¹（根音下方変位）',kn(k));
     assert.ok(!H.label(k,'borrowed','vii_dim7').includes('°'));
   }
   for(const k of MIN){
     H.BORROWED_IDS.forEach(id=>{assert.equal(H.label(k,'borrowed',id),'');assert.equal(H.label(k,'diatonic',id),'');});
     eq(H.targets(k).map(t=>H.label(k,'target',t)),['Ⅲ（自然）','Ⅳ','Ⅴ','Ⅵ','Ⅶ（自然）'],kn(k));
     eq(H.targets(k).map(t=>H.targetIsNatural(k,t)),[true,false,false,false,true],kn(k));
-    eq(H.targets(k).map(t=>H.label(k,'secondary',t,'V7')),['Ⅴ7/Ⅲ（自然）','Ⅴ7/Ⅳ','Ⅴ7/Ⅴ','Ⅴ7/Ⅵ','Ⅴ7/Ⅶ（自然）'],kn(k));
-    eq(H.targets(k).map(t=>H.label(k,'secondary',t,'vii7')),['○Ⅶ7/Ⅲ（自然）','Ⅶ7/Ⅳ','Ⅶ7/Ⅴ','○Ⅶ7/Ⅵ','○Ⅶ7/Ⅶ（自然）'],kn(k));
-    eq(H.targets(k).map(t=>H.label(k,'secondary',t,'vii7h')),['Ⅶ7/Ⅲ（自然）','','','Ⅶ7/Ⅵ','Ⅶ7/Ⅶ（自然）'],kn(k));
+    eq(H.targets(k).map(t=>H.label(k,'secondary',t,'V7')),['ⅢのⅤ₇（自然）','ⅣのⅤ₇','ⅤのⅤ₇','ⅥのⅤ₇','ⅦのⅤ₇（自然）'],kn(k));
+    eq(H.targets(k).map(t=>H.label(k,'secondary',t,'vii7')),['○ⅢのⅤ₉（自然）'+O,'ⅣのⅤ₉'+O,'ⅤのⅤ₉'+O,'○ⅥのⅤ₉'+O,'○ⅦのⅤ₉（自然）'+O],kn(k));
+    eq(H.targets(k).map(t=>H.label(k,'secondary',t,'vii7h')),['ⅢのⅤ₉（自然）'+O,'','','ⅥのⅤ₉'+O,'ⅦのⅤ₉（自然）'+O],kn(k));
+    assert.equal(H.label(k,'N6'),'Ⅱ¹（根音下方変位）',kn(k));
   }
   for(const k of KEYS){
-    assert.equal(H.label(k,'vii7'),'Ⅶ7');
-    for(const t of H.targets(k)) for(const kd of ['V7','vii7','vii7h']) assert.ok(!/[°ø]/.test(H.label(k,'secondary',t,kd)),kn(k));
+    assert.equal(H.label(k,'vii7'),'Ⅴ₉'+O);
+    assert.equal(H.label(k,'vii7',null,null,{voiced:true}),'Ⅴ₉¹'+O);
+    assert.equal(H.label(k,'v9'),'Ⅴ₉');
+    eq(H.rnParts(k,'v7bII'),{of:2,ofDown:true,deg:5,form:7});
+    for(const t of H.targets(k)) for(const kd of ['V7','vii7','vii7h']) assert.ok(!/[°ø/]/.test(H.label(k,'secondary',t,kd)),kn(k));
+    // H.rn は PA.rn の HTML（読み上げのことばつき）
+    assert.match(H.rn(k,'secondary',5,'V7'),/^<span class="rnum" role="img" aria-label="ⅤのⅤ、7の和音">/);
   }
 });
 

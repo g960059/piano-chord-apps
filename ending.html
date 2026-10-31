@@ -234,7 +234,7 @@ function render(){
     ${key.minor?'':`<p class="note" style="margin:-4px 2px 0">🌙 フリギア終止は短調だけ。調を短調にすると選べるよ。</p>`}
     ${state.type==='imperfect'?PA.seg('variant',[['A','れい A<small>上の音が主音じゃない</small>'],['B','れい B<small>Ⅴ7の下が根音じゃない</small>']],state.variant,'full varseg'):''}
     <p class="seqlabel">${data.map(c=>E.labelText(c)).join(' → ')}　タップすると、その和音が鳴るよ</p>
-    <div class="seq">`+data.map((c,i)=>`<button class="scard ${i===step?'on':''}" style="--c:${PA.COL[c.ch]};--l:${PA.LCOL[c.ch]}" data-act="step" data-v="${i}" aria-pressed="${i===step}" aria-label="${i+1}つめ${E.labelText(c)}"><span class="num">${c.label}</span>${c.inv?'<span class="inv">てんかい</span>':''}<span class="nm">${notesSpan(c)}</span></button>`).join('')+`</div>
+    <div class="seq">`+data.map((c,i)=>`<button class="scard ${i===step?'on':''}" style="--c:${PA.COL[c.ch]};--l:${PA.LCOL[c.ch]}" data-act="step" data-v="${i}" aria-pressed="${i===step}" aria-label="${i+1}つめ${E.labelText(c)}"><span class="num">${PA.rnH(c.label)}</span>${c.inv?'<span class="inv">てんかい</span>':''}<span class="nm">${notesSpan(c)}</span></button>`).join('')+`</div>
     <div class="lasttwo" aria-hidden="true"><span>⬆ ここで名前がきまる</span></div>
     <section class="card hero" style="--c:${M.color}">
       <div class="hero-top"><span class="badge" style="--c:${M.color}" aria-hidden="true">${M.emoji}</span>
@@ -257,7 +257,7 @@ function render(){
   h+=`<section class="card"><h2>🎹 けんばん<small>${step+1}つめ${E.labelText(cur)}：こい色＝右手、うすい色＝左手</small></h2>
     ${kb(rlo,rhi,rmarks,'kbr','✋ 右手')}
     ${kb(llo,lhi,lmarks,'kbl','🤚 左手')}</section>`;
-  const cols=data.map((c,i)=>({notes:c.rh,lh:c.lh,color:PA.COL[c.ch],accColor:'#d1495b',op:i===step?1:0.28,label:c.label,sub:c.inv?'てんかい':'',labelColor:PA.COL[c.ch]}));
+  const cols=data.map((c,i)=>({notes:c.rh,lh:c.lh,color:PA.COL[c.ch],accColor:'#d1495b',op:i===step?1:0.28,label:E.rnOf(c),sub:c.inv?'てんかい':'',labelColor:PA.COL[c.ch]}));
   h+=`<section class="card"><h2>🎼 がくふ<small>いま、ひいている和音がこい色。上が右手、下が左手</small></h2>
     <div class="scroll" data-sk="staff"><div class="staffw" style="min-width:${staffMinW(key)}px">${PA.staffSVG(key,cols,{grand:true,colW:66})}</div></div></section>`;
   h+=cmpHTML(key)+tryCard(key)+tipsHTML(key)+termsHTML(key)+`</div>`;

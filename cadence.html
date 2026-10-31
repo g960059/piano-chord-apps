@@ -178,9 +178,9 @@ function render(){
     ${PA.seg('form',[['inv','🤲 なめらかな形<small>伴奏の形</small>'],['root','🧱 基本の形<small>ねもと</small>']],state.form,'full formseg')}
     <p class="note" style="margin:-4px 2px 0">${state.form==='inv'?'右手の音が入れかわっても、使う音は同じ和音の音だよ。':'基本の形は、どれも根音（いちばん下）から、ひとつとばしで音をつんだ形。'}</p>
     <p class="seqlabel">Ⅰ → Ⅳ → Ⅰ → Ⅴ7 → Ⅰ　タップするとその和音が鳴るよ</p>
-    <div class="seq">`+data.map((d,i)=>`<button class="scard ${i===step?'on':''}" style="--c:${PA.COL[d.ch]};--l:${PA.LCOL[d.ch]}" data-act="step" data-v="${i}" aria-pressed="${i===step}" aria-label="${i+1}つめ${LABEL[d.ch]}"><span class="num">${LABEL[d.ch]}</span><span class="nm">${notesSpan(d.rh)}</span></button>`).join('')+`</div>
+    <div class="seq">`+data.map((d,i)=>`<button class="scard ${i===step?'on':''}" style="--c:${PA.COL[d.ch]};--l:${PA.LCOL[d.ch]}" data-act="step" data-v="${i}" aria-pressed="${i===step}" aria-label="${i+1}つめ${LABEL[d.ch]}"><span class="num">${PA.rnH(LABEL[d.ch])}</span><span class="nm">${notesSpan(d.rh)}</span></button>`).join('')+`</div>
     <section class="card hero" style="--c:${col}">
-      <div class="hero-top"><span class="badge" style="--c:${col}">${lab}</span>
+      <div class="hero-top"><span class="badge" style="--c:${col}">${PA.rnH(lab)}</span>
         <div style="min-width:0"><div class="hk">${PA.keyName(key)}のカデンツ　${step+1}つめ</div>
           <div class="hn"><span class="tag">右手</span>${cur.rh.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}</div>
           <div class="hl"><span class="tag">左手</span><b class="nw">${PA.nmH(cur.lh[0])}</b></div></div></div>

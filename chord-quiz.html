@@ -912,7 +912,7 @@ function partAsk(dr,j){
 // ヒーローの問題文（HTML）。hide＝こたえるまでは和音の色を出さない（色でこたえがわかるもの）
 const hideCol=cat=>cat==='staff'||cat==='prog'||cat==='inv';
 function drillTitle(key,c,col){
-  const kn=`<span class="qkey">${PA.keyName(key)}</span>`, badge=(lab,cl)=>`<span class="badge sm" style="--c:${cl}">${lab}</span>`;
+  const kn=`<span class="qkey">${PA.keyName(key)}</span>`, badge=(lab,cl)=>`<span class="badge sm" style="--c:${cl}">${PA.rnH(lab)}</span>`;
   switch(Q.dr.cat){
     case 'root': return `${kn}<span>の</span>${badge(c.label,col)}<span>は、どの音から？</span>`;
     case 'fill': return `${kn}<span>の</span><span class="tg">${badge(c.label,col)}<span>、□は？</span></span>`;
@@ -941,7 +941,7 @@ function drillStaff(key,t0,col,done){
   const dr=Q.dr, ink='#3a3245', t=lowered(t0);
   if(dr.cat==='prog') return '';
   if(dr.cat==='staff'&&!done) return PA.staffSVG(key,[{notes:t,color:ink,accColor:ink}],{maxScale:1.3});
-  if(dr.cat==='inv') return PA.staffSVG(key,[done?{notes:dr.voice,color:col,ltColor:'#d1495b',accColor:'#d1495b',label:CHORDS[Q.q.chord].label,sub:SHAPES[dr.inv],labelColor:col}:{notes:dr.voice,color:ink,accColor:ink}],{maxScale:1.3});
+  if(dr.cat==='inv') return PA.staffSVG(key,[done?{notes:dr.voice,color:col,ltColor:'#d1495b',accColor:'#d1495b',label:{...PA.rnOf(CHORDS[Q.q.chord].label),...(dr.inv?{inv:dr.inv}:{})},sub:SHAPES[dr.inv],labelColor:col}:{notes:dr.voice,color:ink,accColor:ink}],{maxScale:1.3});
   if(dr.cat==='mark'&&!done) return PA.staffSVG(key,[{notes:t.map(n=>n.raised?respell(n,key.sig[n.letter]):n),color:ink,accColor:ink}],{maxScale:1.3});
   return PA.staffSVG(key,[{notes:done?t:[],color:col,ltColor:'#d1495b',accColor:'#d1495b'}],{maxScale:1.3});
 }
@@ -1119,7 +1119,7 @@ function settingsHTML(){
     <div class="opt"><span class="lab">むずかしさ（調号の数）</span>${KD.tierSeg('qtier',Q.tier)}</div>
     <div class="opt"><div class="tog one" role="group"><button class="${Q.weak?'on':''}" style="--c:#c9542e;--l:#fde5df" data-act="qweak" aria-pressed="${Q.weak}">${Q.weak?PA.icon('checkOn'):PA.icon('checkOff')}📈 にがてな調を多めに</button></div><small>まちがえた調がすこし多く出るよ</small></div>
     ${fixed?`<div class="opt"><span class="lab">和音</span><small>このしゅるいは${Q.type==='add7'?'Ⅴ7':'Ⅴ'}だけ出るよ</small></div>`
-      :`<div class="opt"><span class="lab">和音（タップで入れる・はずす）</span><div class="tog" role="group">${CHORD_IDS.map(k=>`<button class="${Q.chords[k]?'on':''}" style="--c:${PA.COL[k]};--l:${PA.LCOL[k]}" data-act="qchord" data-v="${k}" aria-pressed="${!!Q.chords[k]}">${Q.chords[k]?PA.icon('checkOn'):PA.icon('checkOff')}${CHORDS[k].label}</button>`).join('')}</div>${Q.type==='mark'?'<small>このしゅるいはⅤ・Ⅴ7だけ出るよ</small>':''}</div>`}
+      :`<div class="opt"><span class="lab">和音（タップで入れる・はずす）</span><div class="tog" role="group">${CHORD_IDS.map(k=>`<button class="${Q.chords[k]?'on':''}" style="--c:${PA.COL[k]};--l:${PA.LCOL[k]}" data-act="qchord" data-v="${k}" aria-pressed="${!!Q.chords[k]}">${Q.chords[k]?PA.icon('checkOn'):PA.icon('checkOff')}${PA.rnH(CHORDS[k].label)}</button>`).join('')}</div>${Q.type==='mark'?'<small>このしゅるいはⅤ・Ⅴ7だけ出るよ</small>':''}</div>`}
     ${other}
   </details>`;
 }
@@ -1224,7 +1224,7 @@ function render(){
     h+=`<section class="card hero" style="--c:${col}">
       <div class="score">${scoreText(Q)} <span>れんぞく${Q.streak}</span> ${sessHead()}</div>
       <div class="qwrap"><div class="qtext">
-        <div class="qtitle"><span class="qkey">${PA.keyName(key)}</span><span>の</span><span class="badge sm" style="--c:${col}">${c.label}</span><span>は？</span></div>
+        <div class="qtitle"><span class="qkey">${PA.keyName(key)}</span><span>の</span><span class="badge sm" style="--c:${col}">${PA.rnH(c.label)}</span><span>は？</span></div>
         <div class="qsub">${PA.sigLabel(key)}・${c.n}つの音</div></div>
         <div class="qstaff">${PA.staffSVG(key,[{notes:done?t:[],color:col,ltColor:'#d1495b',accColor:'#d1495b'}],{maxScale:1.3})}</div>
       </div>${now}</section>`;
@@ -1389,8 +1389,8 @@ function renderChroma(){
     const cur=chromaNow(r), key=crKey(cur), c=CHORDS[cur.chord], col=PA.COL[cur.chord];
     h+=`<section class="card hero crhero" style="--c:${col}">
       <p class="crtime" id="crtime" role="timer" aria-label="かかった時間">${chromaClock(chromaElapsed(r,Date.now()))}</p>
-      <div class="crnow" role="status"><span class="crn">${cur.n}／${cur.of}</span><span class="qkey">${PA.keyName(key)}</span><span>の</span><span class="badge sm" style="--c:${col}">${c.label}</span></div>
-      <div class="crdots" aria-hidden="true">${CHROMA_CHORDS.map((x,i)=>`<span class="${i<r.ci?'ok':i===r.ci?'cur':''}" style="--c:${PA.COL[x]}">${CHORDS[x].label}</span>`).join('')}</div>
+      <div class="crnow" role="status"><span class="crn">${cur.n}／${cur.of}</span><span class="qkey">${PA.keyName(key)}</span><span>の</span><span class="badge sm" style="--c:${col}">${PA.rnH(c.label)}</span></div>
+      <div class="crdots" aria-hidden="true">${CHROMA_CHORDS.map((x,i)=>`<span class="${i<r.ci?'ok':i===r.ci?'cur':''}" style="--c:${PA.COL[x]}">${PA.rnH(CHORDS[x].label)}</span>`).join('')}</div>
       <p class="qsub" style="text-align:center">${PA.sigLabel(key)}・基本形（いちばん下が根音）</p>
       ${crKeysHTML(r.ids,r.ki)}</section>`;
     const msg=CR.wrong?`<div class="fb bad" id="fb" role="alert"><span aria-hidden="true">❌</span>${crWrongHTML(key,cur.chord,CR.wrong.j)}もういちど！</div>`:'';

@@ -270,7 +270,7 @@ const hintDone=()=>Q.result===true&&Q.peeked?`<br>💡 つくりかたを見て�
 // こたえあわせのメッセージ（描くたびにつくるので、音名の設定をかえてもあう）
 function chordMsg(key,f,t){
   const g=gradeChord(t), pk=g.pk, extra=g.extra, missing=g.missing;
-  if(Q.lastOk) return `🎉 正解！${PA.keyName(key)}の${FAM[f].label}は<b>${PA.namesH(t)}</b>`+hintDone();
+  if(Q.lastOk) return `🎉 正解！${PA.keyName(key)}の${PA.rnH(FAM[f].label)}は<b>${PA.namesH(t)}</b>`+hintDone();
   const hints=[];
   if(missing.some(n=>n.raised)&&extra.includes(mod(key.natLT.midi,12)))
     hints.push(`7ばんめ「${PA.nmH(key.natLT)}」を半音上げるのを、わすれていない？${PA.keyName(key)}では<b>${PA.nmH(key.lt)}</b>（${PA.H(MARK[key.ltType])}${MARK_NAME[key.ltType]}）だよ。`);
@@ -282,8 +282,8 @@ function chordMsg(key,f,t){
   const root=PA.at(key.harm,4), nin=PA.at(key.harm,12), pnin=PA.at(key.par.scale,12);
   if(f==='DIM'&&pk.has(mod(root.midi,12))) hints.push(`減七はⅤ9から根音「${PA.nmH(root)}」を<b>はぶいた</b>和音だよ。`);
   if((f==='V9'||f==='DIM')&&!pk.has(mod(nin.midi,12))&&extra.includes(mod(pnin.midi,12)))
-    hints.push(`${FAM[f].label}のいちばん上の音（第9音）は6ばんめ「${PA.nmH(nin)}」で、調号どおり。「${PA.nmH(pnin)}」は${PA.keyName(key.par)}の音だよ。`);
-  if(pk.size!==t.length) hints.push(`${FAM[f].label}は<b>${t.length}つ</b>の音だよ（いま${pk.size}つ）。`);
+    hints.push(`${PA.rnH(FAM[f].label)}のいちばん上の音（第9音）は6ばんめ「${PA.nmH(nin)}」で、調号どおり。「${PA.nmH(pnin)}」は${PA.keyName(key.par)}の音だよ。`);
+  if(pk.size!==t.length) hints.push(`${PA.rnH(FAM[f].label)}は<b>${t.length}つ</b>の音だよ（いま${pk.size}つ）。`);
   return `🤔 おしい！こたえは<b>${PA.namesH(t)}</b><br>`+(hints.join('<br>')||(f==='DIM'?`導音「${PA.nmH(key.lt)}」からひとつとばしで4つ（根音「${PA.nmH(root)}」ははぶく）。`:`音階の5ばんめ「${PA.nmH(root)}」からひとつとばしで、かさねてみよう。`));
 }
 const markGlyph=a=>a===2?'<span class="ds">x</span>':a===1?'♯':a===0?'♮':'♭';
@@ -306,7 +306,7 @@ function settingsHTML(){
   let h=`<details class="more" data-d="set" ${openD.set?'open':''}><summary>⚙️ 問題の選びかた<small>${lvTxt}${Q.type==='chord'?'・'+famTxt:''}${Q.weak?'・📈':''}</small></summary>
     <div class="optlabel">むずかしさ（調号の数）</div>${KD.tierSeg('qtier',Q.tier)}
     <div class="tog" role="group"><button class="${Q.weak?'on':''}" data-act="qweak" aria-pressed="${Q.weak}">${PA.icon(Q.weak?'checkOn':'checkOff')}📈 にがてな調を多めに</button></div><p class="tognote">まちがえた調がすこし多く出るよ</p>`;
-  if(Q.type==='chord') h+=`<div class="optlabel">和音（いくつでも）</div><div class="seg grid4" role="group">${FAM_KEYS.map(k=>`<button class="${Q.fams[k]?'on':''}" data-act="qfam" data-v="${k}" aria-pressed="${Q.fams[k]}">${PA.icon(Q.fams[k]?'checkOn':'checkOff')}${FAM[k].label}</button>`).join('')}</div>`;
+  if(Q.type==='chord') h+=`<div class="optlabel">和音（いくつでも）</div><div class="seg grid4" role="group">${FAM_KEYS.map(k=>`<button class="${Q.fams[k]?'on':''}" data-act="qfam" data-v="${k}" aria-pressed="${Q.fams[k]}">${PA.icon(Q.fams[k]?'checkOn':'checkOff')}${PA.rnH(FAM[k].label)}</button>`).join('')}</div>`;
   // あまりつかわないもの（スコアを0に・先生におくるリンク）は「その他」にたたむ
   return h+`<details class="more" data-d="set-other" style="margin-top:10px" ${openD['set-other']?'open':''}><summary>その他</summary>
     <div class="row"><button class="btn small" data-act="qreset">スコアを0にもどす</button>${PA.shareHTML(QUIZ,Object.assign(linkParams(),{n:5}),PA.icon('send')+'れんしゅうをおくる')}</div>
@@ -360,7 +360,7 @@ function chordView(key){
     t.forEach(n=>{if(!g.pk.has(mod(n.midi,12))&&!marks.has(n.midi)) set(n.midi,{fill:isBlack(n.midi)?undefined:'#fff',label:PA.nm(n),tc:'#3b4fa8',ring:'#3b4fa8',sr:'たりない音',focus:true});});
   }
   const names=[...Q.picked].sort((a,b)=>a-b).map(m=>PA.H(nameForMidi(m,key)));
-  return `<section class="card hero"><div class="qhead"><div class="qtitle"><span class="qkey">${PA.keyName(key)}</span>の<span class="badge qbadge">${FAM[f].label}</span>は？</div>
+  return `<section class="card hero"><div class="qhead"><div class="qtitle"><span class="qkey">${PA.keyName(key)}</span>の<span class="badge qbadge">${PA.rnH(FAM[f].label)}</span>は？</div>
     ${Q.checked?'':`<div class="sigstaff">${sigStaff(key)}</div>`}</div>
     <p class="note">${PA.sigLabel(key)}・${t.length}つの音${f==='DIM'?'（Ⅴ9から根音をはぶいた和音）':''}</p>
     <p class="inst">${Q.checked?'<b style="color:#22a06b">緑の○</b>＝あたり、<b style="color:#d1495b">赤の×</b>＝ちがう音、<b style="color:#3b4fa8">青わく</b>＝たりない音':`けんばんをタップして<b>${t.length}つ</b>の音をおさえよう${PA.once('tap-erase','（もういちどタップすると、けせる）')}`}</p>
@@ -370,7 +370,7 @@ function chordView(key){
     <div class="row" style="margin-top:10px"><button class="btn small" data-act="qexplain">🐸 つくりかたを見る</button></div>
     ${Q.result===null?PA.once('hint-rule',`<p class="hintnote">${PA.HINT_NOTE}</p>`):''}
   </section>
-  ${Q.checked?`<section class="card"><h2>🎼 がくふ<small>${PA.keyName(key)}の${FAM[f].label}（赤い音＝導音）</small></h2>
+  ${Q.checked?`<section class="card"><h2>🎼 がくふ<small>${PA.keyName(key)}の${PA.rnH(FAM[f].label)}（赤い音＝導音）</small></h2>
     <div class="qstaff">${PA.staffSVG(key,[{notes:t,color:'#3b4fa8',ltColor:'#d1495b',accColor:'#d1495b'}],{minW:200,maxScale:1.3})}</div></section>`:''}`;
 }
 // 回のさいごのもんだいにこたえて、まだけっかを見ていない：つぎは「けっかを見る」

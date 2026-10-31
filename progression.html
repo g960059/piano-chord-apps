@@ -302,7 +302,7 @@ function cardsHTML(data,reveal){
     const nm=reveal?`<span class="nm"><span class="lh">${N(c.lh[0])}</span>${c.rh.map(n=>`<span>${N(n)}</span>`).join('')}</span>`:'';
     const al=`${i+1}つめ${ask&&hideName?'「？」':hideName?'':c.label}${hideBass?'。いちばん下は？':''}${form?'（'+form+'）':''}`;
     return `<div class="scw"><button class="scard ${ask?'ask':''} ${hideName&&!ask?'hid':''} ${i===curCard()?'on':''}" style="--c:${cc};--l:${ll};--t:${tc}" data-act="pcard" data-v="${i}" aria-label="${al}。タップで鳴らす">`
-      +`<span class="num">${ask&&hideName?'？':hideName?'♪':c.label}</span>${hideBass?'<span class="inv">下は？</span>':form?`<span class="inv fm">${form}</span>`:''}${nm}</button></div>`;
+      +`<span class="num">${ask&&hideName?'？':hideName?'♪':PA.rnH(c.label)}</span>${hideBass?'<span class="inv">下は？</span>':form?`<span class="inv fm">${form}</span>`:''}${nm}</button></div>`;
   }).join('')+`</div>`;
 }
 // いちばん上の音の動き（小さな線）
@@ -354,7 +354,7 @@ function staffHTML(data){
   const q=Q.q, key=keyOfQ();
   const cols=data.map((c,i)=>{
     const ask=q.type!=='top'&&i===q.i;
-    return {notes:c.rh,lh:c.lh,color:PA.COL[c.ch],accColor:'#d1495b',op:curStaff()<0||i===curStaff()?1:0.35,label:c.label,
+    return {notes:c.rh,lh:c.lh,color:PA.COL[c.ch],accColor:'#d1495b',op:curStaff()<0||i===curStaff()?1:0.35,label:c.label==='？'?c.label:E.rnOf(c),
       sub:c.inv?P.BASS_ROLES[P.roleOf(c)].form:'',labelColor:PA.COL[c.ch],hl:ask?'#fff3c4':null,lhRing:ask&&q.type==='bass'?'#c98500':null};
   });
   const arrows=q.type==='top'?data.slice(1).map((c,i)=>({c1:i,i1:2,c2:i+1,i2:2,color:'#3b4fa8'})):[];
