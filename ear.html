@@ -50,7 +50,8 @@
 .topbtn .ts-go{flex:none;padding:6px 12px;border-radius:999px;background:var(--soft);font-size:14px}
 .topclose{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-top:10px}
 .actionbar[hidden]{display:none}
-.sessline{display:flex;justify-content:flex-end;margin-top:6px}
+.sessline{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px 10px;margin-top:6px}
+.sessline .pa-week{margin-right:auto}
 .soundhint{background:#fff4d6;color:#6e4c00;border-radius:12px;padding:2px 4px 2px 10px}
 .soundhint .btn{min-height:44px;background:#fff;border:2px solid #ecc967}
 /* まちがえたとき：えらんだ和音とせいかいをおなじ高さでくらべる */
@@ -227,7 +228,8 @@ body{display:flex;flex-direction:column;min-height:calc(100vh - env(safe-area-in
  *   こたえるまで「くらべてきく」はつかえない。
  * 📊 ランキング＝GET api/ranking（今週・ぜんぶ、上位50人とじぶんの順位）。
  * きろく：PA.store 'ear'（せってい・れんしゅう・とちゅうのチャレンジ）、'ear-best'（じぶんのチャレンジのきろく）、
- *   'ear-player'（ランダムな端末の番号）、'ear-name'（さいごにつかったニックネーム）、'ear-rank-intro'（なまえのせつめいを見た）。
+ *   'ear-player'（ランダムな端末の番号）、'ear-name'（さいごにつかったニックネーム）、'ear-rank-intro'（なまえのせつめいを見た）、
+ *   'ear-days'（きょうの5もんをさいごまでやった日。PA.earDays。ならびの聴きわけとおなじきろく）。
  * つづりは3度ずつ（sus4は根音・4度・5度）つみかさねて正しく書き、重嬰・重変（x・𝄫）が出ない根音だけをつかう。
  * リンク：mode＝practice｜challenge、level＝1〜8（れんしゅう）、n＝1〜20（れんしゅうの回）。 */
 /* ===== ここから test/ear.test.mjs もよむ（画面をつかわないところ） ===== */
@@ -764,6 +766,8 @@ load();
 // リンクで来たとき：このせっていにする（いまのせっていとしてほぞんもする。ほかのクイズとおなじ）
 const LINK=readLink(PA.params());
 let sess=null;
+// dayFx：5もんをさいごまでやって、その日はじめてのしるしがついた（けっかのカードをはじめて出すときだけ紙ふぶき）
+let dayFx=false;
 if(LINK.mode&&LINK.mode!==state.mode) setMode(LINK.mode);
 if(LINK.level&&LINK.level!==state.level) setLevel(LINK.level);
 if(state.mode==='rank'&&rk.loading===false&&!rk.data[rk.period]) loadRanking();
@@ -998,7 +1002,8 @@ function heroHTML(){
     // 「せってい」とリンクは、5もんをはじめたときのレベル（あとでレベルをかえてもかわらない）
     const L=state.sessLv||state.level;
     // けっかのカードのボタンにはキー（→）をつけない（2かいおして先生に見せるまえにきえないように）
-    return sess.summaryHTML({title:'和音の聴きわけ',page:'ear',params:linkParams(L),settings:`れんしゅう・レベル${L}（${lvWords(L)}）${state.sessMix?'・とちゅうでレベルをかえた':''}`});
+    const extra=PA.earDays.cheerHTML({fx:dayFx,n:sess.n()}); dayFx=false;
+    return sess.summaryHTML({title:'和音の聴きわけ',page:'ear',params:linkParams(L),settings:`れんしゅう・レベル${L}（${lvWords(L)}）${state.sessMix?'・とちゅうでレベルをかえた':''}`,extra});
   }
   if(state.mode==='rank') return rankHTML();
   const inCh=state.mode==='ch';
@@ -1017,7 +1022,8 @@ function heroHTML(){
   const R=replaysOf(lv,state.mode);
   let h=`<section class="card hero"><div class="qhead"><h2>👂 この和音はどれ？</h2>${score}</div>`;
   if(inCh&&ch.offline&&!NO_RANK) h+=`<span class="offtag">${ch.offWhy==='time'?'⏰ 2時間をすぎたのでランキングなし':ch.offWhy==='busy'?'⏳ こみあっているので、ランキングなしであそんでいるよ':'📴 オフライン：ランキングなしであそんでいるよ'}</span>`;
-  if(!inCh) h+=`<div class="sessline">${sess.n()?sess.progressHTML():'<button type="button" class="btn small" data-act="esess">'+PA.icon('session')+'きょうの5もん</button>'}</div>`;
+  // 今週の丸（きょうの5もんをやった日。いちどでもやったことがあるときだけ）と、きょうの5もんのボタン・すすみぐあい
+  if(!inCh) h+=`<div class="sessline">${PA.earDays.list().length?PA.earDays.weekHTML():''}${sess.n()?sess.progressHTML():'<button type="button" class="btn small" data-act="esess">'+PA.icon('session')+'きょうの5もん</button>'}</div>`;
   if(!q) h+=`<div class="msg" style="margin-top:10px">下の<b>${PA.icon('play')}始める</b>をおすと、和音が鳴るよ。</div>`;
   else if(waitHear()) h+=`<div class="msg" style="margin-top:10px">下の<b>${PA.icon('play')}きく</b>をおすと、和音が鳴るよ。</div>`;
   else if(!state.answer){
@@ -1187,7 +1193,10 @@ document.addEventListener('click',e=>{
       else if(!state.hinted){state.right++;state.streak++;state.lvRun++;if(state.lvRun>state.lvBest[q.lv]) state.lvBest[q.lv]=state.lvRun;}
       else state.hint++;
       // ヒントでできた：⭐ はふえないが、れんぞくもそのまま（💡 の数にかぞえる）
-      if(sess.active()) sess.record({ok,hint:ok&&state.hinted,label:`レベル${q.lv}　${T[q.type].word}（${T[q.type].label}）${PA.namesT(q.notes)}${ok?'':`　選んだ：${T[v].word}`}`});
+      if(sess.active()){
+        const r=sess.record({ok,hint:ok&&state.hinted,label:`レベル${q.lv}　${T[q.type].word}（${T[q.type].label}）${PA.namesT(q.notes)}${ok?'':`　選んだ：${T[v].word}`}`});
+        if(r&&r.finished) dayFx=PA.earDays.mark().first; // さいごまでやった日にしるし（その日はじめてなら、けっかで紙ふぶき）
+      }
     }
     save(); state.fresh=true; render(); playEar();
     const fb=document.querySelector('#view .fb'); reveal(fb,fb,true);

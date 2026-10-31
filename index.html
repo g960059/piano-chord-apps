@@ -77,6 +77,9 @@
 #view .plaza .ways a small{display:block;font-size:12px;font-weight:700;color:#f3e8ff}
 @media (hover:hover){#view .plaza .ways a:hover{background:rgba(255,255,255,.22)}#view .plaza a.today:hover{filter:brightness(1.04)}}
 .plaza a:focus-visible{outline:3px solid #ffd66b;outline-offset:2px}
+/* きょうの5もんができた日：広場に灯り（金色のふち） */
+.plaza.lit{box-shadow:0 0 0 3px #ffd66b,0 3px 0 #1d1240,0 8px 22px rgba(60,20,90,.25)}
+.plaza .days{margin-top:10px;padding:8px 12px;border-radius:14px;background:rgba(0,0,0,.18)}
 .recs{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 0;padding:0;list-style:none}
 .recs li{font-size:13px;font-weight:700;line-height:1.4;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.16);color:#fff}
 .recs.none li{background:none;padding:0;font-weight:400;color:#f3e8ff}
@@ -196,7 +199,8 @@ details.xmap[open]>summary::after{transform:rotate(180deg)}
  *   島の名前・色（LOOK）だけこのページのもの。しらない単元は PA.UNITS の名前と PALETTE の色。app.title・task.title はただの文字、app.d は HTML
  *   ひらいたアプリ：PA.store 'visited'（PA.mountBar がきろく）。まえからの人は 'last'・'keystats-…' なども見る
  *   島・レベルアップの地図のひらく／とじる：PA.store 'home-units'＝{unit の id: true/false}（じぶんでおしたときだけほぞん）
- *   耳のひろばのきろく（よむだけ）：'ear'（right・total・ch.best）、'progression'（rec[ステップ].best）、'session-ear'（とちゅうの5もん）
+ *   耳のひろばのきろく（よむだけ）：'ear'（right・total・ch.best）、'progression'（rec[ステップ].best）、'session-ear'（とちゅうの5もん）、
+ *     'ear-days'（きょうの5もんをさいごまでやった日。PA.earDays：今週の丸・つづけた日数。きょうできたらカードに灯り）
  *
  * ★ のきまり（課題ごと。開いただけでは ★1つ）。島の調＝課題の href の keyset（和音クイズは①が長調・②が短調）。
  *   島にその課題がないときはクイズの調（TALLY_MODES。なければ長調・短調）
@@ -468,14 +472,17 @@ function plazaHTML(){
   if(!DAILY.length) return '';
   const tasks=[]; DAILY.forEach(u=>u.tasks.forEach(t=>tasks.push(t)));
   const ear=PA.app('ear')&&tasks.some(t=>t.app==='ear');
-  let h=`<section class="card plaza" aria-labelledby="plaza-h"><span class="spark" aria-hidden="true">✨</span>`
+  const days=PA.earDays.info(), lit=days.today;
+  let h=`<section class="card plaza${lit?' lit':''}" aria-labelledby="plaza-h"><span class="spark" aria-hidden="true">${lit?'🌟':'✨'}</span>`
     +`<h2 id="plaza-h"><span aria-hidden="true">👂 </span>${ESC(DAILY[0].name)}<small>毎日すこしずつ。聴いてパッとわかるかな？</small></h2>`;
   if(ear){
     // きょうの5もん：ear.html?n=5（れんしゅうの5もんの回。とちゅうならつづきから）
     const st=sessOf('ear'), mid=!!st&&st.done.length<st.n&&st.done.length>0;
     h+=`<a class="today" href="${ESC(PA.url('ear',{n:5}))}"><span class="ic" aria-hidden="true">🎧</span><span class="tx"><b>きょうの5もん</b>`
-      +`<small>${mid?`とちゅうから（${st.done.length} / ${st.n}）`:'和音を聴いて、明るい？さびしい？'}</small></span></a>`;
+      +`<small>${mid?`とちゅうから（${st.done.length} / ${st.n}）`:lit?'きょうはできたね！もっとやってもいいよ':'和音を聴いて、明るい？さびしい？'}</small></span></a>`;
   }
+  // 今週の丸とつづけた日数（いちどでも5もんをさいごまでやったことがあるときだけ。休んでも消さない）
+  if(days.total) h+=`<div class="days">${PA.earDays.weekHTML(days,{dark:true})}</div>`;
   h+=`<div class="ways">`+tasks.map(t=>{const a=PA.app(t.app);
       return `<a href="${ESC(t.href)}"><span aria-hidden="true">${a.ic}</span><span>${ESC(t.title).replace(/の(?=.)/g,'の<wbr>')}</span></a>`;}).join('');
   if(ear) h+=`<a class="wide" href="${ESC(PA.url('ear',{mode:'challenge'}))}"><span aria-hidden="true">🏆</span><span>チャレンジ<small>${PA.native?'ライフ3つで、どこまで行けるかな？':'ライフ3つで、どこまで行けるかな？ランキングにものせられるよ'}</small></span></a>`;

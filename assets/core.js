@@ -91,6 +91,7 @@
  *       まちがえたの数、まちがえた／ヒントを見たもんだい、ひとこと、「👩‍🏫 先生に見せる」（日づけ・ページ・せってい・けっか）、
  *       おなじれんしゅうの PA.shareHTML（params に n をたす）、ボタン data-act="session-again"（もういちど）・data-act="session-free"（じゆうにれんしゅう）。
  *       settings（ただの文字）がなければ params からつくる（key・tier・level・n）。2つのボタンはページであつかう
+ *       extra（HTML）はひとことの下に入れる（耳のひろばの PA.earDays.cheerHTML）
  *     s.start(n) / s.clear() / s.tally() → {n, done, self, hint, wrong, ok, stars(1〜3), msg}
  *   PA.sessionTally(done, n) … tally とおなじ（ページの外でつかうとき）。PA.sessionSig(params) … 上の sig
  *   PA.paramsText(params) … 「調：ト長調・むずかしさ：…・レベル2」（先生に見せる「せってい」の文。ただの文字）
@@ -2494,6 +2495,7 @@ PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
           +`<h2 id="sess-h">🎉 ${d.n}もんおわり！</h2>`
           +`<p class="sess-big"><b>${d.n}もん中${T.ok}もん</b> <span class="sess-stars" role="img" aria-label="ほし3つのうち${T.stars}つ">${stars}</span></p>`
           +`<p class="sess-msg">${T.msg}</p>`
+          +(p.extra||'') // ページがつくる HTML（耳のひろばの「きょうの5もん、できたね！」）
           +`<div class="sess-counts">`
           +`<div class="sc-self"><b>${T.self}</b><span>じぶんでできた</span></div>`
           +`<div class="sc-hint"><b>${T.hint}</b><span>ヒントを見てできた</span></div>`
@@ -2524,6 +2526,74 @@ PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
     }
     return s;
   };
+})();
+/* ===== 耳のひろば：つづけた日（毎日のやる気） =====
+ * 耳のひろばの「きょうの5もん」（和音の聴きわけ・ならびの聴きわけの PA.session の回。どのレベル・ステップでも、リンクの n でも）を
+ * さいごまでやった日に、しるしをつける。ページは s.record(…) が finished をかえしたときに PA.earDays.mark() をよぶ。
+ * PA.store 'ear-days'＝['2026-11-01', …]（その端末の日づけ＝ローカル時刻。古いじゅん・おなじ日は1つ・さいごの KEEP 日ぶんまで）
+ * 休んでも、しるしは消さない。「とぎれた」とは言わない（つづけた日数は、2日いじょうつづいているときだけ出す）。ランキングはない。
+ * 日のけいさんは、年・月・日からつくる（new Date(年, 月, 日＋n)）。24時間をたさないので、月・年のさかいめや夏時間でもずれない。
+ *   PA.earDays.key(t?) → 'YYYY-MM-DD'（t＝ミリ秒か Date。なければ Date.now()）
+ *   PA.earDays.list() → しるしの日（きれいにした配列。ほんとうにある日だけ・古いじゅん・おなじ日は1つ）
+ *   PA.earDays.mark(t?) → {first：その日はじめてのしるし, info}
+ *   PA.earDays.info(t?) → {key：きょう, today：きょうできた, week:[{key, wd:'月'…, on, now：きょう, future}×7（月曜〜日曜）], weekCount, run, total}
+ *     run：きょうまで（きょうまだなら、きのうまで）毎日つづけた日数。つづいていなければ 0。total：のこっているしるしの数
+ *   PA.earDays.weekHTML(info?, {dark}) → 「今週」と7つの丸（月〜日）・「3日」・「つづけて4日」（読み上げは1つの文）。dark＝耳のひろばの夜空の上
+ *   PA.earDays.cheerHTML({fx, n, info}) → 5もんのけっかに入れる「きょうの5もん、できたね！」と今週の丸（きょうのしるしがなければ今週の丸だけ）。
+ *     fx＝その日はじめてできた：紙ふぶきと「ぽん」のうごき（うごきをへらす設定では出さない。app.css） */
+(function(){
+  const SK='ear-days', KEEP=400, WD='月火水木金土日';
+  const pad=n=>(n<10?'0':'')+n;
+  const keyOfDate=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const dayOf=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  const shift=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+  const dateOf=t=>{
+    const d=t instanceof Date?new Date(t.getTime()):new Date(t==null?Date.now():+t);
+    return isNaN(d.getTime())?new Date(Date.now()):d;
+  };
+  // ほんとうにある日だけ（2月30日などはすてる）
+  const valid=k=>{
+    const m=typeof k==='string'&&/^(\d{4})-(\d{2})-(\d{2})$/.exec(k); if(!m) return false;
+    const y=+m[1], mo=+m[2]-1, da=+m[3]; if(y<2000) return false;
+    const d=new Date(y,mo,da); return d.getFullYear()===y&&d.getMonth()===mo&&d.getDate()===da;
+  };
+  const list=()=>{
+    const v=PA.store.get(SK,[]); if(!Array.isArray(v)) return [];
+    const out=[]; v.slice(-2*KEEP).forEach(k=>{if(valid(k)&&out.indexOf(k)<0) out.push(k);});
+    return out.sort().slice(-KEEP);
+  };
+  const info=t=>{
+    const today=dayOf(dateOf(t)), tk=keyOfDate(today), all=list(), set={};
+    all.forEach(k=>{set[k]=true;});
+    const wi=(today.getDay()+6)%7, mon=shift(today,-wi); // 月曜はじまり（ランキングの「今週」とおなじ）
+    const week=[0,1,2,3,4,5,6].map(i=>{const k=keyOfDate(shift(mon,i));return {key:k,wd:WD[i],on:!!set[k],now:i===wi,future:i>wi};});
+    let run=0, d=set[tk]?today:shift(today,-1);
+    while(run<KEEP&&set[keyOfDate(d)]){run++;d=shift(d,-1);}
+    return {key:tk,today:!!set[tk],week,weekCount:week.filter(x=>x.on).length,run,total:all.length};
+  };
+  const mark=t=>{
+    const k=keyOfDate(dateOf(t)), all=list(), first=all.indexOf(k)<0;
+    if(first){all.push(k);PA.store.set(SK,all.sort().slice(-KEEP));}
+    return {first,info:info(t)};
+  };
+  const weekHTML=(I,o)=>{
+    I=I||info(); o=o||{};
+    const on=I.week.filter(x=>x.on).map(x=>x.wd);
+    const al=`今週は${I.weekCount}日できたよ${on.length?'（'+on.join('・')+'）':''}${I.run>=2?`。つづけて${I.run}日`:''}`;
+    return `<div class="pa-week${o.dark?' dark':''}" role="img" aria-label="${al}"><span class="pw-l">今週</span><span class="pw-dots">`
+      +I.week.map(x=>`<span class="pw-d${x.on?' on':''}${x.now?' now':''}${x.future?' fut':''}"><i></i><small>${x.wd}</small></span>`).join('')
+      +`</span><span class="pw-n"><b>${I.weekCount}</b>日できた</span>${I.run>=2?`<span class="pw-run"><span aria-hidden="true">🔥</span>つづけて<b>${I.run}</b>日</span>`:''}</div>`;
+  };
+  const CONF=['#ff6b6b','#ffd166','#06d6a0','#4cc9f0','#b388ff','#ff8fab'];
+  const cheerHTML=(o={})=>{
+    const I=o.info||info(), n=Number.isInteger(o.n)&&o.n>0?o.n:5;
+    if(!I.today) return `<div class="pa-cheer still">${weekHTML(I)}</div>`;
+    const fx=!!o.fx;
+    const conf=fx?`<span class="pa-confetti" aria-hidden="true">`+Array.from({length:14},(_,i)=>`<i style="--x:${4+i*7}%;--d:${(i%5)*0.12}s;--c:${CONF[i%CONF.length]};--r:${i%2?'':'-'}${200+i*20}deg"></i>`).join('')+`</span>`:'';
+    const sub=I.run>=2?'毎日つづいているね！':'またあしたも、まってるよ';
+    return `<div class="pa-cheer${fx?'':' still'}">${conf}<p class="pc-t"><span aria-hidden="true">🎉 </span>きょうの${n}もん、できたね！</p>${weekHTML(I)}<p class="pc-s">${sub}</p></div>`;
+  };
+  PA.earDays={key:t=>keyOfDate(dateOf(t)),list,info,mark,weekHTML,cheerHTML,KEEP};
 })();
 /* ===== おわりかた（終止形）：6つの終止の和音のならび =====
  * key は PA.keyOf(minor, idx, 60)（主音はド4〜シ4）。短調の key.scale は和声的短音階なので、Ⅴ・Ⅴ7の7ばんめは上げた音（raised）。
