@@ -74,6 +74,9 @@
 .lvdesc b{color:var(--ink)}
 @media (min-width:560px){.seg.lvseg{grid-template-columns:repeat(7,minmax(0,1fr))}}
 @media (min-width:700px){.seg.lvseg .lvname{display:block;font-size:12px;font-weight:700;margin-top:2px;line-height:1.25;text-wrap:balance}}
+/* 🔥 チャレンジ（増六に読みかえる）のしるし */
+.chalbadge{display:inline-block;font-size:12.5px;font-weight:800;line-height:1.4;color:#fff;background:#b3361d;border-radius:999px;padding:1px 10px;white-space:nowrap}
+.challine{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:6px 0 0;font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.45}
 /* 📝 きょうの5もん・この調だけ */
 .sessrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin:0 0 6px}
 .lockchip{background:var(--soft2);font-size:14px}
@@ -139,8 +142,11 @@
  *     level＝👂 は1〜3（EAR_LV）：1＝Ⅱ7・ドッペル  2＝増六3しゅるい  3＝Ⅳ・○Ⅳ・ナポリ（長調だけ）。画面では先生のじゅん（1・3・2）にならべる
  *       🎹 の level（1〜5）はまえのリンク：そのときとおなじ和音（OLD_KLV）にする（ステップとおなじならそのステップ）。step があれば step
  *       学ぶページから：doppel → step 1・ear 1、secondary → chord dd,s2,s3,s4,s6、borrowed → step 3、
- *         neapolitan → step 4・ear 3、aug6 → step 5・ear 2、enharmonic → chord vii7（step 6）
- *         （その和音だけにしたいときは chord：neapolitan → n6、borrowed → ivm,bvi、secondary → s2,s3,s4,s6、enharmonic → ger,ddim,vii7）
+ *         neapolitan → step 4・ear 3、aug6 → step 5・ear 2、enharmonic → chord vii7（step 6）、enharmonic の 🔥 チャレンジ → chord ger
+ *         （その和音だけにしたいときは chord：neapolitan → n6、borrowed → ivm,bvi、secondary → s2,s3,s4,s6、enharmonic → vii7）
+ *       🔥 チャレンジ（先生：読みかえのクイズに増六が入る問題は「チャレンジ」としてわける）：読みかえの和音（READ_SET＝減七/Ⅴ・Ⅶ7）と
+ *         ドイツの6だけを「じぶんで選ぶ」で出すとき（chord＝ger、まえのリンクの ger,ddim,vii7 など）、ドイツの6の問題に 🔥 チャレンジのしるし（chalOf）。
+ *         ステップ5（増六）・6（ぜんぶ）では出さない（ふつうの増六の問題）
  *     chord＝🎹 の和音の id を , で（ii7 dd ddim it fr ger n6 ivm bvi s2 s3 s4 s6 vii7）。level よりさき（「じぶんでえらぶ」になる）
  *     tier＝easy｜normal｜hard｜all（🎹 の調のむずかしさ）、key＝M0〜M12・m0〜m12（その調だけ出す。🎹・👂 どちらも）、n＝1〜20（📝 n もん）
  *     リンクのせっていはほぞんする（いまのせっていになる）。おなじタブで読みなおしたとき（「もどる」）はもういちどつかわない
@@ -177,8 +183,11 @@ const KLV=[
   {lv:3,types:['ivm','bvi'],name:'準固有',desc:'準固有和音（○Ⅳ・○Ⅵ：同じ主音の短調からかりる和音。長調だけ）'},
   {lv:4,types:['n6'],name:'ナポリ',desc:'ナポリの六'},
   {lv:5,types:AUG,name:'増六',desc:'増六の和音（イタリアの6・フランスの6・ドイツの6）'},
-  {lv:6,types:TYPES,name:'ぜんぶ',desc:'ぜんぶ（異名同音の読みかえで出てくるⅦ7も）'}
+  {lv:6,types:TYPES,name:'ぜんぶ',desc:'ぜんぶ（ステップ1〜5と、異名同音の読みかえで出てくるⅦ7）'}
 ];
+// 🔥 チャレンジ：読みかえの和音（減七）といっしょに出すドイツの6（増六に読みかえる）。kLv＝いまのステップ（0＝じぶんで選ぶ）、sel＝えらんだ和音
+const READ_SET=['ddim','vii7'], CHAL=['ger'];
+const chalOf=(t,kLv,sel)=>CHAL.includes(t)&&!kLv&&sel.includes(t)&&sel.every(x=>READ_SET.includes(x)||CHAL.includes(x));
 // まえのリンク・保存の「レベル」（1〜5）の和音。おなじ和音でひらく
 const OLD_KLV={1:['ii7','dd'],2:['ii7','dd','ddim'],3:AUG,4:[...AUG,'n6','ivm','bvi'],5:TYPES};
 const EAR_LV={1:['ii7','dd'],2:['it','fr','ger'],3:['iv','ivm','n6']};
@@ -753,7 +762,7 @@ function gerTwin(key){
   // C♭・F♭・B𝄫 などになる調では、けんばんのふつうの名前（B7・E7・A7・D7）でくらべる
   const odd=n=>Math.abs(n.acc)>1||(n.acc===-1&&(n.letter===0||n.letter===3))||(n.acc===1&&(n.letter===2||n.letter===6));
   const tw=PA.H(nm(odd(lo)?PA.spellMidi(lo.midi,PA.keyOf(false,0)):lo)+'7');
-  let s=`けんばんでは<b>${tw}</b>と同じ音${odd(lo)||Math.abs(s7.acc)>1?'':`（「${PA.nmH(up)}」を「${PA.nmH(s7)}」と書くと${tw}）`}。でも書きかたもすすむ先もちがうよ。`;
+  let s=`<span class="chalbadge"><span aria-hidden="true">🔥</span> チャレンジ：読みかえ</span> けんばんでは<b>${tw}</b>と同じ音${odd(lo)||Math.abs(s7.acc)>1?'':`（「${PA.nmH(up)}」を「${PA.nmH(s7)}」と書くと${tw}）`}。でも書きかたもすすむ先もちがうよ。`;
   const alt=C.gerMajorAlt(key);
   if(alt) s+=`<br>長調で${I64H}へすすむときは「${PA.nmH(g[2])}」を「${PA.nmH(alt[2])}」と書くこともあるよ（同じけんばん）。`;
   return s;
@@ -823,11 +832,14 @@ function kbRange(ms){
 /* ===== 画面：🎹 おさえる ===== */
 // ステップのボタン（スマホは数字だけ4つずつ2行にならべて、下の1行でなかみを書く。広い画面はなかみもボタンに）
 const kLvName=()=>Q.kLv?`ステップ${Q.kLv}`:'じぶんで選ぶ';
+// 🔥 チャレンジのしるし（chalOf：読みかえの和音といっしょに出すドイツの6）
+const chalNow=t=>chalOf(t,Q.kLv,selTypes());
+const CHAL_LINE=`<p class="challine"><span class="chalbadge"><span aria-hidden="true">🔥</span> チャレンジ</span><span>増六に読みかえる問題。つぎのレベルだよ</span></p>`;
 function klevelHTML(){
   const cur=Q.kLv, L=KLV.find(x=>x.lv===cur), sel=selTypes();
   const b=(v,top,big,name,aria)=>`<button class="${v===cur?'on':''}" data-act="klevel" data-v="${v}" aria-pressed="${v===cur}" aria-label="${aria}"><small>${top}</small><span class="lvn">${big}</span><span class="lvname">${name}</span></button>`;
   const desc=L?`<b>ステップ${cur}</b>：${L.desc}`
-    :`<b>じぶんで選ぶ</b>：${sel.length>6?`和音${sel.length}しゅるい`:sel.map(t=>nwH(T[t].label)).join('・')}（下の 🎛 でかえられるよ）`;
+    :`<b>じぶんで選ぶ</b>：${sel.length>6?`和音${sel.length}しゅるい`:sel.map(t=>nwH(T[t].label+(chalNow(t)?'（<span aria-hidden="true">🔥</span>チャレンジ）':''))).join('・')}（下の 🎛 でかえられるよ）`;
   return `<div class="seg lvseg" role="group" aria-label="問題のステップ">${KLV.map(x=>b(x.lv,'ステップ',x.lv,x.name,`ステップ${x.lv}：${x.desc}`)).join('')}`+
     `${b(0,'じぶんで','🎛','じぶんで選ぶ','じぶんで選ぶ：和音を1つずつ選ぶ')}</div><p class="lvdesc">${desc}</p>`;
 }
@@ -872,6 +884,7 @@ function keysView(){
     <div class="qhead"><div class="qtitle"><span class="qkey">${PA.keyName(key)}</span><span>の</span><span class="badge qbadge" style="--c:${M.color}">${lab}</span><span>は？</span></div>
       ${done?'':`<div class="sigstaff">${sigStaff(key)}</div>`}</div>
     <p class="qsub">${PA.sigLabel(key)}・<b>${n}つ</b>の音・${subOf(key,t)}</p>
+    ${chalNow(t)?CHAL_LINE:''}
   </section>`;
   const names=[...Q.picked].sort((a,b)=>a-b).map(m=>nwH(PA.H(nameOf(m,key,book))));
   h+=`<section class="card"><h2>🎹 けんばんで音をおさえよう<small>${done?'緑の○＝あたり・赤の×＝ちがう音・わくだけ＝たりない音':`<b>${n}つ</b>の音をタップ・どのオクターブでも OK`}</small></h2>

@@ -356,7 +356,8 @@ function render(){
   h+=famCard(key);
   h+=tryCard(key);
   h+=`<div class="links">
-    <a class="btn" href="aug6.html" data-go="aug6">↔️ <span>次は増六の和音 ›<small>ドッペルの第5音を下げると…</small></span></a></div>
+    <a class="btn" href="secondary.html" data-go="secondary"><span aria-hidden="true">🧭</span> <span>次は副属和音 ›<small>ドッペル（Ⅴ7/Ⅴ）のように、ほかの和音のためのⅤ7もつくれる</small></span></a>
+    <a class="btn" href="aug6.html" data-go="aug6"><span aria-hidden="true">↔️</span> <span>増六の和音 ›<small>ドッペルの第5音を下げると…（レベルアップのあとのほう）</small></span></a></div>
   <details class="more"><summary>💡 もっとくわしく</summary><ul>
     <li>ドッペルドミナントは、Ⅱ7と同じところ（Ⅴの前）で使う。だから「Ⅱのなかま」と考えるよ。</li>
     <li><b>同じ主音の長調と短調では、ドッペルドミナントは同じ音</b>（${namesC(dd)}）になるよ。${pk?`${PA.keyName(pk)}にかえて、たしかめてみよう。`:''}</li>
@@ -422,6 +423,8 @@ document.addEventListener('click',e=>{
     if(g.dataset.go==='aug6'){
       const p=PA.store.get('aug6',{}), t=p&&['it','fr','ger'].includes(p.type)?p.type:'it';
       PA.store.set('aug6',{minor:state.minor,keyIdx:state.keyIdx,type:t});
+    }else if(g.dataset.go==='secondary'){ // 副属和音：おなじ調の Ⅴ7/Ⅴ（＝ドッペル）から
+      PA.store.set('secondary',{minor:state.minor,keyIdx:state.keyIdx,target:5,kind:'V7'});
     }else if(g.dataset.go==='family'&&state.minor){
       const p=PA.store.get('minor-family',{});
       PA.store.set('minor-family',{...(p&&typeof p==='object'?p:{}),keyIdx:state.keyIdx,fam:{dd:'V7',dd9:'V9',ddim:'DIM'}[state.fam]});

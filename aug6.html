@@ -63,6 +63,8 @@
 .links{display:flex;flex-direction:column;gap:8px}
 .links .btn{justify-content:flex-start;text-align:left;flex-wrap:wrap;row-gap:0}
 .links .btn small{font-weight:400;color:var(--sub);font-size:13px}
+/* 🔥 チャレンジ（増六に読みかえる）のしるし */
+.chalbadge{display:inline-block;font-size:12.5px;font-weight:800;line-height:1.4;color:#fff;background:#b3361d;border-radius:999px;padding:1px 10px;margin-right:6px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -258,7 +260,8 @@ function bIIDetails(key){
     g.forEach((n,i)=>{if(n.letter!==d[i].letter||n.acc!==d[i].acc){const m=mk.get(n.midi);m.sub=PA.nm(d[i]);m.subColor=LT;}});
   }
   const [lo,hi]=kbRange([g,b.res,i64,gv]);
-  let h=`<details class="more" data-d="bii"><summary>🎹 けんばんでは${b.domName}と同じ音</summary>
+  // 🔥 チャレンジ（先生：増六が入る読みかえは「チャレンジ」としてわける。異名同音の読みかえはレベルアップのさいご）
+  let h=`<details class="more" data-d="bii"><summary><span class="chalbadge"><span aria-hidden="true">🔥</span> チャレンジ</span>けんばんでは${b.domName}と同じ音（異名同音の読みかえ）</summary>
     <p>ドイツの6${b.plain?`の音をぜんぶ、けんばんのふつうの名前（${namesC(d,'・')}）で書きかえると`:`${q(g[3])}を${q(d[3])}と書きかえると`}、<b>${b.domName}</b>（♭Ⅱ＝${b.bII}のためのⅤ7）と<b>まったく同じけんばん</b>。絶対音感で聴くと、同じ和音に聴こえるね。でも書き方とすすみ方がちがうよ。</p>
     <div class="vs">
       <div><h3 style="color:${AUG}">ドイツの6</h3>${namesC(g,'・')}<br><span class="note">${q(g[3])}は半音上へ → Ⅴへ</span></div>
@@ -323,7 +326,8 @@ function tryCard(key){
     links:[{to:'chroma-quiz',params:{mode:'ear',level:2,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:PA.icon('ear')+'耳で聴きわける'}]});
 }
 function linksCard(){
-  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>ドッペルドミナント・Ⅴの家族</small></h2></summary><div class="links">
+  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>ドッペルドミナント・Ⅴの家族・異名同音の読みかえ</small></h2></summary><div class="links">
+    <button class="btn" data-act="go" data-v="enharmonic"><span aria-hidden="true">🔀</span> 次は異名同音の読みかえ<small>レベルアップのさいご。同じけんばんでも、書きかたで行き先がかわる</small></button>
     <button class="btn" data-act="go" data-v="doppel">🔺 Ⅱ7とドッペルドミナント<small>増六のもとになる和音</small></button>
     <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族<small>短調では、Ⅴ9の根音をはぶくと減七</small></button>
   </div></details>`;
@@ -510,6 +514,12 @@ document.addEventListener('click',e=>{
       const mf=PA.store.get('minor-family',{})||{};
       PA.store.set('minor-family',{keyIdx:mi>=0?mi:Number.isInteger(mf.keyIdx)?mf.keyIdx:0,fam:'DIM'});
       PA.go('minor-family.html');
+    }
+    else if(v==='enharmonic'){
+      // 異名同音の読みかえは短調だけ：長調からはおなじ主音の短調へ（リストにない調なら、まえに見ていた調のまま）
+      const mi=state.minor?state.keyIdx:PA.MINOR_KEYS.findIndex(([l,a])=>l===key.l&&a===key.a);
+      if(mi>=0){const p=PA.store.get('enharmonic',{})||{};PA.store.set('enharmonic',{...(typeof p==='object'?p:{}),keyIdx:mi});}
+      PA.go('enharmonic.html');
     }
   }
 });
