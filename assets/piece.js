@@ -8,7 +8,9 @@
  *             rn（PA.rn の部品）, bass・sop（いちばん下・いちばん上の音。'F#3' のように）, skel:{lh:[…], rh:[…]}（骨組み：がくふと音）,
  *             blank（穴うめにするか）, level（'deg'｜'inv'｜'full'：どの答えかたから穴にするか）, accept:[部品]（べつの正解）,
  *             acceptNote（べつの正解のわけ：「2拍めのファまでいっしょに見て」→「…、Ⅴ₇¹でも正解」）,
- *             cad（ここでのおわりかた：PA.piece.CAD の id）, note（こたえたあとの1行）}],
+ *             cad（ここでのおわりかた：PA.piece.CAD の id）, note（こたえたあとの1行）,
+ *             hear（[はじめの拍, おわりの拍]：本物の楽譜とくらべるときに見るあいだ。なければその和音のあいだ。下の validateScore）}],
+ *    score（本物の楽譜。下の「本物の楽譜」）, source.score（本物の楽譜をどうたしかめたか）,
  *    questions:[{id, type:'key'|'cadence', m, level, ask（type:'key'）, range（type:'cadence'：「3〜4小節」）, answer, choices, note}]}
  *   調の名前：大文字＝長調（'C'・'G'・'F#'・'Bb'）、小文字＝短調（'a'・'c#'・'eb'）
  *   skel：lh＝ヘ音記号、rh＝ト音記号。lh のいちばん下の音＝bass、rh のいちばん上の音＝sop（音名もオクターブもおなじ）
@@ -150,6 +152,7 @@ function validate(pc){
     else e(w+'type');
     if(typeof q.note!=='string'||!q.note) e(w+'note');
   });
+  validateScore(pc,e);
   return err;
 }
 
@@ -196,5 +199,121 @@ function explainHTML(ev){
 }
 const beatText=b=>Number.isInteger(b)?b+'拍め':Math.floor(b)+'拍めのうら';
 
-PA.piece={LEVELS,LV_RANK,CAD,ROLE,INV,key,note,tones,validate,items,asked,check,altAccepts,degChoices,explainHTML,beatText,same};
+/* ===== 本物の楽譜（score）=====
+ * pc.score={clef:{rh,lh}（はじめの音部記号 'treble'｜'bass'）, time:'C'（拍子記号の書きかた。なければ '4/4'）,
+ *   measures:[{m, rh:'…', lh:'…'}]}（ぬき出しの小節をじゅんにぜんぶ）
+ * 1小節の書きかた（手で書く。空白で区切る）：
+ *   C5/2 … 音の高さ（'C#5'・'Bb3'）と長さ（/1 全音符・/2・/4・/8・/16・/32、うしろに . で付点）。長さをはぶくと前とおなじ
+ *   (B4 D5 G5)/4 … 和音（いっしょに鳴る音）。r/4 … 休符
+ *   C6! … 臨時記号をかならず書く（ひとつ前の小節の♯をもどす♮など）
+ *   :tr トリル、:st スタッカート、:ac アクセント（'F5/8:tr'）。[ … ] … 連桁（はたをつなぐ）
+ *   clef:bass … ここから音部記号をかえる（小節のとちゅうでも）
+ * PA.piece.parseStaff(text, clef) → {notes:[{t（小節の何拍めから。1から）, len（拍）, dur:'8', dots, rest, keys:[{name, letter, acc, midi, force}],
+ *     beam（連桁の番号か null）, orn:['tr'], art:['st'|'ac'], clef, clefChange}], clef0・clef（はじめ・おわりの音部記号）, end（おわりの拍＋1）, err:[…]}
+ * PA.piece.score(pc) → [{m, rh:{notes…}, lh:{notes…}}]（音部記号は小節をこえてつづく）
+ * PA.piece.timeline(pc) → 鳴らす音 [{midi, letter, acc, at（ぬき出しのはじめから何拍め。0から）, len, rh, orn}]（at のじゅん）
+ * PA.piece.evSpan(pc, ev) → [はじめ, おわり]（ぬき出しのはじめから何拍め。0から） */
+const DURS={'1':4,'2':2,'4':1,'8':0.5,'16':0.25,'32':0.125};
+const CLEFS=['treble','bass'];
+function parseStaff(text,clef){
+  const err=[], notes=[], clef0=clef;
+  let t=1, last=null, beam=null, beamN=0, pendingClef=null;
+  const src=String(text==null?'':text).replace(/\(([^)]*)\)/g,(m,a)=>'('+a.trim().split(/\s+/).join('+')+')');
+  src.trim().split(/\s+/).filter(Boolean).forEach(tok=>{
+    const cm=/^clef:(\w+)$/.exec(tok);
+    if(cm){if(!CLEFS.includes(cm[1])) err.push('音部記号：'+tok); else {clef=cm[1];pendingClef=cm[1];} return;}
+    let s=tok, open=false, close=false;
+    if(s[0]==='['){open=true;s=s.slice(1);}
+    if(s[s.length-1]===']'){close=true;s=s.slice(0,-1);}
+    const m=/^(r|\([^)]+\)|[A-G][^/:]*)(?:\/(\d+)(\.?))?((?::[a-z]+)*)$/.exec(s);
+    if(!m){err.push('書きかた：'+tok);return;}
+    if(m[2]!=null){if(!DURS[m[2]]){err.push('長さ：'+tok);return;} last={dur:m[2],dots:m[3]?1:0};}
+    if(!last){err.push('さいしょの音に長さがない：'+tok);return;}
+    const flags=(m[4]||'').split(':').filter(Boolean);
+    if(flags.some(f=>!['tr','st','ac'].includes(f))) err.push('しるし：'+tok);
+    const rest=m[1]==='r';
+    const keys=rest?[]:(m[1][0]==='('?m[1].slice(1,-1).split('+'):[m[1]]).map(k=>{
+      const force=k[k.length-1]==='!', n=note(force?k.slice(0,-1):k);
+      if(!n){err.push('音の高さ：'+tok);return null;}
+      return {name:force?k.slice(0,-1):k,letter:n.letter,acc:n.acc,midi:n.midi,force};
+    });
+    if(keys.some(k=>!k)) return;
+    if(open){if(beam!=null) err.push('連桁が二重：'+tok); beam=++beamN;}
+    const len=DURS[last.dur]*(last.dots?1.5:1);
+    if(beam!=null&&(rest||len>=1)) err.push('連桁は8分音符より短い音だけ：'+tok);
+    keys.sort((a,b)=>a.midi-b.midi);
+    notes.push({t,len,dur:last.dur,dots:last.dots,rest,keys,beam,orn:flags.filter(f=>f==='tr'),art:flags.filter(f=>f!=='tr'),clef,clefChange:pendingClef});
+    pendingClef=null;
+    if(close){if(beam==null) err.push('連桁のおわりだけ：'+tok); beam=null;}
+    t+=len;
+  });
+  if(beam!=null) err.push('連桁がとじていない');
+  if(pendingClef) err.push('音部記号のあとに音がない');
+  return {notes,clef0,clef,err,end:t};
+}
+function score(pc){
+  const sc=isObj(pc&&pc.score)?pc.score:{}, cl=isObj(sc.clef)?sc.clef:{};
+  let rc=CLEFS.includes(cl.rh)?cl.rh:'treble', lc=CLEFS.includes(cl.lh)?cl.lh:'bass';
+  return (Array.isArray(sc.measures)?sc.measures:[]).map(x=>{
+    const r=parseStaff(x&&x.rh,rc), l=parseStaff(x&&x.lh,lc);
+    rc=r.clef; lc=l.clef;
+    return {m:x&&x.m,rh:r,lh:l};
+  });
+}
+const beatsOf=pc=>Array.isArray(pc.meter)&&pc.meter.length===2?pc.meter[0]*4/pc.meter[1]:4;
+const exFrom=pc=>pc.excerpts&&pc.excerpts[0]?pc.excerpts[0].from:1;
+function timeline(pc){
+  const beats=beatsOf(pc), from=exFrom(pc), out=[];
+  score(pc).forEach(x=>{
+    const base=(x.m-from)*beats;
+    [['rh',x.rh],['lh',x.lh]].forEach(([h,st])=>st.notes.forEach(n=>n.keys.forEach(k=>out.push({midi:k.midi,letter:k.letter,acc:k.acc,at:base+n.t-1,len:n.len,rh:h==='rh',orn:n.orn.slice()}))));
+  });
+  return out.sort((a,b)=>a.at-b.at||a.midi-b.midi);
+}
+const evSpan=(pc,ev)=>{const s=(ev.m-exFrom(pc))*beatsOf(pc)+ev.beat-1;return [s,s+ev.dur];};
+// 本物の楽譜のたしかめ：形・小節の長さ。そして和音ごとに、本物の楽譜で鳴っている音と、骨組み（skel）・記号（rn）があうか
+//   ・その和音のあいだ（hear:[はじめの拍, おわりの拍] があればそのあいだ。アルベルティ・バスで前の拍の音もいっしょに見るとき）に鳴っている
+//     いちばん下の音＝bass（高さも）
+//   ・骨組みの音（第5音のほか）が、そのあいだに本物の楽譜で鳴っている
+//   ・その和音のはじまりの拍で鳴りはじめる音は、和音の音
+function validateScore(pc,e){
+  const ex=Array.isArray(pc.excerpts)?pc.excerpts:[], beats=beatsOf(pc);
+  if(!isObj(pc.score)){e('score（本物の楽譜）がない');return;}
+  if(!isObj(pc.source)||typeof pc.source.score!=='string'||!pc.source.score) e('source.score（本物の楽譜をどうたしかめたか）');
+  if(pc.score.time!=null&&!['C','4/4','3/4','2/4','6/8'].includes(pc.score.time)) e('score.time');
+  const want=[]; ex.forEach(x=>{for(let m=x.from;m<=x.to;m++) want.push(m);});
+  const S=score(pc);
+  if(JSON.stringify(S.map(x=>x.m))!==JSON.stringify(want)) e('score の小節が、ぬき出しの小節とちがう');
+  S.forEach(x=>{
+    [['右手',x.rh],['左手',x.lh]].forEach(([h,st])=>{
+      st.err.forEach(s=>e(`score ${x.m}小節の${h}：${s}`));
+      if(!st.notes.length) e(`score ${x.m}小節の${h}：音がない`);
+      else if(Math.abs(st.end-1-beats)>1e-9) e(`score ${x.m}小節の${h}：長さが${st.end-1}拍（${beats}拍のはず）`);
+    });
+  });
+  (pc.events||[]).forEach(ev=>{
+    if(!isObj(ev)) return;
+    const w=`${ev.id}（${ev.m}小節${ev.beat}拍）：`, x=S.find(y=>y.m===ev.m), k=key(ev.key);
+    if(!x||!k||!isObj(ev.rn)) return;
+    let a=ev.beat, b=ev.beat+ev.dur;
+    if(ev.hear!=null){
+      if(!Array.isArray(ev.hear)||ev.hear.length!==2||!(ev.hear[0]>=1)||!(ev.hear[1]<=beats+1)||!(ev.hear[0]<=a)||!(ev.hear[1]>=b)) e(w+'hear');
+      else {a=ev.hear[0];b=ev.hear[1];}
+    }
+    const snd=x.rh.notes.concat(x.lh.notes).filter(n=>!n.rest&&n.t<b-1e-9&&n.t+n.len>a+1e-9);
+    const keys=[].concat(...snd.map(n=>n.keys));
+    if(!keys.length){e(w+'本物の楽譜で音が鳴っていない');return;}
+    const p=PA.rnNorm(ev.rn), T=tones(k,p), lo=keys.reduce((u,v)=>v.midi<u.midi?v:u), bass=note(ev.bass);
+    if(bass&&!(same(lo,bass)&&lo.midi===bass.midi)) e(w+`本物の楽譜のいちばん下（${lo.name}）が bass（${ev.bass}）とちがう`);
+    const sk=isObj(ev.skel)?(ev.skel.lh||[]).concat(ev.skel.rh||[]).map(note).filter(Boolean):[];
+    sk.forEach(n=>{
+      const t=T.find(u=>same(u,n));
+      if(t&&t.role!=='第5音'&&!keys.some(q=>same(q,n))) e(w+`骨組みの${t.role}（${PA.LET_EN[n.letter]}${n.acc>0?'#':n.acc<0?'b':''}）が本物の楽譜で鳴っていない`);
+    });
+    snd.filter(n=>Math.abs(n.t-ev.beat)<1e-9).forEach(n=>n.keys.forEach(q=>{if(!T.some(u=>same(u,q))) e(w+`この拍で鳴りはじめる${q.name}が和音の音ではない`);}));
+  });
+}
+
+PA.piece={LEVELS,LV_RANK,CAD,ROLE,INV,key,note,tones,validate,items,asked,check,altAccepts,degChoices,explainHTML,beatText,same,
+  parseStaff,score,timeline,evSpan,DURS};
 })();

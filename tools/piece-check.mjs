@@ -7,6 +7,7 @@
 // ・和音ごとに、はじめに鳴っている音（いちばん下・上）と、和音のあいだに出てくる音をならべる。
 //   bass・sop がちがえば「!!」、アルベルティ・バスのように1拍前までの左手の音がいちばん下なら「~」
 //   和音の外の音（音階・トリルなど）は「外：」に出す（まちがいではない。人が目で見てたしかめる）
+// ・本物の楽譜（pc.score）の音も、楽譜の音のデータと1音ずつくらべる（高さ・はじまり・長さ・右手か左手か）
 // ・さいごに PA.piece.validate（和音の音・転回形・骨組み）のけっか
 import fs from 'node:fs';
 import path from 'node:path';
@@ -61,6 +62,17 @@ for(const ev of pc.events){
   console.log(`${mark.padEnd(2)} ${String(ev.m).padStart(2)}小節${String(ev.beat).padEnd(3)} ${PA.rnText(ev.rn).padEnd(10)} bass ${ev.bass.padEnd(4)}（楽譜 ${L?nm(L.n):'-'}） sop ${ev.sop.padEnd(4)}（楽譜 ${H?nm(H.n):'-'}）`
     +`  楽譜の音：${[...new Set(inside.map(x=>nm(x.n)))].join(' ')}${out.length?'  外：'+out.join(' '):''}`);
 }
+// 本物の楽譜（pc.score）の音を、楽譜の音のデータと1音ずつくらべる（高さ・はじまり・長さ。つづりも）
+const ex=pc.excerpts[0], key3=x=>`${x.at}|${x.len}|${x.name}`;
+const ours=[];
+PA.piece.score(pc).forEach(x=>[['rh',x.rh],['lh',x.lh]].forEach(([h,st])=>st.notes.forEach(n=>n.keys.forEach(k=>
+  ours.push({m:x.m,at:(x.m-1)*beats+n.t-1,len:n.len,name:k.name,h})))));
+const theirs=notes.filter(x=>x.mn>=ex.from&&x.mn<=ex.to).map(x=>({m:x.mn,at:x.t,len:x.d,name:x.name.replace('♯','#').replace('♭','b'),h:x.lh?'lh':'rh'}));
+const cnt=a=>{const m=new Map();a.forEach(x=>{const k=key3(x)+'|'+x.h;m.set(k,(m.get(k)||0)+1);});return m;};
+const A=cnt(ours), B=cnt(theirs), diff=[];
+new Set([...A.keys(),...B.keys()]).forEach(k=>{if((A.get(k)||0)!==(B.get(k)||0)) diff.push(`${k}：アプリ ${A.get(k)||0}・楽譜 ${B.get(k)||0}`);});
+console.log(`本物の楽譜：アプリ ${ours.length}音・楽譜のデータ ${theirs.length}音（${ex.from}〜${ex.to}小節）`+(diff.length?'\n!! ちがう所：\n  '+diff.sort().join('\n  '):'。高さ・はじまり・長さ・右手か左手か、ぜんぶおなじ'));
+if(diff.length) bad++;
 const err=PA.piece.validate(pc);
 console.log(err.length?'validate：\n  '+err.join('\n  '):'validate：OK');
 console.log(bad?`!! ${bad}か所、bass・sop が楽譜とちがう`:'bass・sop：ぜんぶ楽譜とおなじ');

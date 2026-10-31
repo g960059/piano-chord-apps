@@ -5,13 +5,15 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import crypto from 'node:crypto';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {loadPA} from './_load.mjs';
 
 const root=path.join(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=f=>fs.readFileSync(path.join(root,f),'utf8');
-const CORE=read('assets/core.js'), PIECE=read('assets/piece.js');
+const CORE=read('assets/core.js'), PIECE=read('assets/piece.js'), SCORE=read('assets/score.js'), VEX=read('assets/vendor/vexflow-bravura.js');
+const FAKE=read('test/_fakedom.mjs').replace(/^export /m,'');
 const load=(opts)=>loadPA(CORE+'\n'+PIECE,opts);
 const DATA=read('assets/pieces/k545-1.json');
 const K545=()=>JSON.parse(DATA);
@@ -163,7 +165,7 @@ test('ことば：やさしい日本語（分かち書きなし・半減七な�
 });
 
 // ページの<script>を core・piece.js のあとにうごかす。fetch は曲のデータをかえす。クリックは document の click をよぶ
-function runPage(mem,search){
+function runPage(mem,search,opts){
   const js=read('piece.html').match(/<script>([\s\S]*?)<\/script>/)[1];
   const stub=`(function(){const els={};document.getElementById=function(id){return els[id]||(els[id]={id,innerHTML:'',style:{},parentNode:null,addEventListener:function(){}});};
     window.__els=els;window.__clicks=[];window.__dl={};window.__wl={};
@@ -172,8 +174,10 @@ function runPage(mem,search){
     document.querySelector=function(){return null;};window.scrollTo=function(){};document.querySelectorAll=function(){return [];};
     window.__fetched=[];window.fetch=function(u){window.__fetched.push(u);return Promise.resolve({ok:true,json:function(){return Promise.resolve(JSON.parse(${JSON.stringify(DATA)}));}});};})();\n`;
   // 音：PA.sleep はおわらない（鳴らしているとちゅうのまま）。PA.chord は数えるだけ
-  const snd='PA.sleep=function(){return new Promise(function(){});};window.__chords=0;PA.chord=function(){window.__chords++;};PA.stopSound=function(){};\n';
-  return loadPA(stub+CORE+'\n'+PIECE+'\nPA.paint=function(el,h){el.innerHTML=h;};PA.__ctx=function(k){return window[k];};\n'+snd+js,{storage:mem,search,href:'https://example.test/apps/piece.html'+search});
+  const snd='PA.sleep=function(){return new Promise(function(){});};window.__chords=0;PA.chord=function(){window.__chords++;};window.__notes=[];PA.playNote=function(m,w,d,v){window.__notes.push([m,w,d]);};PA.stopSound=function(){};\n';
+  // vex：VexFlow と、それが要素をつくる DOM のかわり（test/_fakedom.mjs）も入れる（本物の楽譜を描く）。ないときは骨組みだけのまえの形
+  const vex=opts&&opts.vex?FAKE+'\n;(function(){var d=fakeDocument();document.createElement=d.createElement;document.createElementNS=d.createElementNS;})();\n'+VEX+'\n':'';
+  return loadPA(stub+vex+CORE+'\n'+PIECE+'\n'+(opts&&opts.vex?SCORE+'\n':'')+'PA.paint=function(el,h){el.innerHTML=h;};PA.__ctx=function(k){return window[k];};\n'+snd+js,{storage:mem,search,href:'https://example.test/apps/piece.html'+search});
 }
 const tick=()=>new Promise(r=>setTimeout(r,0));
 function clicker(PA){
@@ -352,8 +356,8 @@ test('オフライン：曲のデータも sw.js の PRECACHE に入る',()=>{
 });
 
 // runPage の PA に、テストでつかう入り口をつける
-function loadPA2(mem,search){
-  const PA=runPage(mem,search);
+function loadPA2(mem,search,opts){
+  const PA=runPage(mem,search,opts);
   return Object.assign(PA,{__fetched:()=>PA.__ctx('__fetched'),__clicks:()=>PA.__ctx('__clicks'),__el:id=>PA.__ctx('__els')[id]});
 }
 
@@ -397,7 +401,12 @@ test('ページ：音（鳴らしているあいだは描きなおさない・�
   assert.ok(!/data-act="pstop"/.test(view()+bar()));
   const before=view();
   click('pall'); await tick();
-  assert.equal(PA.__ctx('__chords'),1,'さいしょの和音');
+  // 本物の楽譜の音を、リズムどおりにいっぺんに予約する（191音。4小節のトリルは ソファソファ の4つ）
+  const ns=PA.__ctx('__notes');
+  assert.equal(ns.length,194,'ぜんぶの音');
+  assert.equal(PA.__ctx('__chords'),0,'骨組みの和音は鳴らさない');
+  assert.deepEqual(J(ns.slice(0,2)),[[60,0,0.5+0.15],[72,0,2+0.15]],'1小節1拍め：左手のド（8分）と右手のド（2分）。ゆっくり＝4分音符1秒');
+  assert.ok(ns.some(n=>n[0]===54&&Math.abs(n[1]-(9*4+3.5))<1e-9),'10小節4拍めのうらの左手のファ♯');
   assert.equal(view(),before,'鳴らしはじめても、ページを描きなおさない（role=status・aria-live をつくりなおさない）');
   assert.match(bar(),/data-act="pall" data-hot="listen" aria-pressed="true">[\s\S]*?とめる/);
   // もういちど「ぜんぶ聴く」のボタン（いまは「とめる」）をおすと、とめる
@@ -429,4 +438,162 @@ test('ページ：見た目とことば（せまい画面の①のボタン・�
   assert.ok(!/ open/.test(src.slice(0,60)),'はじめはとじておく');
   // ほかのページの記号ボタン（secondary.html の目標の和音）も44pxいじょう
   assert.match(read('secondary.html'),/\.tseg button\{min-width:44px\}/);
+});
+
+/* ===== 本物の楽譜（2026-11-01（2）：先生「その曲のまま分析したかった。和音に直した形はヒントとして」） ===== */
+const FAKE_DOC=async()=>(await import('./_fakedom.mjs')).fakeDocument();
+// VexFlow と score.js を node で（document をにせものに）
+async function loadVex(){
+  const PA=loadPA(VEX+'\n'+CORE+'\n'+PIECE+'\n'+SCORE+'\nPA.__doc=function(d){document.createElement=d.createElement;document.createElementNS=d.createElementNS;};');
+  PA.__doc(await FAKE_DOC());
+  return PA;
+}
+
+test('本物の楽譜：データ（12小節・どの小節も4拍・191音・臨時記号・音部記号）',()=>{
+  const PA=load(), P=PA.piece, pc=K545(), S=P.score(pc);
+  assert.deepEqual(J(S.map(x=>x.m)),[1,2,3,4,5,6,7,8,9,10,11,12]);
+  S.forEach(x=>{assert.deepEqual(J(x.rh.err),[],x.m+'右手');assert.deepEqual(J(x.lh.err),[],x.m+'左手');assert.equal(x.rh.end,5,x.m);assert.equal(x.lh.end,5,x.m);});
+  const tl=P.timeline(pc);
+  assert.equal(tl.length,191,'DCML の notes.tsv とおなじ数（tools/piece-check.mjs で1音ずつくらべた）');
+  // 1小節：右手 ド（2分）・ミ・ソ、左手 ド・ソ・ミ・ソ…（アルベルティ・バス）
+  const nm=n=>n.keys.map(k=>k.name).join('+')+'/'+n.len;
+  assert.deepEqual(J(S[0].rh.notes.map(nm)),['C5/2','E5/1','G5/1']);
+  assert.deepEqual(J(S[0].lh.notes.map(nm)),['C4/0.5','G4/0.5','E4/0.5','G4/0.5','C4/0.5','G4/0.5','E4/0.5','G4/0.5']);
+  assert.deepEqual(J(S[1].rh.notes.map(n=>n.rest?'r':nm(n))),['B4/1.5','C5/0.25','D5/0.25','C5/1','r']);
+  // 4小節：トリルつきのファ（8分）。10小節：左手のファ♯は4拍めのうら、右手のドに♮（前の小節のド♯をもどす）
+  assert.deepEqual(J(S[3].rh.notes[1].orn),['tr']);
+  const fis=S[9].lh.notes[3]; assert.equal(fis.t,4.5); assert.equal(fis.keys[0].name,'F#3');
+  assert.ok(S[9].rh.notes[2].keys[0].force&&S[9].rh.notes[15].keys[0].force,'C6!・C5!');
+  // 左手は1〜5小節がト音記号、5小節4拍めからヘ音記号（Mutopia・DCML の MuseScore とおなじ）
+  assert.equal(S[0].lh.clef0,'treble'); assert.equal(S[4].lh.notes[3].clefChange,'bass'); assert.equal(S[5].lh.clef0,'bass');
+  assert.equal(S[0].rh.clef0,'treble');
+  // 出どころ：どうたしかめたか（Mutopia で書いて、DCML と1音ずつ）。ほかのデータの写しではない
+  assert.match(pc.source.score,/Mutopia/); assert.match(pc.source.score,/DCML/); assert.match(pc.source.score,/tools\/piece-check\.mjs/);
+  assert.equal(pc.score.time,'C');
+  // 長さ・書きかたのまちがい
+  const ps=P.parseStaff;
+  assert.ok(ps('C5/4 D5 E5','treble').end===4,'3拍');
+  assert.ok(ps('[C5/8 D5','treble').err.some(e=>/連桁/.test(e)));
+  assert.ok(ps('H5/4','treble').err.length);
+  assert.ok(ps('[C5/4 D5]','treble').err.some(e=>/8分音符より短い/.test(e)));
+  assert.ok(ps('C5/4:xx','treble').err.some(e=>/しるし/.test(e)));
+  assert.ok(ps('clef:alto C4/1','treble').err.some(e=>/音部記号/.test(e)));
+});
+
+test('本物の楽譜：validate は、本物の楽譜と骨組み・記号のくいちがい（どちらの書きまちがいも）を見つける',()=>{
+  const PA=load(), V=pc=>PA.piece.validate(pc), bad=f=>{const pc=K545();f(pc);return V(pc);};
+  const M=(pc,m)=>pc.score.measures.find(x=>x.m===m);
+  // 本物の楽譜のまちがい
+  assert.ok(bad(pc=>{M(pc,2).rh='B4/4 [C5/16 D5] C5/4 r';}).some(e=>/2小節の右手：長さが3\.5拍/.test(e)),'付点わすれ');
+  assert.ok(bad(pc=>{M(pc,4).lh='[C4/8 G4 D4 G4] [C4 G4 E4 G4]';}).some(e=>/m4a.*いちばん下（C4）が bass（B3）/.test(e)),'左手のシ→ド');
+  assert.ok(bad(pc=>{M(pc,11).rh='[A4/8:ac G5 E5:st C5:st] [D5 G5 E5:st C5:st]';}).some(e=>/m11a.*鳴りはじめるA4が和音の音ではない/.test(e)));
+  assert.ok(bad(pc=>{M(pc,7).rh='[F4/8 G4/16 A4] [B4 C5 D5 E5] [F5 E5 D5 C5] [B4 A4 G4 E4]';}).some(e=>/m7b.*骨組みの第7音（F）が本物の楽譜で鳴っていない/.test(e)),'7小節4拍めの右手のファ→ミ');
+  assert.ok(bad(pc=>{pc.score.measures.pop();}).some(e=>/score の小節/.test(e)));
+  assert.ok(bad(pc=>{delete pc.score;}).some(e=>/score（本物の楽譜）がない/.test(e)));
+  assert.ok(bad(pc=>{delete pc.source.score;}).some(e=>/source\.score/.test(e)));
+  // 骨組み・記号のまちがい（骨組みだけならあっている形でも、本物の楽譜とあわない）
+  assert.ok(bad(pc=>{const e=pc.events.find(x=>x.id==='m5');e.bass='F2';e.skel.lh=['F2'];}).some(e=>/m5.*いちばん下（F3）が bass（F2）/.test(e)),'オクターブちがいの bass');
+  assert.ok(bad(pc=>{const e=pc.events.find(x=>x.id==='m9');e.rn={deg:4};e.bass='F3';e.skel={lh:['F3','A3'],rh:['C4']};e.sop='C4';}).some(e=>/m9.*鳴りはじめるD4が和音の音ではない/.test(e)),'Ⅱ¹ を Ⅳ と書いた');
+  // hear：4小節2拍めのⅤ₇¹ は、1拍めの左手のシ（第3音）もいっしょに見る
+  assert.deepEqual(J(K545().events.find(x=>x.id==='m4b').hear),[1,3]);
+  assert.ok(bad(pc=>{delete pc.events.find(x=>x.id==='m4b').hear;}).some(e=>/m4b/.test(e)),'hear がないと、2拍めだけではシが鳴っていない');
+  assert.ok(bad(pc=>{pc.events.find(x=>x.id==='m4b').hear=[3,4];}).some(e=>/m4b.*hear/.test(e)));
+});
+
+test('本物の楽譜：VexFlow で描く（スマホ＝1段1小節で12段・広い画面＝2小節で6段。どの「？」も拍の位置）',async()=>{
+  const PA=await loadVex(), pc=K545(), S=PA.piece.score(pc);
+  assert.ok(PA.score.ready());
+  const L1=PA.score.layout(pc,1), L2=PA.score.layout(pc,2);
+  assert.equal(L1.systems.length,12); assert.equal(L2.systems.length,6);
+  assert.deepEqual(J(L2.systems.map(s=>s.ms)),[[1,2],[3,4],[5,6],[7,8],[9,10],[11,12]]);
+  assert.equal(PA.score.layout(pc,1),L1,'おなじ曲はいちど描いたらとっておく');
+  [L1,L2].forEach(L=>{
+    const svg=L.systems.map(s=>s.svg).join('');
+    assert.equal((svg.match(/<svg /g)||[]).length,L.systems.length);
+    assert.match(L.systems[0].svg,/^<svg [^>]*viewBox="0 0 \d+ 200"[^>]*class="vfsvg"[^>]*aria-hidden="true"/);
+    assert.ok(!/<svg[^>]* style=/.test(svg),'はばは CSS で（style をけす）');
+    // 小節の数＝段の数×2（右手・左手）、音符・休符の数＝データの数（和音は1つ）
+    assert.equal((svg.match(/class="vf-stave"/g)||[]).length,24);
+    const n=S.reduce((a,x)=>a+x.rh.notes.length+x.lh.notes.length,0);
+    assert.equal((svg.match(/class="vf-stavenote"/g)||[]).length,n);
+    // 連桁の数＝データの [ ] の数
+    const beams=S.reduce((a,x)=>a+new Set(x.rh.notes.filter(q=>q.beam!=null).map(q=>'r'+q.beam)).size+new Set(x.lh.notes.filter(q=>q.beam!=null).map(q=>'l'+q.beam)).size,0);
+    assert.equal((svg.match(/class="vf-beam"/g)||[]).length,beams);
+    // どの和音にも位置。段の中で左から右へ、はばの中
+    const evs=[].concat(...L.systems.map(s=>s.evs));
+    assert.deepEqual(J(evs.map(v=>v.i)),pc.events.map((e,i)=>i));
+    L.systems.forEach(s=>s.evs.forEach((v,k)=>{
+      assert.ok(v.x>0&&v.x<L.W&&v.x0<v.x&&v.x<v.x1&&v.x1<=L.W,'はばの中');
+      if(k) assert.ok(v.x>s.evs[k-1].x&&v.x0>=s.evs[k-1].x1-1e-6,'じゅんに・かさならない');
+    }));
+  });
+  // 4小節：Ⅴ¹（1拍め）・Ⅴ₇¹（2拍め）・Ⅰ（3拍め）。1拍ぶんは、せまい画面（276px）でも「？」（52px）が入るはば
+  const s4=L1.systems[3], u=276/L1.W;
+  assert.equal(s4.evs.length,3); assert.ok((s4.evs[1].x-s4.evs[0].x)*u>=40,'となりの拍との間');
+  // 線のあいだ（VexFlow の10）が、320px の画面（楽譜のはば276px）で7pxいじょう
+  assert.ok(10*276/L1.W>=7);
+});
+
+test('ページ：本物の楽譜がふつう。「？」は楽譜の上の列、骨組みは「ヒント」で（段ごと）',async()=>{
+  const PA=loadPA2(new Map(),'?id=k545-1',{vex:true}); await tick(); await tick();
+  const view=()=>PA.__el('view').innerHTML, click=clicker(PA);
+  let h=view();
+  assert.match(h,/下は本物の楽譜だよ/); assert.match(h,/じぶんの楽譜もひらいて、いっしょに見てね/);
+  assert.equal((h.match(/<div class="sys" /g)||[]).length,12,'スマホ：1段に1小節');
+  assert.equal((h.match(/<div class="sheet" /g)||[]).length,12);
+  assert.equal((h.match(/<svg [^>]*class="vfsvg"/g)||[]).length,12);
+  assert.equal((h.match(/<div class="lslot" style="left:[\d.]+%">/g)||[]).length,22,'和音がかわる所ぜんぶ（答えるのも、見せるだけのも）');
+  assert.equal((h.match(/class="slot[^"]* q"/g)||[]).length,12,'「？」は12');
+  assert.equal((h.match(/<i class="tick" style="left:[\d.]+%" aria-hidden="true"><\/i>/g)||[]).length,22,'拍の位置のしるし');
+  assert.equal((h.match(/<i class="hl" data-ev="\d+"/g)||[]).length,22);
+  assert.ok(!/class="hintbox"/.test(h),'骨組みははじめはとじている');
+  assert.equal((h.match(/data-act="phint"/g)||[]).length,12);
+  assert.match(h,/data-act="phint" data-v="2" aria-pressed="false" aria-label="ヒント：和音だけにした形を見る"><svg[^>]*>[\s\S]*?<\/svg>ヒント<span class="hx">：和音だけ<\/span><\/button>/);
+  // ヒント：その段だけ骨組み（全音符）をひらく・とじる
+  click('phint','2');
+  h=view();
+  assert.equal((h.match(/class="hintbox"/g)||[]).length,1);
+  assert.match(h,/data-act="phint" data-v="2" aria-pressed="true"/);
+  const hb=h.match(/<div class="hintbox">[\s\S]*?<\/svg><\/div>/)[0];
+  assert.match(hb,/和音の音だけを、全音符にした形だよ/); assert.match(hb,/data-ev="1"/); assert.match(hb,/data-ev="2"/); assert.ok(!/data-ev="3"/.test(hb),'2小節の和音だけ');
+  click('phint','2'); assert.ok(!/class="hintbox"/.test(view()));
+  click('phint','99'); assert.ok(!/class="hintbox"/.test(view()),'しらない小節');
+  // 「？」をえらぶ → その段の下に答える所。「この和音」（本物の楽譜）と「和音にして聴く」（骨組み）
+  click('pick','m10c');
+  h=view();
+  assert.match(h,/10小節4拍めのうらの和音は？/);
+  assert.match(h,/data-act="pplay" data-v="m10c"/); assert.match(h,/data-act="pskel" data-v="m10c" aria-pressed="false">[\s\S]*?和音にして聴く/);
+  assert.match(h,/<i class="hl" data-ev="16" style="left:[\d.]+%;width:[\d.]+%;background:#e6eefc"/,'えらんだ和音の所に色');
+  click('pskel','m10c'); await tick();
+  assert.equal(PA.__ctx('__chords'),1,'骨組みの和音'); assert.equal(PA.__ctx('__notes').length,0);
+  click('pskel','m10c');
+  click('pplay','m10c'); await tick();
+  // 10小節4拍めのうら（8分）：左手のファ♯と右手のレ・ド（16分）
+  assert.deepEqual(J(PA.__ctx('__notes').map(n=>n[0]).sort()),[54,72,74]);
+  // 答えて正解すると、列の「？」が記号に
+  click('pclose');
+  click('pick','m2a'); click('adeg',5);
+  assert.match(view(),/<div class="lslot" style="left:[\d.]+%"><button type="button" class="slot[^"]* ok"[^>]*data-v="m2a"/);
+});
+
+test('オフライン・ライセンス：VexFlow 4.2.5（そのまま）を assets/vendor に。sw.js の PRECACHE・サポートのページ',()=>{
+  const v=read('assets/vendor/vexflow-bravura.js');
+  assert.match(v.slice(0,200),/VexFlow 4\.2\.5 /);
+  // npm の vexflow@4.2.5 の build/cjs/vexflow-bravura.js のまま（かえていない）
+  assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path.join(root,'assets/vendor/vexflow-bravura.js'))).digest('hex'),'d632111c9dc0eedc095e22b1a61913c23c5d166865e4fece61e1554535de355e');
+  assert.ok(!/\?\.[a-zA-Z_$(]|\?\?/.test(v.replace(/\?\.\d/g,'')),'古い Safari でうごかない ?. ?? がない');
+  const h=read('piece.html');
+  assert.match(h,/<script src="assets\/vendor\/vexflow-bravura\.js"><\/script>\n<script src="assets\/core\.js"><\/script>\n<script src="assets\/piece\.js"><\/script>\n<script src="assets\/score\.js"><\/script>/);
+  assert.ok(!/https?:\/\/[^"']*\.js/.test(h),'ネットから読まない');
+  const sw=read('sw.js');
+  assert.match(sw,/'assets\/vendor\/vexflow-bravura\.js',/); assert.match(sw,/'assets\/score\.js',/);
+  assert.match(read('assets/licenses/VEXFLOW-LICENSE.txt'),/Mohit Muthanna Cheppudira/);
+  assert.ok(!/\?\.|\?\?/.test(SCORE),'score.js も ?. ?? をつかわない');
+  assert.match(read('assets/licenses/BRAVURA-OFL.txt'),/SIL Open Font License, Version 1\.1/);
+  const sp=read('support.html');
+  assert.match(sp,/VexFlow[\s\S]*?assets\/licenses\/VEXFLOW-LICENSE\.txt/); assert.match(sp,/Bravura[\s\S]*?assets\/licenses\/BRAVURA-OFL\.txt/);
+  // ことば：やさしい日本語（分かち書きなし）
+  const js=h.match(/<script>([\s\S]*?)<\/script>/)[1];
+  ['下は本物の楽譜だよ','和音にして聴く','ヒント：和音だけにした形を見る','和音の音だけを、全音符にした形だよ'].forEach(t=>assert.ok(js.includes(t),t));
+  assert.ok(!/[ぁ-んァ-ヶー一-龠][ 　][ぁ-んァ-ヶー一-龠]/.test(K545().source.score));
 });

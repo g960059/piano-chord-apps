@@ -42,6 +42,7 @@
 .sysc>h2,.sysc>.note,.sysc>.soundhint{margin-left:10px;margin-right:10px}
 .sys{margin-top:14px;padding-top:10px;border-top:2px dashed var(--line)}
 .sysbar{display:flex;flex-wrap:wrap;gap:6px;margin:0 8px 4px}
+.sysbar .btn.small{padding-left:10px;padding-right:12px}
 .sysin{margin:0 auto}
 .slots{position:relative;display:flex;align-items:stretch;margin-top:2px}
 .slots .kpre{position:absolute;left:0;top:0;bottom:0;display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:800;color:var(--ink)}
@@ -79,21 +80,42 @@ button.slot.ng{border-color:var(--ng);background:#fde4e7;color:#8f2233}
 .src p{margin:6px 0 0}
 .src summary h2{margin:0}
 @media (max-width:359px){.degs{gap:3px}.dbtn{font-size:18px}}
+/* 本物の楽譜（assets/score.js が VexFlow で描く）。上の「？」の列は拍の位置にあわせる（符頭をかくさない） */
+.score{position:relative;margin:4px auto 0}
+.lane{position:relative;height:62px}
+.lane .kpre{position:absolute;left:0;top:0;height:56px;display:flex;align-items:center;font-size:17px;font-weight:800;color:var(--ink)}
+.lslot{position:absolute;top:0;width:50px;margin-left:-25px;display:flex}
+.lslot>.slot{width:100%}
+.lane .tick{position:absolute;bottom:0;width:0;height:0;margin-left:-5px;border:5px solid transparent;border-top:6px solid #8d7e69;border-bottom:0}
+.sheet{position:relative;height:0;overflow:hidden}
+.sheet .vfsvg{position:absolute;left:0;top:0;width:100%;height:100%}
+.sheet .hl{position:absolute;top:2%;bottom:2%;border-radius:8px}
+.hintbtn.on{background:#fff4c9;border-color:#e0b43a}
+@media (max-width:359px){.hintbtn .hx{display:none}}
+.hintbox{margin:10px 6px 0;padding:8px 6px 6px;border-radius:14px;background:#fffbea;border:2px dashed #e0b43a}
+.hintbox>p{margin:0 6px 4px;font-size:14.5px;font-weight:700;color:#6b5a1f}
+.hintin{margin:0 auto}
+.hintbox svg{display:block;width:100%;height:auto}
 </style>
 </head>
 <body>
 <header class="appbar" id="appbar"></header>
 <main class="page" id="view"></main>
 <div class="actionbar" id="actions"></div>
+<script src="assets/vendor/vexflow-bravura.js"></script>
 <script src="assets/core.js"></script>
 <script src="assets/piece.js"></script>
+<script src="assets/score.js"></script>
 <script>
 /* 名曲で楽曲分析：本物の曲（コンクールでひくような曲）の和音を、記号で穴うめする（先生の案。docs/REPERTOIRE-ANALYSIS.md）
  *   曲のデータ：assets/pieces/<id>.json（しくみと形は assets/piece.js のコメント）。ページ：piece.html?id=k545-1
- *   がくふは「骨組み」（和音の音を全音符にしたもの。PA.staffSVG）。小節ごとにたて線と番号。その下に、和音がかわる所ごとに「？」
+ *   がくふは本物の楽譜（pc.score を assets/score.js が VexFlow で描く。スマホは1段に1小節、はばの広い画面は2小節）。
+ *     その上の列に、和音がかわる拍ごとに「？」（符頭をかくさない）。和音だけにした「骨組み」（全音符。PA.staffSVG）は、段ごとの「ヒント」で見る
+ *     （VexFlow が読めなかったときは、骨組みの下に「？」をならべる、まえの形）
  *   答えかた（先生：人では分けない。何を答えるかを自分でえらぶ）：'deg'＝和音の番号だけ（4択）、'inv'＝転回形も、
  *     'full'＝ぜんぶ（番号・7／9・転回形・○・ⅤのⅤを部品でつくる。調とおわりかたの問題も）
- *   音：この和音・この小節・ぜんぶ（鳴っている所をがくふの下の色と「？」のわくで見せる）
+ *   音：この和音・この小節・ぜんぶ。本物の楽譜の音をリズムどおりに鳴らす（鳴っている和音の所を、がくふの色と「？」のわくで見せる）。
+ *     「和音にして聴く」は骨組みの和音をいっしょに鳴らす
  * リンク：id＝曲（なければさいごにひらいた曲）、mode＝deg｜inv｜full（その答えかたで。ほぞんもする）
  * 保存：PA.store 'piece-<id>'＝{lv, tempo, ans:{deg:{問題の id:{a（部品か文字）, ok}}, inv:{…}, full:{…}}}（いちど答えたらかえない）
  *       PA.store 'pieces'＝{<id>:{t（さいごにひらいた時こく）, n（答えた数）, best:{deg|inv|full:{ok, n}}}}（ホームの ★ でつかう） */
@@ -114,7 +136,11 @@ const ID=(()=>{
 })();
 const SKEY='piece-'+ID;
 const S={pc:null,err:ID?null:'notfound',lv:'deg',tempo:'slow',ans:{deg:{},inv:{},full:{}},sel:null,
-  B:{deg:null,form:0,inv:0,borrowed:false,of:false},playing:null,cur:-1,muteHint:false,focusNext:false};
+  B:{deg:null,form:0,inv:0,borrowed:false,of:false},playing:null,cur:-1,muteHint:false,focusNext:false,
+  hint:{}}; // hint：ヒント（骨組み）をひらいている段（段のさいしょの小節の番号：true）。ほぞんしない
+// 1段の小節の数：はばの広い画面は2、スマホは1（線のあいだが7pxいじょうになるように）
+const WIDE='(min-width: 700px)';
+const perNow=()=>{try{return window.matchMedia&&window.matchMedia(WIDE).matches?2:1;}catch(e){return 1;}};
 if(LEVELS.includes(P.mode)) S.lv=P.mode;
 
 /* ===== 保存 ===== */
@@ -181,7 +207,25 @@ let token=0;
 const midis=ev=>ev.skel.lh.concat(ev.skel.rh).map(s=>PC.note(s).midi);
 const bpm=()=>S.tempo==='normal'?S.pc.tempo.normal:S.pc.tempo.slow;
 function stop(){token++;S.playing=null;S.cur=-1;PA.stopSound();}
-// list＝鳴らす和音の番号（S.pc.events の）。what＝鳴らしているボタン（'all'・'m3'・'e:m2a'）
+// 本物の楽譜の音を、リズムどおりにいっぺんに予約する（とめるときは PA.stopSound が、まだ鳴っていない音もけす）
+//   a・b＝ぬき出しのはじめから何拍めから何拍めまで。トリルは上の音からの32分音符（ソファソファ）
+let TL=null;
+function schedule(a,b){
+  const spb=60/bpm(), k=PC.key(S.pc.key), sig=k&&k.sig||{};
+  if(!TL) TL=PC.timeline(S.pc);
+  TL.forEach(n=>{
+    if(n.at<a-1e-9||n.at>=b-1e-9) return;
+    const vel=n.rh?0.2:0.13, len=Math.min(n.len,b-n.at);
+    if(n.orn.includes('tr')&&len>=0.5){
+      // 上の音：調号の音（ハ長調ならファの上はソ）
+      const um=n.midi+(PA.NAT[(n.letter+1)%7]+(sig[(n.letter+1)%7]||0)-PA.NAT[n.letter]-(n.acc||0)+12)%12;
+      for(let j=0;j<4;j++) PA.playNote(j%2?n.midi:um,(n.at-a+j*len/4)*spb,len/4*spb+0.08,vel);
+      return;
+    }
+    PA.playNote(n.midi,(n.at-a)*spb,len*spb+0.15,vel);
+  });
+}
+// list＝鳴らす和音の番号（S.pc.events の）。what＝鳴らしているボタン（'all'・'m3'・'e:m2a'・'k:m2a'（和音にして聴く））
 //   鳴らしているあいだはページを描きなおさない（フォーカス・こたえの読み上げ（role=status）・組み立ての aria-live をこわさない）。
 //   鳴っている所の色・ボタンのようすは syncPlay() で、その所だけかえる
 async function playList(list,what){
@@ -189,24 +233,28 @@ async function playList(list,what){
   const hint=S.muteHint;
   stop(); const my=token; S.playing=what; S.muteHint=false;
   if(hint) render();
+  const real=what.slice(0,2)!=='k:';
+  // 本物の楽譜：はじめの和音のはじめから、さいごの和音のおわりまでを予約して、色だけ和音ごとにすすめる
+  if(real) schedule(PC.evSpan(S.pc,S.pc.events[list[0]])[0],PC.evSpan(S.pc,S.pc.events[list[list.length-1]])[1]);
   for(const i of list){
     if(my!==token) return;
     S.cur=i; syncPlay();
     const ev=S.pc.events[i], sec=ev.dur*60/bpm();
-    PA.chord(midis(ev),{dur:Math.max(0.6,sec+0.3)});
-    await PA.sleep(sec*1000);
+    if(!real) PA.chord(midis(ev),{dur:Math.max(1.2,sec+0.3)});
+    await PA.sleep((real?sec:Math.max(1.2,sec))*1000);
   }
   if(my!==token) return;
   S.playing=null; S.cur=-1; syncPlay();
 }
 // 鳴らすボタンの中身（鳴っていれば ■ とめる）。data-act は鳴っていてもかえない（キーボードでおしたあとも、おなじボタンにフォーカスがのこる）
-const PLAYBTN={pm:(on,v)=>`${PA.icon(on?'stop':'play')}${ESC(v)}小節`,pplay:on=>`${PA.icon(on?'stop':'listen')}この和音`};
-const playWhat={pm:v=>'m'+v,pplay:v=>'e:'+v};
+const PLAYBTN={pm:(on,v)=>`${PA.icon(on?'stop':'play')}${ESC(v)}小節`,pplay:on=>`${PA.icon(on?'stop':'listen')}この和音`,pskel:on=>`${PA.icon(on?'stop':'listen')}和音にして聴く`};
+const playWhat={pm:v=>'m'+v,pplay:v=>'e:'+v,pskel:v=>'k:'+v};
 function playBtn(act,v,extra){
   const on=S.playing===playWhat[act](v);
   return `<button type="button" class="btn small${on?' night':''}" data-act="${act}" data-v="${ESC(v)}" aria-pressed="${on}"${extra||''}>${PLAYBTN[act](on,v)}</button>`;
 }
 const SEL_HL='#e6eefc', PLAY_HL='#ffe9a8';
+const hlColor=i=>{const ev=S.pc&&S.pc.events[i];return i===S.cur?PLAY_HL:ev&&S.sel===ev.id?SEL_HL:'transparent';};
 // 鳴っている所（「？」のわく・がくふの列の色）と、鳴らすボタン・下のバーだけをかえる
 function syncPlay(){
   document.querySelectorAll('.slot[data-i]').forEach(el=>{el.classList.toggle('play',+el.dataset.i===S.cur);});
@@ -214,7 +262,8 @@ function syncPlay(){
     const i=+r.getAttribute('data-ev'), ev=S.pc&&S.pc.events[i];
     r.setAttribute('fill',i===S.cur?PLAY_HL:ev&&S.sel===ev.id?SEL_HL:'none');
   });
-  document.querySelectorAll('[data-act="pm"],[data-act="pplay"]').forEach(b=>{
+  document.querySelectorAll('.sheet .hl[data-ev]').forEach(r=>{r.style.background=hlColor(+r.getAttribute('data-ev'));});
+  document.querySelectorAll('[data-act="pm"],[data-act="pplay"],[data-act="pskel"]').forEach(b=>{
     const a=b.dataset.act, v=b.dataset.v, on=S.playing===playWhat[a](v);
     b.classList.toggle('night',on); b.setAttribute('aria-pressed',String(on)); b.innerHTML=PLAYBTN[a](on,v);
   });
@@ -237,7 +286,8 @@ function headHTML(){
   const pc=S.pc, ex=pc.excerpts[0];
   return `<section class="card phead" aria-labelledby="ph"><p class="pcomp">${ESC(pc.composer)}</p>
     <h2 id="ph">${ESC(keyOpen()&&pc.titleShort?pc.titleShort:pc.title)}<small>${ESC(pc.movement)}・${ex.from}〜${ex.to}小節（${ESC(ex.label)}）</small></h2>
-    <p class="msg" style="margin-top:10px"><span aria-hidden="true">📖 </span>じぶんの楽譜もひらいて、いっしょに見てね。下のがくふは、和音の音だけを全音符にした「骨組み」だよ。</p></section>`;
+    <p class="msg" style="margin-top:10px"><span aria-hidden="true">📖 </span>${realOK()?'下は本物の楽譜だよ。メロディーや左手の動きのまま、和音を見つけよう。こまったら「ヒント」で、和音の音だけにした形も見られるよ。じぶんの楽譜もひらいて、いっしょに見てね。'
+      :'じぶんの楽譜もひらいて、いっしょに見てね。下のがくふは、和音の音だけを全音符にした「骨組み」だよ。'}</p></section>`;
 }
 function lvHTML(){
   const t=tally(), pct=t.n?Math.round(t.done/t.n*100):0;
@@ -272,8 +322,12 @@ function sysHTML(ms,si,Wmax){
     <div class="scroll"><div class="sysin" style="min-width:${Math.round(G.W*45/Math.min(G.cw,70))}px;max-width:${Math.round(G.W*1.5)}px">${svg}
       <div class="slots" style="padding-left:${pct(G.nx)};padding-right:${pct(G.W-G.nx-cols.length*G.cw)}"><span class="kpre" style="width:${pct(G.nx)}" aria-hidden="true">${ESC(keyPre(ev0[0].e))}</span>${slots}</div>
     </div></div>`;
-  const sel=S.sel&&ev0.find(x=>x.e.id===S.sel);
-  if(sel) h+=pickHTML(sel.e);
+  return h+sysTail(ms)+`</div>`;
+}
+// 段の下：えらんだ「？」の答える所と、おわりかた
+function sysTail(ms){
+  const pc=S.pc, sel=S.sel&&evById(S.sel);
+  let h=sel&&ms.includes(sel.m)?pickHTML(sel):'';
   // おわりかた：その範囲（「10〜12小節」）の出題した和音にぜんぶ答えたら、ぜんぶ＝問題、ほか＝おしえる。
   //   それまでは出さない（説明に和音の答えが書いてあるので、先に見えないように）
   (pc.questions||[]).filter(q=>q.type==='cadence'&&ms.includes(q.m)).forEach(q=>{
@@ -281,7 +335,59 @@ function sysHTML(ms,si,Wmax){
     else if(S.lv==='full') h+=qHTML(q);
     else h+=`<p class="cadinfo"><span aria-hidden="true">🏁 </span>${ESC(q.range)}のおわりかた：<b>${PC.CAD[q.answer]}</b>。${ESC(q.note)}</p>`;
   });
-  return h+`</div>`;
+  return h;
+}
+
+/* ===== 本物の楽譜（assets/score.js）===== */
+// 描けるか（VexFlow を読めた・曲に score がある）。描けなければ、まえの形（骨組みの下に「？」）
+let realErr=false;
+const realOK=()=>!realErr&&!!(PA.score&&PA.score.ready()&&S.pc&&S.pc.score);
+function layoutNow(){
+  try{return PA.score.layout(S.pc,perNow());}
+  catch(e){realErr=true;if(window.console) console.error('score:',e);return null;}
+}
+// 「？」の列：拍の位置（符頭のまんなか）に50pxのボタン。せまい画面（1小節＝276px・2小節＝640px）でもかさならないように、右へずらす
+const LANE_PX={1:276,2:640}, SLOT_PX=52;
+function laneXs(sys,L){
+  const u=L.W/LANE_PX[L.per], gap=SLOT_PX*u, half=gap/2, lo=(sys.bars[0].ns-sys.bars[0].x0)*0.55+half;
+  const xs=sys.evs.map(v=>v.x);
+  for(let i=0;i<xs.length;i++) xs[i]=Math.max(xs[i],i?xs[i-1]+gap:lo);
+  for(let i=xs.length-1;i>=0;i--) xs[i]=Math.min(xs[i],i<xs.length-1?xs[i+1]-gap:L.W-half);
+  return xs;
+}
+function realSysHTML(sys,si,L){
+  const pc=S.pc, ms=sys.ms, pct=v=>(v/L.W*100).toFixed(3)+'%', ev0=pc.events[sys.evs[0].i];
+  const xs=laneXs(sys,L), open=!!S.hint[ms[0]];
+  const name=ms.length>1?`${ms[0]}〜${ms[ms.length-1]}小節`:`${ms[0]}小節`;
+  const lane=sys.evs.map((v,k)=>`<div class="lslot" style="left:${pct(xs[k])}">${slotHTML(pc.events[v.i],v.i)}</div><i class="tick" style="left:${pct(v.x)}" aria-hidden="true"></i>`).join('');
+  const hl=sys.evs.map(v=>`<i class="hl" data-ev="${v.i}" style="left:${pct(v.x0)};width:${pct(v.x1-v.x0)};background:${hlColor(v.i)}" aria-hidden="true"></i>`).join('');
+  // スマホ（1小節）は広くしすぎない（線のあいだが大きくなりすぎないように）
+  const maxW=L.per===1?480:760;
+  let h=`<div class="sys" data-sys="${si}"><p class="pa-sr">${name}の楽譜（本物の楽譜）</p>
+    <div class="sysbar">${ms.map(m=>playBtn('pm',String(m))).join('')}
+      <button type="button" class="btn small hintbtn${open?' on':''}" data-act="phint" data-v="${ms[0]}" aria-pressed="${open}" aria-label="ヒント：和音だけにした形を見る">${PA.icon('hint')}ヒント<span class="hx">：和音だけ</span></button></div>
+    <div class="score" style="max-width:${maxW}px">
+      <div class="lane"><span class="kpre" aria-hidden="true">${ESC(keyPre(ev0))}</span>${lane}</div>
+      <div class="sheet" style="padding-top:${(L.H/L.W*100).toFixed(3)}%">${hl}${sys.svg}</div>
+    </div>`;
+  if(open) h+=hintHTML(ms);
+  return h+sysTail(ms)+`</div>`;
+}
+// ヒント：その段の小節を、和音の音だけの全音符（骨組み）で
+function hintHTML(ms){
+  const pc=S.pc, ev0=pc.events.map((e,i)=>({e,i})).filter(x=>ms.includes(x.e.m)), key=PC.key(ev0[0].e.key);
+  let carry={}, lastM=null;
+  const cols=ev0.map(({e,i})=>{
+    if(e.m!==lastM){carry={};lastM=e.m;}
+    const c={notes:e.skel.rh.map(PC.note),lh:e.skel.lh.map(PC.note),carry:{...carry},hlAttr:`data-ev="${i}"`};
+    c.hl=S.cur===i?PLAY_HL:S.sel===e.id?SEL_HL:'none';
+    c.notes.concat(c.lh).forEach(n=>{if(n.acc!==(key.sig[n.letter]||0)||carry[n.letter]!=null) carry[n.letter]=n.acc;});
+    return c;
+  });
+  const measures=[]; ev0.forEach(({e},ci)=>{if(!ci||ev0[ci-1].e.m!==e.m) measures.push({ci,n:e.m});});
+  // 線のあいだが本物の楽譜とおなじくらい（8px）になる大きさ
+  const o={grand:true,measures,colW:58}, G=PA.staffGeom(key,cols.length,o);
+  return `<div class="hintbox"><p><span aria-hidden="true">💡 </span>和音の音だけを、全音符にした形だよ（骨組み）</p><div class="hintin" style="max-width:${Math.round(G.W*0.8)}px">${PA.staffSVG(key,cols,o)}</div></div>`;
 }
 // おわりかたの問題を出してよいか：その範囲（q.range の「10〜12小節」の10から q.m まで）の、出題した和音にぜんぶ答えた
 function cadOpen(q){
@@ -297,7 +403,7 @@ function slotHTML(ev,i){
 function pickHTML(ev){
   const a=ansOf(ev.id);
   let h=`<div class="pick" id="pick" role="group" aria-labelledby="pick-h"><h3 id="pick-h" tabindex="-1">${where(ev)}の和音は？</h3>
-    <div class="row">${playBtn('pplay',ev.id,' data-hot="listen"')}
+    <div class="row">${playBtn('pplay',ev.id,' data-hot="listen"')}${realOK()?playBtn('pskel',ev.id):''}
     <button type="button" class="btn small" data-act="pclose">${PA.icon('close')}とじる</button></div>`;
   if(a) h+=fbHTML(ev,a);
   else if(S.lv==='deg') h+=`<p class="plab">何の和音？</p><div class="choices pchoices">${PC.degChoices(ev).map(d=>`<button type="button" class="choice" data-act="adeg" data-v="${d}">${PA.rn({deg:d})}</button>`).join('')}</div>`;
@@ -377,13 +483,20 @@ function render(){
   if(!S.pc){PA.paint(v,`<div class="stack"><section class="card"><p class="lead" role="status">よみこんでいるよ…</p></section></div>`,'load');renderActions();return;}
   const pc=S.pc, ex=pc.excerpts[0], ms=[];
   for(let m=ex.from;m<=ex.to;m++) ms.push(m);
-  const groups=[]; for(let i=0;i<ms.length;i+=2) groups.push(ms.slice(i,i+2)); // 1段に2小節（スマホでも「？」がおせる大きさ）
-  const Wmax=Math.max(...groups.map(g=>{const es=pc.events.filter(e=>g.includes(e.m));return PA.staffGeom(PC.key(es[0].key),es.length,{}).W;}));
+  const L=realOK()?layoutNow():null;
+  let body;
+  if(L) body=L.systems.map((sys,i)=>realSysHTML(sys,i,L)).join('');
+  else{
+    // VexFlow がないとき：まえの形（骨組みの下に「？」。1段に2小節）
+    const groups=[]; for(let i=0;i<ms.length;i+=2) groups.push(ms.slice(i,i+2));
+    const Wmax=Math.max(...groups.map(g=>{const es=pc.events.filter(e=>g.includes(e.m));return PA.staffGeom(PC.key(es[0].key),es.length,{}).W;}));
+    body=groups.map((g,i)=>sysHTML(g,i,Wmax)).join('');
+  }
   const kq=(pc.questions||[]).filter(q=>q.type==='key'&&PC.LV_RANK[q.level]<=PC.LV_RANK[S.lv]);
   let h=`<div class="stack">${headHTML()}${lvHTML()}<section class="card sysc" aria-labelledby="sys-h"><h2 id="sys-h"><span aria-hidden="true">🎼 </span>がくふと和音</h2>
-    <p class="note">「？」をおして、和音の記号を答えよう。小節の番号のボタンで、その小節の音を聴けるよ。</p>`
+    <p class="note">${L?'楽譜の上の「？」をおして、その拍からの和音の記号を答えよう。小節の番号のボタンで、その小節を聴けるよ。':'「？」をおして、和音の記号を答えよう。小節の番号のボタンで、その小節の音を聴けるよ。'}</p>`
     +(S.muteHint&&!PA.settings.sound?`<p class="msg soundhint" role="status" style="margin-top:8px"><span aria-hidden="true">🔇 </span>音がオフだよ <button type="button" class="btn small" data-pa="sound-on">${PA.icon('listen')}音を出す</button></p>`:'')
-    +kq.map(qHTML).join('')+groups.map((g,i)=>sysHTML(g,i,Wmax)).join('')+`</section>${sumHTML()}${srcHTML()}${PA.rnHelp()}</div>`;
+    +kq.map(qHTML).join('')+body+`</section>${sumHTML()}${srcHTML()}${PA.rnHelp()}</div>`;
   PA.paint(v,h,'piece:'+S.lv);
   renderActions();
 }
@@ -449,10 +562,15 @@ document.addEventListener('click',e=>{
     case 'pplay': {if(S.playing==='e:'+v){stop();syncPlay();return;} const i=S.pc.events.findIndex(x=>x.id===v); if(i<0) return; playList([i],'e:'+v); return;}
     case 'pm': {if(S.playing==='m'+v){stop();syncPlay();return;} const m=+v, l=idxOf(x=>x.m===m); if(!l.length) return; playList(l,'m'+m); return;}
     case 'pall': if(S.playing==='all'){stop();syncPlay();return;} playList(S.pc.events.map((x,i)=>i),'all'); return;
+    case 'pskel': {if(S.playing==='k:'+v){stop();syncPlay();return;} const i=S.pc.events.findIndex(x=>x.id===v); if(i<0) return; playList([i],'k:'+v); return;}
+    // ヒント（骨組み）をひらく・とじる。段のさいしょの小節の番号
+    case 'phint': {const m=+v; if(!S.pc.events.some(e=>e.m===m)) return; if(S.hint[m]) delete S.hint[m]; else S.hint[m]=true; stop(); render(); return;}
     case 'pstop': stop(); syncPlay(); return;
     default: return;
   }
 });
+// 画面のはばがかわって1段の小節の数がかわったら描きなおす（鳴らしていればとめる）
+try{const mq=window.matchMedia&&window.matchMedia(WIDE);if(mq){const f=()=>{if(S.playing){stop();}render();};if(mq.addEventListener) mq.addEventListener('change',f);else if(mq.addListener) mq.addListener(f);}}catch(e){}
 PA.mountBar({title:'名曲で楽曲分析',app:'piece'});
 PA.onSettings=render;
 // ページをはなれたら音をとめる（「ぜんぶ聴く」はゆっくりで50秒ちかくある。タブをかえた・アプリをうしろへ・「もどる」でもどった）

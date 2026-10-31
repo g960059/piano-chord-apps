@@ -41,7 +41,7 @@ const AUDIO=[
   'assets/piano/Fs6.mp3',
   'assets/piano/Fs7.mp3',
 ];
-const VERSION='11513932fc';
+const VERSION='027e37da3a';
 const PRECACHE=[
   './',
   'accompaniment.html',
@@ -77,6 +77,8 @@ const PRECACHE=[
   'assets/ear-game.js',
   'assets/mic.js',
   'assets/piece.js',
+  'assets/score.js',
+  'assets/vendor/vexflow-bravura.js',
   'assets/pieces/k545-1.json',
   'manifest.webmanifest',
   'favicon.svg',
