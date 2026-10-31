@@ -106,9 +106,11 @@ details.stage.here>summary{padding-top:22px}
   .isle .frog{animation:hop 2.4s ease-in-out infinite}
   @keyframes hop{0%,62%,100%{transform:translateY(0)}70%{transform:translateY(-8px)}78%{transform:translateY(0)}84%{transform:translateY(-3px)}90%{transform:translateY(0)}}
 }
-.sign{flex:1;min-width:0;position:relative;background:#fff;border:2px solid var(--l);border-radius:16px;padding:8px 30px 8px 12px;box-shadow:0 2px 0 var(--line)}
-.sign::after{content:"▾";position:absolute;right:10px;top:9px;color:var(--sub);font-size:14px;transition:transform .15s}
-details.stage[open] .sign::after{transform:rotate(180deg)}
+.sign{flex:1;min-width:0;position:relative;background:#fff;border:2px solid var(--l);border-radius:16px;padding:8px 42px 8px 12px;box-shadow:0 2px 0 var(--line)}
+/* ひらく／とじるのしるし：とじているときは白い丸に▼、ひらいているときは黒い丸に▲（先生と作者：ひらいているのかわかりにくい 2026-11-01） */
+.sign::after,details.xmap>summary::after{content:"▼";position:absolute;right:8px;top:8px;width:28px;height:28px;border-radius:50%;background:#fff;border:2px solid var(--c,#b9ac99);color:var(--ink);font-size:11px;line-height:24px;text-align:center;box-sizing:border-box}
+details.stage[open] .sign::after,details.xmap[open]>summary::after{content:"▲";background:var(--ink);border-color:var(--ink);color:#fff}
+details.stage[open] .sign{border:3px solid var(--c);box-shadow:none}
 .sign b{font-size:16px;line-height:1.35}
 .sign .num{margin-right:2px}
 .sign small{display:block;color:var(--sub);font-size:12.5px;line-height:1.4}
@@ -119,10 +121,19 @@ details.stage[open] .sign::after{transform:rotate(180deg)}
 .stars{display:inline-block;font-size:15px;line-height:1.2;letter-spacing:1px;color:#a08c70;white-space:nowrap}
 .stars .on{color:#a35f00}
 .sign .ssum{display:block;margin-top:2px;font-size:13px;font-weight:800;color:#a35f00}
-.stage.here .sign{border-color:var(--c);box-shadow:0 3px 0 var(--c)}
+.stage.here:not([open]) .sign{border-color:var(--c);box-shadow:0 3px 0 var(--c)}
 @media (hover:hover){details.stage>summary:hover .sign{background:var(--soft2)}}
-/* 島をあけたときのページ（クイズ・耳はその色で） */
-.alist{position:relative;z-index:1;list-style:none;margin:2px 0 10px;padding:6px;display:flex;flex-direction:column;gap:4px;background:#fff;border-radius:16px;border:2px solid var(--l);border-top:5px solid var(--c);box-shadow:0 2px 0 var(--line)}
+/* 島をあけたときのページ：島の色のうすい地に、白くて小さめの行。上の▲の切りかけで看板とつなげて、島の中身だとわかるように */
+.apanel{position:relative;z-index:1;margin:4px 0 12px;padding:8px;background:var(--l);border:3px solid var(--c);border-radius:16px}
+.apanel::before{content:"";position:absolute;top:-10px;left:96px;width:16px;height:16px;background:var(--l);border-top:3px solid var(--c);border-left:3px solid var(--c);transform:rotate(45deg);border-top-left-radius:3px}
+.stage.r .apanel::before{left:auto;right:96px}
+.alist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+#view .alist li a.arow{min-height:50px;padding:4px 8px;background:#fff;border-radius:12px;box-shadow:0 1px 0 rgba(58,50,69,.12)}
+.alist .arow .ic{width:32px;height:32px;font-size:17px}
+.alist .arow .tx b{font-size:14.5px}
+.aclose{display:flex;align-items:center;justify-content:center;gap:4px;margin:8px auto 0;min-height:44px;padding:0 18px;border-radius:999px;background:#fff;border:2px solid var(--c);color:var(--ink);font-size:14px;font-weight:800}
+@media (hover:hover){.aclose:hover{background:var(--soft2)}}
+.aclose:focus-visible{outline:3px solid var(--c5);outline-offset:2px}
 #view li a.arow{display:flex;margin:0;align-items:center;gap:10px;min-height:56px;padding:6px 8px;border-radius:12px;color:var(--ink);text-decoration:none}
 @media (hover:hover){#view li a.arow:hover{background:var(--soft2)}}
 .arow .ic{flex:none;width:38px;height:38px;border-radius:50%;background:var(--soft2);display:grid;place-items:center;font-size:20px}
@@ -150,9 +161,8 @@ details.stage[open] .sign::after{transform:rotate(180deg)}
 .link.r{transform:scaleX(-1)}
 /* レベルアップしたい人へ：もう1つの地図。基本よりしずかな色で、はじめはとじておく */
 details.xmap{padding:0;background:#fbf9f6;border:2px dashed #d9cfc1;box-shadow:none}
-details.xmap>summary{display:flex;align-items:center;gap:12px;min-height:72px;padding:12px 14px;cursor:pointer;list-style:none;border-radius:16px}
-details.xmap>summary::after{content:"▾";flex:none;color:var(--sub);font-size:14px;transition:transform .15s}
-details.xmap[open]>summary::after{transform:rotate(180deg)}
+details.xmap>summary{position:relative;display:flex;align-items:center;gap:12px;min-height:72px;padding:12px 46px 12px 14px;cursor:pointer;list-style:none;border-radius:16px}
+details.xmap>summary::after{top:50%;right:12px;margin-top:-14px}
 @media (hover:hover){details.xmap>summary:hover{background:var(--soft2)}}
 .xmap .xic{flex:none;width:48px;height:48px;border-radius:50%;background:#fff;border:2px solid #d9cfc1;display:grid;place-items:center;font-size:24px}
 .xmap .xt{flex:1;min-width:0}
@@ -176,6 +186,7 @@ details.xmap[open]>summary::after{transform:rotate(180deg)}
   details.stage::before{left:24px} details.stage.r::before{right:24px}
   .link{margin:0 24px}
   .sign{padding-left:10px}
+  .apanel::before{left:84px} .stage.r .apanel::before{right:84px}
   .sign b{font-size:15px}
   #view .plaza .ways a{font-size:13.5px;padding:6px 8px}
 }
@@ -507,14 +518,18 @@ function mapHTML(vis,stars,here){
   let h=`<section class="card map" aria-labelledby="map-h"><h2 id="map-h"><span aria-hidden="true">🗺️ </span>ぼうけんの地図<small>①〜⑥が基本の島。🐸のいる島が、いまやっているところ。島をおすとページが出てくるよ</small></h2>`
     +`<p class="legend"><span><b aria-hidden="true">★</b>見た</span><span><b aria-hidden="true">★★</b>5もんやった</span><span><b aria-hidden="true">★★★</b>自分でできた</span></p>`
     +`<div class="trail"><div class="start"><span aria-hidden="true">🚩</span>スタート</div>`;
+  // ひらく島は1つだけ（じぶんでひらいた島。なければ🐸の島）
+  const opened=BASIC.filter(s=>typeof sv[s.id]==='boolean'?sv[s.id]:s.id===here).map(s=>s.id);
+  const openId=opened.length>1&&opened.includes(here)?here:opened[0];
   BASIC.forEach((s,i)=>{
     const st=stars[s.id], done=st.clear, isHere=s.id===here, side=i%2?'r':'l';
-    const open=typeof sv[s.id]==='boolean'?sv[s.id]:isHere;
+    const open=s.id===openId;
     h+=`<details class="stage ${side}${isHere?' here':''}${done?' done':''}" data-d="stage-${s.id}" data-u="${s.id}" style="--c:${s.c};--l:${s.l}"${open?' open':''}>`
       +`<summary><span class="isle" aria-hidden="true">${s.emoji}${isHere?'<span class="frog">🐸</span>':''}${done?'<span class="ok">✓</span>':''}</span>`
       +`<span class="sign"><b><span class="num">${NUMS[i]||i+1}</span>${ESC(s.name)}</b>${isHere?'<span class="tag now">いまここ</span>':''}${done?'<span class="tag clear">クリア！</span>':''}`
       +`${s.sub?`<small>${ESC(s.sub)}</small>`:''}${sumHTML(st)}</span></summary>`
-      +`<ul class="alist">${s.tasks.map((t,k)=>`<li>${rowHTML(t,st.tasks[k],vis)}</li>`).join('')}</ul></details>`
+      +`<div class="apanel"><ul class="alist" aria-label="${ESC(s.name)}のページ">${s.tasks.map((t,k)=>`<li>${rowHTML(t,st.tasks[k],vis)}</li>`).join('')}</ul>`
+      +`<button type="button" class="aclose" data-close><span aria-hidden="true">▲</span>とじる</button></div></details>`
       +`<div class="link ${side}" aria-hidden="true"></div>`;
   });
   const gside=BASIC.length%2?'r':'l', all=!here;
@@ -575,10 +590,27 @@ function render(){
   PA.paint(document.getElementById('view'),h,'home');
 }
 // じぶんでひらいた／とじた島・地図だけおぼえる
+const saveOpen=ds=>{const s=PA.store.get('home-units',{}), sv=isObj(s)?s:{};ds.forEach(d=>{sv[d.dataset.u]=d.open;});PA.store.set('home-units',sv);};
+const appbarH=()=>{const b=document.getElementById('appbar');return b?b.offsetHeight:0;};
 document.getElementById('view').addEventListener('click',e=>{
-  const sm=e.target.closest&&e.target.closest('details.stage>summary,details.xmap>summary'); if(!sm) return; // 名曲で楽曲分析（.pmap）も .xmap
-  const d=sm.parentNode;
-  setTimeout(()=>{const s=PA.store.get('home-units',{}), sv=isObj(s)?s:{};sv[d.dataset.u]=d.open;PA.store.set('home-units',sv);},0);
+  if(!e.target.closest) return;
+  // 島の中の「とじる」：とじて、島の看板が画面の上にかくれていたら見えるところへ
+  const cl=e.target.closest('details.stage [data-close]');
+  if(cl){
+    const d=cl.closest('details.stage'), sm=d.querySelector('summary');
+    d.open=false; saveOpen([d]); sm.focus();
+    if(sm.getBoundingClientRect().top<appbarH()) sm.scrollIntoView({block:'start',behavior:PA.reduceMotion()?'auto':'smooth'});
+    return;
+  }
+  const sm=e.target.closest('details.stage>summary,details.xmap>summary'); if(!sm) return; // 名曲で楽曲分析（.pmap）も .xmap
+  const d=sm.parentNode, others=[];
+  // 島をひらくときは、ほかの島をとじる（ひらいている島は1つだけ）。上の島がとじても、おした島が画面の同じところにのこるように
+  if(d.matches('details.stage')&&!d.open){
+    const top=sm.getBoundingClientRect().top;
+    document.querySelectorAll('#view details.stage[open]').forEach(o=>{if(o!==d){o.open=false;others.push(o);}});
+    const dy=sm.getBoundingClientRect().top-top; if(dy) scrollBy(0,dy);
+  }
+  setTimeout(()=>saveOpen([d,...others]),0);
 });
 PA.store.set('return-to',null);
 PA.mountBar({title:'ピアノ和音アプリ',back:'#'});

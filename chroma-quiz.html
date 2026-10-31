@@ -99,10 +99,6 @@
 .kbwrap{margin-top:12px}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:14px;color:var(--sub);margin-top:4px}
 .legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px}
-.cmpgrid{display:grid;grid-template-columns:1fr;gap:8px}
-.cmpbtn{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:56px;padding:8px 14px;border-radius:16px;background:var(--soft2);text-align:left;border-left:6px solid var(--c)}
-.cmpbtn b{color:var(--c);font-size:16px}
-.cmpbtn small{color:var(--sub);font-size:13.5px;line-height:1.4}
 .diff b.lt{color:#a3273a}
 .wide{width:100%}
 .nw{white-space:nowrap}
@@ -113,7 +109,6 @@
 @media (min-width:700px){
   .echoices.n3{grid-template-columns:repeat(3,1fr)}
   .echoices.n3 .echoice:last-child{grid-column:auto}
-  .cmpgrid{grid-template-columns:repeat(2,1fr)}
 }
 .actionbar .btn{flex:1 1 auto}
 </style>
@@ -364,7 +359,7 @@ const uniqM=ns=>ns.filter((n,i)=>ns.findIndex(x=>x.midi===n.midi)===i);
 const Q={mode:'keys',keyset:'both',tier:'all',weak:true,kLv:1,types:typesOf(1),earLv:1,openSet:false,chal:false,
   sc:{keys:{right:0,total:0,streak:0,hint:0},ear:{right:0,total:0,streak:0,hint:0}},
   q:null,qid:0,picked:new Set(),checked:false,result:null,lastOk:null,hint:0,peek:false,
-  eq:null,ans:null,resShown:false,eqid:0,eHint:false,fresh:false,deck:null,
+  eq:null,ans:null,resShown:false,eqid:0,fresh:false,deck:null,
   lock:null,lockSess:false,sumOpen:false}; // lock＝この調だけ出す（リンクの key・チェック表のます）。lockSess＝📝 の回といっしょにおわる
 const saved=(d=>d&&typeof d==='object'?d:{})(PA.store.get('chroma-quiz',{}));
 const selTypes=()=>TYPES.filter(t=>Q.types[t]);
@@ -467,13 +462,12 @@ const LINK=(()=>{
     Q.eq={lv:e.lv,minor:e.minor,keyIdx:e.keyIdx,type:e.type,shift:e.shift}; Q.eqid=1;
     if(EAR_LV[e.lv].includes(d.ans)) Q.ans=d.ans;
     Q.resShown=!!Q.ans&&d.resShown===true;
-    Q.eHint=d.eHint===true;
   }
 })();
 function save(){
   PA.store.set('chroma-quiz',{mode:Q.mode,keyset:Q.keyset,tier:Q.tier,weak:Q.weak,kStep:Q.kLv,types:Q.types,earLv:Q.earLv,openSet:Q.openSet,sc:Q.sc,
     q:Q.q?{minor:Q.q.minor,keyIdx:Q.q.keyIdx,type:Q.q.type}:null,answered:Q.checked,scored:Q.result!==null,peek:Q.peek,hint:Q.hint,
-    eq:Q.eq,ans:Q.ans,resShown:Q.resShown,eHint:Q.eHint,deck:Q.deck.state(),tBag,lock:Q.lock,lockSess:Q.lockSess});
+    eq:Q.eq,ans:Q.ans,resShown:Q.resShown,deck:Q.deck.state(),tBag,lock:Q.lock,lockSess:Q.lockSess});
 }
 // ⭐：ヒントでできた（hint）はせいかいにかぞえないが、れんぞくも0にしない（ヒントでできた数は s.hint）
 const score=(m,ok,hint)=>{const s=Q.sc[m];s.total++;if(hint){s.hint=(s.hint||0)+1;return;}if(ok){s.right++;s.streak++;}else s.streak=0;};
@@ -950,7 +944,7 @@ function newEar(){
   let type=pick(types); if(Q.eq&&Q.eq.type===type&&Math.random()<0.5) type=pick(types);
   let k,tries=0; do{k=pick(ks);}while(Q.eq&&ks.length>1&&k.minor===Q.eq.minor&&k.keyIdx===Q.eq.keyIdx&&++tries<20);
   Q.eq={lv:Q.earLv,minor:k.minor,keyIdx:k.keyIdx,type,shift:pick(EAR_SHIFT[Q.earLv])};
-  Q.ans=null; Q.resShown=false; Q.eHint=false; Q.eqid++; save();
+  Q.ans=null; Q.resShown=false; Q.eqid++; save();
 }
 // レベル1：和音 → Ⅴ（ⅡかⅤへのすすみかたでくらべる）。レベル2：和音だけ（すすみかたはこたえてから）。
 // レベル3：カデンツⅠ → ？ → Ⅴ7 → Ⅰ（2ばんめの和音を当てる）
@@ -999,7 +993,7 @@ function earFb3(){
   const e=Q.eq, ok=Q.ans===e.type, M=T[e.type], d=earData(e), key=d.key, c={};
   EAR_LV[3].forEach(t=>c[t]=cadOf(key,t));
   const iv=c.iv.X, ivm=c.ivm.X, n6=c.n6.X, B=n=>`<b class="lo">${PA.nmH(n)}</b>`;
-  let h=`<div class="fb ${ok?'good':'bad'}${Q.fresh?'':' still'}" role="status">${!ok?'🤔 おしい！':Q.eHint?'💡 正解！「ヒントでできた」だよ。':'🎉 正解！'}これは<b>${longH(e.type,key)}</b>。「${M.word}」ひびき。<br>${PA.keyName(key)}で音は<b>${namesN(roleSort(d.chord))}</b>`;
+  let h=`<div class="fb ${ok?'good':'bad'}${Q.fresh?'':' still'}" role="status">${!ok?'🤔 おしい！':'🎉 正解！'}これは<b>${longH(e.type,key)}</b>。「${M.word}」ひびき。<br>${PA.keyName(key)}で音は<b>${namesN(roleSort(d.chord))}</b>`;
   // 下からじゅんに（おなじ音は1つ）ならべると、ちがう音がおなじ場所にくる
   const up=ns=>ns.filter((n,i)=>ns.findIndex(x=>mod(x.midi,12)===mod(n.midi,12))===i);
   h+=`<span class="sm diff">下からじゅんに<br>Ⅳ：${namesN(up(iv))}<br>○Ⅳ：${namesN(up(ivm))}<br>ナポリ：${namesN(up(n6))}<br>`+
@@ -1020,7 +1014,7 @@ function earFb3(){
 function earFb(){
   const e=Q.eq, ok=Q.ans===e.type, M=T[e.type], d=earData(e), key=d.key;
   if(e.lv===3) return earFb3();
-  let h=`<div class="fb ${ok?'good':'bad'}${Q.fresh?'':' still'}" role="status">${!ok?'🤔 おしい！':Q.eHint?'💡 正解！「ヒントでできた」だよ。':'🎉 正解！'}これは<b>${longH(e.type,key)}</b>。「${M.word}」ひびき。<br>${PA.keyName(key)}で音は<b>${namesN(disp(e.type,d.chord))}</b>`;
+  let h=`<div class="fb ${ok?'good':'bad'}${Q.fresh?'':' still'}" role="status">${!ok?'🤔 おしい！':'🎉 正解！'}これは<b>${longH(e.type,key)}</b>。「${M.word}」ひびき。<br>${PA.keyName(key)}で音は<b>${namesN(disp(e.type,d.chord))}</b>`;
   if(e.lv===1){
     const ii=byRole(shiftN(C.ii7(key),e.shift)), dd=byRole(shiftN(C.dd(key),e.shift));
     const diff=ii.map((n,i)=>n.letter!==dd[i].letter||n.acc!==dd[i].acc?`「${PA.nmH(n)}」→「<b class="lt">${PA.nmH(dd[i])}</b>」`:'').filter(Boolean);
@@ -1047,7 +1041,6 @@ function earFb(){
   h+=`<div class="row" style="margin-top:10px"><button class="btn small wide" data-act="eexplain">🐸 ${labelH(e.type)}のつくりかたを見る</button></div>`;
   return h;
 }
-function cmpKey(){return PA.keyOf(Q.keyset==='minor'&&Q.earLv!==3,0);} // ハ長調（短調だけのときはイ短調。レベル3はいつもハ長調）でくらべる
 function earView(){
   const types=EAR_LV[Q.earLv], e=Q.eq, mute=!PA.settings.sound;
   let h=`<section class="card hero" style="--c:#c98500">
@@ -1059,12 +1052,6 @@ function earView(){
     <div class="echoices n${types.length}">${types.map(echoiceHTML).join('')}</div>
     ${e&&Q.ans?earFb():''}
   </section>`;
-  const k=cmpKey();
-  h+=`<section class="card"><h2>🎧 くらべてきく<small>${PA.keyName(k)}でならべたよ</small></h2>${e&&!Q.ans?PA.once('hint-rule',`<p class="qsub" style="margin:0 0 8px">${PA.HINT_NOTE}</p>`):''}<div class="cmpgrid">`+types.map(t=>{
-    if(Q.earLv===3){const c=cadOf(k,t);return `<button class="cmpbtn" style="--c:${T[t].color}" data-act="ecmp" data-v="${t}"><b>${T[t].emoji}Ⅰ → ${longH(t,k)} → Ⅴ7 → Ⅰ</b><small>${namesN(roleSort(c.X))} → ${namesN(uniqM(c.V))}</small></button>`;}
-    const c=t==='ii7'||t==='dd'?C[t](k):C.aug6(k,t), st=stepsOf(k,t);
-    return `<button class="cmpbtn" style="--c:${T[t].color}" data-act="ecmp" data-v="${t}"><b>${T[t].emoji} ${longH(t,k)} → ${st.map(x=>labH(x.label)).join(' → ')}</b><small>${namesN(disp(t,c))} → ${st.map(x=>namesN(uniqM(x.notes))).join(' → ')}</small></button>`;
-  }).join('')+`</div></section>`;
   return h;
 }
 
@@ -1202,7 +1189,7 @@ document.addEventListener('click',e=>{
       Q.sumOpen=false;
       if(Q.mode==='keys'){newQ(); save(); render(); PA.scrollTop(); return;}
       if(a==='session-again'){newEar(); render(); playEar(); PA.scrollTop(); return;}
-      Q.eq=null; Q.ans=null; Q.resShown=false; Q.eHint=false; Q.eqid++; break;
+      Q.eq=null; Q.ans=null; Q.resShown=false; Q.eqid++; break;
     }
     // チェック表のます：その調を3もん（🎹 おさえる）
     case 'kd-pick': {
@@ -1235,7 +1222,7 @@ document.addEventListener('click',e=>{
       if(!Q.checked&&Q.result===null) Q.peek=true; // こたえるまえに見た：できたら「ヒントでできた」（×にはしない）
       goExplain(Q.q.minor,Q.q.keyIdx,Q.q.type); return;
     }
-    case 'elevel': {const lv=+v; if(lv===Q.earLv||!EAR_LV[lv]) return; PA.stopSound(); Q.earLv=lv; Q.eq=null; Q.ans=null; Q.resShown=false; Q.eHint=false; Q.eqid++; break;}
+    case 'elevel': {const lv=+v; if(lv===Q.earLv||!EAR_LV[lv]) return; PA.stopSound(); Q.earLv=lv; Q.eq=null; Q.ans=null; Q.resShown=false; Q.eqid++; break;}
     case 'enew':
       if(sess.finished()&&!Q.sumOpen){PA.stopSound();Q.sumOpen=true;save();render();PA.scrollTop();return;}
       newEar(); render(); playEar(); reveal(document.querySelector('#view .echoices'),document.querySelector('#view .hero')); return;
@@ -1244,19 +1231,14 @@ document.addEventListener('click',e=>{
     case 'epair': playPair(); return;
     case 'eans': {
       if(!Q.eq||Q.ans||!EAR_LV[Q.eq.lv].includes(v)) return;
-      const ok=v===Q.eq.type, key=keyOfQ(Q.eq), hint=ok&&Q.eHint; // こたえるまえに 🎧 くらべてきくをつかった：できたら「ヒントでできた」
-      Q.ans=v; score('ear',ok,hint); PA.answerFx(ok);
-      sessRecord(ok,hint,`👂 ${PA.keyName(key)}の${T[Q.eq.type].long}${ok?'':`（選んだ：${T[v].long}）`}`,KD.id(Q.eq.minor,Q.eq.keyIdx));
+      const ok=v===Q.eq.type, key=keyOfQ(Q.eq);
+      Q.ans=v; score('ear',ok,false); PA.answerFx(ok);
+      sessRecord(ok,false,`👂 ${PA.keyName(key)}の${T[Q.eq.type].long}${ok?'':`（選んだ：${T[v].long}）`}`,KD.id(Q.eq.minor,Q.eq.keyIdx));
       save(); Q.fresh=true; render(); playEar(false);
       const fb=document.querySelector('#view .fb'); reveal(fb,fb,true); return;
     }
     case 'eres': if(!Q.eq||!Q.ans) return; Q.resShown=true; save(); render(); playEarRes(); return;
     case 'eexplain': if(!Q.eq||!Q.ans) return; goExplain(Q.eq.minor,Q.eq.keyIdx,Q.eq.type); return;
-    case 'ecmp': {
-      if(!EAR_LV[Q.earLv].includes(v)) return;
-      // こたえるまえにきいたら「ヒントでできた」（音がオフのときは鳴らないのでしない）
-      if(Q.eq&&!Q.ans&&!Q.eHint&&PA.settings.sound){Q.eHint=true;save();} // 見た目はかわらない（ボタンのフォーカスをのこす）
-      const k=cmpKey(); if(Q.earLv===3){const c=cadOf(k,v);PA.stopSound();playCad(c.I,c.X,[{notes:c.V},{notes:c.I}]);return;} playSeq(v==='ii7'||v==='dd'?C[v](k):C.aug6(k,v),stepsOf(k,v)); return;}
     default: return;
   }
   save(); render();
