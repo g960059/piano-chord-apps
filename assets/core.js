@@ -595,6 +595,8 @@ PA.staffSVG=(key,cols,o={})=>{
   let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="がくふ" style="max-width:${Math.round(W*(o.maxScale||1.5))}px;margin:0 auto">`;
   // c.hl：列のうしろの色は、五線より先にぬる（五線が見えるように）
   cols.forEach((c,ci)=>{if(c.hl) svg+=`<rect x="${nx+ci*cw+3}" y="4" width="${cw-6}" height="${H-8}" rx="12" fill="${c.hl}"/>`;});
+  // かわった調号のうしろの赤い丸も、五線より先に（線の上の記号か、間の記号かがわかるように）
+  sigDraw.forEach((d,i)=>{if(d.red) svg+=`<circle cx="${sx+i*10}" cy="${ty(d.st)}" r="10" fill="#fde4e7"/>`;});
   for(let i=0;i<5;i++) svg+=`<line x1="6" x2="${W-4}" y1="${TB-i*10}" y2="${TB-i*10}" stroke="#6b6273" stroke-width="1.2"/>`;
   svg+=PA.gClef(10,TB-10);
   if(grand){
@@ -603,7 +605,6 @@ PA.staffSVG=(key,cols,o={})=>{
     svg+=PA.fClef(12,BT+10);
   }
   sigDraw.forEach((d,i)=>{
-    if(d.red) svg+=`<circle cx="${sx+i*10}" cy="${ty(d.st)}" r="10" fill="#fde4e7"/>`;
     svg+=PA.accGlyph(sx+i*10,ty(d.st),d.a,d.red?'#d1495b':'#3a3245');
     if(grand) svg+=PA.accGlyph(sx+i*10,by(d.st-14),d.a,d.red?'#d1495b':'#3a3245');
   });
@@ -643,7 +644,8 @@ PA.staffSVG=(key,cols,o={})=>{
         if(p.n.raised&&c.accRing) r+=`<circle cx="${x-18-k*11}" cy="${hy}" r="11" fill="none" stroke="${ac}" stroke-width="2" opacity=".6"/>`;
       }
       const col=p.n.raised&&c.ltColor?c.ltColor:(c.color||'#3a3245');
-      r+=`<ellipse cx="${hx}" cy="${hy}" rx="7" ry="5" fill="#fff" stroke="${col}" stroke-width="3" transform="rotate(-18 ${hx} ${hy})"/>`;
+      // 白い符頭は中をぬらない：線の上の音は、五線・加線が符頭の中を通って見える（白でぬると間の音に見える）
+      r+=`<ellipse cx="${hx}" cy="${hy}" rx="7" ry="5" fill="none" stroke="${col}" stroke-width="3" transform="rotate(-18 ${hx} ${hy})"/>`;
       if(yf===by&&c.lhRing) r+=`<circle cx="${hx}" cy="${hy}" r="12" fill="none" stroke="${c.lhRing}" stroke-width="2.5"/>`;
       if(yf===ty){pos[ci]=pos[ci]||[];pos[ci][p.i]={x:hx,y:hy};}
     });
