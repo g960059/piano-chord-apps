@@ -160,3 +160,19 @@ test('再生：メロディー・伴奏のオン・オフはとちゅうから�
   assert.equal(bass,0,'伴奏をオフにしたらベースは鳴らない');
   assert.ok(w.run('__played.length')>0,'メロディーは鳴る');
 });
+
+test('がくふ：2分・全音符の符頭は中をぬらない。えらんだマス・鳴っている音の色は五線より先にぬる',()=>{
+  const W=world();
+  W.run("state.songId='mary'; state.sel=0;");
+  const html=W.run('scoreRows()');
+  const g=html.match(/<g aria-hidden="true">([\s\S]*?)<\/g><rect class="hit"/)[1];
+  const heads=g.match(/<ellipse [^>]*>/g)||[];
+  assert.ok(heads.some(h=>/fill="none"/.test(h)),'白い符頭がある（メリーさんの羊は2分音符がある）');
+  assert.ok(!heads.some(h=>/fill="#fff"/.test(h)),'白でぬった符頭はない');
+  const firstLine=g.indexOf('<line'), sel=g.indexOf('fill="#fff6d6"');
+  assert.ok(sel>=0&&sel<firstLine,'えらんだマスの色は五線の下');
+  W.run("state.sel=-1; state.play={slot:0,note:0,model:false,from:0,to:0};");
+  const g2=W.run('scoreRows()').match(/<g aria-hidden="true">([\s\S]*?)<\/g><rect class="hit"/)[1];
+  const hl=g2.indexOf('fill="#ffd66b"');
+  assert.ok(hl>=0&&hl<g2.indexOf('<line'),'鳴っている音の色は五線の下');
+});

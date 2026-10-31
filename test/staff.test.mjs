@@ -31,3 +31,19 @@ test('autoCarry なしは前とおなじ（c.carry をつかう）',()=>{
   assert.equal(glyphs(PA.staffSVG(G,cols,{grand:true})),2+1+1);
   assert.equal(glyphs(PA.staffSVG(G,[{notes:[Cs4]},{notes:[C4]}],{grand:true})),2+1);
 });
+
+// 先生の指摘（2026-10-31）：符頭の中を白でぬると、線の上の音が「間の音」に見える
+const E4=n(2,0,64), F4=n(3,0,65);
+test('白い符頭は中をぬらない（五線が符頭の中を通って見える）',()=>{
+  const svg=draw([{notes:[E4,F4]},{notes:[C4],lh:[C3]}]);
+  const heads=svg.match(/<ellipse [^>]*>/g)||[];
+  assert.equal(heads.length,4);
+  heads.forEach(h=>assert.match(h,/fill="none"/));
+});
+test('列の色・かわった調号の赤い丸は、五線より先にぬる（五線の上をぬりつぶさない）',()=>{
+  const svg=PA.staffSVG(PA.minorKey(0),[{notes:[E4],hl:'#fff1cc'}],{sigOverride:{letter:4,acc:1}});
+  const firstLine=svg.indexOf('<line');
+  assert.ok(firstLine>0);
+  for(const m of svg.matchAll(/<(rect|circle)[^>]*fill="#(fff1cc|fde4e7)"/g)) assert.ok(m.index<firstLine,m[0]);
+  assert.ok(svg.includes('#fde4e7')&&svg.includes('#fff1cc'));
+});
