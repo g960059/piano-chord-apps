@@ -700,7 +700,7 @@ PA.UNITS=[
 ];
 PA.APPS=[
   {id:'chord-build',ic:'🐸',title:'和音のしくみ',d:'音階のなんばんめから「ひとつとばし」で和音をつくる',type:'learn',practice:'chord-quiz'},
-  {id:'chord-quiz',ic:'🎯',title:'和音クイズ',d:'「ト長調のⅤ7は？」を、けんばんでおさえる／選ぶ',type:'quiz'},
+  {id:'chord-quiz',ic:'🎯',title:'和音クイズ',d:'Ⅰ・Ⅳ・Ⅴ・Ⅴ7を、いろいろな問題で。やさしいじゅんのステップつき',type:'quiz'},
   {id:'cadence',ic:'🎵',title:'カデンツ',d:'「おしまい」になる和音のならび（Ⅰ→Ⅳ→Ⅰ→Ⅴ7→Ⅰ）を聴いて、伴奏の形を見る',type:'play',practice:'chord-quiz'},
   {id:'chord-table',ic:'📋',title:'和音いちらん表',d:'ぜんぶの調のⅠ・Ⅳ・Ⅴ・Ⅴ7。かくして、れんしゅうもできる',type:'ref',practice:'chord-quiz'},
   {id:'accompaniment',ic:'🎼',title:'伴奏づけ',d:'知っている曲のメロディーにⅠ・Ⅳ・Ⅴ7をつける',type:'play'},

@@ -276,9 +276,12 @@ function modesOf(t){
   const m=/[?&]keyset=(major|minor)(?:&|$)/.exec(t.href||'');
   return m?[m[1]]:(TALLY_MODES[t.app]||['major','minor']);
 }
+// 和音クイズの「もんだいのしゅるい」のきろく（'keystats-chord-quiz-root' など）。★★（やった）には入れる。★★★（できた調）は前からのきろくだけ
+const subQuizzes=id=>PA.store.keys().map(k=>/^keystats-(.+)$/.exec(k)).filter(r=>r&&r[1].indexOf(id+'-')===0&&/^[a-z0-9-]+$/.test(r[1])).map(r=>r[1]);
 function quizStat(id,modes){
-  const t=PA.keyDeck.tally(id,{modes:modes||TALLY_MODES[id]||['major','minor']});
-  return {good:t.good,total:t.total,tried:t.total-t.none>0};
+  const md=modes||TALLY_MODES[id]||['major','minor'], t=PA.keyDeck.tally(id,{modes:md});
+  const tried=t.total-t.none>0||subQuizzes(id).some(q=>{const u=PA.keyDeck.tally(q,{modes:md});return u.total-u.none>0;});
+  return {good:t.good,total:t.total,tried};
 }
 const sessTried=id=>{const st=sessOf(id);return !!st&&st.done.length>0;};
 // 練習クイズでこたえたことがある（調はとわない）

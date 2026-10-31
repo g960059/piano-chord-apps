@@ -105,7 +105,7 @@
 | `chord` | そのページの和音 | ページごとの和音の id（`,` でいくつかならべられるページもある） |
 | `mode` | こたえかた | ページごと |
 | `level` | レベル | 1から |
-| `step` | ステップ（学ぶじゅんの段階） | 1から（変化和音クイズ・ならびの聴きわけ） |
+| `step` | ステップ（学ぶじゅんの段階） | 1から（和音クイズ・変化和音クイズ・ならびの聴きわけ） |
 | `tier` | むずかしさ（調号の数） | `easy`（0〜1）・`normal`（2〜3）・`hard`（4〜5）・`all` |
 | `n` | れんしゅうのもんだいの数 | 1〜20（「📝 きょうの5もん」とおなじしくみではじまる） |
 
@@ -117,7 +117,7 @@
 
 | ページ | パラメータ |
 |---|---|
-| `chord-quiz.html` | `key`（その調だけ）・`chord`（`I`・`IV`・`V`・`V7` を `,` で）・`mode`（`keys`＝けんばんでおさえる／`choice`＝4つからえらぶ）・`tier`・`keyset`（`major`・`minor`・`both`。このページだけ）・`n` |
+| `chord-quiz.html` | `key`（その調だけ）・`chord`（`I`・`IV`・`V`・`V7` を `,` で）・`mode`（`keys`＝けんばんでおさえる／`choice`＝4つからえらぶ）・`cat`（もんだいのしゅるい：`root` はじまりの音・`fill` たりない音・`add7` Ⅴ7にするには・`choice`・`keys`・`staff` がくふを見て・`fix` まちがいさがし・`prog` ならびの「？」・短調だけ `lt` 7ばんめの音・`mark` どの記号？。`mode` よりさき）・`tier`・`keyset`（`major`・`minor`・`both`。このページだけ）・`n`・`step`（`keyset` の長調／短調のステップの番号。そのステップの5もん）。`keyset` だけのリンクは、その調のステップのいちらんをひらく。きろくは `keys`・`choice` が `chord-quiz`、ほかは `chord-quiz-<しゅるい>`、ステップの ✓ は `chord-quiz-steps` |
 | `minor-quiz.html` | `mode`（`chord`＝和音をおさえる／`mark`＝臨時記号をえらぶ）・`chord`（`V`・`V7`・`V9`・`DIM` を `,` で）・`tier`・`key`（短調 `m0`〜`m12`。`mark`（または `chord` が1つ）のときはさいしょの1もんだけ、あとは `tier` の調。`key` だけで `mode` がないときは `chord`）・`n` |
 | `chroma-quiz.html` | `mode`（`keys`＝けんばんでおさえる／`ear`＝耳で聴きわける）・`step`（おさえる1〜6：1＝Ⅱ7・ドッペル、2＝副属和音、3＝準固有、4＝ナポリの六、5＝増六、6＝ぜんぶ）・`level`（耳1〜3。おさえるの `level` 1〜5はまえのリンクで、そのときとおなじ和音でひらく）・`chord`（和音の id を `,` で）・`tier`・`key`・`n`。`mode` がなくて `key`・`n`・`step`・`level`・`chord`・`tier` のどれかがあれば `keys`（ほぞんしたこたえかたが `ear` でもけんばんになる） |
 | `ending-quiz.html` | `mode`（`ear`＝聴いて／`see`＝がくふを見て）・`level`（1〜4）・`tier`・`key`・`n` |
