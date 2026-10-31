@@ -3,7 +3,7 @@
  *
  * PA.score.ready() → VexFlow を読めたか（読めなければ、ページは骨組みだけを出す）
  * PA.score.layout(pc, per) → {W, H, systems:[{ms:[小節…], svg（文字）, evs:[{i（pc.events の番号）, x（「？」をおく所＝符頭のまんなか）,
- *     x0・x1（色をつける所）}], bars:[{m, x0, x1}]}]}
+ *     x0・x1（色をつける所）}], bars:[{m, x0, x1}], heads:[{m, hand（rh｜lh）, t（拍）, x（符頭のまんなか）}]}]}
  *   単位は VexFlow の単位（線と線のあいだ＝10）。ページは viewBox で画面のはばにあわせ、位置は W に対する % でつかう
  *   per＝1段の小節の数（1｜2）。おなじ曲・per は1回だけ描く（テストでは document を test/_fakedom.mjs にする）
  * 音の書きかた（pc.score）は piece.js の PA.piece.parseStaff */
@@ -25,7 +25,6 @@ const cache=new Map();
 function makeNotes(V,st,sig){
   const ticks=[], list=[], beams={}, state=new Map();
   st.notes.forEach(n=>{
-    if(n.clefChange) ticks.push(new V.ClefNote(n.clefChange,'small'));
     const sn=new V.StaveNote(n.rest
       ?{keys:[n.clef==='bass'?'d/3':'b/4'],duration:n.dur+(n.dots?'d':'')+'r',clef:n.clef}
       :{keys:n.keys.map(vkey),duration:n.dur+(n.dots?'d':''),clef:n.clef,auto_stem:true});
@@ -37,6 +36,8 @@ function makeNotes(V,st,sig){
       state.set(id,k.acc);
     });
     if(n.orn.includes('tr')) sn.addModifier(new V.Ornament('tr'),0);
+    // 小節のとちゅうの音部記号は、その音符の前にそえる（べつの音符にすると、拍の列がずれる）
+    if(n.clefChange) sn.addModifier(new V.NoteSubGroup([new V.ClefNote(n.clefChange,'small')]),0);
     if(n.beam!=null) (beams[n.beam]=beams[n.beam]||[]).push(sn);
     ticks.push(sn); list.push({sn,n});
   });
@@ -72,7 +73,7 @@ function drawSystem(V,pc,mxs,firstSys,W){
   rd.resize(W,H);
   const ctx=rd.getContext();
   let x=LEFT;
-  const out={evs:[],bars:[]};
+  const out={evs:[],bars:[],heads:[]};
   const evs=pc.events.map((e,i)=>({e,i}));
   mxs.forEach((mx,i)=>{
     // 小節のはば：音の多さにあわせる（半分）＋おなじはば（半分）。音の少ない小節がつぶれないように
@@ -101,6 +102,7 @@ function drawSystem(V,pc,mxs,firstSys,W){
         o.hb=Math.min(o.hb,hb); o.he=Math.max(o.he,he);
       }
       o.x0=Math.min(o.x0,x0);
+      if(!n.rest) out.heads.push({m:mx.m,hand:a.list.some(q=>q.sn===sn)?'rh':'lh',t:n.t,x:(hb+he)/2});
     });
     const ns=r.getNoteStartX(), end=r.getX()+r.getWidth();
     out.bars.push({m:mx.m,x0:r.getX(),x1:end,ns});
@@ -129,7 +131,7 @@ function layout(pc,per){
   const W=W_OF[per], all=PC.score(pc), systems=[];
   for(let i=0;i<all.length;i+=per){
     const mxs=all.slice(i,i+per), s=drawSystem(V,pc,mxs,i===0,W);
-    systems.push({ms:mxs.map(x=>x.m),svg:s.svg,evs:s.evs,bars:s.bars});
+    systems.push({ms:mxs.map(x=>x.m),svg:s.svg,evs:s.evs,bars:s.bars,heads:s.heads});
   }
   const L={W,H,per,systems};
   cache.set(k,{pc,L});

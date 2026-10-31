@@ -5,7 +5,8 @@
 // ・楽譜の音は DCML の notes.tsv（CC BY-NC-SA。答え合わせに見るだけ。アプリにも git にも入れない）。
 //   音の高さ（name）と、いつ鳴るか（quarterbeats・duration_qb）だけをつかい、DCML の和音記号は読まない
 // ・和音ごとに、はじめに鳴っている音（いちばん下・上）と、和音のあいだに出てくる音をならべる。
-//   bass・sop がちがえば「!!」、アルベルティ・バスのように1拍前までの左手の音がいちばん下なら「~」
+//   bass・sop がちがえば「!!」、アルベルティ・バスのように1拍前までの左手の音がいちばん下なら「~」、
+//   和音のあいだ（hear があればそのあいだ。validate とおなじ）のいちばん下なら「_」（5小節：1拍めは左手のF4、4拍めにF3）
 //   和音の外の音（音階・トリルなど）は「外：」に出す（まちがいではない。人が目で見てたしかめる）
 // ・本物の楽譜（pc.score）の音も、楽譜の音のデータと1音ずつくらべる（高さ・はじまり・長さ・右手か左手か）
 // ・さいごに PA.piece.validate（和音の音・転回形・骨組み）のけっか
@@ -55,6 +56,11 @@ for(const ev of pc.events){
   if(!bOk){ // アルベルティ・バス：1拍前からの左手のいちばん下
     const back=notes.filter(x=>x.lh&&x.t>=t0-1-1e-9&&x.t<=t0+1e-9);
     if(back.length&&lo(back).n.midi===bass.midi){bOk=true;mark='~';}
+  }
+  if(!bOk){ // その和音のあいだ（hear）のいちばん下（PA.piece.validate とおなじ見かた）
+    const h0=ev.hear?(ev.m-1)*beats+ev.hear[0]-1:t0, h1=ev.hear?(ev.m-1)*beats+ev.hear[1]-1:t1;
+    const span=notes.filter(x=>x.t<h1-1e-9&&x.t+x.d>h0+1e-9);
+    if(span.length&&lo(span).n.midi===bass.midi){bOk=true;mark='_';}
   }
   const sOk=H&&H.n.midi===sop.midi;
   if(!bOk||!sOk){mark='!!';bad++;}

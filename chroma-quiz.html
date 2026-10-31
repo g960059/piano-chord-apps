@@ -74,6 +74,8 @@
 .lvdesc b{color:var(--ink)}
 @media (min-width:560px){.seg.lvseg{grid-template-columns:repeat(8,minmax(0,1fr))}}
 @media (min-width:700px){.seg.lvseg .lvname{display:block;font-size:12px;font-weight:700;margin-top:2px;line-height:1.25;text-wrap:balance}}
+/* 名前が2行になるボタンがあっても、「ステップ」と番号の高さをそろえる（上からならべる） */
+@media (min-width:700px){.seg.lvseg button{justify-content:flex-start;padding-top:8px}}
 /* 🔥 チャレンジ（増六に読みかえる）のしるし */
 .chalbadge{display:inline-block;font-size:12.5px;font-weight:800;line-height:1.4;color:#fff;background:#b3361d;border-radius:999px;padding:1px 10px;white-space:nowrap}
 .challine{display:flex;flex-wrap:wrap;align-items:center;gap:4px 8px;margin:6px 0 0;font-size:13.5px;font-weight:700;color:var(--ink);line-height:1.45}
@@ -936,8 +938,7 @@ function keysView(){
     const b=baseOf(key,t);
     h+=`<div class="msg" id="fb" role="status">💡 ヒント${Q.hint}：${recipe(key,t)}${Q.hint>=2?`<br>${b.root?`いちばん下の${b.low||'根音'}は<b>「${PA.nmH(b.notes[0])}」</b>（オレンジのわく）。`:`もとの和音<b>${b.name}</b>（${namesN(b.notes)}）をオレンジのわくで出したよ。`}`:''}</div>`;
   }
-  h+=`<div class="row center"><button class="btn small" data-act="qexplain">🐸 ${t==='ddim'?'ドッペルの家族を見る':'つくりかたを見る'}</button></div>`+
-    (t==='ddim'?`<p class="qsub" style="text-align:center;margin:0">ひらいたら下の 🏠 ドッペルの家族で「ⅤのⅤ9の根音省略」を選んでね</p>`:'')+
+  h+=`<div class="row center"><button class="btn small" data-act="qexplain">🐸 つくりかたを見る</button></div>`+
     (done||Q.result!==null?'':PA.once('hint-rule',`<p class="qsub" style="text-align:center;margin:0">${PA.HINT_NOTE}</p>`));
   if(done){
     const st=stepsOf(key,t);
@@ -1153,12 +1154,13 @@ function reveal(el,target,bottomOnly){
 const showFb=()=>{const el=document.getElementById('fb'); if(el&&el.scrollIntoView) el.scrollIntoView({block:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});};
 // 「つくりかたを見る」：そのページの保存に調・和音を書いてひらく
 // 変化和音のページ：保存の名前＝ページの名前。{minor, keyIdx}と、borrowed は id（PA.henka.BORROWED_IDS）、
-//   secondary は target（度数）・kind（'V7'）。'<ページ>-auto'＝true でひらいたらつくりかたをはじめる
+//   secondary は target（度数）・kind（'V7'。ddim は target 5・kind 'vii7'）。'<ページ>-auto'＝true でひらいたらつくりかたをはじめる
 const NEW_PAGE={n6:['neapolitan',{}],iv:['borrowed',{id:'iv'}],ivm:['borrowed',{id:'iv'}],bvi:['borrowed',{id:'bVI'}],ivd:['dorian',{on:true}],vii7:['dim-halfdim',{}]};
 function goExplain(minor,keyIdx,type){
   PA.stopSound(); save();
-  if(isNew(type)){
-    const [page,extra]=T[type].tg?['secondary',{target:T[type].tg,kind:'V7'}]:NEW_PAGE[type];
+  if(isNew(type)||type==='ddim'){
+    // ddim（ⅤのⅤ9の根音省略）は副属和音のページで習う（2026-11-01（2））：目標Ⅴ・減七の形で
+    const [page,extra]=type==='ddim'?['secondary',{target:5,kind:'vii7'}]:T[type].tg?['secondary',{target:T[type].tg,kind:'V7'}]:NEW_PAGE[type];
     const p=PA.store.get(page,{});
     PA.store.set(page,{...(p&&typeof p==='object'?p:{}),minor:page==='borrowed'?false:minor,keyIdx,...extra});
     if(type!=='iv') PA.store.set(page+'-auto',true); // ⅣはふつうのⅣ（かりるスイッチオフ）を見せる。アニメは ○Ⅳでおわるのではじめない

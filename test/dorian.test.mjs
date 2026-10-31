@@ -136,3 +136,9 @@ test('変化和音クイズ：chord=ivd（ドリアのページのためして�
   assert.equal(openQuiz('?step=6').__Q.types.ivd,true);
   assert.equal(openQuiz('?step=3').__Q.types.ivd,false,'準固有のステップには入れない');
 });
+
+test('ドリアのⅣ：そのあとはⅤ・Ⅴ7。短調のⅤ9（根音省略も）は書かない（第9音＝ふつうの6ばんめと、上げた6ばんめがぶつかる対斜になる）',()=>{
+  const h=read('dorian.html');
+  assert.match(h,/<b>Ⅴ<\/b>（Ⅴ7も）へすすむよ/);
+  assert.ok(!/Ⅴ9/.test(h),'Ⅴ9 は出さない');
+});

@@ -17,7 +17,7 @@ const plain=h=>h.replace(/<[^>]+>/g,'');
 function openQuiz(search,mem=new Map()){
   const js=read('chroma-quiz.html').match(/<script>\n(\/\* 変化和音クイズ[\s\S]*?)<\/script>/)[1];
   return loadPA(STUB+read('assets/core.js')+'\nwindow.scrollTo=function(){};window.innerHeight=800;PA.paint=function(el,h,sig){if(sig!=="bar")PA.__html=h;};'
-    +'document.addEventListener=function(){};\n'+js+'\nPA.__Q=Q;PA.__render=render;PA.__new=newQ;',{storage:mem,search,href:'https://example.test/chroma-quiz.html'+search});
+    +'document.addEventListener=function(){};\n'+js+'\nPA.__Q=Q;PA.__render=render;PA.__new=newQ;PA.__explain=goExplain;',{storage:mem,search,href:'https://example.test/chroma-quiz.html'+search});
 }
 const typesSeen=P=>{const s=new Set();for(let i=0;i<120;i++){P.__new();s.add(P.__Q.q.type);}return s;};
 
@@ -68,4 +68,17 @@ test('副属和音：目標がⅤのときは、まず「ドッペルドミナ�
     const m=plain(P.__hero(key,P.__info(key)));
     assert.ok(!/ドッペルドミナント/.test(m.split('<br>')[0])&&/度調のⅤ7」と読むよ/.test(m),m.slice(0,60));
   }
+});
+
+test('変化和音クイズ：ⅤのⅤ9の根音省略の「つくりかたを見る」は副属和音のページ（目標Ⅴ・減七）へ',()=>{
+  const mem=new Map(), P=openQuiz('?mode=keys&chord=ddim&key=M0&n=5',mem);
+  let went=null; P.go=u=>{went=u;};
+  for(let i=0;i<20&&P.__Q.q.type!=='ddim';i++) P.__new();
+  assert.equal(P.__Q.q.type,'ddim');
+  P.__explain(false,0,'ddim');
+  assert.equal(went,'secondary.html');
+  const s=JSON.parse(mem.get('pianoapps.secondary'));
+  assert.equal(s.target,5); assert.equal(s.kind,'vii7'); assert.equal(s.keyIdx,0);
+  assert.equal(mem.get('pianoapps.secondary-auto'),'true');
+  assert.ok(!/ドッペルの家族を見る|ドッペルの家族で/.test(read('chroma-quiz.html')));
 });

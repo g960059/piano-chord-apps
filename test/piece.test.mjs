@@ -530,6 +530,17 @@ test('本物の楽譜：VexFlow で描く（スマホ＝1段1小節で12段・�
   // 4小節：Ⅴ¹（1拍め）・Ⅴ₇¹（2拍め）・Ⅰ（3拍め）。1拍ぶんは、せまい画面（276px）でも「？」（52px）が入るはば
   const s4=L1.systems[3], u=276/L1.W;
   assert.equal(s4.evs.length,3); assert.ok((s4.evs[1].x-s4.evs[0].x)*u>=40,'となりの拍との間');
+  // 5小節4拍め：左手のヘ音記号は和音の前にそえるだけ。和音（F3・C4）は右手の4拍め（D5）とおなじ列（16分おくれない）
+  [L1,L2].forEach(L=>{
+    const hs=[].concat(...L.systems.map(s=>s.heads)).filter(h=>h.m===5), at=(hand,t)=>hs.filter(h=>h.hand===hand&&h.t===t).map(h=>h.x);
+    const lh4=at('lh',4), rh4=at('rh',4), rh425=at('rh',4.25);
+    assert.equal(lh4.length,1); assert.equal(rh4.length,1);
+    assert.ok(Math.abs(lh4[0]-rh4[0])<3,'5小節4拍め：左手の和音 '+lh4[0]+' と右手のレ '+rh4[0]);
+    assert.ok(lh4[0]<rh425[0]-5,'左手の和音は、右手の4拍めのうらのド（16分あと）より左');
+    // どの拍も、右手と左手がおなじ拍に鳴るときはおなじ列
+    hs.forEach(h=>{const o=hs.filter(q=>q.hand!==h.hand&&q.t===h.t);o.forEach(q=>assert.ok(Math.abs(q.x-h.x)<3,'5小節 '+h.t+'拍'));});
+  });
+  assert.match(L1.systems[4].svg,/vf-clefnote|vf-clef/,'ヘ音記号は描く');
   // 線のあいだ（VexFlow の10）が、320px の画面（楽譜のはば276px）で7pxいじょう
   assert.ok(10*276/L1.W>=7);
 });
@@ -548,7 +559,7 @@ test('ページ：本物の楽譜がふつう。「？」は楽譜の上の列�
   assert.equal((h.match(/<i class="hl" data-ev="\d+"/g)||[]).length,22);
   assert.ok(!/class="hintbox"/.test(h),'骨組みははじめはとじている');
   assert.equal((h.match(/data-act="phint"/g)||[]).length,12);
-  assert.match(h,/data-act="phint" data-v="2" aria-pressed="false" aria-label="ヒント：和音だけにした形を見る"><svg[^>]*>[\s\S]*?<\/svg>ヒント<span class="hx">：和音だけ<\/span><\/button>/);
+  assert.match(h,/data-act="phint" data-v="2" aria-pressed="false" aria-label="2小節のヒント：和音だけにした形を見る"><svg[^>]*>[\s\S]*?<\/svg><span>ヒント<span class="hx">：和音だけ<\/span><\/span><\/button>/,'ボタンの名前に小節（どのボタンもおなじ名前にしない）。「ヒント」と「：和音だけ」は1つのまとまり（すきまをあけない）');
   // ヒント：その段だけ骨組み（全音符）をひらく・とじる
   click('phint','2');
   h=view();
@@ -594,6 +605,6 @@ test('オフライン・ライセンス：VexFlow 4.2.5（そのまま）を ass
   assert.match(sp,/VexFlow[\s\S]*?assets\/licenses\/VEXFLOW-LICENSE\.txt/); assert.match(sp,/Bravura[\s\S]*?assets\/licenses\/BRAVURA-OFL\.txt/);
   // ことば：やさしい日本語（分かち書きなし）
   const js=h.match(/<script>([\s\S]*?)<\/script>/)[1];
-  ['下は本物の楽譜だよ','和音にして聴く','ヒント：和音だけにした形を見る','和音の音だけを、全音符にした形だよ'].forEach(t=>assert.ok(js.includes(t),t));
+  ['下は本物の楽譜だよ','和音にして聴く','のヒント：和音だけにした形を見る','和音の音だけを、全音符にした形だよ'].forEach(t=>assert.ok(js.includes(t),t));
   assert.ok(!/[ぁ-んァ-ヶー一-龠][ 　][ぁ-んァ-ヶー一-龠]/.test(K545().source.score));
 });

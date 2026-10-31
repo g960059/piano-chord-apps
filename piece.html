@@ -365,7 +365,7 @@ function realSysHTML(sys,si,L){
   const maxW=L.per===1?480:760;
   let h=`<div class="sys" data-sys="${si}"><p class="pa-sr">${name}の楽譜（本物の楽譜）</p>
     <div class="sysbar">${ms.map(m=>playBtn('pm',String(m))).join('')}
-      <button type="button" class="btn small hintbtn${open?' on':''}" data-act="phint" data-v="${ms[0]}" aria-pressed="${open}" aria-label="ヒント：和音だけにした形を見る">${PA.icon('hint')}ヒント<span class="hx">：和音だけ</span></button></div>
+      <button type="button" class="btn small hintbtn${open?' on':''}" data-act="phint" data-v="${ms[0]}" aria-pressed="${open}" aria-label="${name}のヒント：和音だけにした形を見る">${PA.icon('hint')}<span>ヒント<span class="hx">：和音だけ</span></span></button></div>
     <div class="score" style="max-width:${maxW}px">
       <div class="lane"><span class="kpre" aria-hidden="true">${ESC(keyPre(ev0))}</span>${lane}</div>
       <div class="sheet" style="padding-top:${(L.H/L.W*100).toFixed(3)}%">${hl}${sys.svg}</div>
