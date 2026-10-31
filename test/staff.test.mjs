@@ -34,11 +34,19 @@ test('autoCarry なしは前とおなじ（c.carry をつかう）',()=>{
 
 // 先生の指摘（2026-10-31）：符頭の中を白でぬると、線の上の音が「間の音」に見える
 const E4=n(2,0,64), F4=n(3,0,65);
-test('白い符頭は中をぬらない（五線が符頭の中を通って見える）',()=>{
+test('符頭は全音符：穴をぬかない（evenodd で、五線が穴の中を通って見える）。白い楕円はつかわない',()=>{
   const svg=draw([{notes:[E4,F4]},{notes:[C4],lh:[C3]}]);
-  const heads=svg.match(/<ellipse [^>]*>/g)||[];
+  assert.ok(!/<ellipse /.test(svg),'楕円の符頭はもうない');
+  const heads=svg.match(/<path [^>]*fill-rule="evenodd"\/>/g)||[];
   assert.equal(heads.length,4);
-  heads.forEach(h=>assert.match(h,/fill="none"/));
+  heads.forEach(h=>{assert.ok(!/fill="#fff"/.test(h));assert.equal((h.match(/Z/g)||[]).length,2,'まわりと穴の2つ');});
+});
+test('全音符の形：まわりは横長でかたむけない（x軸の回転0）、穴はたて長で左上へかたむく',()=>{
+  const h=PA.wholeNote(100,50,'#000');
+  const arcs=[...h.matchAll(/A([\d.]+) ([\d.]+) (-?[\d.]+) 1 0/g)].map(m=>m.slice(1).map(Number));
+  assert.equal(arcs.length,4);
+  const [rx,ry,rot]=arcs[0]; assert.ok(rx>ry&&rot===0,'まわり');
+  const [hx,hy,hr]=arcs[2]; assert.ok(hx>hy&&hr>45&&hr<75,'穴の長いじくは右下へ（上は左へ）かたむく');
 });
 test('列の色・かわった調号の赤い丸は、五線より先にぬる（五線の上をぬりつぶさない）',()=>{
   const svg=PA.staffSVG(PA.minorKey(0),[{notes:[E4],hl:'#fff1cc'}],{sigOverride:{letter:4,acc:1}});

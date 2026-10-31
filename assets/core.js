@@ -569,6 +569,13 @@ PA.accGlyph=(x,y,a,color='#3a3245')=>{
   return '';
 };
 // ト音記号（y0＝ソ4の線）／ヘ音記号（y0＝ファ3の線）。フォントに頼らない線画
+// 全音符（先生の決め：和音の図は全音符）。まわりは横長でかたむけない、中の穴だけ左上へかたむける。
+//   穴は evenodd でぬかない（透明）：線の上の音は、五線・加線が穴の中を通って見える
+PA.wholeNote=(x,y,col,o={})=>{
+  const a=o.rx||8, b=o.ry||5.3, ha=2.7, hb=4.3, t=-32*Math.PI/180, ct=Math.cos(t), st=Math.sin(t), f=v=>Math.round(v*100)/100;
+  const ell=(rx,ry,deg,dx,dy)=>`M${f(x+dx)} ${f(y+dy)}A${rx} ${ry} ${deg} 1 0 ${f(x-dx)} ${f(y-dy)}A${rx} ${ry} ${deg} 1 0 ${f(x+dx)} ${f(y+dy)}Z`;
+  return `<path d="${ell(a,b,0,a,0)}${ell(hb,ha,f(-32+90),-hb*st,hb*ct)}" fill="${col}" fill-rule="evenodd"/>`;
+};
 PA.gClef=(x,y0)=>`<g transform="translate(${x} ${y0})" fill="none" stroke="#3a3245" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3 C8 3 7 -5 13 -7 C21 -9 25 0 20 7 C14 14 2 10 2 0 C2 -10 12 -17 17 -27 C20 -34 19 -44 15 -44 C10 -44 8 -34 10 -24 L16 24 C17 31 11 33 8 29"/><circle cx="9.5" cy="27.5" r="3.2" fill="#3a3245" stroke="none"/></g>`;
 PA.fClef=(x,y0)=>`<g transform="translate(${x} ${y0})"><circle cx="5" cy="0" r="4" fill="#3a3245"/><path d="M3 -2 C4 -10 14 -12 19 -7 C25 -1 22 10 14 17 C9 21 4 24 -1 26" fill="none" stroke="#3a3245" stroke-width="2.8" stroke-linecap="round"/><circle cx="27" cy="-5" r="2.2" fill="#3a3245"/><circle cx="27" cy="5" r="2.2" fill="#3a3245"/></g>`;
 /* cols: [{notes:[...ト音記号], lh:[...ヘ音記号], color, ltColor(導音の色), accColor, accRing, label, sub(和音名の下の小さな字), labelColor, op, noAcc, carry:{文字:変化記号},
@@ -633,14 +640,14 @@ PA.staffSVG=(key,cols,o={})=>{
     let ps=-99,po=false; P.forEach(p=>{p.off=(p.s-ps===1&&!po);po=p.off;ps=p.s;});
     const anyOff=P.some(p=>p.off), minS=P[0].s, maxS=P[P.length-1].s;
     let r='';
-    for(let q=lo-2;q>=minS;q-=2) r+=`<line x1="${x-12}" x2="${x+12+(anyOff?13:0)}" y1="${yf(q)}" y2="${yf(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
-    for(let q=hi+2;q<=maxS;q+=2) r+=`<line x1="${x-12}" x2="${x+12+(anyOff?13:0)}" y1="${yf(q)}" y2="${yf(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
+    for(let q=lo-2;q>=minS;q-=2) r+=`<line x1="${x-12}" x2="${x+12+(anyOff?16:0)}" y1="${yf(q)}" y2="${yf(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
+    for(let q=hi+2;q<=maxS;q+=2) r+=`<line x1="${x-12}" x2="${x+12+(anyOff?16:0)}" y1="${yf(q)}" y2="${yf(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
     const accCols=[];
     [...P].reverse().forEach(p=>{
       const sigAcc=o.noSig?0:(key.sig[p.n.letter]||0);
       const was=A?[A.at[st+p.s],A.any[p.n.letter]]:[c.carry&&c.carry[p.n.letter]];
       const need=(p.n.acc!==sigAcc)||was.some(w=>w!==undefined&&w!==p.n.acc);
-      const hx=x+(p.off?13:0), hy=yf(p.s);
+      const hx=x+(p.off?16:0), hy=yf(p.s);
       if(need&&!c.noAcc){
         let k=0; while(accCols.some(q=>q.k===k&&Math.abs(q.s-p.s)<6)) k++;
         accCols.push({k,s:p.s});
@@ -649,8 +656,8 @@ PA.staffSVG=(key,cols,o={})=>{
         if(p.n.raised&&c.accRing) r+=`<circle cx="${x-18-k*11}" cy="${hy}" r="11" fill="none" stroke="${ac}" stroke-width="2" opacity=".6"/>`;
       }
       const col=p.n.raised&&c.ltColor?c.ltColor:(c.color||'#3a3245');
-      // 白い符頭は中をぬらない：線の上の音は、五線・加線が符頭の中を通って見える（白でぬると間の音に見える）
-      r+=`<ellipse cx="${hx}" cy="${hy}" rx="7" ry="5" fill="none" stroke="${col}" stroke-width="3" transform="rotate(-18 ${hx} ${hy})"/>`;
+      // 全音符。穴はぬらない：線の上の音は、五線・加線が穴の中を通って見える（白でぬると間の音に見える）
+      r+=PA.wholeNote(hx,hy,col);
       if(yf===by&&c.lhRing) r+=`<circle cx="${hx}" cy="${hy}" r="12" fill="none" stroke="${c.lhRing}" stroke-width="2.5"/>`;
       if(yf===ty){pos[ci]=pos[ci]||[];pos[ci][p.i]={x:hx,y:hy};}
     });
