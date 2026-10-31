@@ -307,9 +307,9 @@ function termsHTML(key){
   </ul></details>`;
 }
 let lastActions='';
-// 変化和音クイズへ：いまの調で、🎹 おさえるレベル1（Ⅱ7・ドッペル）を5もん。👂 聴きわけもレベル1
+// 変化和音クイズへ：いまの調で、🎹 おさえるステップ1（Ⅱ7・ドッペル・減七/Ⅴ）を5もん。👂 聴きわけはレベル1
 function tryCard(key){
-  return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',level:1,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
+  return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',step:1,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
     sub:`${PA.keyName(key)}で、Ⅱ7とドッペルドミナントをけんばんで5問おさえてみよう。`,btn:PA.icon('target')+'けんばんで5問',
     links:[{to:'chroma-quiz',params:{mode:'ear',level:1,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:PA.icon('ear')+'耳で聴きわける'}]});
 }

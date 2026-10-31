@@ -316,9 +316,9 @@ function termsHTML(key,t){
     <li><b>ナポリの和音</b>（♭Ⅱ） … Ⅱの根音を半音下げた長三和音。${PA.keyName(key)}では${b.bII}。</li>
   </ul></details>`;
 }
-// 変化和音クイズへ：いまの調で、🎹 おさえるレベル3（増六3しゅるい）を5もん。👂 聴きわけはレベル2（増六）
+// 変化和音クイズへ：いまの調で、🎹 おさえるステップ5（増六3しゅるい）を5もん。👂 聴きわけはレベル2（増六）
 function tryCard(key){
-  return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',level:3,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
+  return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',step:5,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
     sub:`${PA.keyName(key)}で、イタリア・フランス・ドイツの6をけんばんで5問おさえてみよう。`,btn:PA.icon('target')+'けんばんで5問',
     links:[{to:'chroma-quiz',params:{mode:'ear',level:2,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:PA.icon('ear')+'耳で聴きわける'}]});
 }

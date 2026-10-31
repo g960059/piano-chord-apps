@@ -406,10 +406,10 @@ function termsHTML(key){
     <li><b>共通音</b> … となりの和音にもある同じ音。同じ声でそのままのこすと、なめらか。ナポリの${q(n6[1])}は、そのままⅤ7の第7音になるよ。</li>
   </ul></details>`;
 }
-// 変化和音クイズへ：いまの調で、🎹 おさえるレベル4（増六＋ナポリ・Ⅳm・♭Ⅵ）を5もん。👂 聴きわけはレベル3（Ⅳ・Ⅳm・ナポリ）
+// 変化和音クイズへ：いまの調で、🎹 おさえるステップ4（ナポリの六）を5もん。👂 聴きわけはレベル3（Ⅳ・Ⅳm・ナポリ）
 function tryCard(key){
-  return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',level:4,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
-    sub:`${PA.keyName(key)}で、ナポリの六（と増六${key.minor?'':'・かりた和音'}）をけんばんで5問おさえてみよう。`,btn:PA.icon('target')+'けんばんで5問',
+  return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',step:4,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
+    sub:`${PA.keyName(key)}で、ナポリの六をけんばんで5問おさえてみよう。`,btn:PA.icon('target')+'けんばんで5問',
     links:[{to:'chroma-quiz',params:{mode:'ear',level:3,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:PA.icon('ear')+'耳で聴きわける'}]});
 }
 function linksCard(){

@@ -39,8 +39,12 @@
  *
  * ----- アプリの目次（ホーム・つぎへのリンク・もどるにつかう） -----
  *   PA.APP_TYPES … {learn,quiz,play,ref,ear}：{label, c(色), l(うすい色), dk(白い字をのせられるこい色)}
- *   PA.UNITS … [{id, title, sub, apps:[app の id]}]（ホームにならべるじゅん）
+ *   PA.UNITS … [{id, kind, title, sub, tasks:[{app, href, title}], apps:[app の id]}]（ホームにならべるじゅん）
+ *     kind：'basic'＝基本の地図（①〜⑥）、'daily'＝毎日たのしむところ（耳のひろば）、'extra'＝レベルアップしたい人へ
+ *     tasks＝島の中の課題。おなじアプリを、べつの設定（href の ?keyset=… など）でいくつかの単元に出せる（和音クイズは①長調・②短調）
+ *     apps＝tasks のアプリの id（おなじものは1つ）。PA.unit(id) → その単元（なければ null）
  *   PA.APPS  … [{id, ic, title, d, type:'learn'|'quiz'|'play'|'ref'|'ear', unit, practice?(れんしゅうのページの id), href?(外のページ)}]
+ *     unit＝そのアプリがさいしょに出てくる単元（アプリ1つに1つ）
  *     title はただの文字。d は HTML（<span class="ds">…</span>などが入る）なので PA.esc をとおさずにそのまま入れる
  *   PA.app(id) → そのアプリ（なければ null）
  *
@@ -60,11 +64,12 @@
  *   PA.absUrl(rel) → https://… のながいアドレス（いまのページの場所から）
  *   PA.params() → location.search の {名前:文字}（名前は /^[a-z][a-z0-9-]{0,20}$/、値は40文字まで。ちがうものはすてる）
  *   PA.parseParams(search) … PA.params とおなじ（'?a=1&b=2' の文字をわたす）
- *   PA.PARAM_KEYS＝['key','chord','mode','level','tier','n']（下のことば）。PA.fromLink() → このどれかがリンクにあれば true
+ *   PA.PARAM_KEYS＝['key','chord','mode','level','tier','n','step']（下のことば）。PA.fromLink() → このどれかがリンクにあれば true
  *   PA.paramInt(name, lo, hi) → 整数（lo〜hi の外・ないときは null）
  *   ことば（どのページもおなじ意味。その1回だけつかい、ほぞんした設定はかえない）：
  *     key＝調（keyDeck の id：M0〜M12長調、m0〜m12短調）、chord＝そのページの和音の id、mode＝そのページのこたえかた、
- *     level＝レベル（1から）、tier＝easy｜normal｜hard｜all、n＝れんしゅうのもんだいの数（1〜20）
+ *     level＝レベル（1から）、tier＝easy｜normal｜hard｜all、n＝れんしゅうのもんだいの数（1〜20）、
+ *     step＝ステップ（1から。学ぶじゅんの段階：変化和音クイズ・ならびの聴きわけ）
  *   PA.shareHTML(page, params, label?) → リンクをおくるボタン（data-pa="share" data-url="https://…"）。
  *     おすと navigator.share、なければコピー（navigator.clipboard、だめなら prompt）して「コピーしたよ」。クリックは core があつかう
  *
@@ -678,13 +683,20 @@ PA.APP_TYPES={
   ear:{label:'耳',c:'#c98500',l:'#fff1cc',dk:'#8a5a00'}
 };
 PA.UNITS=[
-  {id:'u1',title:'🎹 はじめの和音（Ⅰ・Ⅳ・Ⅴ・Ⅴ7）',sub:'まずはここから',apps:['chord-build','chord-quiz','cadence','chord-table']},
-  {id:'u2',title:'🎼 曲につけてみる',sub:'知っている曲に和音をつける',apps:['accompaniment']},
-  {id:'u3',title:'🧩 和音をもっと知る',sub:'7つの和音・和音のかたち・音のへだたり',apps:['diatonic','inversion','interval']},
-  {id:'u4',title:'🌙 短調と臨時記号',sub:'Ⅴ・Ⅴ7・Ⅴ9・減七',apps:['minor-why','minor-signature','minor-family','minor-quiz']},
-  {id:'u5',title:'🏁 おわりかた',sub:'曲のおわりの6つの形',apps:['ending','ending-quiz']},
-  {id:'u6',title:'🌈 変化和音',sub:'調の音を半音動かす・よその調からかりる和音',apps:['doppel','secondary','aug6','neapolitan','borrowed','dim-halfdim','enharmonic','chroma-quiz']},
-  {id:'ear',title:'👂 耳をきたえる（毎日すこしずつ）',sub:'聴いてパッとわかる',apps:['ear','progression']}
+  // 基本の地図（①〜⑥）。①②③がいちばん手厚くする「基本」（先生のじゅん：docs/TEACHER-FEEDBACK.md）
+  {id:'major',kind:'basic',title:'🎹 長調のⅠ・Ⅳ・Ⅴ・Ⅴ7',sub:'いちばん大事な4つの和音。まずはここから',tasks:[
+    {app:'chord-build'},{app:'chord-quiz',href:'chord-quiz.html?keyset=major',title:'和音クイズ（長調）'},{app:'cadence'},{app:'chord-table'}]},
+  {id:'minor',kind:'basic',title:'🌙 短調のⅠ・Ⅳ・Ⅴ・Ⅴ7',sub:'7ばんめを上げるので、Ⅴ・Ⅴ7にはかならず臨時記号',tasks:[
+    {app:'minor-why'},{app:'minor-signature'},{app:'chord-quiz',href:'chord-quiz.html?keyset=minor',title:'和音クイズ（短調）'}]},
+  {id:'minor9',kind:'basic',title:'🏠 短調のⅤ9と減七',sub:'短調では、Ⅴ9の根音を省略（はぶく）すると減七',tasks:[{app:'minor-family'},{app:'dim-halfdim'},{app:'minor-quiz'}]},
+  {id:'more',kind:'basic',title:'🧩 和音をもっと知ろう',sub:'7つの和音・和音のかたち・音のへだたり',tasks:[{app:'diatonic'},{app:'inversion'},{app:'interval'}]},
+  {id:'ending',kind:'basic',title:'🏁 おわりかた',sub:'曲のおわりの6つの形',tasks:[{app:'ending'},{app:'ending-quiz'}]},
+  {id:'accomp',kind:'basic',title:'🎼 曲につけてみよう',sub:'知っている曲のメロディーに和音をつける',tasks:[{app:'accompaniment'}]},
+  // 毎日たのしむところ（学ぶじゅんとはべつ。いつでもあそべる）
+  {id:'ear',kind:'daily',title:'👂 耳のひろば',sub:'毎日すこしずつ。聴いてパッとわかる',tasks:[{app:'ear'},{app:'progression'}]},
+  // レベルアップしたい人へ（変化和音。先生のじゅん：準固有和音がナポリの六よりさき、異名同音の読みかえはいちばん最後）
+  {id:'extra',kind:'extra',title:'🌈 レベルアップしたい人へ',sub:'変化和音：調の音を半音動かす・よその調からかりる',tasks:[
+    {app:'doppel'},{app:'secondary'},{app:'borrowed'},{app:'neapolitan'},{app:'aug6'},{app:'enharmonic'},{app:'chroma-quiz'}]}
 ];
 PA.APPS=[
   {id:'chord-build',ic:'🐸',title:'和音のしくみ',d:'音階のなんばんめから「ひとつとばし」で和音をつくる',type:'learn',practice:'chord-quiz'},
@@ -697,23 +709,30 @@ PA.APPS=[
   {id:'interval',ic:'📏',title:'音のへだたり',d:'ドからミは3度。文字をかぞえて、広い・せまいを知る',type:'learn'},
   {id:'minor-why',ic:'❓',title:'なぜ7ばんめを上げるの？',d:'長調と短調の「7ばんめ→主音」をくらべて聴く',type:'learn',practice:'minor-quiz'},
   {id:'minor-signature',ic:'♮',title:'調号と臨時記号',d:'調号に書けないわけ。♯・♮・<span class="ds">x</span>のいちらん',type:'learn',practice:'minor-quiz'},
-  {id:'minor-family',ic:'🏠',title:'Ⅴの家族',d:'Ⅴ→Ⅴ7→Ⅴ9→減七と、Ⅰへのすすみかた',type:'learn',practice:'minor-quiz'},
+  {id:'minor-family',ic:'🏠',title:'Ⅴの家族',d:'短調のⅤ→Ⅴ7→Ⅴ9→減七と、Ⅰへのすすみかた',type:'learn',practice:'minor-quiz'},
+  {id:'dim-halfdim',ic:'⚖️',title:'Ⅴ9の根音省略',d:'短調では減七になる。長調ではならない。ちがうのは第9音だけ',type:'learn',practice:'minor-quiz'},
   {id:'minor-quiz',ic:'🎯',title:'短調クイズ',d:'短調のⅤの家族をおさえる／臨時記号を選ぶ',type:'quiz'},
   {id:'ending',ic:'🏁',title:'おわりかた',d:'完全終止・半終止・偽終止など6つのおわりかたを、聴いて・がくふで見る',type:'learn',practice:'ending-quiz'},
   {id:'ending-quiz',ic:'🎯',title:'おわりかたクイズ',d:'4つの和音を聴いて／がくふを見て、おわりかたの名前を当てる',type:'quiz'},
   {id:'doppel',ic:'🔺',title:'Ⅱ7とドッペルドミナント',d:'Ⅱ7の第3音を上げると「ⅤのためのⅤ7」になる',type:'learn',practice:'chroma-quiz'},
   {id:'secondary',ic:'🧭',title:'副属和音',d:'Ⅱ・Ⅲ・Ⅳ・Ⅵを、いっときⅠにみたてる「その和音のためのⅤ7」',type:'learn',practice:'chroma-quiz'},
-  {id:'aug6',ic:'↔️',title:'増六の和音',d:'イタリア・フランス・ドイツの6。外へひらいてⅤへ',type:'learn',practice:'chroma-quiz'},
-  {id:'neapolitan',ic:'🌋',title:'ナポリの六',d:'2ばんめを半音下げた♭Ⅱ。いちばん下の音とⅤへのすすみかた',type:'learn',practice:'chroma-quiz'},
   {id:'borrowed',ic:'🎁',title:'準固有和音（借用和音）',d:'長調で、同じ主音の短調からかりるⅣ・♭Ⅵなど',type:'learn',practice:'chroma-quiz'},
-  {id:'dim-halfdim',ic:'⚖️',title:'減七と半減七',d:'にているひびき。ちがうのは第7音だけ',type:'learn',practice:'chroma-quiz'},
+  {id:'neapolitan',ic:'🌋',title:'ナポリの六',d:'2ばんめを半音下げた♭Ⅱ。いちばん下の音とⅤへのすすみかた',type:'learn',practice:'chroma-quiz'},
+  {id:'aug6',ic:'↔️',title:'増六の和音',d:'イタリア・フランス・ドイツの6。外へひらいてⅤへ',type:'learn',practice:'chroma-quiz'},
   {id:'enharmonic',ic:'🔀',title:'異名同音の読みかえ',d:'同じけんばんでも、書き方とすすむ先で役わりがかわる',type:'learn',practice:'chroma-quiz'},
-  {id:'chroma-quiz',ic:'🎯',title:'変化和音クイズ',d:'けんばんでおさえる／耳で聴きわける',type:'quiz'},
+  {id:'chroma-quiz',ic:'🎯',title:'変化和音クイズ',d:'Ⅱ7・ドッペルから順に、けんばんでおさえる／耳で聴きわける',type:'quiz'},
   {id:'ear',ic:'👂',title:'和音の聴きわけ',d:'10しゅるいの和音を音で当てる。8レベルとチャレンジ',type:'ear'},
   {id:'progression',ic:'🧩',title:'ならびの聴きわけ',d:'Ⅰ→Ⅳ→Ⅴ7→Ⅰ などのならびを聴いて、「？」の和音を当てる。おちつく・もどりたい感じ、いちばん下と上の音の動きも',type:'ear'}
 ];
-PA.UNITS.forEach(u=>u.apps.forEach(id=>{const a=PA.APPS.find(x=>x.id===id);if(a) a.unit=u.id;}));
 PA.app=id=>PA.APPS.find(a=>a.id===id)||null;
+// 課題：href・title がなければアプリのページと名前。u.apps＝課題のアプリの id（おなじものは1つ）。
+// a.unit＝そのアプリがさいしょに出てくる単元（1つのアプリに1つ。和音クイズは①）
+PA.UNITS.forEach(u=>{
+  u.tasks=u.tasks.filter(t=>PA.app(t.app)).map(t=>{const a=PA.app(t.app);return {app:a.id,href:t.href||a.href||a.id+'.html',title:t.title||a.title};});
+  u.apps=u.tasks.map(t=>t.app).filter((id,i,arr)=>arr.indexOf(id)===i);
+  u.apps.forEach(id=>{const a=PA.app(id);if(!a.unit) a.unit=u.id;});
+});
+PA.unit=id=>PA.UNITS.find(u=>u.id===id)||null;
 
 /* ===== 画面のしくみ ===== */
 PA.seg=(act,opts,cur,cls='')=>`<div class="seg ${cls}" role="group">`+opts.map(([v,l])=>`<button class="${String(v)===String(cur)?'on':''}" data-act="${act}" data-v="${v}" aria-pressed="${String(v)===String(cur)}">${l}</button>`).join('')+`</div>`;
@@ -1024,7 +1043,7 @@ PA.url=(page,obj)=>{
   return q.length?p+(p.indexOf('?')>=0?'&':'?')+q.join('&'):p;
 };
 const PARAM_RE=/^[a-z][a-z0-9-]{0,20}$/;
-PA.PARAM_KEYS=['key','chord','mode','level','tier','n'];
+PA.PARAM_KEYS=['key','chord','mode','level','tier','n','step'];
 const hasOwn=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 PA.parseParams=search=>{
   const out={};
@@ -1423,7 +1442,7 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
     return '';
   };
 })();
-/* ===== 変化和音（芸大和声の考え方）：ナポリの六・準固有和音・副属和音・減七と半減七・異名同音の読み替え =====
+/* ===== 変化和音（芸大和声の考え方）：ナポリの六・準固有和音・副属和音・Ⅴ9の根音省略（長調の形と減七）・異名同音の読み替え =====
  * key（PA.majorKey / PA.minorKey）をわたすと、正しいつづりと高さの音をかえす。
  * 音：{letter, acc, midi, role(日本語の役わり), tag}
  *   tag：'lt'＝導音（上へすすむ）、'seventh'＝第7音（下へすすむ）、'b9'／'ninth'＝短9度／長9度（下へ）、
@@ -2188,7 +2207,7 @@ PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
     if(Number.isFinite(r.endedAt)) out.endedAt=r.endedAt;
     return out;
   };
-  // リンクのしるし：n いがいの PARAM_KEYS（key・chord・mode・level・tier）をならべた文字。ちがう宿題のリンクなら新しい回
+  // リンクのしるし：n いがいの PARAM_KEYS（key・chord・mode・level・tier・step）をならべた文字。ちがう宿題のリンクなら新しい回
   const sigOf=p=>(PA.PARAM_KEYS||[]).filter(k=>k!=='n'&&p&&p[k]!=null&&p[k]!=='').map(k=>k+'='+p[k]).join('&');
   PA.sessionSig=sigOf;
   const AFTER_END=10*6e4; // おわってから10分まではけっかのカードをまた出す（「もどる」で読みなおしたとき）

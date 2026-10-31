@@ -113,16 +113,16 @@
 const H=PA.henka;
 // ボタンのじゅん：よくつかう ○Ⅳ・○Ⅵ → Ⅱのなかま → ドミナント（Ⅴ9・Ⅶ7）
 const IDS=['iv','bVI','ii_dim','ii_hdim7','V9_b9','vii_dim7'].filter(i=>H.BORROWED_IDS.includes(i));
-// ボタン：上＝和音記号（H.BORROWED の label）、下＝和音の種類（芸大の和音記号には減・半減を書かないのでことばでそえる）
-const SEG={iv:'短三和音',ii_dim:'減三和音',ii_hdim7:'半減七の和音',bVI:'長三和音',V9_b9:'短調のⅤ9',vii_dim7:'減七の和音'};
+// ボタン：上＝和音記号（H.BORROWED の label）、下＝和音の種類（芸大の和音記号には減などを書かないのでことばでそえる）
+const SEG={iv:'短三和音',ii_dim:'減三和音',ii_hdim7:'短調のⅡ7',bVI:'長三和音',V9_b9:'短調のⅤ9',vii_dim7:'減七の和音'};
 // 和音の名前（かりた形・ふつうの形）。root＝コードネームの根音（主音からなん文字め）
 const INFO={
   iv:{bn:'Ⅳm（短調のⅣ）',dn:'Ⅳ（長三和音）',root:3},
   ii_dim:{bn:'Ⅱ6（減三和音。第3音がいちばん下）',dn:'Ⅱ6（第3音がいちばん下）',root:1},
-  ii_hdim7:{bn:'Ⅱ7（半減七の和音）',dn:'Ⅱ7（Ⅱの七の和音）',root:1},
+  ii_hdim7:{bn:'Ⅱ7（短調のⅡ7の形）',dn:'Ⅱ7（Ⅱの七の和音）',root:1},
   bVI:{bn:'♭Ⅵ（長三和音）',dn:'Ⅵ（短三和音）',root:5},
   V9_b9:{bn:'Ⅴ9（短調の形）',dn:'Ⅴ9（長調の形）',root:4},
-  vii_dim7:{bn:'Ⅶ7（減七の和音）',dn:'Ⅶ7（半減七の和音）',root:6}
+  vii_dim7:{bn:'Ⅶ7（減七の和音）',dn:'Ⅶ7（長調の形。減七ではない）',root:6}
 };
 const NIGHT='#3b4fa8', SUN='#c46a00', RED='#d1495b', GHOST='#9b9184';
 const I_COL=PA.COL.I, S_COL=PA.COL.IV, V_COL=PA.COL.V, V7_COL=PA.COL.V7;
@@ -400,10 +400,10 @@ function cadStaff(key,seq){
 const ID_LINE={
   iv:(key,c)=>`Ⅳの第3音が下がって<b>短三和音（Ⅳm）</b>に。やわらかく、すこしさみしいひびき。${q(c[0].b)}は半音下の${q(H.nextOf(key,'iv')[3])}へすすみたがるよ（Ⅰの第5音）。`,
   ii_dim:key=>`Ⅱの第5音が下がって<b>減三和音</b>に。減三和音なので、いちばん下に第3音${q(H.borrowed(key,'ii_dim')[0])}をおいた<b>第1転回形（Ⅱ6）</b>で使うよ。`,
-  ii_hdim7:()=>`Ⅱ7の第5音が下がって<b>半減七の和音</b>に。短調のⅡ7と同じ形で、Ⅴ7の前でくもった色になるよ。`,
+  ii_hdim7:()=>`Ⅱ7の第5音が下がって、<b>短調のⅡ7と同じ形</b>に。Ⅴ7の前でくもった色になるよ。`,
   bVI:()=>`Ⅵの根音と第5音をかりると、短三和音だったⅥが<b>長三和音（♭Ⅵ）</b>に。Ⅴの前で使うと、ドラマチックなひびき。第3音（調の主音）を2つにするよ。`,
   V9_b9:()=>`Ⅴ9の第9音をかりると、<b>短調のⅤ9</b>と同じ形。こくて、ドキッとするひびき（第5音ははぶいて4つの音に）。`,
-  vii_dim7:()=>`Ⅴ9の第9音をかりると、<b>減七の和音</b>＝短調のⅦ7と同じ形になるよ。`
+  vii_dim7:()=>`Ⅴ9の第9音をかりると、短調のⅤ9から根音をはぶいた形と同じ<b>減七の和音</b>になるよ。`
 };
 function heroMsg(key,id){
   const c=changes(key,id), pm=parMinor(key), dl=labelOf(key,id,false), bl=labelOf(key,id,true);
@@ -477,20 +477,19 @@ function abCard(key,id){
 }
 function linksCard(key){
   const n6=H.neapolitan(key), b2=n6[n6.length-1];
-  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>ナポリの六・増六・減七と半減七など</small></h2></summary><div class="links">
+  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>ナポリの六・増六・Ⅴ9の根音省略など</small></h2></summary><div class="links">
     <a class="btn" href="neapolitan.html" data-go="neapolitan">🌋 <span>ナポリの六 ›<small>♭Ⅱ（${PA.nmH(b2)}）の第1転回形。長調では6ばんめもかりる</small></span></a>
     <a class="btn" href="aug6.html" data-go="aug6">↔️ <span>増六の和音 ›<small>長調では、6ばんめを下げた音をかりてつくる</small></span></a>
-    <a class="btn" href="dim-halfdim.html" data-go="dim-halfdim">⚖️ <span>減七と半減七 ›<small>○Ⅶ7をⅦ7として見た名前（根音・第3音・第5音・第7音）でくらべる</small></span></a>
+    <a class="btn" href="dim-halfdim.html" data-go="dim-halfdim">⚖️ <span>Ⅴ9の根音省略 ›<small>長調の形と、短調の形（減七）をくらべる</small></span></a>
     <a class="btn" href="minor-why.html" data-go="minor-why">🌙 <span>なぜ7ばんめを上げるの？ ›<small>短調のⅤが長調と同じ導音を使うわけ</small></span></a>
   </div></details>`;
 }
-// 「ためしてみる」：変化和音クイズのレベル4（増六・ナポリ・Ⅳm・♭Ⅵ）をいまの調で5もん
+// 「ためしてみる」：変化和音クイズのステップ3（準固有：○Ⅳ・○Ⅵ）をいまの調で5もん
 function tryCard(){
   const key=PA.keyDeck.id(false,state.keyIdx);
-  return PA.tryHTML({to:'chroma-quiz',params:{key,mode:'keys',level:4,n:5},
-    sub:'けんばんで、Ⅳm・♭Ⅵ（短調からかりる和音）をおさえてみよう。レベル4なので、ナポリの六・増六も出るよ。いまの調で5問。',
-    btn:PA.icon('target')+'5問ためしてみる',
-    links:[{to:'chroma-quiz',params:{key,mode:'keys',chord:'ivm,bvi',n:5},label:'Ⅳmと♭Ⅵだけで5問'}]});
+  return PA.tryHTML({to:'chroma-quiz',params:{key,mode:'keys',step:3,n:5},
+    sub:'けんばんで、Ⅳm・♭Ⅵ（短調からかりる和音）をおさえてみよう。いまの調で5問。',
+    btn:PA.icon('target')+'5問ためしてみる'});
 }
 // この調でかりた音にダブルフラットがつく音（なければ null）
 const dblOf=key=>{for(const id of IDS){const n=H.borrowed(key,id).find(n=>n.acc===-2);if(n) return n;}return null;};

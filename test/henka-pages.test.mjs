@@ -1,4 +1,4 @@
-// 準固有和音・減七と半減七・異名同音の読みかえ（学ぶページ）の文とリンクのきまり
+// 準固有和音・異名同音の読みかえ（学ぶページ）の文とリンクのきまり（Ⅴ9の根音省略（dim-halfdim）は test/lesson-map.test.mjs）
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -8,7 +8,7 @@ import {loadPA} from './_load.mjs';
 
 const dir=path.join(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=f=>fs.readFileSync(path.join(dir,f),'utf8');
-const PAGES=['borrowed.html','dim-halfdim.html','enharmonic.html'];
+const PAGES=['borrowed.html','enharmonic.html'];
 
 test('家族・聴きくらべのよびかたに A・B・C をつかわない（CDE の音の名前とまちがえる）',()=>{
   for(const f of PAGES){
@@ -23,6 +23,7 @@ test('どのページにも「ためしてみる」（変化和音クイズ・n=
   for(const f of PAGES){
     const s=read(f);
     assert.match(s,/PA\.tryHTML\(\{to:'chroma-quiz',params:\{key,mode:'keys',[^}]*n:5\}/,f);
+    assert.ok(!/to:'chroma-quiz',params:\{[^}]*level:/.test(s),f+'：🎹 はまえの level をつかわない（step か chord）');
     assert.match(s,/data-hot="listen"/,f);
     assert.match(s,/data-hot="next"/,f);
   }

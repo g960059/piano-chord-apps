@@ -107,7 +107,7 @@ const SEC='#8a4fe0', TGT='#0f8a8a', I_COL=PA.COL.I, V_COL='#3b4fa8', OTHER='#8a6
 const LIGHT={[SEC]:'#dccbf6',[TGT]:'#bfe6e6',[I_COL]:'#f8c9bd',[V_COL]:'#cdd5f3',[OTHER]:'#eadcc4'};
 const DARK={[SEC]:'#4b2390',[TGT]:'#0b5c5c',[I_COL]:'#8f2a17',[V_COL]:'#24316f',[OTHER]:'#5a4524'};
 const KINDS=['V7','vii7','vii7h'];
-const KNAME={V7:'Ⅴ7',vii7:'減七',vii7h:'半減七'};
+const KNAME={V7:'Ⅴ7',vii7:'減七',vii7h:'長調の形'}; // vii7h＝長調のⅤ9の根音省略（減七にならない形。「半減七」ということばは画面に出さない）
 
 const saved=(d=>d&&typeof d==='object'?d:{})(PA.store.get('secondary',{}));
 const state={minor:saved.minor===true,keyIdx:0,target:5,kind:'V7',res:0,anim:null,prog:null,mode:'target',msg:null,autoWait:false,ab:null,abOk:0,abN:0};
@@ -415,7 +415,7 @@ function heroMsg(key,I){
   let m=`<b>${I.lab}</b>は「${shortLab(I.tl)}の${I.k==='V7'?'Ⅴ7':'Ⅶ7'}」と読むよ。<br>`;
   m+=`<b>その和音をいっときのⅠと考えて、その調${I.vb?'と同じ主音の短調':''}の${what}を前におく。</b><br>`;
   m+=`${I.tl}「${namesW(I.T.slice(1))}」をⅠと考えると<b class="tg">${I.tkName}</b>。`;
-  if(I.vb) m+=`${I.tkName}のⅦ7は半減七なので、同じ主音の短調（<b>${I.pm}</b>）の${what}を使う。それが<b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝${I.lab}。`;
+  if(I.vb) m+=`${I.tkName}のⅦ7は減七にならない（長調の形）ので、同じ主音の短調（<b>${I.pm}</b>）の${what}を使う。それが<b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝${I.lab}。`;
   else m+=`${srcWhat(I)}が<b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝${I.lab}。`;
   if(I.k!=='V7'){
     m+=`<br>${KNAME[I.k]}のⅦ7は、${I.src}のⅤ9から根音をはぶいた形（Ⅴの家族）だよ。`;
@@ -443,7 +443,7 @@ function rolesHTML(key,I){
 }
 function kindNote(key,I){
   if(H.secondary(key,I.t,'vii7h')) return '';
-  return `<p class="note" style="margin:0">${I.tl}には半減七は使わないよ（${I.tmin?'目標が短三和音':'半減七の第9音がこの調にない音'}だから）。</p>`;
+  return `<p class="note" style="margin:0">${I.tl}には長調の形は使わないよ（${I.tmin?'目標が短三和音':'長調の形の第9音がこの調にない音'}だから）。</p>`;
 }
 function staticMsgDone(key,I){
   const lt=I.X.find(n=>n.tag==='lt'), i=I.X.indexOf(lt);
@@ -553,17 +553,16 @@ function termsHTML(key,I){
     <p class="note" style="margin:0 0 4px">例は${PA.keyName(key)}の${I.lab}（${I.sym}）だよ。</p><ul>
     <li><b>副属和音</b>（セカンダリー・ドミナント） … Ⅰ以外の和音を「いっときのⅠ」と考えて、その前におくⅤ7（またはⅦ7）。いまは${I.lab}＝${srcWhat(I)}。</li>
     <li><b>導音</b> … すぐ上の音へ半音でのぼりたがる音。${qC(key,lt)}は${I.tkName}の導音で、${I.tl}の根音へのぼるよ。</li>
-    <li><b>減七</b>・<b>半減七</b> … どちらも導音からひとつとばしで4つかさねたⅦ7。Ⅴ9から根音をはぶいた形。第9音が半音低いほう（短調の形）なら減七、高いほう（長調の形）なら半減七。</li>
+    <li><b>減七</b>・<b>長調の形</b> … どちらも導音からひとつとばしで4つかさねたⅦ7で、Ⅴ9から根音をはぶいた形。短調のⅤ9（第9音が半音低い）からつくると減七。長調のⅤ9（第9音が半音高い）からつくると減七にならないので、このページでは「長調の形」とよぶよ。</li>
     <li><b>○</b>（準固有） … 同じ主音の短調から音をかりたしるし。${I.jun?`いまの${I.lab}は、第9音を${I.pm}からかりているよ。`:`いっときの調が長調で、第9音を同じ主音の短調からかりて、その音がもとの調にもないときだけ、つくよ。${I.k==='vii7'&&I.tmin?`いまはいっときの調が短調なので、第9音はもともと${I.tkName}の音。`:I.vb?`いまの第9音は${PA.keyName(key)}の音でもあるので、つかないよ。`:''}`}</li>
     ${key.minor?'<li><b>Ⅲ（自然）</b>・<b>Ⅶ（自然）</b> … 導音を上げない、調号の音だけの音階（<b>自然的短音階</b>）でつくった長三和音。導音を半音上げた音階（<b>和声的短音階</b>）だと、ⅢもⅦもちがうひびきの和音になるよ。</li>':''}
     <li><b>Ⅰ6</b> … Ⅰの第3音をいちばん下にした形（第1転回形）。Ⅰ¹と書く本もあるよ。</li>
     <li><b>対斜</b> … 同じ文字の音（たとえば「${F}」と「${Fs}」）が、ちがう声でつづけて出てぶつかること。にごって聞こえるので、さける。同じ声で半音動かせば、だいじょうぶ。</li>
   </ul></details>`;
 }
-// 変化和音クイズへ：副属和音だけのレベルはないので、いちばん近い 🎹 レベル5（ぜんぶ：副属和音も出る）。
-// chord でⅤ7/Ⅴ（ドッペル）と副属和音（Ⅴ7/Ⅱ・Ⅴ7/Ⅲ・Ⅴ7/Ⅳ・Ⅴ7/Ⅵ）にしぼる。短調ではクイズのほうでⅤ7/Ⅱが、長調ではⅤ7/Ⅲが出ない
+// 変化和音クイズへ：chord でⅤ7/Ⅴ（ドッペル）と副属和音（Ⅴ7/Ⅱ・Ⅴ7/Ⅲ・Ⅴ7/Ⅳ・Ⅴ7/Ⅵ）にしぼる（ステップ2の副属和音＋ドッペル）。短調ではクイズのほうでⅤ7/Ⅱが、長調ではⅤ7/Ⅲが出ない
 function tryCard(key){
-  return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',level:5,chord:'dd,s2,s3,s4,s6',key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
+  return PA.tryHTML({to:'chroma-quiz',params:{mode:'keys',chord:'dd,s2,s3,s4,s6',key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},
     sub:`${PA.keyName(key)}で、副属和音（${key.minor?'Ⅴ7/Ⅲ・Ⅴ7/Ⅳ':'Ⅴ7/Ⅱ・Ⅴ7/Ⅳ'}など）をけんばんで5問おさえてみよう。`,btn:PA.icon('target')+'けんばんで5問'});
 }
 // ドッペル（doppel.html）へのリンクは1つだけ：目標がⅤのときは上の doppelCard がリンクになるので、ここは出さない

@@ -111,8 +111,8 @@ const TALLY_MODES={'minor-quiz':['minor']}; // 短調クイズは短調だけ（
 const isObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
 const rec=k=>{const v=PA.store.get(k,null);return isObj(v)&&typeof v.app==='string'&&PA.app(v.app)?v:null;};
 const typeOf=a=>T[a.type]||T.learn;
-// コースにならべる単元（「いつでも」のアプリをのぞいて、のこりがある単元だけ）
-const COURSE=PA.UNITS.map(u=>({id:u.id,title:u.title,sub:u.sub,apps:u.apps.filter(id=>PA.app(id)&&TOOL_IDS.indexOf(id)<0)})).filter(u=>u.apps.length);
+// コースにならべる単元（「いつでも」のアプリをのぞいて、のこりがある単元だけ）。tasks＝{app, href, title}（おなじアプリが2つの単元に出ることもある）
+const COURSE=PA.UNITS.map(u=>({id:u.id,title:u.title,sub:u.sub,tasks:u.tasks.filter(t=>PA.app(t.app)&&TOOL_IDS.indexOf(t.app)<0)})).filter(u=>u.tasks.length);
 // 単元の名前の先頭の絵文字は番号にかえる（「🎹 はじめの和音」→「はじめの和音」）
 const plainTitle=t=>String(t).replace(/^(?:[\uD800-\uDBFF][\uDC00-\uDFFF]|[\u2600-\u266C\u2670-\u27BF])\uFE0F?\s*/,'');
 
@@ -152,8 +152,8 @@ function fallbackRec(vis){
   if(isObj(v)) Object.keys(v).forEach(id=>{const t=v[id];if(PA.app(id)&&typeof t==='number'&&t>0&&(!best||t>best.t)) best={app:id,t};});
   if(best) return best;
   const nx=COURSE.find(u=>u.id===nextUnitId(vis))||COURSE[0];
-  const id=nx&&(nx.apps.find(a=>!vis.has(a))||nx.apps[0]);
-  return id?{app:id,t:0}:null;
+  const tk=nx&&(nx.tasks.find(t=>!vis.has(t.app))||nx.tasks[0]);
+  return tk?{app:tk.app,t:0}:null;
 }
 function topHTML(vis){
   const lp=rec('last-practice'), ll=rec('last-learn'), old=rec('last');
@@ -199,7 +199,7 @@ function toolsHTML(){
 
 /* ----- コース：番号つきの単元 ----- */
 function nextUnitId(vis){
-  const u=COURSE.find(u=>u.apps.some(id=>!vis.has(id)));
+  const u=COURSE.find(u=>u.tasks.some(t=>!vis.has(t.app)));
   return u?u.id:null;
 }
 function quizStat(id){
@@ -207,24 +207,24 @@ function quizStat(id){
   return {good:t.good,total:t.total};
 }
 // 行は アイコン＋名前＋ようす だけ。説明は まだひらいていない行だけ1行で（ひらいたことがあれば中身はわかっているので）
-function appRow(app,vis){
-  const seen=vis.has(app.id);
+function appRow(task,vis){
+  const app=PA.app(task.app), seen=vis.has(app.id);
   let st='';
   if(app.type==='quiz'&&seen){const q=quizStat(app.id);st=`<span class="kd">できた調${q.good}／${q.total}</span>`;}
   else if(seen) st=`<span class="seen" role="img" aria-label="ひらいた">✓</span>`;
-  return `<li><a class="arow${seen?' seen-row':''}" href="${app.href?ESC(app.href):app.id+'.html'}"><span class="ic" aria-hidden="true">${app.ic}</span>`
-    +`<span class="tx"><b>${ESC(app.title)}</b>${seen?'':`<span class="d">${app.d}</span>`}</span>${st?`<span class="st">${st}</span>`:''}</a></li>`;
+  return `<li><a class="arow${seen?' seen-row':''}" href="${ESC(task.href)}"><span class="ic" aria-hidden="true">${app.ic}</span>`
+    +`<span class="tx"><b>${ESC(task.title)}</b>${seen?'':`<span class="d">${app.d}</span>`}</span>${st?`<span class="st">${st}</span>`:''}</a></li>`;
 }
 function courseHTML(vis){
   const saved=PA.store.get('home-units',{}), sv=isObj(saved)?saved:{};
   const nx=nextUnitId(vis);
   const cards=COURSE.map((u,i)=>{
-    const apps=u.apps.map(PA.app), n=apps.filter(a=>vis.has(a.id)).length, done=n===apps.length;
+    const ts=u.tasks, n=ts.filter(t=>vis.has(t.app)).length, done=n===ts.length;
     const isNext=u.id===nx, open=typeof sv[u.id]==='boolean'?sv[u.id]:isNext;
     return `<details class="unit${isNext?' next':''}${done?' done':''}" data-d="unit-${u.id}" data-u="${u.id}"${open?' open':''}>`
       +`<summary><span class="no" aria-hidden="true">${done?'✓':i+1}</span><span class="ut"><b>${ESC(plainTitle(u.title))}${isNext?'<span class="nexttag">次</span>':''}</b>${u.sub?`<small>${ESC(u.sub)}</small>`:''}</span>`
-      +`<span class="prog">${done?'<span class="pa-sr">おわった、</span>':''}${n}/${apps.length}<span class="pa-sr">ひらいた</span></span></summary>`
-      +`<ul class="alist">${apps.map(a=>appRow(a,vis)).join('')}</ul></details>`;
+      +`<span class="prog">${done?'<span class="pa-sr">おわった、</span>':''}${n}/${ts.length}<span class="pa-sr">ひらいた</span></span></summary>`
+      +`<ul class="alist">${ts.map(t=>appRow(t,vis)).join('')}</ul></details>`;
   }).join('');
   return `<h2 class="lbl">コース</h2><div class="units">${cards}</div>`;
 }

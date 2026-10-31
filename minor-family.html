@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <!-- meta:start -->
-<meta name="description" content="Ⅴ→Ⅴ7→Ⅴ9→減七と、Ⅰへのすすみかた">
+<meta name="description" content="短調のⅤ→Ⅴ7→Ⅴ9→減七と、Ⅰへのすすみかた">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="ピアノ和音アプリ">
 <meta property="og:locale" content="ja_JP">
 <meta property="og:title" content="Ⅴの家族｜ピアノ和音アプリ">
-<meta property="og:description" content="Ⅴ→Ⅴ7→Ⅴ9→減七と、Ⅰへのすすみかた">
+<meta property="og:description" content="短調のⅤ→Ⅴ7→Ⅴ9→減七と、Ⅰへのすすみかた">
 <meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/minor-family.html">
 <meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
 <meta property="og:image:width" content="1200">
@@ -75,7 +75,7 @@ const FAM={
   V:{label:'Ⅴ',ks:[4,6,8],title:'Ⅴ（5ばんめの音の和音）'},
   V7:{label:'Ⅴ7',ks:[4,6,8,10],title:'Ⅴ7（Ⅴの七の和音）'},
   V9:{label:'Ⅴ9',ks:[4,6,8,10,12],title:'Ⅴ9（Ⅴの九の和音）'},
-  DIM:{label:'減七',ks:[6,8,10,12],title:'減七の和音（Ⅴ9から根音をはぶいた形）'}
+  DIM:{label:'減七',ks:[6,8,10,12],title:'減七の和音（短調のⅤ9から根音をはぶいた形）'}
 };
 const FAM_KEYS=['V','V7','V9','DIM'];
 // 「3もんためしてみる」でいっしょに出す和音（見ている和音がさき。Ⅴ9と減七はにたなかま）
@@ -110,13 +110,15 @@ function famSym(key,f){
 }
 const ltH=n=>n.raised?`<span style="color:${LT}">${PA.nmH(n)}</span>`:PA.nmH(n);
 
+// 長調とくらべるページ（Ⅴ9の根音省略）へ：この短調でひらく
+const dhLink=label=>`<a href="${PA.esc(PA.url('dim-halfdim',{key:PA.keyDeck.id(true,state.keyIdx)}))}">${label}</a>`;
 function famInfo(key,f){
   const t=famTones(key,f), root=PA.at(key.harm,4), sev=PA.at(key.harm,10), ninth=PA.at(key.harm,12), parNinth=PA.at(key.par.scale,12);
   const lines={
     V:`Ⅴは音階の5ばんめ「${PA.nmH(root)}」（根音）からひとつとばしで3つ。7ばんめを上げるので、短調でも<b>明るい長三和音</b>になるよ。`,
     V7:`Ⅴ7はⅤに、もうひとつとばして「${PA.nmH(sev)}」（第7音）をのせた4つの音。`,
     V9:`Ⅴ9はⅤ7に、さらに「${PA.nmH(ninth)}」（第9音）をのせた5つの音。第9音は音階の6ばんめ。<br><b>${PA.keyName(key.par)}</b>（同じ主音の長調）のⅤ9ではここが「${PA.nmH(parNinth)}」になる。短調のⅤ9のほうが暗く、ドキッとするひびき。`,
-    DIM:`Ⅴ9から根音「${PA.nmH(root)}」をはぶくと<b>${PA.namesH(t)}</b>。これが<b>減七の和音</b>。<br>となりどうしが、ぜんぶ同じ間かく。だから減七は、音のくみあわせで見ると<b>3つのなかま</b>しかないよ（下の「かたちでおぼえる」）。<br>いちばん下といちばん上のはばが、ふつうの7度よりせまい（けんばんでは6度と同じはば）ので「減七」とよぶよ。`
+    DIM:`<b>短調では</b>、Ⅴ9から根音「${PA.nmH(root)}」をはぶくと<b>${PA.namesH(t)}</b>。これが<b>減七の和音</b>。<br>となりどうしが、ぜんぶ同じ間かく。だから減七は、音のくみあわせで見ると<b>3つのなかま</b>しかないよ（下の「かたちでおぼえる」）。<br>いちばん下といちばん上のはばが、ふつうの7度よりせまい（けんばんでは6度と同じはば）ので「減七」とよぶよ。<br>長調のⅤ9から根音をはぶいても、減七にはならないよ（${dhLink('<span aria-hidden="true">⚖️</span>Ⅴ9の根音省略')}で、長調とくらべてみよう）。`
   };
   return {t,line:lines[f]};
 }
@@ -218,7 +220,7 @@ function termsHTML(key){
     <dt>${yomi('解決','かいけつ')}</dt>
       <dd>ドキドキする和音が、おちつく和音（Ⅰなど）へすすむこと。このページの「Ⅰへすすむ」のこと。</dd>
     <dt>${yomi('根音省略形','こんおんしょうりゃくけい')}</dt>
-      <dd>和音から根音をはぶいた形のこと。「Ⅴ9の根音省略形」と書いてあったら減七の和音（Ⅶ7）、「Ⅴ7の根音省略形」ならⅦ（減三和音）のこと。どちらもⅤのなかまだよ。</dd>
+      <dd>和音から根音をはぶいた形のこと。短調で「Ⅴ9の根音省略形」と書いてあったら減七の和音のこと（長調のⅤ9の根音省略形は、減七にならない）。「Ⅴ7の根音省略形」ならⅦ（減三和音）のこと。どちらもⅤのなかまだよ。</dd>
     <dt>${yomi('和声的短音階','わせいてきたんおんかい')}</dt>
       <dd>7ばんめを半音上げた短音階。このページの和音は、ぜんぶこの音階からつくるよ。</dd>
     <dt>減七の3つのなかま</dt>
@@ -273,7 +275,8 @@ function render(){
   // 1つの和音だけだと3もんともおなじもんだいになるので、2つをかわりばんこに）
   const pair=TRY_PAIR[f]||['V','V7'];
   h+=PA.tryHTML({to:'minor-quiz',params:{mode:'chord',key:PA.keyDeck.id(true,state.keyIdx),chord:pair.join(','),n:3},
-    sub:`けんばんで${PA.keyName(key)}の${pair.map(x=>FAM[x].label).join('と')}をおさえてみよう（3問）`,btn:PA.icon('target')+'3問ためしてみる'});
+    sub:`けんばんで${PA.keyName(key)}の${pair.map(x=>FAM[x].label).join('と')}をおさえてみよう（3問）`,btn:PA.icon('target')+'3問ためしてみる',
+    links:f==='V9'||f==='DIM'?[{to:'dim-halfdim',params:{key:PA.keyDeck.id(true,state.keyIdx)},label:'<span aria-hidden="true">⚖️</span>長調とくらべる（Ⅴ9の根音省略）'}]:[]});
   h+=termsHTML(key);
   h+=`<p class="note">※ 和音は、7ばんめの音を半音上げた短音階でつくっています。<span class="ds">x</span>はダブルシャープの楽譜での書き方です。</p></div>`;
   PA.paint(document.getElementById('view'),h,state.keyIdx+':'+f);
@@ -303,7 +306,7 @@ async function runBuild(){
   }
   if(f==='DIM'){
     A.ks=A.ks.filter(k=>k!==4); A.omitShown=true;
-    upd(`<b>${full.length+1}.</b> いちばん下の根音「${PA.nmH(root)}」を<b>はぶく</b>と…<br>🎉 <b class="big">${PA.namesH(famTones(key,f))}</b>＝減七の和音！`);
+    upd(`<b>${full.length+1}.</b> いちばん下の根音「${PA.nmH(root)}」を<b>はぶく</b>と…<br>🎉 <b class="big">${PA.namesH(famTones(key,f))}</b>＝減七の和音！<br>（短調のⅤ9だから減七になるよ。長調では減七にならない）`);
   }else upd(`🎉 できあがり！<b class="big">${PA.namesH(famTones(key,f))}</b>`);
   PA.chord(famTones(key,f).map(n=>n.midi));
   await PA.sleep(1800); if(!alive()) return;

@@ -383,21 +383,21 @@ function gerCard(){
   return h;
 }
 function linksCard(){
-  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>Ⅴの家族・増六の和音・減七と半減七</small></h2></summary><div class="links">
-    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族<small>Ⅴ9の根音をはぶくと減七（3つのなかま）</small></button>
+  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>Ⅴの家族・増六の和音・Ⅴ9の根音省略</small></h2></summary><div class="links">
+    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族<small>短調では、Ⅴ9の根音をはぶくと減七（3つのなかま）</small></button>
     <button class="btn" data-act="go" data-v="aug6">↔️ 増六の和音<small>イタリア・フランス・ドイツの6</small></button>
-    <button class="btn" data-act="go" data-v="dim-halfdim">⚖️ 減七と半減七<small>ちがうのは第7音だけ</small></button>
+    <button class="btn" data-act="go" data-v="dim-halfdim">⚖️ Ⅴ9の根音省略<small>長調と短調で、のこる音はどうちがう？</small></button>
   </div></details>`;
 }
 
 // 「ためしてみる」：変化和音クイズでいまの短調のⅦ7（減七）を5もん。減七の読みかえのレベルはないので chord＝vii7。
-// ドイツの6はレベル3（増六3しゅるい）
+// ドイツの6はステップ5（増六3しゅるい）
 function tryCard(){
   const key=PA.keyDeck.id(true,state.keyIdx);
   return PA.tryHTML({to:'chroma-quiz',params:{key,mode:'keys',chord:'vii7',n:5},
     sub:`けんばんで、${PA.keyName(curKey())}の減七（Ⅶ7）をおさえてみよう。5問。`,
     btn:PA.icon('target')+'5問ためしてみる',
-    links:[{to:'chroma-quiz',params:{key,mode:'keys',level:3,n:5},label:'↔️ レベル3（ドイツの6など増六）'}]});
+    links:[{to:'chroma-quiz',params:{key,mode:'keys',step:5,n:5},label:'<span aria-hidden="true">↔️</span> ステップ5（ドイツの6など増六）'}]});
 }
 // 📖 ことばメモ：本や楽譜で見かける名前を、やさしいことばで（いまの調の音をれいに）。よみかたは小さく
 function termsHTML(){

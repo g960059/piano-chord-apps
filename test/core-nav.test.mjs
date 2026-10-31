@@ -10,30 +10,57 @@ const J=x=>JSON.parse(JSON.stringify(x));
 const eq=(a,b,m)=>assert.deepStrictEqual(J(a),J(b),m);
 const root=path.join(path.dirname(fileURLToPath(import.meta.url)),'..');
 
-test('目次：PA.UNITS・PA.APPS・PA.app',()=>{
+test('目次：PA.UNITS・PA.APPS・PA.app（先生のじゅん：docs/TEACHER-FEEDBACK.md）',()=>{
   const PA=loadPA();
-  eq(PA.UNITS.map(u=>u.id),['u1','u2','u3','u4','u5','u6','ear']);
-  eq(PA.UNITS[0].apps,['chord-build','chord-quiz','cadence','chord-table']);
-  eq(PA.UNITS[2].apps,['diatonic','inversion','interval']);
-  eq(PA.UNITS[5].apps,['doppel','secondary','aug6','neapolitan','borrowed','dim-halfdim','enharmonic','chroma-quiz']);
-  eq(PA.UNITS[6].apps,['ear','progression']);
-  const ids=PA.UNITS.flatMap(u=>u.apps);
-  assert.equal(new Set(ids).size,ids.length,'おなじアプリは1回だけ');
-  eq(PA.APPS.map(a=>a.id).sort(),[...ids].sort());
+  eq(PA.UNITS.map(u=>u.id),['major','minor','minor9','more','ending','accomp','ear','extra']);
+  eq(PA.UNITS.map(u=>u.kind),['basic','basic','basic','basic','basic','basic','daily','extra']);
+  const apps=id=>PA.unit(id).apps;
+  eq(apps('major'),['chord-build','chord-quiz','cadence','chord-table']);
+  eq(apps('minor'),['minor-why','minor-signature','chord-quiz']);
+  eq(apps('minor9'),['minor-family','dim-halfdim','minor-quiz']);
+  eq(apps('more'),['diatonic','inversion','interval']);
+  eq(apps('ending'),['ending','ending-quiz']);
+  eq(apps('accomp'),['accompaniment']);
+  eq(apps('ear'),['ear','progression']);
+  // レベルアップ：Ⅱ7とドッペル → 副属和音 → 準固有和音 → ナポリの六 → 増六 → 異名同音（いちばん最後）（＋変化和音クイズ）
+  eq(apps('extra'),['doppel','secondary','borrowed','neapolitan','aug6','enharmonic','chroma-quiz']);
+  assert.equal(PA.unit('nope'),null);
+  // 和音クイズは①（長調）と②（短調）に、べつの設定で出る。ほかのアプリは1回だけ
+  const tasks=PA.UNITS.flatMap(u=>u.tasks);
+  const cq=tasks.filter(t=>t.app==='chord-quiz');
+  eq(cq.map(t=>t.href),['chord-quiz.html?keyset=major','chord-quiz.html?keyset=minor']);
+  eq(cq.map(t=>t.title),['和音クイズ（長調）','和音クイズ（短調）']);
+  cq.forEach(t=>assert.ok(['major','minor'].includes(PA.parseParams(t.href.split('?')[1]).keyset)));
+  const ids=tasks.map(t=>t.app).filter(id=>id!=='chord-quiz');
+  assert.equal(new Set(ids).size,ids.length,'和音クイズのほかは1回だけ');
+  PA.UNITS.forEach(u=>assert.equal(new Set(u.apps).size,u.apps.length,u.id+'：おなじ単元に2回出さない'));
+  eq(PA.APPS.map(a=>a.id).sort(),[...new Set(tasks.map(t=>t.app))].sort());
+  // 課題の href・title：なければそのアプリのページと名前
+  tasks.forEach(t=>{
+    assert.ok(t.title&&t.href,t.app);
+    if(t.app!=='chord-quiz'){assert.equal(t.href,t.app+'.html');assert.equal(t.title,PA.app(t.app).title);}
+  });
   PA.APPS.forEach(a=>{
     assert.ok(['learn','quiz','play','ref','ear'].includes(a.type),a.id);
     assert.ok(a.ic&&a.title&&a.d,a.id);
-    assert.ok(PA.UNITS.find(u=>u.id===a.unit).apps.includes(a.id),a.id);
+    // a.unit はさいしょに出てくる単元
+    assert.equal(a.unit,PA.UNITS.find(u=>u.apps.includes(a.id)).id,a.id);
     if(a.practice){assert.ok(PA.app(a.practice),a.id+' → '+a.practice);assert.ok(['quiz','play','ear'].includes(PA.app(a.practice).type));}
     assert.ok(PA.APP_TYPES[a.type].dk);
   });
+  assert.equal(PA.app('chord-quiz').unit,'major');
   // いまあるページはファイルがある（diatonic・inversion・interval はべつの人が書いている）
   PA.APPS.filter(a=>!['diatonic','inversion','interval'].includes(a.id)).forEach(a=>assert.ok(fs.existsSync(path.join(root,a.id+'.html')),a.id));
   assert.equal(PA.app('chord-build').practice,'chord-quiz');
   assert.equal(PA.app('minor-family').practice,'minor-quiz');
+  assert.equal(PA.app('dim-halfdim').practice,'minor-quiz');
+  assert.equal(PA.app('dim-halfdim').title,'Ⅴ9の根音省略'); // 先生：「Ⅴ9の根音省略」ということばで伝える
   assert.equal(PA.app('ending').practice,'ending-quiz');
   assert.equal(PA.app('enharmonic').practice,'chroma-quiz');
   assert.equal(PA.app('waon'),null); assert.equal(PA.app('nope'),null);
+  // 「半減七」は画面に出さない（先生の意見）
+  PA.APPS.forEach(a=>assert.ok(!/半減七/.test(a.title+a.d),a.id));
+  PA.UNITS.forEach(u=>assert.ok(!/半減七/.test(u.title+u.sub+u.tasks.map(t=>t.title).join('')),u.id));
 });
 
 test('PA.url・PA.parseParams・PA.params・PA.fromLink・PA.paramInt',()=>{
@@ -55,7 +82,7 @@ test('PA.url・PA.parseParams・PA.params・PA.fromLink・PA.paramInt',()=>{
   assert.equal(L.paramInt('n',1,20),null); assert.equal(L.paramInt('level',1,8),2); assert.equal(L.paramInt('nope',1,8),null);
   assert.equal(loadPA(undefined,{search:'?zzz=1'}).fromLink(),false);
   assert.equal(PA.fromLink(),false);
-  eq(PA.PARAM_KEYS,['key','chord','mode','level','tier','n']);
+  eq(PA.PARAM_KEYS,['key','chord','mode','level','tier','n','step']);
 });
 
 test('PA.shareHTML・PA.tryHTML',()=>{
