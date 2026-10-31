@@ -88,6 +88,11 @@ test('PA.rn：Ⅴ9の根音省略・ⅤのⅤ・準固有・転回形・ナポ�
   // ナポリ：Ⅱの根音下方変位（印の形は先生に確認まち）。チョンは下の横棒の左
   const n=PA.rnSvg({deg:2,rootDown:true,inv:1}), B=big(n), r=pathOf(n,'rn-root');
   assert.ok(r&&Math.abs(r.y1-(B.y+20))<1&&r.x2<r.x1,'下の横棒の左はしから左へ');
+  // 下方変位のチョンは、どれも左へ行くほど下がる（第5音・根音・上の小さい数字の根音でおなじ向き）
+  assert.ok(r.y2>r.y1,'根音下方変位：左下へ');
+  const t5=pathOf(PA.rnSvg(GER),'rn-alt5'); assert.ok(t5.y2>t5.y1,'第5音下方変位：左下へ');
+  const od=/<path d="M([-\d.]+) ([-\d.]+)L([-\d.]+) ([-\d.]+)" stroke="currentColor" stroke-width="1.8"/.exec(PA.rnSvg({of:2,ofDown:true,deg:5,form:7}));
+  assert.ok(od&&+od[3]<+od[1]&&+od[4]>+od[2]&&+od[3]>0,'上の小さい数字の根音下方変位：左下へ（左がきれない）');
   assert.equal(PA.rnText({deg:2,rootDown:true,inv:1}),'Ⅱ¹（根音下方変位）');
   // 字の大きさでのびちぢみ（em）・色はまわりの字（currentColor）・読み上げはそと、svg は aria-hidden
   assert.match(s,/^<svg class="rnum-svg" viewBox="0 -4 [\d.]+ [\d.]+" style="width:[\d.]+em;height:[\d.]+em;vertical-align:-[\d.]+em" aria-hidden="true" focusable="false">/);
@@ -117,9 +122,14 @@ test('PA.rnOf／PA.rnH：文字からは「Ⅰ〜Ⅶ」「Ⅴ7」のような決
 test('PA.staffSVG：和音名に部品をわたすと記号で描く（文字の「Ⅴ7」も記号に、ほかの字はそのまま）',()=>{
   const key=cMin, n={letter:0,acc:0,midi:60};
   const s=PA.staffSVG(key,[{notes:[n],label:GER,labelColor:'#8a4fe0'},{notes:[n],label:'Ⅴ7'},{notes:[n],label:'ドイツ'}]);
-  const inner=[...s.matchAll(/<svg x="[-\d.]+" y="[-\d.]+" width="[\d.]+" height="[\d.]+" viewBox="[^"]+" overflow="visible" color="([^"]+)" role="img" aria-label="([^"]+)">/g)];
-  eq(inner.map(m=>[m[1],m[2]]),[['#8a4fe0','ⅤのⅤ、9の和音、第2転回形、第5音下方変位、根音省略'],['#3a3245','Ⅴ、7の和音']]);
-  assert.match(s,/>ドイツ<\/text>/);
+  const inner=[...s.matchAll(/<svg x="[-\d.]+" y="[-\d.]+" width="[\d.]+" height="[\d.]+" viewBox="[^"]+" overflow="visible" color="([^"]+)" aria-hidden="true">/g)];
+  eq(inner.map(m=>m[1]),['#8a4fe0','#3a3245']);
+  // 読み上げ：role=img の子は読まれないので、和音名は外の svg の aria-label に（中の記号・文字は aria-hidden）
+  assert.match(s,/^<svg viewBox="[^"]+" role="img" aria-label="がくふ：ⅤのⅤ、9の和音、第2転回形、第5音下方変位、根音省略。Ⅴ、7の和音。ドイツ"/);
+  assert.equal((s.match(/role="img"/g)||[]).length,1,'role=img は外の svg だけ');
+  assert.match(s,/<text aria-hidden="true" [^>]*>ドイツ<\/text>/);
+  assert.match(PA.staffSVG(key,[{notes:[n]}]),/^<svg viewBox="[^"]+" role="img" aria-label="がくふ"/,'和音名がなければ「がくふ」だけ');
+  assert.match(PA.staffSVG(key,[{notes:[n],label:'Ⅰ',sub:'はじめ'}]),/aria-label="がくふ：Ⅰ（はじめ）"/);
   assert.ok(!/>Ⅴ7<\/text>/.test(s),'文字の Ⅴ7 は描かない');
   // 2段の記号があると、名前を下げて音符とかさならないようにする
   const H=x=>+/viewBox="0 0 [\d.]+ ([\d.]+)"/.exec(x)[1];
@@ -129,7 +139,9 @@ test('PA.staffSVG：和音名に部品をわたすと記号で描く（文字の
 test('PA.rnHelp：記号のみかた（やさしいことば）',()=>{
   const h=PA.rnHelp();
   assert.match(h,/^<details class="more rnhelp" data-d="rnhelp"><summary><span aria-hidden="true">🔤<\/span> 記号のみかた<\/summary>/);
-  for(const w of ['右上の小さい数字</b>＝転回形','右下の小さい数字</b>＝7の和音・9の和音','ななめの線</b>＝根音省略','前の小さい○</b>＝準固有和音','2だん</b>＝ⅤのⅤ','左上のチョン</b>＝第5音下方変位'])
+  for(const w of ['右上の小さい数字</b>＝転回形','右下の小さい数字</b>＝7の和音・9の和音','ななめの線</b>＝根音省略','前の小さい○</b>＝準固有和音','2だん</b>＝ⅤのⅤ','左上のチョン</b>＝第5音下方変位',
+    // 斜線の和音の右上の数字は、はぶいた根音も入れて数える（先生の写真のきまり）。調はドイツ語の音名
+    'はぶいた根音もあるつもりで数えるよ（いちばん下が第3音なら1）','調はドイツ語の音名で書くよ（H:＝ロ長調、Es:＝変ホ長調、fis:＝嬰ヘ短調、B:＝変ロ長調）'])
     assert.ok(h.includes(w),w);
   assert.ok(!/半減七/.test(h));
   assert.equal((h.match(/class="rnum"/g)||[]).length,6,'れいの記号が6つ');

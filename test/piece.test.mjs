@@ -24,7 +24,10 @@ test('曲のデータ：K.545 はデータのきまりどおり（PA.piece.valid
   assert.equal(pc.id,'k545-1'); assert.equal(pc.key,'C');
   assert.deepEqual(pc.excerpts.map(x=>[x.from,x.to]),[[1,12]]);
   // 版・小節の数えかた・作りかた・ライセンスを書く（ほかのデータを写していない）
-  assert.match(pc.source.edition,/ブライトコプフ/); assert.match(pc.source.edition,/1878/);
+  // 版：じっさいに見たもの（Mutopia）と、見ていないもの（旧全集のスキャン＝未確認）を書きわける
+  assert.match(pc.source.edition,/^Mutopia Project の楽譜/); assert.match(pc.source.edition,/旧モーツァルト全集（ブライトコプフ・ウント・ヘルテル、1878年）/);
+  assert.match(pc.source.edition,/未確認/);
+  assert.equal(pc.titleShort,'ピアノ・ソナタ K.545'); assert.ok(!/長調|短調/.test(pc.titleShort),'titleShort に調を書かない');
   assert.match(pc.source.license,/著作権が切れて/);
   assert.match(pc.source.made,/アプリには入れていません/);
   // 1〜12小節をすきまなく（4/4 で 48拍。12小節の4拍めは休み）
@@ -44,6 +47,7 @@ test('曲のデータ：骨組みの音は、書いた調の和音の音（つ�
     const lo=sk.reduce((a,b)=>b.midi<a.midi?b:a), hi=sk.reduce((a,b)=>b.midi>a.midi?b:a);
     assert.ok(P.same(lo,T[e.rn.inv||0]),e.id+'：いちばん下');
     assert.ok(P.same(lo,P.note(e.bass))&&P.same(hi,P.note(e.sop)),e.id+'：bass・sop');
+    assert.equal(lo.midi,P.note(e.bass).midi,e.id+'：bass は骨組みのいちばん下とおなじ高さ'); assert.equal(hi.midi,P.note(e.sop).midi,e.id+'：sop もおなじ高さ');
     assert.ok(sk.some(n=>P.same(n,T[1])),e.id+'：第3音');
     if(e.rn.form) assert.ok(sk.some(n=>P.same(n,T[3])),e.id+'：第7音');
   });
@@ -74,6 +78,11 @@ test('曲のデータ：validate はまちがいを見つける',()=>{
   assert.ok(bad(pc=>{pc.events[0].skel.rh=['G4','C5'];}).some(e=>/第3音がない/.test(e)));
   assert.ok(bad(pc=>{pc.events[1].skel.rh=['F4','B4'];}).some(e=>/根音がない/.test(e)));
   assert.ok(bad(pc=>{pc.events[0].sop='E5';}).some(e=>/いちばん上が sop/.test(e)));
+  // オクターブちがいの bass・sop も見つける（音名だけでくらべない）
+  assert.ok(bad(pc=>{pc.events[4].bass='F4';}).some(e=>/いちばん下が bass/.test(e)),'m5：bass F4・骨組み F3');
+  assert.ok(bad(pc=>{pc.events[0].sop='C6';}).some(e=>/いちばん上が sop/.test(e)));
+  assert.ok(bad(pc=>{pc.events[0].acceptNote='x';}).some(e=>/acceptNote/.test(e)),'accept がないのに acceptNote');
+  assert.ok(bad(pc=>{pc.titleShort='';}).some(e=>/titleShort/.test(e)));
   assert.ok(bad(pc=>{pc.events[16].level='deg';}).some(e=>/level:full/.test(e)),'ⅤのⅤ は「ぜんぶ」だけ');
   assert.ok(bad(pc=>{pc.events[1].dur=3;}).some(e=>/すきま・かさなり|小節の外/.test(e)));
   assert.ok(bad(pc=>{pc.events[1].rn={deg:5,form:8};}).some(e=>/rn の部品/.test(e)));
@@ -157,10 +166,14 @@ test('ことば：やさしい日本語（分かち書きなし・半減七な�
 function runPage(mem,search){
   const js=read('piece.html').match(/<script>([\s\S]*?)<\/script>/)[1];
   const stub=`(function(){const els={};document.getElementById=function(id){return els[id]||(els[id]={id,innerHTML:'',style:{},parentNode:null,addEventListener:function(){}});};
-    window.__els=els;window.__clicks=[];document.addEventListener=function(t,f){if(t==='click') window.__clicks.push(f);};
+    window.__els=els;window.__clicks=[];window.__dl={};window.__wl={};
+    document.addEventListener=function(t,f){if(t==='click') window.__clicks.push(f);(window.__dl[t]=window.__dl[t]||[]).push(f);};
+    window.addEventListener=function(t,f){(window.__wl[t]=window.__wl[t]||[]).push(f);};
     document.querySelector=function(){return null;};window.scrollTo=function(){};document.querySelectorAll=function(){return [];};
     window.__fetched=[];window.fetch=function(u){window.__fetched.push(u);return Promise.resolve({ok:true,json:function(){return Promise.resolve(JSON.parse(${JSON.stringify(DATA)}));}});};})();\n`;
-  return loadPA(stub+CORE+'\n'+PIECE+'\nPA.paint=function(el,h){el.innerHTML=h;};PA.__ctx=function(k){return window[k];};\n'+js,{storage:mem,search,href:'https://example.test/apps/piece.html'+search});
+  // 音：PA.sleep はおわらない（鳴らしているとちゅうのまま）。PA.chord は数えるだけ
+  const snd='PA.sleep=function(){return new Promise(function(){});};window.__chords=0;PA.chord=function(){window.__chords++;};PA.stopSound=function(){};\n';
+  return loadPA(stub+CORE+'\n'+PIECE+'\nPA.paint=function(el,h){el.innerHTML=h;};PA.__ctx=function(k){return window[k];};\n'+snd+js,{storage:mem,search,href:'https://example.test/apps/piece.html'+search});
 }
 const tick=()=>new Promise(r=>setTimeout(r,0));
 function clicker(PA){
@@ -189,7 +202,7 @@ test('ページ：読みこみ → 「？」 → 答える → きろく（和�
   assert.match(h,/aria-label="2小節1拍めの和音（まだ）">？<\/button>/);
   assert.match(h,/<span class="kpre"[^>]*>C:<\/span>/);
   // 番号だけで出さない和音は記号で見せる（読み上げに場所）
-  assert.match(h,/<span class="slot given"><span class="pa-sr">1小節1拍め：<\/span><span class="rnum" role="img" aria-label="Ⅰ">/);
+  assert.match(h,/<span class="slot given" data-i="0"><span class="pa-sr">1小節1拍め：<\/span><span class="rnum" role="img" aria-label="Ⅰ">/);
   assert.match(h,/aria-label="ⅤのⅤ、7の和音、第1転回形"/);
   const click=clicker(PA);
   click('pick','m2a');
@@ -199,19 +212,26 @@ test('ページ：読みこみ → 「？」 → 答える → きろく（和�
   click('adeg',4); // まちがい
   h=view();
   assert.match(h,/class="fb bad"/); assert.match(h.replace(/<[^>]+>/g,''),/ソ・シ・レ・ファの和音/);
+  // 番号だけ：こたえはまず番号（Ⅴ）、記号はあとにそえる（記号でかくと Ⅴ₇²）
+  assert.match(h,/ざんねん。こたえは <span class="rnum" role="img" aria-label="Ⅴ">[\s\S]*?<span class="yours">（記号でかくと <span class="rnum" role="img" aria-label="Ⅴ、7の和音、第2転回形">/);
   click('adeg',5); // もうこたえたので、かわらない
   let st=PA.store.get('piece-k545-1');
   assert.deepEqual(J(st.ans.deg.m2a),{a:{deg:4},ok:false});
+  // 4小節1拍め：番号だけでは7の和音をえらべないので「…でも正解」は出さない
+  click('pick','m4a'); click('adeg',5);
+  assert.ok(!/でも正解/.test(view()),'番号だけ：accept の行を出さない');
+  assert.match(view(),/せいかい！ <span class="rnum" role="img" aria-label="Ⅴ">[\s\S]*?記号でかくと <span class="rnum" role="img" aria-label="Ⅴ、第1転回形">/);
+  click('pick','m2a');
   click('pnext');
   assert.match(view(),/2小節3拍めの和音は？/);
   click('adeg',1);
   assert.equal(PA.store.get('piece-k545-1').ans.deg.m2b.ok,true);
   assert.match(view(),/<span aria-hidden="true">⭕ <\/span>せいかい！/);
-  assert.equal(PA.store.get('pieces')['k545-1'].n,2);
+  assert.equal(PA.store.get('pieces')['k545-1'].n,3);
   assert.ok(PA.store.get('pieces')['k545-1'].t>0);
   // のこりをぜんぶ正解 → けっか・いちばんよいけっか
   const pc=K545();
-  PA.piece.items(pc,'deg').forEach(x=>{if(x.id==='m2a'||x.id==='m2b') return;click('pick',x.id);click('adeg',x.item.rn.deg);});
+  PA.piece.items(pc,'deg').forEach(x=>{if(x.id==='m2a'||x.id==='m2b'||x.id==='m4a') return;click('pick',x.id);click('adeg',x.item.rn.deg);});
   h=view();
   assert.match(h,/id="sum"/); assert.match(h,/<b>11<\/b> \/ 12もん正解/);
   assert.deepEqual(J(PA.store.get('pieces')['k545-1'].best),{deg:{ok:11,n:12}});
@@ -228,10 +248,21 @@ test('ページ：ぜんぶ（部品で記号をつくる・調とおわりか�
   assert.match(h,/data-act="plv" data-v="full" aria-pressed="true"/);
   assert.match(h,/<span class="kpre"[^>]*>？:<\/span>/,'調の問題に答えるまでは ？:');
   assert.match(h,/1〜12小節は、何調？/);
-  assert.match(h,/3〜4小節のおわりかたは？/); assert.match(h,/10〜12小節のおわりかたは？/);
+  // 調の問題に答えるまで、見出しにも調を書かない（答えが見えないように）
+  assert.match(h,/<h2 id="ph">ピアノ・ソナタ K\.545<small>/); assert.ok(!/ハ長調/.test(h.slice(0,h.indexOf('id="lv-h"'))),'見出しに調がない');
+  // おわりかたの問題は、その範囲の「？」をうめてから（説明に和音の答えが書いてあるので）
+  assert.ok(!/3〜4小節のおわりかたは？|10〜12小節のおわりかたは？/.test(h));
+  assert.match(h,/3〜4小節の「？」をうめたら、おわりかたの問題が出るよ/); assert.match(h,/10〜12小節の「？」をうめたら、おわりかたの問題が出るよ/);
+  assert.ok(!/Ⅴ7のいちばん下が根音ではなく|ⅤのⅤ7からⅤへすすんで/.test(h));
   let click=clicker(PA);
   click('aq','C',{q:'key'});
   assert.match(view(),/<span class="kpre"[^>]*>C:<\/span>/);
+  assert.match(view(),/<h2 id="ph">ピアノ・ソナタ K\.545（ハ長調）<small>/,'答えたら調も');
+  // 4小節1拍め：ぜんぶでは「2拍めのファまでいっしょに見て、Ⅴ₇¹でも正解」。べつの正解で答えたら、えらんだ記号を先に
+  click('pick','m4a'); click('bdeg',5); click('binv',1); click('bok');
+  assert.match(view(),/せいかい！ <span class="rnum" role="img" aria-label="Ⅴ、第1転回形">/);
+  assert.match(view(),/<p class="note">2拍めのファまでいっしょに見て、<span class="rnum" role="img" aria-label="Ⅴ、7の和音、第1転回形">[\s\S]*?<\/span>でも正解<\/p>/);
+  assert.ok(!/記号でかくと/.test(view()),'ぜんぶでは記号をそえない（おなじ記号）');
   click('pick','m10c');
   h=view();
   assert.equal((h.match(/data-act="bdeg"/g)||[]).length,7);
@@ -242,6 +273,15 @@ test('ページ：ぜんぶ（部品で記号をつくる・調とおわりか�
   assert.match(h,/こたえ：<span class="rnum" role="img" aria-label="ⅤのⅤ、7の和音、第1転回形">/);
   click('bok');
   assert.deepEqual(J(PA.store.get('piece-k545-1').ans.full.m10c),{a:{deg:5,form:7,inv:1,of:5},ok:true});
+  // 10〜12小節の「？」がのこっているあいだは、おわりかたに答えられない
+  click('aq','imperfect',{q:'cad12'});
+  assert.equal(PA.store.get('piece-k545-1').ans.full.cad12,undefined);
+  click('pick','m10a'); click('bdeg',4); click('bok');
+  click('pick','m10b'); click('bdeg',4); click('binv',1); click('bok');
+  assert.ok(!/10〜12小節のおわりかたは？/.test(view()));
+  click('pick','m11a'); click('bdeg',5); click('bok');
+  assert.match(view(),/10〜12小節のおわりかたは？/);
+  assert.ok(!/3〜4小節のおわりかたは？/.test(view()),'3〜4小節はまだ');
   click('aq','imperfect',{q:'cad12'});
   assert.equal(PA.store.get('piece-k545-1').ans.full.cad12.ok,false);
   assert.match(view(),/ざんねん。こたえは<b>半終止<\/b>/);
@@ -249,10 +289,10 @@ test('ページ：ぜんぶ（部品で記号をつくる・調とおわりか�
   click('plv','deg');
   assert.match(view(),/こたえた 0 \/ 12もん/);
   click('plv','full');
-  assert.match(view(),/こたえた 3 \/ 18もん/);
+  assert.match(view(),/こたえた 7 \/ 18もん/);
   // ひらきなおす（mode なし）→ さいごの答えかた・こたえ
   PA=loadPA2(mem,'?id=k545-1'); await tick(); await tick();
-  assert.match(PA.__el('view').innerHTML,/こたえた 3 \/ 18もん/);
+  assert.match(PA.__el('view').innerHTML,/こたえた 7 \/ 18もん/);
   // さいしょから（この答えかただけけす）
   click=clicker(PA);
   click('preset');
@@ -275,11 +315,11 @@ test('ページ：しらない id は「見つからない」（データを読�
   assert.deepEqual(J(PA.__fetched()),['assets/pieces/k545-1.json']);
 });
 
-test('ホーム：名曲で楽曲分析は基本の地図のあと・レベルアップの前。じゅんびちゅうの曲はリンクにしない。★',()=>{
+test('ホーム：名曲で楽曲分析は基本の地図のあと・レベルアップの前。これからの曲は1行のメモ（アプリでは出さない）。★',()=>{
   const page=read('index.html'), js=page.match(/<script>([\s\S]*?)<\/script>/)[1];
-  const render=mem=>{
+  const render=(mem,protocol)=>{
     const stub='document.getElementById=function(){return {innerHTML:"",parentNode:null,addEventListener:function(){}};};document.querySelector=function(){return {};};\n';
-    return loadPA(stub+CORE+'\nPA.paint=function(el,h,sig){PA.__html=h;};\n'+js,{storage:mem}).__html;
+    return loadPA(stub+CORE+'\nPA.paint=function(el,h,sig){PA.__html=h;};\n'+js,{storage:mem,protocol}).__html;
   };
   let h=render(new Map());
   const pm=h.match(/<details class="card xmap pmap"[\s\S]*?<\/details>/)[0];
@@ -287,10 +327,13 @@ test('ホーム：名曲で楽曲分析は基本の地図のあと・レベル�
   assert.match(pm,/名曲で楽曲分析/);
   assert.match(pm,/href="piece\.html\?id=k545-1"/);
   assert.equal((pm.match(/<a /g)||[]).length,1,'リンクは K.545 だけ');
-  ['ベートーヴェンのソナタ第1番 Op.2-1','シューベルトの曲','ショパンのエチュード Op.10-8','ショパンのスケルツォ第2番'].forEach(t=>{
-    assert.match(pm,new RegExp(`<li class="soon">[\\s\\S]*?<b>${t.replace(/[.]/g,'\\.')}</b>`),t);
-  });
-  assert.equal((pm.match(/じゅんびちゅう/g)||[]).length,4);
+  // これからの曲：番号つきの4行ではなく、1行のメモ（作りかけに見えないように）
+  assert.match(pm,/<\/ol><p class="note soonnote"><span aria-hidden="true">🎼 <\/span>これから、ベートーヴェン・シューベルト・ショパンの曲もふえるよ<\/p><\/details>/);
+  assert.ok(!/じゅんびちゅう|class="soon"/.test(pm));
+  assert.equal((pm.match(/<li/g)||[]).length,1,'地図の行は K.545 だけ');
+  // iOS アプリ（App Review 2.1：作りかけの中身を出さない）ではメモも出さない
+  const app=render(new Map(),'capacitor:').match(/<details class="card xmap pmap"[\s\S]*?<\/details>/)[0];
+  assert.ok(!/soonnote|ふえるよ/.test(app)); assert.match(app,/href="piece\.html\?id=k545-1"/);
   assert.ok(!/<details class="stage [^"]*" data-d="stage-pieces"/.test(h),'基本の島にはしない');
   assert.match(pm,/aria-label="ほし3こ中0こ"/);
   // ひらいた → ★、5もん → ★★、8わりいじょう → ★★★
@@ -313,3 +356,77 @@ function loadPA2(mem,search){
   const PA=runPage(mem,search);
   return Object.assign(PA,{__fetched:()=>PA.__ctx('__fetched'),__clicks:()=>PA.__ctx('__clicks'),__el:id=>PA.__ctx('__els')[id]});
 }
+
+test('曲のデータ：K.545 の見なおし（楽譜にある高さの骨組み・13小節は左手だけのつなぎ・べつの正解の文はデータの note に書かない）',()=>{
+  const pc=K545(), E=id=>pc.events.find(e=>e.id===id);
+  // 8小節の左手は C3+C4 → C3+E3（ソは右手の音階だけ）。12小節の左手は G2・G3（レは右手だけ）
+  assert.deepEqual(J(E('m8').skel),{lh:['C3','C4'],rh:['E4']});
+  assert.deepEqual(J(E('m12').skel),{lh:['G2','G3'],rh:['B4','D5']});
+  assert.equal(E('m5').bass,'F3');
+  assert.match(E('m12').note,/13小節からト長調になり、左手だけのつなぎのあと、14小節から新しいメロディーがはじまる/);
+  assert.ok(!/13小節から、ト長調の新しいメロディー/.test(E('m12').note));
+  // 「…と答えても正解」は note ではなく accept の行（答えかたで出しわける）
+  pc.events.forEach(e=>assert.ok(!/正解/.test(e.note||''),e.id));
+  assert.equal(E('m4a').acceptNote,'2拍めのファまでいっしょに見て');
+});
+
+test('こたえあわせ：「こう答えても正解」は、その答えかたでちがいがわかるときだけ（PA.piece.altAccepts）',()=>{
+  const PA=load(), P=PA.piece, pc=K545(), m4a=pc.events.find(e=>e.id==='m4a');
+  assert.deepEqual(J(P.altAccepts(m4a,'deg')),[]);
+  assert.deepEqual(J(P.altAccepts(m4a,'inv')),[],'転回形も：7の和音はえらべないので Ⅴ¹ と Ⅴ₇¹ はおなじ');
+  assert.deepEqual(J(P.altAccepts(m4a,'full')),[{deg:5,form:7,inv:1}]);
+  pc.events.filter(e=>e.id!=='m4a').forEach(e=>assert.deepEqual(J(P.altAccepts(e,'full')),[],e.id));
+});
+
+test('ページ：ぜんぶでべつの正解（accept）で答えたら、えらんだ記号を先に「せいかい！Ⅴ₇¹（Ⅴ¹でも正解）」',async()=>{
+  const PA=loadPA2(new Map(),'?id=k545-1&mode=full'); await tick(); await tick();
+  const view=()=>PA.__el('view').innerHTML, click=clicker(PA);
+  click('pick','m4a'); click('bdeg',5); click('bform',7); click('binv',1); click('bok');
+  const h=view();
+  assert.match(h,/せいかい！ <span class="rnum" role="img" aria-label="Ⅴ、7の和音、第1転回形">[\s\S]*?<span class="yours">（<span class="rnum" role="img" aria-label="Ⅴ、第1転回形">[\s\S]*?<\/span>でも正解）<\/span>/);
+  assert.ok(!/2拍めのファまでいっしょに見て/.test(h),'えらんだのが accept なら、下の行はいらない');
+  assert.equal(PA.store.get('piece-k545-1').ans.full.m4a.ok,true);
+});
+
+test('ページ：音（鳴らしているあいだは描きなおさない・おなじボタンでとめる・ページをはなれたらとめる）',async()=>{
+  const PA=loadPA2(new Map(),'?id=k545-1'); await tick(); await tick();
+  const view=()=>PA.__el('view').innerHTML, bar=()=>PA.__el('actions').innerHTML, click=clicker(PA);
+  assert.match(bar(),/data-act="pall" data-hot="listen" aria-pressed="false">[\s\S]*?ぜんぶ聴く（1〜12小節）/);
+  // 鳴らすボタンは data-act を pm・pplay のままにする（pstop にかえるとキーボードのフォーカスがとぶ）
+  assert.match(view(),/<button type="button" class="btn small" data-act="pm" data-v="1" aria-pressed="false">/);
+  assert.ok(!/data-act="pstop"/.test(view()+bar()));
+  const before=view();
+  click('pall'); await tick();
+  assert.equal(PA.__ctx('__chords'),1,'さいしょの和音');
+  assert.equal(view(),before,'鳴らしはじめても、ページを描きなおさない（role=status・aria-live をつくりなおさない）');
+  assert.match(bar(),/data-act="pall" data-hot="listen" aria-pressed="true">[\s\S]*?とめる/);
+  // もういちど「ぜんぶ聴く」のボタン（いまは「とめる」）をおすと、とめる
+  click('pall');
+  assert.match(bar(),/aria-pressed="false">[\s\S]*?ぜんぶ聴く/);
+  // ページをはなれた（pagehide）・見えなくなった（visibilitychange）・「もどる」でもどった（pageshow）
+  click('pall'); assert.match(bar(),/とめる/);
+  PA.__ctx('__wl').pagehide.forEach(f=>f({}));
+  assert.match(bar(),/ぜんぶ聴く/,'pagehide でとめる');
+  click('pall'); assert.match(bar(),/とめる/);
+  PA.__ctx('document').hidden=true; PA.__ctx('__dl').visibilitychange.forEach(f=>f({}));
+  assert.match(bar(),/ぜんぶ聴く/,'visibilitychange でとめる');
+  PA.__ctx('document').hidden=false;
+  click('pall'); PA.onPageShow(); assert.match(bar(),/ぜんぶ聴く/,'pageshow でとめる');
+});
+
+test('ページ：見た目とことば（せまい画面の①のボタン・「Ⅴの調（2だん）」・楽譜の出どころはとじて「おとなの人へ」）',async()=>{
+  const h=read('piece.html');
+  assert.match(h,/@media \(max-width:429px\)\{\.degs\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)\}\}/,'7つが1行だと44pxにとどかない');
+  const PA=loadPA2(new Map(),'?id=k545-1&mode=full'); await tick(); await tick();
+  const view=()=>PA.__el('view').innerHTML, click=clicker(PA);
+  click('pick','m2a');
+  assert.match(view(),/data-act="bof" aria-pressed="false">Ⅴの調（2だん）<\/button>/);
+  assert.ok(!/ⅤのⅤ（2だん）/.test(view()));
+  assert.match(view(),/<button type="button" class="btn small" data-act="pplay" data-v="m2a" aria-pressed="false" data-hot="listen">/);
+  const src=view().match(/<details class="card fold src" data-d="src">[\s\S]*?<\/details>/)[0];
+  assert.match(src,/この楽譜について（おとなの人へ）<small>曲も楽譜も、だれでもつかえるものだよ<\/small>/);
+  assert.match(src,/Mutopia Project/); assert.match(src,/未確認/);
+  assert.ok(!/ open/.test(src.slice(0,60)),'はじめはとじておく');
+  // ほかのページの記号ボタン（secondary.html の目標の和音）も44pxいじょう
+  assert.match(read('secondary.html'),/\.tseg button\{min-width:44px\}/);
+});

@@ -139,7 +139,9 @@ test('weekHTML・cheerHTML：7つの丸、読み上げは1つの文、紙ふぶ�
   assert.match(h,/<span class="pw-n"><b>3<\/b>日できた<\/span>/);
   // まだ何もない週
   const E=mk().PA.earDays, h0=E.weekHTML(E.info(at(2026,10,31)));
-  assert.match(h0,/aria-label="今週は0日できたよ"/);
+  // 0日は数を出さない（「0日できた」はがっかりする）。「これから」
+  assert.match(h0,/aria-label="今週はまだこれから"/); assert.match(h0,/<span class="pw-n">これから<\/span>/);
+  assert.ok(!/0日|<b>0<\/b>/.test(h0),h0);
   // 5もんのけっか：その日はじめて（fx）は紙ふぶき。2回めはうごきなし
   const c1=D.cheerHTML({fx:true,n:5,info:I});
   assert.match(c1,/^<div class="pa-cheer">/);
@@ -215,10 +217,11 @@ test('index.html：耳のひろばのカードに今週の丸。きょうでき�
   assert.match(p,/つづけて3日/);
   // 月曜：あたらしい週は0日。でも、つづけた日数はつづいている（休んでいない）
   p=plazaOf(renderHome(mem,at(2026,11,2,7)).__html);
-  assert.match(p,/aria-label="今週は0日できたよ。つづけて3日"/);
+  assert.match(p,/aria-label="今週はまだこれから。つづけて3日"/);
+  assert.ok(!/0日|<b>0<\/b>/.test(p.match(/<div class="days">[\s\S]*?<\/div><\/div>/)[0]),'月曜に「0日」を出さない');
   // 何日も休んだ：しるしはのこる（「とぎれた」とは言わない）
   p=plazaOf(renderHome(mem,at(2026,11,20,7)).__html);
-  assert.match(p,/aria-label="今週は0日できたよ"/); assert.ok(!/とぎれ|pw-run/.test(p));
+  assert.match(p,/aria-label="今週はまだこれから"/); assert.ok(!/とぎれ|pw-run|0日できた/.test(p));
   assert.deepEqual(JSON.parse(mem.get('pianoapps.ear-days')),['2026-10-30','2026-10-31','2026-11-01']);
   // ランキングのことばは出さない（アプリでもウェブでも、この丸は自分だけのきろく）
   assert.ok(!/ランキング/.test(p.match(/<div class="days">[\s\S]*?<\/div><\/div>/)[0]));

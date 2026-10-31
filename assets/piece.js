@@ -2,15 +2,16 @@
  * core.js のあとに読む（PA をつかう）。ページのほかに、テスト（test/piece.test.mjs）と tools/piece-check.mjs もつかう
  *
  * 曲のデータ（手で書く。DCML などのデータは写さない。docs/REPERTOIRE-ANALYSIS.md）
- *   {id, title, composer, composerFull, movement, key:'C', meter:[4,4], tempo:{slow,normal}（4分音符／分）,
+ *   {id, title, titleShort（調を書かない名前。調の問題に答えるまで見出しに出す）, composer, composerFull, movement, key:'C', meter:[4,4], tempo:{slow,normal}（4分音符／分）,
  *    source:{edition, measures, made, license}, excerpts:[{from,to,label}],
  *    events:[{id, m（小節）, beat（何拍めから。4分音符で数える。4.5＝4拍めのうら）, dur（何拍ぶん）, key（その和音の調）,
  *             rn（PA.rn の部品）, bass・sop（いちばん下・いちばん上の音。'F#3' のように）, skel:{lh:[…], rh:[…]}（骨組み：がくふと音）,
  *             blank（穴うめにするか）, level（'deg'｜'inv'｜'full'：どの答えかたから穴にするか）, accept:[部品]（べつの正解）,
+ *             acceptNote（べつの正解のわけ：「2拍めのファまでいっしょに見て」→「…、Ⅴ₇¹でも正解」）,
  *             cad（ここでのおわりかた：PA.piece.CAD の id）, note（こたえたあとの1行）}],
  *    questions:[{id, type:'key'|'cadence', m, level, ask（type:'key'）, range（type:'cadence'：「3〜4小節」）, answer, choices, note}]}
  *   調の名前：大文字＝長調（'C'・'G'・'F#'・'Bb'）、小文字＝短調（'a'・'c#'・'eb'）
- *   skel：lh＝ヘ音記号、rh＝ト音記号。lh のいちばん下の音名＝bass、rh のいちばん上の音名＝sop（オクターブはかえてよい）
+ *   skel：lh＝ヘ音記号、rh＝ト音記号。lh のいちばん下の音＝bass、rh のいちばん上の音＝sop（音名もオクターブもおなじ）
  *
  * 答えかた（先生：人ではなく「何を答えるか」で分けて、自分でえらぶ）
  *   'deg'＝和音の番号だけ（Ⅰ〜Ⅶの4択）、'inv'＝転回形も（番号＋転回形）、'full'＝ぜんぶ（番号・7／9・転回形・○・ⅤのⅤ、調とおわりかたも）
@@ -20,6 +21,7 @@
  * PA.piece.validate(piece) → まちがいのリスト（文字）。[] ならよい
  * PA.piece.items(piece, lv) → その答えかたで出す問題 [{kind:'ev'|'q', id, m, item}]（調の問題 → 小節のじゅん。おわりかたはその小節の和音のあと）
  * PA.piece.check(item, ans, lv) → 正解か（和音は accept もみる）
+ * PA.piece.altAccepts(ev, lv) → その答えかたでくらべる部品で、ev.rn とちがう accept（なければ []。「こう答えても正解」を出すときだけ）
  * PA.piece.degChoices(ev) → 和音の番号だけの4択 [deg…]
  * PA.piece.explainHTML(ev) → 「ソ・シ・レ・ファの和音。いちばん下がレ（第5音）なので第2転回形」（HTML） */
 (function(){
@@ -78,6 +80,7 @@ function validate(pc){
   const err=[], e=s=>err.push(s);
   if(!isObj(pc)) return ['データがない'];
   ['id','title','composer','movement'].forEach(f=>{if(typeof pc[f]!=='string'||!pc[f]) e(f+' がない');});
+  if(pc.titleShort!=null&&(typeof pc.titleShort!=='string'||!pc.titleShort)) e('titleShort');
   if(!/^[a-z0-9-]{1,40}$/.test(pc.id||'')) e('id の形');
   if(!key(pc.key)) e('key（曲の調）がわからない：'+pc.key);
   const meter=Array.isArray(pc.meter)&&pc.meter.length===2?pc.meter:null; if(!meter) e('meter');
@@ -109,6 +112,7 @@ function validate(pc){
     if(typeof ev.blank!=='boolean') e(w+'blank');
     if(ev.cad!=null&&!CAD[ev.cad]) e(w+'cad');
     if(ev.note!=null&&typeof ev.note!=='string') e(w+'note');
+    if(ev.acceptNote!=null&&(typeof ev.acceptNote!=='string'||!ev.acceptNote||!ev.accept)) e(w+'acceptNote');
     if(ev.accept!=null&&(!Array.isArray(ev.accept)||ev.accept.some(a=>!isObj(a)||!normEq(a)||J(PA.rnNorm(a))===J(PA.rnNorm(ev.rn))))) e(w+'accept');
     // 番号だけ・転回形の答えでは、○・ⅤのⅤ・斜線などは答えられない → 'full' だけで穴にする
     const p=PA.rnNorm(ev.rn), fancy=p.of||p.borrowed||p.omit||p.alt5||p.rootDown||p.natural;
@@ -125,8 +129,9 @@ function validate(pc){
     const all=lh.concat(rh);
     all.forEach(n=>{if(!has(n)) e(w+'skel に和音の外の音：'+PA.LET_EN[n.letter]+n.acc);});
     const lo=all.reduce((a,b)=>b.midi<a.midi?b:a), hi=all.reduce((a,b)=>b.midi>a.midi?b:a);
-    if(bass&&!same(lo,bass)) e(w+'skel のいちばん下が bass ではない');
-    if(sop&&!same(hi,sop)) e(w+'skel のいちばん上が sop ではない');
+    // 音名だけでなく高さ（オクターブ）もおなじ
+    if(bass&&!(same(lo,bass)&&lo.midi===bass.midi)) e(w+'skel のいちばん下が bass ではない');
+    if(sop&&!(same(hi,sop)&&hi.midi===sop.midi)) e(w+'skel のいちばん上が sop ではない');
     if(Math.max(...lh.map(n=>n.midi))>Math.min(...rh.map(n=>n.midi))) e(w+'skel の左手が右手より上');
     if(new Set(all.map(n=>n.midi)).size!==all.length) e(w+'skel におなじ高さの音が2つ');
     // 根音（省略でなければ）・第3音・第7音・第9音はかならず。第5音ははぶいてよい
@@ -177,6 +182,8 @@ function check(it,ans,lv){
   if(!isObj(ans)) return false;
   return [it.rn].concat(it.accept||[]).some(p=>matchParts(p,ans,lv));
 }
+// その答えかたで ev.rn とくらべてちがいがわかる accept だけ（番号だけ・転回形もでは7の和音をえらべないので、Ⅴ¹ と Ⅴ₇¹ はおなじ）
+const altAccepts=(ev,lv)=>(ev.accept||[]).filter(p=>!matchParts(ev.rn,p,lv));
 // 和音の番号だけ：Ⅰ・Ⅳ・Ⅴに、こたえ（なければⅡ）をたした4つ
 function degChoices(ev){
   const d=ev.rn.deg, s=[1,4,5];
@@ -189,5 +196,5 @@ function explainHTML(ev){
 }
 const beatText=b=>Number.isInteger(b)?b+'拍め':Math.floor(b)+'拍めのうら';
 
-PA.piece={LEVELS,LV_RANK,CAD,ROLE,INV,key,note,tones,validate,items,asked,check,degChoices,explainHTML,beatText,same};
+PA.piece={LEVELS,LV_RANK,CAD,ROLE,INV,key,note,tones,validate,items,asked,check,altAccepts,degChoices,explainHTML,beatText,same};
 })();

@@ -62,6 +62,8 @@ button.slot.ng{border-color:var(--ng);background:#fde4e7;color:#8f2233}
 .pick h3:focus{outline:none}
 .plab{margin:12px 0 6px;font-size:15px;font-weight:800}
 .degs{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+/* せまい画面では4こ＋3こ（1つ44pxいじょう。7こ1行だと 420px くらいまで足りない） */
+@media (max-width:429px){.degs{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .dbtn{min-height:52px;min-width:0;border-radius:12px;background:#fff;border:2px solid #b9ac99;font-size:20px;font-weight:800;color:var(--ink);padding:0}
 .dbtn.on,.tog.on{background:#2f5fc4;border-color:#2f5fc4;color:#fff}
 .tog{min-height:48px;padding:6px 14px;border-radius:999px;background:#fff;border:2px solid #b9ac99;font-size:16px;font-weight:800;color:var(--ink)}
@@ -75,6 +77,7 @@ button.slot.ng{border-color:var(--ng);background:#fde4e7;color:#8f2233}
 .cadinfo{margin:8px 10px 0;padding:8px 12px;border-radius:12px;background:#fffaf0;border:2px solid #f0d9a8;font-size:15px}
 .sumc{border-top:6px solid var(--ok)}
 .src p{margin:6px 0 0}
+.src summary h2{margin:0}
 @media (max-width:359px){.degs{gap:3px}.dbtn{font-size:18px}}
 </style>
 </head>
@@ -179,33 +182,61 @@ const midis=ev=>ev.skel.lh.concat(ev.skel.rh).map(s=>PC.note(s).midi);
 const bpm=()=>S.tempo==='normal'?S.pc.tempo.normal:S.pc.tempo.slow;
 function stop(){token++;S.playing=null;S.cur=-1;PA.stopSound();}
 // list＝鳴らす和音の番号（S.pc.events の）。what＝鳴らしているボタン（'all'・'m3'・'e:m2a'）
+//   鳴らしているあいだはページを描きなおさない（フォーカス・こたえの読み上げ（role=status）・組み立ての aria-live をこわさない）。
+//   鳴っている所の色・ボタンのようすは syncPlay() で、その所だけかえる
 async function playList(list,what){
   if(!PA.settings.sound){S.muteHint=true;render();return;}
+  const hint=S.muteHint;
   stop(); const my=token; S.playing=what; S.muteHint=false;
+  if(hint) render();
   for(const i of list){
     if(my!==token) return;
-    S.cur=i; render();
+    S.cur=i; syncPlay();
     const ev=S.pc.events[i], sec=ev.dur*60/bpm();
     PA.chord(midis(ev),{dur:Math.max(0.6,sec+0.3)});
     await PA.sleep(sec*1000);
   }
   if(my!==token) return;
-  S.playing=null; S.cur=-1; render();
+  S.playing=null; S.cur=-1; syncPlay();
+}
+// 鳴らすボタンの中身（鳴っていれば ■ とめる）。data-act は鳴っていてもかえない（キーボードでおしたあとも、おなじボタンにフォーカスがのこる）
+const PLAYBTN={pm:(on,v)=>`${PA.icon(on?'stop':'play')}${ESC(v)}小節`,pplay:on=>`${PA.icon(on?'stop':'listen')}この和音`};
+const playWhat={pm:v=>'m'+v,pplay:v=>'e:'+v};
+function playBtn(act,v,extra){
+  const on=S.playing===playWhat[act](v);
+  return `<button type="button" class="btn small${on?' night':''}" data-act="${act}" data-v="${ESC(v)}" aria-pressed="${on}"${extra||''}>${PLAYBTN[act](on,v)}</button>`;
+}
+const SEL_HL='#e6eefc', PLAY_HL='#ffe9a8';
+// 鳴っている所（「？」のわく・がくふの列の色）と、鳴らすボタン・下のバーだけをかえる
+function syncPlay(){
+  document.querySelectorAll('.slot[data-i]').forEach(el=>{el.classList.toggle('play',+el.dataset.i===S.cur);});
+  document.querySelectorAll('.sys rect[data-hl]').forEach(r=>{
+    const i=+r.getAttribute('data-ev'), ev=S.pc&&S.pc.events[i];
+    r.setAttribute('fill',i===S.cur?PLAY_HL:ev&&S.sel===ev.id?SEL_HL:'none');
+  });
+  document.querySelectorAll('[data-act="pm"],[data-act="pplay"]').forEach(b=>{
+    const a=b.dataset.act, v=b.dataset.v, on=S.playing===playWhat[a](v);
+    b.classList.toggle('night',on); b.setAttribute('aria-pressed',String(on)); b.innerHTML=PLAYBTN[a](on,v);
+  });
+  renderActions();
 }
 const idxOf=pred=>S.pc.events.map((e,i)=>pred(e)?i:-1).filter(i=>i>=0);
 
 /* ===== 画面 ===== */
 const where=ev=>`${ev.m}小節${PC.beatText(ev.beat)}`;
-// 調のしるし：ぜんぶの答えかたで、調の問題にまだ答えていなければ「？」
-function keyPre(ev){
+// 調の問題（ぜんぶ）にまだ答えていない：調のしるしは「？」、見出しは調を書かない名前（titleShort）
+function keyOpen(){
   const kq=(S.pc.questions||[]).find(q=>q.type==='key'&&q.level==='full');
-  if(S.lv==='full'&&kq&&!ansOf(kq.id)) return '？:';
+  return S.lv==='full'&&!!kq&&!ansOf(kq.id);
+}
+function keyPre(ev){
+  if(keyOpen()) return '？:';
   return PA.rnKey(PC.key(ev.key));
 }
 function headHTML(){
   const pc=S.pc, ex=pc.excerpts[0];
   return `<section class="card phead" aria-labelledby="ph"><p class="pcomp">${ESC(pc.composer)}</p>
-    <h2 id="ph">${ESC(pc.title)}<small>${ESC(pc.movement)}・${ex.from}〜${ex.to}小節（${ESC(ex.label)}）</small></h2>
+    <h2 id="ph">${ESC(keyOpen()&&pc.titleShort?pc.titleShort:pc.title)}<small>${ESC(pc.movement)}・${ex.from}〜${ex.to}小節（${ESC(ex.label)}）</small></h2>
     <p class="msg" style="margin-top:10px"><span aria-hidden="true">📖 </span>じぶんの楽譜もひらいて、いっしょに見てね。下のがくふは、和音の音だけを全音符にした「骨組み」だよ。</p></section>`;
 }
 function lvHTML(){
@@ -225,8 +256,8 @@ function sysHTML(ms,si,Wmax){
   let carry={}, lastM=null;
   const cols=ev0.map(({e,i})=>{
     if(e.m!==lastM){carry={};lastM=e.m;}
-    const c={notes:e.skel.rh.map(PC.note),lh:e.skel.lh.map(PC.note),carry:{...carry}};
-    if(S.cur===i) c.hl='#ffe9a8'; else if(S.sel===e.id) c.hl='#e6eefc';
+    const c={notes:e.skel.rh.map(PC.note),lh:e.skel.lh.map(PC.note),carry:{...carry},hlAttr:`data-ev="${i}"`};
+    c.hl=S.cur===i?PLAY_HL:S.sel===e.id?SEL_HL:'none';
     c.notes.concat(c.lh).forEach(n=>{if(n.acc!==(key.sig[n.letter]||0)||carry[n.letter]!=null) carry[n.letter]=n.acc;});
     return c;
   });
@@ -235,7 +266,7 @@ function sysHTML(ms,si,Wmax){
   const o={grand:true,measures,colW:Math.round(cw*100)/100}, G=PA.staffGeom(key,cols.length,o), pct=v=>(v/G.W*100).toFixed(3)+'%';
   const svg=PA.staffSVG(key,cols,o);
   const slots=ev0.map(({e,i})=>`<div class="slotc" style="width:${pct(G.cw)}">${slotHTML(e,i)}</div>`).join('');
-  const mbtn=m=>{const on=S.playing==='m'+m;return `<button type="button" class="btn small${on?' night':''}" data-act="${on?'pstop':'pm'}" data-v="${m}">${PA.icon(on?'stop':'play')}${m}小節</button>`;};
+  const mbtn=m=>playBtn('pm',String(m));
   let h=`<div class="sys" data-sys="${si}"><p class="pa-sr">${ms[0]}〜${ms[ms.length-1]}小節のがくふ（和音の骨組み）</p>
     <div class="sysbar">${ms.map(mbtn).join('')}</div>
     <div class="scroll"><div class="sysin" style="min-width:${Math.round(G.W*45/Math.min(G.cw,70))}px;max-width:${Math.round(G.W*1.5)}px">${svg}
@@ -243,23 +274,30 @@ function sysHTML(ms,si,Wmax){
     </div></div>`;
   const sel=S.sel&&ev0.find(x=>x.e.id===S.sel);
   if(sel) h+=pickHTML(sel.e);
-  // おわりかた：ぜんぶ＝問題、ほか＝この段の「？」にぜんぶ答えたらおしえる
+  // おわりかた：その範囲（「10〜12小節」）の出題した和音にぜんぶ答えたら、ぜんぶ＝問題、ほか＝おしえる。
+  //   それまでは出さない（説明に和音の答えが書いてあるので、先に見えないように）
   (pc.questions||[]).filter(q=>q.type==='cadence'&&ms.includes(q.m)).forEach(q=>{
-    if(S.lv==='full') h+=qHTML(q);
-    else if(ev0.every(({e})=>!PC.asked(e,S.lv)||ansOf(e.id))) h+=`<p class="cadinfo"><span aria-hidden="true">🏁 </span>${ESC(q.range)}のおわりかた：<b>${PC.CAD[q.answer]}</b>。${ESC(q.note)}</p>`;
+    if(!cadOpen(q)){if(S.lv==='full') h+=`<p class="cadinfo"><span aria-hidden="true">🏁 </span>${ESC(q.range)}の「？」をうめたら、おわりかたの問題が出るよ</p>`;}
+    else if(S.lv==='full') h+=qHTML(q);
+    else h+=`<p class="cadinfo"><span aria-hidden="true">🏁 </span>${ESC(q.range)}のおわりかた：<b>${PC.CAD[q.answer]}</b>。${ESC(q.note)}</p>`;
   });
   return h+`</div>`;
 }
+// おわりかたの問題を出してよいか：その範囲（q.range の「10〜12小節」の10から q.m まで）の、出題した和音にぜんぶ答えた
+function cadOpen(q){
+  const from=+((/^(\d+)/.exec(q.range||'')||[])[1]||q.m);
+  return S.pc.events.every(e=>e.m<from||e.m>q.m||!PC.asked(e,S.lv)||ansOf(e.id));
+}
 function slotHTML(ev,i){
-  const a=ansOf(ev.id), sel=S.sel===ev.id, cls=`slot${sel?' sel':''}${S.cur===i?' play':''}`;
-  if(!PC.asked(ev,S.lv)) return `<span class="${cls} given"><span class="pa-sr">${where(ev)}：</span>${PA.rn(ev.rn)}</span>`;
-  if(!a) return `<button type="button" class="${cls} q" data-act="pick" data-v="${ev.id}" aria-pressed="${sel}" aria-label="${where(ev)}の和音（まだ）">？</button>`;
-  return `<button type="button" class="${cls} ${a.ok?'ok':'ng'}" data-act="pick" data-v="${ev.id}" aria-pressed="${sel}" aria-label="${ESC(where(ev)+'：'+(a.ok?'せいかい':'まちがい')+'。こたえは'+PA.rnAria(ev.rn))}">${PA.rn(ev.rn)}<span class="mk" aria-hidden="true">${a.ok?'⭕':'✗'}</span></button>`;
+  const a=ansOf(ev.id), sel=S.sel===ev.id, cls=`slot${sel?' sel':''}${S.cur===i?' play':''}`, di=` data-i="${i}"`; // data-i：鳴っている所（syncPlay）
+  if(!PC.asked(ev,S.lv)) return `<span class="${cls} given"${di}><span class="pa-sr">${where(ev)}：</span>${PA.rn(ev.rn)}</span>`;
+  if(!a) return `<button type="button" class="${cls} q"${di} data-act="pick" data-v="${ev.id}" aria-pressed="${sel}" aria-label="${where(ev)}の和音（まだ）">？</button>`;
+  return `<button type="button" class="${cls} ${a.ok?'ok':'ng'}"${di} data-act="pick" data-v="${ev.id}" aria-pressed="${sel}" aria-label="${ESC(where(ev)+'：'+(a.ok?'せいかい':'まちがい')+'。こたえは'+PA.rnAria(ev.rn))}">${PA.rn(ev.rn)}<span class="mk" aria-hidden="true">${a.ok?'⭕':'✗'}</span></button>`;
 }
 function pickHTML(ev){
-  const a=ansOf(ev.id), on=S.playing==='e:'+ev.id;
+  const a=ansOf(ev.id);
   let h=`<div class="pick" id="pick" role="group" aria-labelledby="pick-h"><h3 id="pick-h" tabindex="-1">${where(ev)}の和音は？</h3>
-    <div class="row"><button type="button" class="btn small${on?' night':''}" data-act="${on?'pstop':'pplay'}" data-v="${ev.id}" data-hot="listen">${PA.icon(on?'stop':'listen')}この和音</button>
+    <div class="row">${playBtn('pplay',ev.id,' data-hot="listen"')}
     <button type="button" class="btn small" data-act="pclose">${PA.icon('close')}とじる</button></div>`;
   if(a) h+=fbHTML(ev,a);
   else if(S.lv==='deg') h+=`<p class="plab">何の和音？</p><div class="choices pchoices">${PC.degChoices(ev).map(d=>`<button type="button" class="choice" data-act="adeg" data-v="${d}">${PA.rn({deg:d})}</button>`).join('')}</div>`;
@@ -276,17 +314,25 @@ function builderHTML(){
   h+=`<p class="plab">${'①②③④'[no++]} 転回形は？（いちばん下の音）</p>`+PA.seg('binv',[['0','基本形'],['1','第1'],['2','第2'],['3','第3']],String(B.inv),'full');
   if(full) h+=`<p class="plab">${'①②③④'[no++]} しるし（あれば）</p><div class="row">`
     +`<button type="button" class="tog${B.borrowed?' on':''}" data-act="bborrow" aria-pressed="${B.borrowed}">○ 準固有</button>`
-    +`<button type="button" class="tog${B.of?' on':''}" data-act="bof" aria-pressed="${B.of}">ⅤのⅤ（2だん）</button></div>`;
+    +`<button type="button" class="tog${B.of?' on':''}" data-act="bof" aria-pressed="${B.of}">Ⅴの調（2だん）</button></div>`;
   h+=`<div class="pv" aria-live="polite">こたえ：${B.deg?PA.rn(built()):'<span class="note" style="margin:0">①をえらんでね</span>'}</div>`
     +`<button type="button" class="btn primary" data-act="bok" data-hot="check"${B.deg?'':' disabled'}>${PA.icon('check')}こたえる</button>`;
   return h;
 }
+// その答えかたで答える部品だけの記号（番号だけ＝Ⅴ、転回形も＝Ⅴ²）。記号ぜんぶとちがえば「（記号でかくと Ⅴ₇²）」をそえる
+function ansRn(rn){
+  const p=PA.rnNorm(rn), q=S.lv==='deg'?{deg:p.deg}:S.lv==='inv'?PA.rnNorm({deg:p.deg,inv:p.inv}):p;
+  return PA.rn(q)+(PA.rnText(q)!==PA.rnText(p)?`<span class="yours">（記号でかくと ${PA.rn(p)}）</span>`:'');
+}
 function fbHTML(ev,a){
-  const nx=nextOpen();
-  let h=a.ok?`<div class="fb good" role="status"><span aria-hidden="true">⭕ </span>せいかい！ ${PA.rn(ev.rn)}</div>`
-    :`<div class="fb bad" role="status"><span aria-hidden="true">✗ </span>ざんねん。こたえは ${PA.rn(ev.rn)}<br><span class="yours">えらんだのは ${PA.rn(a.a)}</span></div>`;
+  const nx=nextOpen(), exact=PC.check({rn:ev.rn},a.a,S.lv), alt=PC.altAccepts(ev,S.lv);
+  let h=!a.ok?`<div class="fb bad" role="status"><span aria-hidden="true">✗ </span>ざんねん。こたえは ${ansRn(ev.rn)}<br><span class="yours">えらんだのは ${PA.rn(a.a)}</span></div>`
+    :exact?`<div class="fb good" role="status"><span aria-hidden="true">⭕ </span>せいかい！ ${ansRn(ev.rn)}</div>`
+    // べつの正解（accept）で答えた：えらんだ記号を先に
+    :`<div class="fb good" role="status"><span aria-hidden="true">⭕ </span>せいかい！ ${PA.rn(a.a)}<span class="yours">（${PA.rn(ev.rn)}でも正解）</span></div>`;
   h+=`<p class="expl">${PC.explainHTML(ev)}。${ESC(ev.note||'')}</p>`;
-  if(ev.accept&&ev.accept.length) h+=`<p class="note">こう答えても正解：${ev.accept.map(p=>PA.rn(p)).join('・')}</p>`;
+  // こう答えても正解：この答えかたで、ちがいがわかるときだけ（番号だけ・転回形もでは7の和音をえらべない）
+  if(alt.length&&exact) h+=`<p class="note">${ev.acceptNote?ESC(ev.acceptNote)+'、':''}${alt.map(p=>PA.rn(p)).join('・')}でも正解</p>`;
   if(ev.cad&&S.lv!=='full') h+=`<p class="note"><span aria-hidden="true">🏁 </span>ここで${PC.CAD[ev.cad]}</p>`;
   h+=`<div class="row" style="margin-top:10px">`+(nx?`<button type="button" class="btn primary" data-act="pnext" data-hot="next">${PA.icon('next')}${nx.kind==='ev'?'次の「？」へ':'のこりの問題へ'}</button>`
     :`<button type="button" class="btn primary" data-act="psum" data-hot="next">${PA.icon('next')}けっかを見る</button>`)+`</div>`;
@@ -312,11 +358,12 @@ function sumHTML(){
     <div class="row" style="flex-wrap:wrap;gap:8px">${other.map(l=>`<button type="button" class="btn small" data-act="plv" data-v="${l}">「${LV_NAME[l]}」でやってみる</button>`).join('')}
       <button type="button" class="btn small" data-act="preset" data-confirm="もういちどおすと、「${LV_NAME[S.lv]}」のこたえをけすよ">${PA.icon('retry')}さいしょから</button></div></section>`;
 }
+// 楽譜の出どころ（おとなの人へ）。子どもが答えるページなので、とじておく
 function srcHTML(){
   const s=S.pc.source;
-  return `<section class="card src" aria-labelledby="src-h"><h2 id="src-h"><span aria-hidden="true">📚 </span>この楽譜について</h2>
+  return `<details class="card fold src" data-d="src"><summary><h2 id="src-h"><span aria-hidden="true">📚 </span>この楽譜について（おとなの人へ）<small>曲も楽譜も、だれでもつかえるものだよ</small></h2></summary>
     <p class="note">${ESC(S.pc.composerFull)}。楽譜：${ESC(s.edition)}。${ESC(s.measures)}。</p>
-    <p class="note">${ESC(s.made)}。${ESC(s.license)}。</p></section>`;
+    <p class="note">${ESC(s.made)}。${ESC(s.license)}。</p></details>`;
 }
 function render(){
   const v=document.getElementById('view');
@@ -343,8 +390,9 @@ function render(){
 let lastActions=null;
 function renderActions(){
   const bar=document.getElementById('actions');
-  const a=S.pc?(S.playing==='all'?`<button type="button" class="btn" data-act="pstop" data-hot="listen">${PA.icon('stop')}とめる</button>`
-    :`<button type="button" class="btn night" data-act="pall" data-hot="listen">${PA.icon('play')}ぜんぶ聴く（${S.pc.excerpts[0].from}〜${S.pc.excerpts[0].to}小節）</button>`):'';
+  // data-act は鳴っていても pall のまま（おなじボタンをもういちどおすと、とめる）
+  const a=S.pc?(S.playing==='all'?`<button type="button" class="btn" data-act="pall" data-hot="listen" aria-pressed="true">${PA.icon('stop')}とめる</button>`
+    :`<button type="button" class="btn night" data-act="pall" data-hot="listen" aria-pressed="false">${PA.icon('play')}ぜんぶ聴く（${S.pc.excerpts[0].from}〜${S.pc.excerpts[0].to}小節）</button>`):'';
   bar.style.display=a?'':'none';
   if(a!==lastActions){PA.paint(bar,a,'bar');lastActions=a;}
 }
@@ -394,19 +442,23 @@ document.addEventListener('click',e=>{
       stop(); record(ev,ev.id,built()); answered(); return;
     }
     case 'aq': {
-      const q=qById(el.dataset.q); if(!q||ansOf(q.id)||!q.choices.includes(v)) return;
+      const q=qById(el.dataset.q); if(!q||ansOf(q.id)||!q.choices.includes(v)||(q.type==='cadence'&&!cadOpen(q))) return;
       record(q,q.id,v); render(); reveal('#q-'+q.id,'h3'); return;
     }
-    case 'pplay': {const i=S.pc.events.findIndex(x=>x.id===v); if(i<0) return; playList([i],'e:'+v); return;}
-    case 'pm': {const m=+v, l=idxOf(x=>x.m===m); if(!l.length) return; playList(l,'m'+m); return;}
-    case 'pall': playList(S.pc.events.map((x,i)=>i),'all'); return;
-    case 'pstop': stop(); render(); return;
+    // 鳴らすボタン：鳴っているボタンをもういちどおすと、とめる
+    case 'pplay': {if(S.playing==='e:'+v){stop();syncPlay();return;} const i=S.pc.events.findIndex(x=>x.id===v); if(i<0) return; playList([i],'e:'+v); return;}
+    case 'pm': {if(S.playing==='m'+v){stop();syncPlay();return;} const m=+v, l=idxOf(x=>x.m===m); if(!l.length) return; playList(l,'m'+m); return;}
+    case 'pall': if(S.playing==='all'){stop();syncPlay();return;} playList(S.pc.events.map((x,i)=>i),'all'); return;
+    case 'pstop': stop(); syncPlay(); return;
     default: return;
   }
 });
 PA.mountBar({title:'名曲で楽曲分析',app:'piece'});
 PA.onSettings=render;
-PA.onPageShow=render;
+// ページをはなれたら音をとめる（「ぜんぶ聴く」はゆっくりで50秒ちかくある。タブをかえた・アプリをうしろへ・「もどる」でもどった）
+PA.onPageShow=()=>{stop();render();};
+window.addEventListener('pagehide',()=>{if(S.playing){stop();syncPlay();}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden&&S.playing){stop();render();}});
 // リンクの mode はつかったので、アドレスは id だけに（「もどる」の読みなおしでかわらないように）
 if(ID&&(P.mode!=null||P.id!==ID)){try{history.replaceState(history.state,'',PA.url('piece',{id:ID})+location.hash);}catch(e){}}
 render();

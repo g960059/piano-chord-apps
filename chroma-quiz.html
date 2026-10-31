@@ -125,7 +125,7 @@
 <script src="assets/core.js"></script>
 <script>
 /* 変化和音クイズ：Ⅱ7・ドッペルドミナント・減七/Ⅴ・増六（イタリア・フランス・ドイツ）・ナポリの六・準固有（○Ⅳ・○Ⅵ）・
- *   副属和音（Ⅴ7/x）・Ⅶ7（Ⅴ9の根音をはぶいた形：長調の形・減七）を 🎹 けんばんでおさえる／ 👂 ひびきで聴きわける。
+ *   副属和音（x度調のⅤ7）・Ⅴ9の根音省略（長調の形・減七）を 🎹 けんばんでおさえる／ 👂 ひびきで聴きわける。
  *   ならびとステップは先生のじゅん（docs/TEACHER-FEEDBACK.md）：Ⅱ7・ドッペル → 副属和音 → 準固有和音 → ナポリの六 → 増六 → 異名同音（ぜんぶ）。
  *   まえにならっていない和音が、さきのステップで出ないようにする。画面に「半減七」ということばは出さない
  *   和音のつづりと高さはぜんぶ PA.chroma・PA.henka から（ほかのページとそろえる）
@@ -138,13 +138,13 @@
  *
  *   リンクのパラメータ（先生の宿題・学ぶページの「ためしてみる」。しらべかたは linkOf）：
  *     mode＝keys（🎹 おさえる）｜ear（👂 聴きわけ）。mode がなくて step・level・chord・tier のどれか、または key と n のりょうほうがあれば keys
- *     step＝🎹 のステップ1〜6（KLV）：1＝Ⅱ7・ドッペル（減七/Ⅴも）  2＝副属和音  3＝準固有（○Ⅳ・○Ⅵ）  4＝ナポリの六  5＝増六3しゅるい  6＝ぜんぶ（Ⅶ7も）
+ *     step＝🎹 のステップ1〜6（KLV）：1＝Ⅱ7・ドッペル（ⅤのⅤ9の根音省略も）  2＝副属和音  3＝準固有（○Ⅳ・○Ⅵ）  4＝ナポリの六  5＝増六3しゅるい  6＝ぜんぶ（Ⅴ9の根音省略も）
  *     level＝👂 は1〜3（EAR_LV）：1＝Ⅱ7・ドッペル  2＝増六3しゅるい  3＝Ⅳ・○Ⅳ・ナポリ（長調だけ）。画面では先生のじゅん（1・3・2）にならべる
  *       🎹 の level（1〜5）はまえのリンク：そのときとおなじ和音（OLD_KLV）にする（ステップとおなじならそのステップ）。step があれば step
  *       学ぶページから：doppel → step 1・ear 1、secondary → chord dd,s2,s3,s4,s6、borrowed → step 3、
  *         neapolitan → step 4・ear 3、aug6 → step 5・ear 2、enharmonic → chord vii7（step 6）、enharmonic の 🔥 チャレンジ → chord ger・chal 1
  *         （その和音だけにしたいときは chord：neapolitan → n6、borrowed → ivm,bvi、secondary → s2,s3,s4,s6、enharmonic → vii7）
- *       🔥 チャレンジ（先生：読みかえのクイズに増六が入る問題は「チャレンジ」としてわける）：読みかえの和音（READ_SET＝減七/Ⅴ・Ⅶ7）と
+ *       🔥 チャレンジ（先生：読みかえのクイズに増六が入る問題は「チャレンジ」としてわける）：読みかえの和音（READ_SET＝ⅤのⅤ9の根音省略・Ⅴ9の根音省略）と
  *         ドイツの6だけを「じぶんで選ぶ」で出すとき、ドイツの6の問題に 🔥 チャレンジのしるし（chalOf）。読みかえのチャレンジから来たとき
  *         （chal＝1。enharmonic の chord=ger&chal=1）か、読みかえの和音もいっしょに出すとき（まえのリンクの ger,ddim,vii7 など）だけ。
  *         🎛 でドイツだけを選んで増六の練習をするときや、ステップ5（増六）・6（ぜんぶ）では出さない（ふつうの増六の問題）
@@ -296,7 +296,7 @@ const longOfH=(key,t)=>T[t].tg?'副属和音'+labOfH(key,t):t==='vii7'?labOfH(ke
 const subOf=(key,t)=>T[t].tg?`${H.rn(key,'target',T[t].tg)}をいっときⅠにみたてたⅤ7`:T[t].sub;
 // がくふの和音名：どの和音も記号（藝大式）で
 const staffLab=(key,t)=>rnT(key,t,true);
-// 色：赤＝半音上げた音（Ⅶ7は導音）、青＝半音下げた音（調号から見て）。まえからの和音は doppel.html・aug6.html とおなじ
+// 色：赤＝半音上げた音（Ⅴ9の根音省略は導音）、青＝半音下げた音（調号から見て）。まえからの和音は doppel.html・aug6.html とおなじ
 function hl(key,t,n){
   if(!isNew(t)) return isRed(n)?'red':isLow(n)?'blue':null;
   if(t==='vii7') return n.tag==='lt'?'red':null;
@@ -313,7 +313,7 @@ function chordOf(key,t){
   if(t==='ivm') return H.borrowed(key,'iv');
   if(t==='bvi') return H.borrowed(key,'bVI');
   if(T[t]&&T[t].tg) return H.secondary(key,T[t].tg,'V7');
-  if(t==='vii7') return H.vii7(key,'vii'); // 名前はⅦ7から見たもの（導音＝根音）
+  if(t==='vii7') return H.vii7(key); // 名前はⅤ9の根音省略から見たもの（導音＝第3音。藝大式。ddim とおなじ）
   if(t==='iv') return cadOf(key,'iv').X;
   return C.aug6(key,t);
 }
@@ -607,7 +607,7 @@ function baseOf(key,t){
   if(t==='ivm') return {name:'Ⅳ',notes:[at0(key,3,5),at0(key,5,9),at0(key,7,12)]};
   if(t==='bvi') return {name:'Ⅵ',notes:[at0(key,5,9),at0(key,7,12),at0(key,9,16)]};
   if(T[t].tg) return {name:'根音',notes:[secInfo(key,t).root],root:true};
-  if(t==='vii7') return {name:'根音',notes:[chordOf(key,t)[0]],root:true};
+  if(t==='vii7') return {name:'導音',notes:[chordOf(key,t)[0]],root:true,low:'導音（第3音）'};
   return {name:'ドッペル',notes:C.dd(key)};
 }
 // 変化和音のこたえあわせのヒント（r＝主音から見たピッチクラス。くらべるためだけにつかい、ことばには出さない）
@@ -636,9 +636,9 @@ function hintsNew(key,t,g,book){
   }
   if(t==='vii7'){
     const LT=tn(key,6,11), B7=tn(key,6,10);
-    if(!key.minor&&miss(9)&&has(8)) L.push(`それは<b>減七</b>（長調では${par}からかりる${PA.rn({...RN.vii7,borrowed:true})}）。長調のⅦ7は減七にならない形：第9音（音階の6ばんめ）は「${nm(N6)}」のままだよ。`);
-    if(key.minor&&miss(8)&&has(9)) L.push(`それは<b>長調の形</b>（減七にならない形）。短調のⅦ7は<b>減七</b>：第9音（音階の6ばんめ）は調号どおり「${nm(L6)}」だよ。`);
-    if(key.minor&&miss(11)&&has(10)) L.push(`根音は<b>導音</b>。音階の7ばんめ「${nm(B7)}」を半音上げて「${nm(LT)}」にしよう（短調のⅤやⅦ7ではいつもこうするよ）。`);
+    if(!key.minor&&miss(9)&&has(8)) L.push(`それは<b>減七</b>（長調では${par}からかりる${PA.rn({...RN.vii7,borrowed:true})}）。長調のⅤ9の根音省略は減七にならない形：第9音（音階の6ばんめ）は「${nm(N6)}」のままだよ。`);
+    if(key.minor&&miss(8)&&has(9)) L.push(`それは<b>長調の形</b>（減七にならない形）。短調のⅤ9の根音省略は<b>減七</b>：第9音（音階の6ばんめ）は調号どおり「${nm(L6)}」だよ。`);
+    if(key.minor&&miss(11)&&has(10)) L.push(`いちばん下は<b>導音</b>（第3音）。音階の7ばんめ「${nm(B7)}」を半音上げて「${nm(LT)}」にしよう（短調のⅤやⅤ9の根音省略ではいつもこうするよ）。`);
   }
   if(T[t].tg) secHints(key,t,g,book).forEach(x=>L.push(x));
   return L;
@@ -765,7 +765,7 @@ function okExtraNew(key,t,ans){
   if(t==='bvi') L.push(`根音「${nm(tn(key,5,8))}」は半音下の「${nm(tn(key,4,7))}」へすすむよ（${PA.rn(RN.bvi)} → Ⅴ）。`);
   if(T[t].tg){const S=secInfo(key,t);L.push(`${S.tk}のⅤ7だよ。第3音「${nm(S.lt)}」は${S.rn}への導音で上へ、第7音「${nm(S.sev)}」は下へすすむよ。`);}
   if(t==='vii7') L.push(key.minor
-    ?`同じ主音の長調のⅦ7（長調の形）とは、第9音（音階の6ばんめ）だけがちがうよ。短調は調号どおりの「${nm(tn(key,5,8))}」で減七。`
+    ?`同じ主音の長調のⅤ9の根音省略（長調の形）とは、第9音（音階の6ばんめ）だけがちがうよ。短調は調号どおりの「${nm(tn(key,5,8))}」で減七。`
     :`${par}から第9音（音階の6ばんめ）をかりて「${nm(tn(key,5,8))}」にすると減七（${PA.rn({...RN.vii7,borrowed:true})}）になるよ。`);
   return L;
 }
@@ -922,7 +922,7 @@ function keysView(){
   if(msg) h+=`<div class="fb ${Q.lastOk?'good':'bad'}" id="fb" role="status">${msg}</div>`;
   else if(Q.hint>=1){
     const b=baseOf(key,t);
-    h+=`<div class="msg" id="fb" role="status">💡 ヒント${Q.hint}：${recipe(key,t)}${Q.hint>=2?`<br>${b.root?`いちばん下の根音は<b>「${PA.nmH(b.notes[0])}」</b>（オレンジのわく）。`:`もとの和音<b>${b.name}</b>（${namesN(b.notes)}）をオレンジのわくで出したよ。`}`:''}</div>`;
+    h+=`<div class="msg" id="fb" role="status">💡 ヒント${Q.hint}：${recipe(key,t)}${Q.hint>=2?`<br>${b.root?`いちばん下の${b.low||'根音'}は<b>「${PA.nmH(b.notes[0])}」</b>（オレンジのわく）。`:`もとの和音<b>${b.name}</b>（${namesN(b.notes)}）をオレンジのわくで出したよ。`}`:''}</div>`;
   }
   h+=`<div class="row center"><button class="btn small" data-act="qexplain">🐸 ${t==='ddim'?'ドッペルの家族を見る':'つくりかたを見る'}</button></div>`+
     (t==='ddim'?`<p class="qsub" style="text-align:center;margin:0">ひらいたら下の 🏠 ドッペルの家族で「ⅤのⅤ9の根音省略」を選んでね</p>`:'')+
@@ -931,7 +931,7 @@ function keysView(){
     const st=stepsOf(key,t);
     const cap=isNew(t)?capNew(key,t,ans):ans.some(isRed)?'赤い音＝'+redLabel(ans,t)+(ans.some(isLow)?'・下の青＝下げた第5音':''):'Ⅱ7には導音はないよ。調の音だけ';
     h+=`<section class="card"><h2>🎼 がくふ<small>${PA.keyName(key)}の${lab} → ${st.map(x=>labH(x.label)).join(' → ')}（${cap}）</small></h2>
-      <div class="qstaff">${progStaff(key,ans,staffLab(key,t),M.color,st,t)}</div>${rolesHTML(disp(t,ans),key,t)}${t==='vii7'?'<p class="note">音の名前はⅦ7として見たよびかた（記号のⅤ9の根音省略から見ると、導音＝第3音、第7音＝第9音）</p>':t==='ddim'?'<p class="note">名前はⅤのⅤ9から見たよびかた（根音をはぶいたので、いちばん下の導音が第3音）</p>':''}
+      <div class="qstaff">${progStaff(key,ans,staffLab(key,t),M.color,st,t)}</div>${rolesHTML(disp(t,ans),key,t)}${t==='vii7'?'<p class="note">名前はⅤ9から見たよびかた（根音をはぶいたので、いちばん下の導音が第3音）</p>':t==='ddim'?'<p class="note">名前はⅤのⅤ9から見たよびかた（根音をはぶいたので、いちばん下の導音が第3音）</p>':''}
       <div class="row" style="margin-top:10px"><button class="btn small wide" data-act="qres">🔔 ${lab} → ${st.map(x=>labH(x.label)).join(' → ')}をきく</button></div></section>`;
   }
   return h;
@@ -1102,7 +1102,7 @@ function tipsHTML(){
     <li><b>増六の和音</b>はドッペルの<b>第5音を半音下げて</b>、その音を<b>いちばん下</b>においた形。<br>イタリア＝根音なし（3つ）、フランス＝根音あり、ドイツ＝根音のかわりに第9音。</li>
     <li>下げた音と上げた音のあいだが<b>増6度</b>。外へひらいてⅤのオクターブへ。ドイツの6は、そのままⅤへすすむと2つの声が5度のままならんで動いてしまうので、あいだに${I64H}をはさむことが多いよ。</li>
     <li>長調の増六は、下げた音（ドイツは第9音も）を同じ主音の短調からかりてくるよ。</li>
-    <li><b>Ⅴ9の根音省略</b>（${PA.rn(RN.vii7)}）は、導音からひとつとばしに4つ（Ⅶ7の形）。短調＝<b>減七</b>（導音は半音上げ、第9音（音階の6ばんめ）は調号どおり）。長調は、第9音が半音高いので減七にならない（長調の形）。ちがうのはその音だけ。</li>
+    <li><b>Ⅴ9の根音省略</b>（${PA.rn(RN.vii7)}）は、導音からひとつとばしに4つ（導音からつむ形）。短調＝<b>減七</b>（導音は半音上げ、第9音（音階の6ばんめ）は調号どおり）。長調は、第9音が半音高いので減七にならない（長調の形）。ちがうのはその音だけ。</li>
   </ul><div class="row"><span class="note" style="margin:0">くわしくは</span><a class="btn small" href="doppel.html"><span aria-hidden="true">🔺</span> Ⅱ7とドッペルドミナント</a><a class="btn small" href="secondary.html"><span aria-hidden="true">🧭</span> 副属和音</a><a class="btn small" href="borrowed.html"><span aria-hidden="true">🎁</span> 準固有和音</a><a class="btn small" href="neapolitan.html"><span aria-hidden="true">🌋</span> ナポリの六</a><a class="btn small" href="aug6.html"><span aria-hidden="true">↔️</span> 増六の和音</a><a class="btn small" href="enharmonic.html"><span aria-hidden="true">🔀</span> 異名同音の読みかえ</a><a class="btn small" href="dim-halfdim.html"><span aria-hidden="true">⚖️</span> Ⅴ9の根音省略</a></div></details>`;
 }
 // 📝 の回がおわったときのけっかのカード

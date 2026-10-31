@@ -22,10 +22,10 @@ test('目次：PA.UNITS・PA.APPS・PA.app（先生のじゅん：docs/TEACHER-F
   eq(apps('ending'),['ending','ending-quiz']);
   eq(apps('accomp'),['accompaniment']);
   eq(apps('ear'),['ear','progression']);
-  // 名曲で楽曲分析：曲ごとに piece.html?id=…。きまっているつぎの曲は soon（リンクにしない）
+  // 名曲で楽曲分析：曲ごとに piece.html?id=…。これから足す曲は soon（1行のメモ。リンクにしない）
   eq(apps('pieces'),['piece']);
   eq(PA.unit('pieces').tasks.map(t=>t.href),['piece.html?id=k545-1']);
-  eq(PA.unit('pieces').soon.map(x=>x.title),['ベートーヴェンのソナタ第1番 Op.2-1','シューベルトの曲','ショパンのエチュード Op.10-8','ショパンのスケルツォ第2番']);
+  assert.equal(PA.unit('pieces').soon,'これから、ベートーヴェン・シューベルト・ショパンの曲もふえるよ');
   PA.unit('pieces').tasks.forEach(t=>assert.ok(fs.existsSync(path.join(root,'assets','pieces',PA.parseParams(t.href.split('?')[1]).id+'.json')),t.href));
   // レベルアップ：Ⅱ7とドッペル → 副属和音 → 準固有和音 → ナポリの六 → 増六 → 異名同音（いちばん最後）（＋変化和音クイズ）
   eq(apps('extra'),['doppel','secondary','borrowed','neapolitan','aug6','enharmonic','chroma-quiz']);

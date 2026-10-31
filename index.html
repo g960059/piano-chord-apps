@@ -169,12 +169,7 @@ details.xmap[open]>summary::after{transform:rotate(180deg)}
 .xsteps li.done .stone{background:var(--ok);border-color:var(--ok);color:#fff}
 #view .xsteps li a.arow{background:#fff;border:1.5px solid var(--line)}
 /* 名曲で楽曲分析のじゅんびちゅうの曲：リンクではない。うすい地の色（字は 4.5:1いじょう） */
-.xsteps li.soon .stone{background:#f3efe8;border-style:dashed;color:#5f5869}
-.soonrow{display:flex;align-items:center;gap:10px;min-height:56px;padding:6px 8px;border-radius:12px;background:#f6f2ec;border:1.5px dashed #d9cfc1;color:#5f5869}
-.soonrow .ic{background:#fff;filter:grayscale(1);opacity:.7}
-.soonrow .tx b{font-size:15px;font-weight:700}
-.soonrow .d{color:#5f5869;white-space:normal}
-.soontag{display:inline-block;margin-right:6px;font-size:12px;font-weight:800;padding:0 8px;border-radius:999px;background:#e9e2d6;color:#4f4858;line-height:1.7}
+.soonnote{margin:0;padding:0 16px 14px;color:#5f5869}
 /* せまい画面（320px）：島を小さくして、看板の文字をすこし小さく */
 @media (max-width:360px){
   .isle{width:52px;height:52px;font-size:24px}
@@ -537,16 +532,15 @@ const openOf=(u,times)=>{
 };
 function piecesHTML(vis,stars,times){
   return PIECES.map(u=>{
-    const st=stars[u.id], U=PA.unit(u.id), soon=U&&Array.isArray(U.soon)?U.soon:[];
+    // これから足す曲は1行のメモだけ。iOS アプリでは出さない（作りかけの中身に見えないように）
+    const st=stars[u.id], U=PA.unit(u.id), soon=!PA.native&&U&&typeof U.soon==='string'?U.soon:'';
     let no=0;
     return `<details class="card xmap pmap" data-d="pmap-${u.id}" data-u="${u.id}"${openOf(u,times)?' open':''}>`
       +`<summary><span class="xic" aria-hidden="true">${u.emoji}</span><span class="xt"><b>${ESC(u.name)}</b>`
       +`<small>${ESC(u.sub)}。答えかたは、じぶんでえらべるよ</small>${sumHTML(st)}</span></summary>`
       +`<ol class="xsteps">${u.tasks.map((t,k)=>{const s=st.tasks[k];
         return `<li class="${taskDone(s)?'done':''}"><span class="stone" aria-hidden="true">${++no}</span>${rowHTML(t,s,vis)}</li>`;}).join('')}`
-      +soon.map(x=>`<li class="soon"><span class="stone" aria-hidden="true">${++no}</span><div class="arow soonrow"><span class="ic" aria-hidden="true">🎼</span>`
-        +`<span class="tx"><b>${ESC(x.title)}</b><span class="d"><span class="soontag">じゅんびちゅう</span>${x.sub?ESC(x.sub):''}</span></span></div></li>`).join('')
-      +`</ol></details>`;
+      +`</ol>`+(soon?`<p class="note soonnote"><span aria-hidden="true">🎼 </span>${ESC(soon)}</p>`:'')+`</details>`;
   }).join('');
 }
 

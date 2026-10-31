@@ -223,8 +223,8 @@ test('レベルアップの順番：地図・ページの「次は」も先生�
   assert.doesNotThrow(()=>new Function(scriptOf(sc)));
   // 「長調の形」だけでは何の形かわからない：長調のⅤ9の根音省略だとそえる（「半減七」は出さない）
   assert.match(sc,/には長調の形（長調のⅤ9の根音省略）は使わないよ（\$\{I\.tmin\?'目標が短三和音':'長調のⅤ9の第9音がこの調にない音'\}だから）/);
-  assert.match(sc,/のⅦ7は減七にならない（長調のⅤ9の根音省略で、減七にならない形）ので/);
-  assert.match(sc,/k==='vii7'\?'Ⅶ7・くらいひびき':'長調のⅤ9の根音省略'/);
+  assert.match(sc,/のⅤ9の根音省略は減七にならない（長調の形）ので/);
+  assert.match(sc,/k==='vii7'\?'短調のⅤ9の根音省略':'長調のⅤ9の根音省略'/);
   assert.ok(!/半減七/.test(screenOf(sc)));
   const bw=read('borrowed.html');
   assert.match(bw,/href="neapolitan\.html" data-go="neapolitan">🌋 <span>次はナポリの六 ›/);

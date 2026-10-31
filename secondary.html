@@ -31,6 +31,7 @@
 .selcard{display:flex;flex-direction:column;gap:6px}
 .sellab{font-size:13px;font-weight:700;color:var(--sub);margin:0}
 .tseg button,.kseg button{padding:4px 4px;line-height:1.2;font-size:clamp(15px,4.4vw,18px)}
+.tseg button{min-width:44px} /* 記号（PA.rn）にしても、320px で44pxいじょう。入らなければ折りかえす（.seg は wrap） */
 .tseg button small,.kseg button small{display:block;font-weight:400;font-size:11.5px;color:var(--sub);white-space:nowrap}
 .kseg button{font-size:clamp(14px,4vw,16px)}
 .seg button[disabled]{opacity:.38;cursor:default}
@@ -99,7 +100,7 @@
 <div class="actionbar" id="actions"></div>
 <script src="assets/core.js"></script>
 <script>
-/* 副属和音：目標の和音（Ⅱ・Ⅲ・Ⅳ・Ⅴ・Ⅵ／短調はⅢ・Ⅳ・Ⅴ・Ⅵ・Ⅶ）をいっときの主和音（Ⅰ）と考えて、その調のⅤ7（またはⅦ7）を前におく。
+/* 副属和音：目標の和音（Ⅱ・Ⅲ・Ⅳ・Ⅴ・Ⅵ／短調はⅢ・Ⅳ・Ⅴ・Ⅵ・Ⅶ）をいっときの主和音（Ⅰ）と考えて、その調のⅤ7（またはⅤ9の根音省略）を前におく。
  * 和音のつづり・高さ・解決はぜんぶ PA.henka（Ⅴ7/Ⅴは PA.chroma のドッペルドミナントとおなじ音）。
  * ながれ（Ⅰ → 副属和音 → 目標 → … → Ⅴ7 → Ⅰ）の前後の和音は、調の音でつくり、連続5度・8度・対斜・増2度がないならびをさがす */
 const H=PA.henka, ROMAN=H.ROMAN;
@@ -151,12 +152,12 @@ function info(key){
   // labP・tlP＝記号の部品、lab・tl＝その HTML（PA.rn）。このページの減七・長調の形は、いちばん下が導音（第1転回形）
   const labP=H.rnParts(key,'secondary',t,k,{voiced:true}), tlP=H.rnParts(key,'target',t);
   const lab=PA.rn(labP), tl=PA.rn(tlP), tkName=PA.keyName(tk), pm=PA.keyName({...tk,minor:true});
-  // 目標が長三和音の減七は、いっときの調（長調）のⅦ7ではなく、その同主短調のⅦ7（長調のⅦ7は半減七）
+  // 目標が長三和音の減七は、いっときの調（長調）のⅤ9の根音省略ではなく、その同主短調のⅤ9の根音省略（長調のは減七にならない）
   const vb=k==='vii7'&&!tmin;
   return {t,k,X,R,T,tmin,root,tk,tkName,tkEn:PA.keyEn(tk),pm,vb,src:vb?pm:tkName,lab,tl,labP,tlP,tls:ROMAN[t-1],sym:H.symbol(key,'secondary',t,k),tsym:H.symbol(key,'target',t),jun:!!labP.borrowed};
 }
-// 「どの調のどの和音か」（例：ト長調のⅤ7、ト短調のⅦ7（減七））
-const srcWhat=I=>I.k==='V7'?`${I.tkName}のⅤ7`:`${I.src}のⅦ7（${KNAME[I.k]}）`;
+// 「どの調のどの和音か」（例：ト長調のⅤ7、ト短調のⅤ9の根音省略（減七））
+const srcWhat=I=>I.k==='V7'?`${I.tkName}のⅤ7`:`${I.src}のⅤ9の根音省略（${KNAME[I.k]}）`;
 // コードネーム（調の音だけの形のめやす）
 function symOf(ns){
   const d=i=>PA.mod(ns[i].midi-ns[0].midi,12), r=PA.LET_EN[ns[0].letter]+PA.ACC[ns[0].acc];
@@ -168,7 +169,7 @@ const diaLabel=(key,X)=>{
   const d=PA.mod(stackOrder(X)[0].letter-key.l,7);
   return PA.rn({deg:d+1,form:7,...(key.minor&&[0,2,4,6].includes(d)?{natural:true}:{})});
 };
-// いちばん下の音（Ⅴ7は根音、Ⅶ7は導音）を半音かえたか。かえたなら「調の音だけ」の形は根音からちがう和音
+// いちばん下の音（Ⅴ7は根音、Ⅴ9の根音省略は導音）を半音かえたか。かえたなら「調の音だけ」の形は根音からちがう和音
 const lowChanged=(key,I)=>!!chg(key,stackOrder(I.X)[0]);
 // 調の音だけ → 副属和音（どの音を半音上げ・下げしたか）
 function shapeChain(key,I){
@@ -290,7 +291,7 @@ const genItem=(key,d,seventh,i6)=>{
   return {lab:ch.lab,col:d===1?I_COL:d===5?V_COL:OTHER,cands:c,isV:d===5,v7:d===5&&!!seventh};
 };
 // 副属和音・目標は PA.henka の形（おなじ高さ）をいちばんに。だめなときだけ、おなじ音でならべかえた形（ペナルティつき）
-const MEM=['R','5','7','3']; // PA.henka のならび [根音|5,7,3]（Ⅶ7は [導音|第5音,第7音,第9音] をⅦ7から見た根音・5・7・3）
+const MEM=['R','5','7','3']; // PA.henka のならび [根音|5,7,3]（Ⅴ9の根音省略は [導音|第5音,第7音,第9音] を、導音を根音として見たならび）
 const reVoice=(key,ns,o)=>voicings(key,{ms:ns.map((n,i)=>({...n,mem:o.mem[i]}))},o).map(v=>({...v,pen:v.pen+12}));
 const secItem=(key,t,k)=>{const X=H.secondary(key,t,k);return {lab:H.rnParts(key,'secondary',t,k,{voiced:true}),col:SEC,cands:[...fixedCands(X),...reVoice(key,X,{mem:MEM,complete:k!=='V7'})],sec:true};};
 const resItem=(key,t,k)=>{
@@ -418,14 +419,14 @@ function resArrows(X,R){
 /* ===== せつめい ===== */
 function heroMsg(key,I){
   const st=stackOrder(I.X), lt=I.X.find(n=>n.tag==='lt'), others=st.filter(n=>n!==lt&&chg(key,n));
-  const what=I.k==='V7'?'Ⅴ7':`Ⅶ7（${KNAME[I.k]}）`;
+  const what=I.k==='V7'?'Ⅴ7':`Ⅴ9の根音省略（${KNAME[I.k]}）`;
   let m=`<b>${I.lab}</b>は「${ROMAN[I.t-1]}度調の${I.k==='V7'?'Ⅴ7':'Ⅴ9の根音省略'}」と読むよ。上の小さい数字が目標（いっときの調）、下の大きい数字がその調での和音。<br>`;
   m+=`<b>その和音をいっときのⅠと考えて、その調${I.vb?'と同じ主音の短調':''}の${what}を前におく。</b><br>`;
   m+=`${I.tl}「${namesW(I.T.slice(1))}」をⅠと考えると<b class="tg">${I.tkName}</b>。`;
-  if(I.vb) m+=`${I.tkName}のⅦ7は減七にならない（長調のⅤ9の根音省略で、減七にならない形）ので、同じ主音の短調（<b>${I.pm}</b>）の${what}を使う。それが<b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝${I.lab}。`;
+  if(I.vb) m+=`${I.tkName}のⅤ9の根音省略は減七にならない（長調の形）ので、同じ主音の短調（<b>${I.pm}</b>）の${what}を使う。それが<b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝${I.lab}。`;
   else m+=`${srcWhat(I)}が<b class="big">${namesC(key,st,'・')}</b>（${I.sym}）＝${I.lab}。`;
   if(I.k!=='V7'){
-    m+=`<br>${KNAME[I.k]}のⅦ7は、${I.src}のⅤ9から根音をはぶいた形（Ⅴの家族）だよ。`;
+    m+=`<br>${KNAME[I.k]}は、${I.src}のⅤ9から根音をはぶいた形（Ⅴの家族）だよ。`;
     const n9=I.X.find(n=>n.tag==='b9');
     if(n9&&I.vb&&!I.jun) m+=`<br>第9音${qC(key,n9)}は${I.pm}からかりた音だけど、${PA.keyName(key)}の音でもあるので、${H.JUN}はつかないよ。`;
   }
@@ -542,12 +543,12 @@ function overview(key){
 }
 function tipsHTML(key){
   return `<details class="more" data-d="tips"><summary>💡 おぼえておこう</summary><ul>
-    <li><b>副属和音</b>は、Ⅰ以外の和音を<b>いっときのⅠ</b>と考えて、その調のⅤ7（またはⅦ7）を前においた和音。</li>
+    <li><b>副属和音</b>は、Ⅰ以外の和音を<b>いっときのⅠ</b>と考えて、その調のⅤ7（またはⅤ9の根音省略）を前においた和音。</li>
     <li>和音記号は${PA.rn({of:2,deg:5,form:7})}（Ⅱ度調のⅤ7）のように、<b>上の小さい数字に目標</b>、下の大きい数字にその調での和音を書くよ（ドッペルドミナントの${PA.rn({of:5,deg:5,form:7})}とおなじ2だん）。減七・長調の形は「Ⅴ9の根音省略」なので、下の数字は${PA.rn({deg:5,form:9,omit:true})}（ななめの線）になるよ。</li>
     <li>目標になれるのは<b>長三和音か短三和音</b>だけ。減三和音（${key.minor?'短調のⅡ':'長調のⅦ'}）はいっときのⅠにならないよ。</li>
     <li>いちばんだいじな音は目標の<b>導音</b>（目標の根音の半音下）。目標へは半音上へすすむよ（${PA.rn({of:5,deg:5,form:7})} → Ⅴ7のときだけは、同じ声で半音下がってⅤ7の第7音になる）。</li>
     ${key.minor?'<li>短調のⅢ・Ⅶは、導音を上げない調号の音だけでつくった長三和音。${PA.rn({deg:3,natural:true})}・${PA.rn({deg:7,natural:true})}と書いて、導音を上げたときのⅢ・Ⅶと区別するよ。</li>':''}
-    <li>${H.JUN}のしるしは「同じ主音の短調から音をかりた」いみ。いっときの調が<b>長調</b>で、Ⅶ7（減七）にするために第9音をその短調からかりて、しかもその音がもとの${PA.keyName(key)}にもないときだけ、つくよ。</li>
+    <li>${H.JUN}のしるしは「同じ主音の短調から音をかりた」いみ。いっときの調が<b>長調</b>で、Ⅴ9の根音省略を減七にするために第9音をその短調からかりて、しかもその音がもとの${PA.keyName(key)}にもないときだけ、つくよ。</li>
     <li>ダブルシャープは楽譜と同じ「<span class="ds">x</span>」、ダブルフラットは「${PA.H('𝄫')}」であらわしているよ。</li>
     <li>右上の ⚙️ で、音の名前（ドレミ／CDE／ハニホ）と基準の音（ラ＝440〜443Hz）を選べるよ。</li>
   </ul></details>`;
@@ -558,9 +559,9 @@ function termsHTML(key,I){
   const F=PA.nmH({letter:3,acc:0}), Fs=PA.nmH({letter:3,acc:1}); // 対斜の例（ファとファ♯）
   return `<details class="more" data-d="terms"><summary>📖 ことばメモ（本や楽譜で見かける名前）</summary>
     <p class="note" style="margin:0 0 4px">例は${PA.keyName(key)}の${I.lab}（${I.sym}）だよ。</p><ul>
-    <li><b>副属和音</b>（セカンダリー・ドミナント） … Ⅰ以外の和音を「いっときのⅠ」と考えて、その前におくⅤ7（またはⅦ7）。いまは${I.lab}＝${srcWhat(I)}。</li>
+    <li><b>副属和音</b>（セカンダリー・ドミナント） … Ⅰ以外の和音を「いっときのⅠ」と考えて、その前におくⅤ7（またはⅤ9の根音省略）。いまは${I.lab}＝${srcWhat(I)}。</li>
     <li><b>導音</b> … すぐ上の音へ半音でのぼりたがる音。${qC(key,lt)}は${I.tkName}の導音で、${I.tl}の根音へのぼるよ。</li>
-    <li><b>減七</b>・<b>長調の形</b> … どちらも導音からひとつとばしで4つかさねたⅦ7で、Ⅴ9から根音をはぶいた形。短調のⅤ9（第9音が半音低い）からつくると減七。長調のⅤ9（第9音が半音高い）からつくると減七にならないので、このページでは「長調の形」とよぶよ。</li>
+    <li><b>減七</b>・<b>長調の形</b> … どちらもⅤ9から根音をはぶいた形（Ⅴ9の根音省略）で、導音からひとつとばしで4つかさねる。短調のⅤ9（第9音が半音低い）からつくると減七。長調のⅤ9（第9音が半音高い）からつくると減七にならないので、このページでは「長調の形」とよぶよ。</li>
     <li><b>○</b>（準固有） … 同じ主音の短調から音をかりたしるし。${I.jun?`いまの${I.lab}は、第9音を${I.pm}からかりているよ。`:`いっときの調が長調で、第9音を同じ主音の短調からかりて、その音がもとの調にもないときだけ、つくよ。${I.k==='vii7'&&I.tmin?`いまはいっときの調が短調なので、第9音はもともと${I.tkName}の音。`:I.vb?`いまの第9音は${PA.keyName(key)}の音でもあるので、つかないよ。`:''}`}</li>
     ${key.minor?'<li><b>Ⅲ（自然）</b>・<b>Ⅶ（自然）</b> … 導音を上げない、調号の音だけの音階（<b>自然的短音階</b>）でつくった長三和音。導音を半音上げた音階（<b>和声的短音階</b>）だと、ⅢもⅦもちがうひびきの和音になるよ。</li>':''}
     <li><b>${PA.rn({deg:1,inv:1})}</b> … Ⅰの第3音をいちばん下にした形（第1転回形）。右上の1が第1転回形のしるし。</li>
@@ -595,7 +596,7 @@ function render(){
       <p class="sellab">🎯 目標の和音（どの和音をよぶ？）</p>
       ${PA.seg('target',H.targets(key).map(t=>[t,`${PA.rnH(ROMAN[t-1])}<small>${H.symbol(key,'target',t)}</small>`]),state.target,'full tseg')}
       <p class="sellab" style="margin-top:4px">🧩 前におく和音の形</p>
-      <div class="seg full kseg" role="group">${KINDS.map(k=>{const ok=!!H.secondary(key,I.t,k);return `<button class="${I.k===k?'on':''}" data-act="kind" data-v="${k}" aria-pressed="${I.k===k}" ${ok?'':'disabled'}>${k==='V7'?PA.rn({deg:5,form:7}):KNAME[k]}<small>${k==='V7'?'Ⅴの七の和音':k==='vii7'?'Ⅶ7・くらいひびき':'長調のⅤ9の根音省略'}</small></button>`;}).join('')}</div>
+      <div class="seg full kseg" role="group">${KINDS.map(k=>{const ok=!!H.secondary(key,I.t,k);return `<button class="${I.k===k?'on':''}" data-act="kind" data-v="${k}" aria-pressed="${I.k===k}" ${ok?'':'disabled'}>${k==='V7'?PA.rn({deg:5,form:7}):KNAME[k]}<small>${k==='V7'?'Ⅴの七の和音':k==='vii7'?'短調のⅤ9の根音省略':'長調のⅤ9の根音省略'}</small></button>`;}).join('')}</div>
       ${kindNote(key,I)}
     </section>
     ${heroCard(key,I)}`;
@@ -673,9 +674,9 @@ async function runBuild(){
   A.staffCap=`目標：${I.tl}`; A.kbCap=`<b style="color:${TGT}">${I.tl}</b>（${I.tkName}のⅠ）`;
   upd(`<b>①</b>目標は${I.tl}「${namesW(I.T.slice(1))}」。この和音を<b>いっときのⅠ（主和音）</b>と考えると…<b class="tg">${I.tkName}</b>のⅠだね。`);
   PA.chord(midisOf(I.T),{dur:1.8}); if(!await wait(2100)) return;
-  // ② その調のⅤ7（Ⅶ7）をひとつずつ
+  // ② その調のⅤ7（Ⅴ9の根音省略）をひとつずつ
   const head=I.k==='V7'?`<b>②</b>${I.tkName}の<b>Ⅴ7</b>をつくるよ。根音は${I.tl}の根音${q(I.T[0])}から5度上の${q(I.X[0])}。`
-    :`<b>②</b>${I.vb?`${I.tkName}と同じ主音の短調（${I.pm}）`:I.src}の<b>Ⅶ7（${KNAME[I.k]}）</b>をつくるよ。導音${qC(key,lt)}（${I.tl}の根音${q(I.T[0])}の半音下）からひとつとばしで4つ。<br><small>名前はⅤ9から見たよびかた：根音をはぶいたので、いちばん下の導音が第3音</small>`;
+    :`<b>②</b>${I.vb?`${I.tkName}と同じ主音の短調（${I.pm}）`:I.src}の<b>Ⅴ9の根音省略（${KNAME[I.k]}）</b>をつくるよ。導音${qC(key,lt)}（${I.tl}の根音${q(I.T[0])}の半音下）からひとつとばしで4つ。<br><small>名前はⅤ9から見たよびかた：根音をはぶいたので、いちばん下の導音が第3音</small>`;
   A.staffCap=srcWhat(I);
   for(let i=0;i<4;i++){
     const shown=new Set(st.slice(0,i+1)), part=I.X.filter(n=>shown.has(n)), n=st[i], c=chg(key,n);
