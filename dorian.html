@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!-- meta:start -->
+<meta name="description" content="短調のⅣの第3音（6ばんめ）を半音上げた、明るいⅣ。導音へなめらかに上がる">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="ピアノ和音アプリ">
+<meta property="og:locale" content="ja_JP">
+<meta property="og:title" content="ドリアのⅣ｜ピアノ和音アプリ">
+<meta property="og:description" content="短調のⅣの第3音（6ばんめ）を半音上げた、明るいⅣ。導音へなめらかに上がる">
+<meta property="og:url" content="https://piano-chord-apps.g960059.workers.dev/dorian.html">
+<meta property="og:image" content="https://piano-chord-apps.g960059.workers.dev/assets/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ピアノ和音アプリ">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/icons/icon-180.png">
+<!-- meta:end -->
+<meta name="theme-color" content="#fdf8f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>ドリアのⅣ</title>
+<link rel="stylesheet" href="assets/app.css">
+<style>
+.toprow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.hero{border-top:6px solid var(--c)}
+.hero-top{display:flex;gap:12px;align-items:center}
+.hero .badge{font-size:26px;min-width:72px}
+.hk{font-weight:700;font-size:15px;line-height:1.4}
+.hn{font-size:clamp(22px,6.4vw,34px);font-weight:800;color:var(--c);line-height:1.25;text-wrap:balance}
+.hs{font-size:13px;color:var(--sub);line-height:1.45}
+.hero>.hn{margin-top:8px}
+.msg{margin-top:10px}
+.nw{white-space:nowrap}
+.up{color:#d1495b}
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:10px}
+.role{display:flex;flex-direction:column;justify-content:center;min-width:0;padding:5px 8px 6px;border-radius:12px;background:var(--soft2)}
+.role .rn{font-size:13px;color:var(--sub);font-weight:700;line-height:1.35}
+.role .rb{display:flex;align-items:baseline;flex-wrap:wrap;gap:0 4px}
+.role .rv{font-size:20px;font-weight:800;line-height:1.3}
+.role .rf{font-size:13px;color:var(--sub)}
+.role .rt{align-self:flex-start;font-size:11.5px;font-weight:800;line-height:1.5;padding:0 7px;border-radius:999px;background:#d1495b;color:#fff;white-space:nowrap}
+.role.on{background:#fde5e8;outline:2px solid #d1495b}
+.rcap{margin:6px 0 0;font-size:13px}
+.sw{width:100%;gap:10px;margin-top:10px;background:var(--card);border:2px solid var(--c);color:var(--c);font-size:clamp(14px,4vw,16px);min-height:52px}
+.sw .knob{width:44px;height:26px;border-radius:13px;background:#d8cfc4;position:relative;flex:none;transition:background .2s}
+.sw .knob::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .2s}
+.sw.on{background:#fff1dd}
+.sw.on .knob{background:var(--c)}
+.sw.on .knob::after{left:21px}
+@media (prefers-reduced-motion:reduce){.sw .knob,.sw .knob::after{transition:none}}
+.pbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.pbtns .btn{padding-left:8px;padding-right:8px;font-size:15px;background:var(--card);border:2px solid var(--line)}
+.pbtns .btn.on{border-color:var(--c);color:var(--c);background:#fff1dd}
+.seqrow{display:flex;flex-wrap:wrap;align-items:center;gap:4px;margin:2px 0 8px}
+.seqrow .sc{min-width:44px;padding:4px 10px;border-radius:12px;font-weight:800;font-size:17px;text-align:center;background:var(--soft2);color:var(--c);border:2px solid transparent}
+.seqrow .sc.on{background:var(--c);color:#fff}
+.seqrow .ar{color:var(--sub);font-size:14px}
+/* 3つの短音階をならべる（6ばんめ・7ばんめに色） */
+.scl{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px;margin-top:4px}
+.scl>span{display:flex;align-items:center;justify-content:center;min-height:38px;padding:2px;border-radius:10px;background:var(--soft2);font-weight:800;font-size:clamp(12px,3.7vw,16px);line-height:1.15;text-align:center;overflow-wrap:anywhere;min-width:0}
+.scl>span.dg{min-height:22px;background:none;color:var(--sub);font-size:12px;font-weight:700}
+.scl>span.upn{background:#fde5e8;color:#a3273a;outline:2px solid #d1495b}
+.scl>span.use{box-shadow:inset 0 -4px 0 #c46a00}
+.slab{margin:10px 0 0;font-size:13px;font-weight:700;color:var(--sub)}
+.ab{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.ab .btn{font-size:16px;padding-left:8px;padding-right:8px}
+.ab.one{grid-template-columns:1fr}
+.askline{margin:12px 0 0;font-weight:700}
+.fb{margin-top:12px}
+.qscore{float:right;font-weight:800;font-size:15px}
+.more p{margin:8px 0 0}
+.more ul{margin:6px 0 0;padding-left:1.3em}
+.more li{margin:6px 0}
+.terms dl{margin:0}
+.terms dt{font-weight:800;margin:12px 0 2px}
+.terms dt:first-child{margin-top:2px}
+.terms dd{margin:0;line-height:1.65;overflow-wrap:break-word}
+.terms .yomi{font-weight:400;font-size:12px;color:var(--sub)}
+.links{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px}
+.links .btn{background:var(--card);border:2px solid var(--line);justify-content:flex-start;text-align:left;padding-left:16px;padding-right:16px;min-height:56px}
+.links .btn small{display:block;font-weight:400;color:var(--sub);font-size:12.5px}
+</style>
+</head>
+<body>
+<header class="appbar" id="appbar"></header>
+<main class="page" id="view"></main>
+<div class="actionbar" id="actions"></div>
+<script src="assets/core.js"></script>
+<script>
+/* ドリアのⅣ（短調だけ）：Ⅳの第3音（音階の6ばんめ）を半音上げた長三和音。島岡『和声 理論と実習』の書きかたでは「＋Ⅳ」（第3音上方変位）。
+ * 上げた6ばんめは、Ⅴの導音へ2度上がる（旋律的短音階ののぼる形：6→7）。ふつうのⅣ（調号どおり）のままだと6→導音が増2度になる。
+ * 和音のつづり・高さ・すすみかた（Ⅰ → Ⅳ → Ⅴ → Ⅰ）は PA.henka.dorian・dorianToV・dorianCad（連続5度・8度なし：test でたしかめる）。
+ * 記号の印（Ⅳの左の＋）は先生に確認まち（PA.rn の alt3）。
+ * 先生のリンク：key＝短調（m0〜m12）。ほぞん（'dorian'）：{keyIdx, on} */
+const H=PA.henka;
+const DOR_COL='#c46a00', IV_COL='#3b4fa8', V_COL=PA.COL.V, I_COL=PA.COL.I, RED='#d1495b', GHOST='#9b9184';
+const LIGHT={[DOR_COL]:'#f6d9b5',[IV_COL]:'#cfd6f4',[V_COL]:'#c6dafa',[I_COL]:'#f8c9bd'};
+const DARK={[DOR_COL]:'#7a4100',[IV_COL]:'#24316f',[V_COL]:'#1d4f9a',[I_COL]:'#8f2a17'};
+
+const saved=PA.store.get('dorian',{})||{};
+const state={keyIdx:0,on:true,show:null,res:null,cad:null,ab:null,abOk:0,abN:0,abPlaying:null};
+// show：鳴らしているあいだけんばんに出す和音 {ns,col,lab}。res：Ⅴへすすむ（'on'｜'off'＋何番め）。cad：カデンツの何番め
+if(Number.isInteger(saved.keyIdx)&&saved.keyIdx>=0&&saved.keyIdx<PA.keyCount(true)) state.keyIdx=saved.keyIdx;
+if(typeof saved.on==='boolean') state.on=saved.on;
+const save=()=>PA.store.set('dorian',{keyIdx:state.keyIdx,on:state.on});
+(()=>{const k=PA.keyDeck.parse(PA.params().key);if(k&&k.minor){state.keyIdx=k.idx;save();}})();
+// 変化和音クイズの「つくりかたを見る」から：その調・ドリアのⅣ（on）でひらく（このページにはつくりかたのアニメはないので、しるしをけすだけ）
+if(PA.store.get('dorian-auto',false)) PA.store.set('dorian-auto',false);
+const curKey=()=>PA.minorKey(state.keyIdx); // 短調だけ（長調のⅣはもともと長三和音）
+
+/* ===== 和音（PA.henka から） ===== */
+const cadOf=(key,on)=>H.dorianCad(key,on);           // [Ⅰ, Ⅳ, Ⅴ, Ⅰ]
+const ivOf=(key,on)=>H.dorian(key,on);               // [根音 | 主音（第5音）, 根音, 第3音]
+const vOf=key=>H.dorianToV(key);
+const rnP=(key,on)=>on?H.rnParts(key,'dorian'):{deg:4};
+const rnH=(key,on)=>PA.rn(rnP(key,on));
+const symOf=(key,on)=>H.symbol(key,on?'dorian':'minorIV');
+const colOf=on=>on?DOR_COL:IV_COL;
+const nameOf=on=>on?'ドリアのⅣ':'ふつうのⅣ';
+const isUp=n=>n.tag==='raised';
+const midisOf=ns=>[...new Set(ns.map(n=>n.midi))];
+// 根音・第3音・第5音のじゅん（ならびは [ベース, 第5音, 根音, 第3音]）
+const triad=ns=>[ns[2],ns[3],ns[1]];
+const nmW=n=>`<span class="nw ${isUp(n)?'up':''}">${PA.nmH(n)}</span>`;
+const q=n=>`「${nmW(n)}」`;
+const names=ns=>ns.map(nmW).join('・');
+// 音階の lo 番め（0＝主音）を so 半音上でつづる
+const sp=(key,lo,so)=>{const L=PA.mod(key.l+lo,7);return {letter:L,acc:PA.spell(L,key.tpc+so)};};
+
+/* ===== けんばん ===== */
+const isWhite=m=>!PA.BLACK.has(PA.mod(m,12));
+function kbRange(ms){
+  let lo=Math.min(...ms)-1, hi=Math.max(...ms)+1;
+  while(!isWhite(lo)) lo--; while(!isWhite(hi)) hi++;
+  return [lo,hi];
+}
+const keyRange=key=>kbRange([...cadOf(key,true),...cadOf(key,false)].flat().map(n=>n.midi));
+// ベースは左手（うすい色）、上の3つは右手。上げた音は赤
+function marks(ns,col,o={}){
+  const m=new Map();
+  ns.forEach((n,i)=>{
+    if(i===0){m.set(n.midi,{fill:LIGHT[col]||'#eee',tc:DARK[col]||'#3a3245',label:PA.nm(n),sub:'左手',subColor:col});return;}
+    if(m.has(n.midi)) return;
+    const k={fill:isUp(n)?RED:n.tag==='lt'?RED:col,label:PA.nm(n),focus:true};
+    if(o.sub&&isUp(n)){k.sub='上げた';k.subColor=RED;}
+    m.set(n.midi,k);
+  });
+  return m;
+}
+
+/* ===== がくふ（大譜表。いちばん下の音とド4より下の音はヘ音記号）＋矢印 ===== */
+const prep=n=>({letter:n.letter,acc:n.acc,midi:n.midi,raised:isUp(n)||n.tag==='lt'||undefined});
+// cols:[{notes,color,label,op}]、arrows:[{c1,n1,c2,n2,color,text}]（n1・n2は cols の音そのもの）
+function staff(key,cols,arrows=[],o={}){
+  const cw=o.cw||96;
+  const sc=cols.map(c=>{
+    const lo=c.notes.reduce((a,b)=>b.midi<a.midi?b:a);
+    const lh=c.notes.filter(n=>n===lo||n.midi<60), tr=c.notes.filter(n=>!lh.includes(n));
+    return {col:{notes:tr.map(prep),lh:lh.map(prep),color:c.color,ltColor:RED,accColor:RED,label:c.label,labelColor:c.color,op:c.op},tr,lh};
+  });
+  const ns=PA.sigInfo(key).letters.length, nx=50+ns*10+(ns?24:14);
+  const pad=36;
+  let svg=PA.staffSVG(key,sc.map(s=>s.col),{grand:true,autoCarry:true,colW:cw,minW:Math.max(o.minW||0,arrows.length?nx+cols.length*cw+pad:0)});
+  const posOf=(ci,n)=>{
+    const s=sc[ci]; if(!s) return null;
+    const inT=s.tr.includes(n), arr=inT?s.tr:s.lh.includes(n)?s.lh:null; if(!arr) return null;
+    const P=arr.map(m=>({m,s:PA.stepOf(m)})).sort((a,b)=>a.s-b.s);
+    let ps=-99,po=false; P.forEach(p=>{p.off=(p.s-ps===1&&!po);po=p.off;ps=p.s;});
+    const p=P.find(p=>p.m===n);
+    return {x:nx+ci*cw+cw/2+(p.off?13:0),y:inT?96-(p.s-30)*5:178-(p.s-26)*5};
+  };
+  let add='';
+  const cs=new Set();
+  arrows.forEach(a=>{
+    const p=posOf(a.c1,a.n1), r=posOf(a.c2,a.n2); if(!p||!r) return;
+    const id='dr'+a.color.slice(1); cs.add(a.color);
+    add+=`<path d="M${p.x+12} ${p.y} L${r.x-22} ${r.y}" stroke="${a.color}" stroke-width="2.4" fill="none" marker-end="url(#${id})"/>`;
+    // 字は矢印のまん中の上（右のはしの列でもきれない）
+    if(a.text) add+=`<text x="${(p.x+r.x)/2}" y="${Math.min(p.y,r.y)-12}" text-anchor="middle" font-size="14" font-weight="800" fill="${a.color}">${a.text}</text>`;
+  });
+  if(cs.size) add+=`<defs>${[...cs].map(c=>`<marker id="dr${c.slice(1)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0 L10 5 L0 10 z" fill="${c}"/></marker>`).join('')}</defs>`;
+  svg=svg.replace(/<\/svg>$/,add+'</svg>');
+  // 小さくなりすぎないように（文字が読めるように）横スクロールにする
+  const m=svg.match(/viewBox="0 0 ([\d.]+) /), W=m?+m[1]:400;
+  return `<div class="scroll" data-sk="${o.sk||'staff'}"><div style="min-width:${Math.round(W*0.66)}px">${svg}</div></div>`;
+}
+
+/* ===== せつめい ===== */
+function heroMsg(key){
+  const d=ivOf(key,true), m=ivOf(key,false), lt=vOf(key)[3];
+  if(!state.on) return `${PA.keyName(key)}のふつうのⅣは、調号どおりの<b>短三和音</b>（${names(triad(m))}）。<br>☀️ スイッチをおして、第3音${q(m[3])}を半音上げてみよう！`;
+  return `ふつうのⅣの第3音${q(m[3])}を<b class="up">半音上げて</b>${q(d[3])}にすると<b>ドリアのⅣ</b>。${q(d[3])}は音階の6ばんめを上げた音で、和音は明るい<b>長三和音</b>になるよ。`+
+    `<br>記号は<b>${rnH(key,true)}</b>。Ⅳの左の<b>＋</b>は「第3音を半音上げた」しるし（第3音上方変位）。上げた${q(d[3])}は、Ⅴの導音${q(lt)}へ<b>2度上がる</b>よ。`;
+}
+function rolesHTML(key){
+  const on=state.on, x=ivOf(key,on), m=ivOf(key,false);
+  const box=(name,n,from,tag)=>`<div class="role ${tag?'on':''}"><span class="rn">${name}</span><div class="rb">${from?`<span class="rf nw">${PA.nmH(from)} →</span>`:''}<b class="rv nw ${isUp(n)?'up':''}">${PA.nmH(n)}</b></div>${tag?`<span class="rt">${tag}</span>`:''}</div>`;
+  return `<div class="roles">`+box('根音',x[2])+box('第3音',x[3],on?m[3]:null,on?'上げた':'')+box('第5音',x[1])+`</div>`+
+    `<p class="note rcap">根音＝和音のもとの音（音階の4ばんめ）。そこから、ひとつとばしに第3音・第5音。</p>`;
+}
+function heroCard(key){
+  const on=state.on, col=colOf(on), x=ivOf(key,on);
+  return `<section class="card hero" style="--c:${col}">
+    <div class="hero-top"><span class="badge" style="--c:${col}">${rnH(key,on)}</span>
+      <div style="min-width:0"><div class="hk">${PA.keyName(key)}の${nameOf(on)}</div>
+      <div class="hs">コードネーム<b>${symOf(key,on)}</b>　/　${on?'☀️ 第3音を半音上げた、明るいⅣ':'🌙 調号どおりの、くらいⅣ'}</div></div></div>
+    <div class="hn">${names(triad(x))}</div>
+    ${rolesHTML(key)}
+    <button class="btn sw ${on?'on':''}" style="--c:${DOR_COL}" data-act="raise" role="switch" aria-checked="${on}"><span class="knob"></span>☀️ 第3音（6ばんめ）を半音上げる</button>
+    <div class="msg">${heroMsg(key)}</div>
+  </section>`;
+}
+function kbCard(key){
+  const [lo,hi]=keyRange(key), on=state.on;
+  let mk, cap;
+  if(state.abPlaying){mk=new Map();cap=`${state.abPlaying}をきいているよ（けんばんは、かくしてあるよ）`;}
+  else if(state.show){const s=state.show;mk=marks(s.ns,s.col);cap=`<b style="color:${s.col}">${PA.rnH(s.lab)}</b>：${names(s.ns.slice(1))}（左手${PA.nmH(s.ns[0])}）`;}
+  else{mk=marks(ivOf(key,on),colOf(on),{sub:true});cap=`${nameOf(on)}。${on?'<span class="up">赤＝半音上げた音</span>。':''}左手はいちばん下の音。${PA.once('tap-sound','さわると音が出るよ')}`;}
+  return `<section class="card"><h2>🎹 けんばん<small>${cap}</small></h2><div class="scroll" data-sk="kb">${PA.kbSVG(lo,hi,mk)}</div></section>`;
+}
+// ふつうのⅣ → Ⅴ と、ドリアのⅣ → Ⅴ をならべる（ソプラノの6ばんめ → 導音に矢印）
+function resCard(key){
+  const m=ivOf(key,false), d=ivOf(key,true), V=vOf(key), r=state.res;
+  const op=i=>r==null||r===i?1:.35;
+  const cols=[
+    {notes:m,color:IV_COL,label:{deg:4},op:op(0)},{notes:V,color:V_COL,label:'Ⅴ',op:op(1)},
+    {notes:d,color:DOR_COL,label:rnP(key,true),op:op(2)},{notes:V,color:V_COL,label:'Ⅴ',op:op(3)}
+  ];
+  const arrows=[{c1:0,n1:m[3],c2:1,n2:V[3],color:GHOST,text:'増2度'},{c1:2,n1:d[3],c2:3,n2:V[3],color:RED,text:'2度'}];
+  const ns=PA.sigInfo(key).letters.length;
+  return `<section class="card" style="--c:${DOR_COL}"><h2>🎼 Ⅴへすすむ<small>左：ふつうのⅣ → Ⅴ　右：ドリアのⅣ → Ⅴ　ボタンで聴けるよ</small></h2>
+    <div class="pbtns">
+      <button class="btn ${r!=null&&r<2?'on':''}" data-act="resolve" data-v="off">${PA.icon('next')}ふつうのⅣ→Ⅴ</button>
+      <button class="btn ${r!=null&&r>=2?'on':''}" data-act="resolve" data-v="on">${PA.icon('next')}ドリアのⅣ→Ⅴ</button>
+    </div>
+    ${staff(key,cols,arrows,{sk:'staff',cw:ns>=5?92:104})}
+    <p class="note">ふつうのⅣでは、${q(m[3])}から導音${q(V[3])}へ。となりの文字なのに少し遠い<b>増2度</b>で、ぎこちなく聞こえるよ。
+    ドリアのⅣなら${q(d[3])}から${q(V[3])}へ、ふつうの2度で<b class="up">すっと上がれる</b>。だからⅤの前で、6ばんめを上げたⅣを使うんだね。</p>
+    <p class="note">ほかの声：根音${q(d[2])}は下へ${q(V[2])}、${q(d[1])}も下へ${q(V[1])}。ベースは${q(d[0])}から${q(V[0])}へ上がるよ。</p>
+  </section>`;
+}
+// 3つの短音階（調号どおり・7ばんめを上げる・6ばんめと7ばんめを上げる）
+function scaleCard(key){
+  const nat=key.nat, harm=key.harm, mel=harm.map((n,i)=>i===5?{...n,...sp(key,5,9)}:n);
+  const dg=[1,2,3,4,5,6,7].map(d=>`<span class="dg">${d}</span>`).join('');
+  const row=(ns,use)=>ns.map((n,i)=>`<span class="${n.acc!==nat[i].acc?'upn':''} ${use&&[3,5,0].includes(i)?'use':''}">${PA.nmH(n)}</span>`).join('');
+  return `<details class="card fold" data-d="scale"><summary><h2>🎹 6ばんめを上げた音階<small>ドリアのⅣは、6ばんめと7ばんめを上げた音階からつくる</small></h2></summary>
+    <p class="slab">① 調号のとおり</p>
+    <div class="scl">${dg}${row(nat)}</div>
+    <p class="slab">② 7ばんめを上げる（Ⅴ・Ⅴ7をつくるときの音階）</p>
+    <div class="scl">${row(harm)}</div>
+    <p class="slab">③ 6ばんめと7ばんめを上げる（メロディーが上がっていくときの音階）</p>
+    <div class="scl">${row(mel,true)}</div>
+    <p class="note" style="color:var(--ink)">②では、6ばんめ${q(nat[5])}から7ばんめ${q(harm[6])}へのあいだが少し遠い（増2度）。③のように<b class="up">6ばんめも上げる</b>と、${q(mel[5])} → ${q(mel[6])} → ${q(mel[0])}となめらかに上がれるよ。</p>
+    <p class="note">③の4ばんめ${q(mel[3])}から、ひとつとばしに3つ（下線）＝${names([mel[3],mel[5],mel[0]])}。これが<b>ドリアのⅣ</b>だよ。</p>
+  </details>`;
+}
+function cadCard(key){
+  const on=state.on, seq=cadOf(key,on), cur=state.cad;
+  const labs=[{l:'Ⅰ',c:I_COL},{l:rnP(key,on),c:colOf(on)},{l:'Ⅴ',c:V_COL},{l:'Ⅰ',c:I_COL}];
+  const cols=seq.map((ns,i)=>({notes:ns,color:labs[i].c,label:labs[i].l,op:cur==null||cur===i?1:.35}));
+  return `<details class="card fold" data-d="cad"><summary><h2>🎵 カデンツ<small>Ⅰ → ${nameOf(on)} → Ⅴ → Ⅰ　下の「🎵 カデンツ」で鳴らすよ</small></h2></summary>
+    <div style="margin-bottom:8px">${PA.seg('cmode',[['on','ドリアのⅣ'],['off','ふつうのⅣ']],on?'on':'off','full')}</div>
+    <div class="seqrow">${labs.map((x,i)=>`${i?'<span class="ar" aria-hidden="true">→</span>':''}<span class="sc ${cur===i?'on':''}" style="--c:${x.c}">${PA.rnH(x.l)}</span>`).join('')}</div>
+    ${staff(key,cols,[],{sk:'cadstaff',cw:78,minW:340})}
+    <p class="note">ソプラノ（いちばん上）は<b>${seq.map(c=>nmW(c[3])).join(' → ')}</b>。${on?'音階の5・6・7・1ばんめと、なめらかに上がっていくよ。':'ふつうのⅣだと、6ばんめから7ばんめへのところが少しぎこちないね。'}</p>
+  </details>`;
+}
+// 聴きくらべ（A・B は音の名前（CDE）とまちがえやすいので、画面では ①・②）
+const AB_NM={A:'①',B:'②'};
+function abCard(key){
+  const ab=state.ab;
+  let h=`<details class="card fold" data-d="ab"><summary><h2>👂 どっちがドリアのⅣ？<span class="qscore">${state.abN?`⭐ ${state.abOk} / ${state.abN}`:''}</span><small>①と②の後には、どちらもⅤが鳴るよ</small></h2></summary>
+    <p class="note" style="margin-top:0">ひとつはドリアのⅣ、もうひとつはふつうのⅣ。ぱっと<b>明るく</b>聞こえて、Ⅴへすっと上がるのはどっち？</p>`;
+  if(!ab) return h+`<div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}問題を出す</button></div></details>`;
+  h+=`<div class="ab"><button class="btn" data-act="abplay" data-v="A">${PA.icon('play')}①をきく</button><button class="btn" data-act="abplay" data-v="B">${PA.icon('play')}②をきく</button></div>`;
+  if(ab.answer==null) return h+`<p class="askline">☀️ ドリアのⅣは？</p><div class="ab"><button class="btn night" data-act="qchoose" data-v="A">①がドリア</button><button class="btn night" data-act="qchoose" data-v="B">②がドリア</button></div></details>`;
+  const ok=ab.answer===ab.d, other=ab.d==='A'?'B':'A', d=ivOf(key,true), m=ivOf(key,false);
+  return h+`<div class="fb ${ok?'good':'bad'}" role="status">${ok?'🎉 そのとおり！':'🤔 おしい！もういちど聴きくらべてみよう。'}
+      <b>${AB_NM[ab.d]}</b>がドリアのⅣ（${names(triad(d))}）、<b>${AB_NM[other]}</b>がふつうのⅣ（${names(triad(m))}）。
+      <br>ちがうのは第3音だけ（${q(m[3])}と${q(d[3])}）。</div>
+    <div class="ab one"><button class="btn night" data-act="qnext" data-hot="next">${PA.icon('dice')}次の問題</button></div></details>`;
+}
+// 変化和音クイズへ：いまの調で、ドリアのⅣだけを5もん（ステップ「ドリアのⅣ」とおなじ和音。chord でしぼる）
+function tryCard(key){
+  return PA.tryHTML({to:'chroma-quiz',params:{key:PA.keyDeck.id(true,state.keyIdx),mode:'keys',chord:'ivd',n:5},
+    sub:`${PA.keyName(key)}で、ドリアのⅣをけんばんで5問おさえてみよう。`,btn:PA.icon('target')+'けんばんで5問'});
+}
+function nameDetails(key){
+  return `<details class="more" data-d="name"><summary>📛 「ドリア」って何？</summary>
+    <p>ずっとむかし（長調・短調ができるまえ）の音楽では、いろいろな音階が使われていたよ。その1つが<b>ドリアの音階</b>（ドリア旋法）。白い鍵だけで「レ」から「レ」までひくと、ドリアの音階になるよ。</p>
+    <p>ドリアの音階は短調ににているけど、<b>6ばんめが半音高い</b>のがちがうところ。だから、短調で6ばんめを上げたⅣを「ドリアのⅣ」とよぶんだね。</p>
+    <p>和音記号は${rnH(key,true)}。Ⅳの左の＋は「第3音を半音上げた」しるし（第3音上方変位）。本によって書きかたがちがうこともあるけど、どれも同じ和音だよ。</p>
+  </details>`;
+}
+function tipsHTML(key){
+  const d=ivOf(key,true), s7=sp(key,2,3);
+  return `<details class="more" data-d="tips"><summary>💡 おぼえておこう</summary><ul>
+    <li><b>ドリアのⅣ</b>＝短調のⅣの第3音（音階の6ばんめ）を半音上げた、明るい長三和音。${PA.keyName(key)}では${names(triad(d))}。</li>
+    <li>上げた6ばんめ${q(d[3])}は、Ⅴの導音（主音にすすみたがる音）へ<b>2度上がる</b>。だから、そのあとは<b>Ⅴ</b>（Ⅴ7・Ⅴ9の根音省略も）へすすむよ。Ⅰへはすすまない。</li>
+    <li>七の和音（${PA.rn({deg:4,alt3:'up',form:7})}：${names([...triad(d),{...s7,tag:null}])}）でもよく使うよ。第7音${q({...s7,tag:null})}は調号どおり。</li>
+    <li>長調では使わないよ。長調のⅣは、もともと明るい長三和音だから。</li>
+    <li>和音記号の＋は、第3音の臨時記号とはべつのもの。${PA.keyName(key)}の楽譜では${q(d[3])}に<b class="up">${PA.H({'-1':'♭','0':'♮','1':'♯','2':'𝄪'}[d[3].acc])}</b>をつけて書くよ。</li>
+  </ul></details>`;
+}
+// 📖 ことばメモ：本や楽譜で見かける名前を、やさしいことばで（いまの調の音をれいに）
+function termsHTML(key){
+  const nat=key.nat, d=ivOf(key,true);
+  return `<details class="more terms" data-d="terms"><summary>📖 ことばメモ（本や楽譜で見かける名前）</summary><dl>
+    <dt>上方変位<span class="yomi">（じょうほうへんい）</span></dt>
+      <dd>和音の中の音を半音上げること。ドリアのⅣは第3音を上げるので「第3音上方変位」。下げるのは「下方変位」（ナポリの六や増六の和音で出てくるよ）。</dd>
+    <dt>旋律的短音階<span class="yomi">（せんりつてきたんおんかい）</span></dt>
+      <dd>メロディーが上がっていくときに、6ばんめと7ばんめを上げる短音階（${names(key.harm.map((n,i)=>i===5?{...n,...sp(key,5,9)}:n))}）。ドリアのⅣは、この音階のⅣだよ。</dd>
+    <dt>増2度<span class="yomi">（ぞう2ど）</span></dt>
+      <dd>7ばんめだけを上げたときの、6ばんめ→7ばんめ（${q(nat[5])} → ${q(key.harm[6])}）のひろい間かく。となりの文字どうしなのに、少し遠く聞こえる。</dd>
+    <dt>ドリア旋法<span class="yomi">（ドリアせんぽう）</span></dt>
+      <dd>むかしの音階の1つ。白い鍵だけで「レ」から「レ」まで。短調ににているけど、6ばんめが半音高い。</dd>
+    <dt>長三和音・短三和音<span class="yomi">（ちょうさんわおん・たんさんわおん）</span></dt>
+      <dd>明るいひびきの3つの音の和音と、くらいひびきの3つの音の和音。ドリアのⅣ（${names(triad(d))}）は長三和音、ふつうのⅣは短三和音。</dd>
+  </dl></details>`;
+}
+function linksCard(key){
+  const n6=H.neapolitan(key), b2=n6[n6.length-1];
+  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>次はナポリの六</small></h2></summary><div class="links">
+    <a class="btn" href="neapolitan.html" data-go="neapolitan">🌋 <span>次はナポリの六 ›<small>2ばんめを半音下げた和音（${PA.nmH(b2)}）。こちらは下げる和音</small></span></a>
+    <a class="btn" href="borrowed.html" data-go="borrowed">🎁 <span>準固有和音 ›<small>長調で、同じ主音の短調から6ばんめなどをかりる和音</small></span></a>
+    <a class="btn" href="minor-why.html" data-go="minor-why">❓ <span>なぜ7ばんめを上げるの？ ›<small>短調のⅤで7ばんめを上げるわけ</small></span></a>
+  </div></details>`;
+}
+
+/* ===== 画面 ===== */
+let lastActions='';
+function render(){
+  const key=curKey(), playing=state.show||state.abPlaying;
+  const h=`<div class="stack">
+    <div class="toprow">${PA.keyChip(key)}<span class="note" style="margin:0">${PA.keyEn(key)}・短調だけ</span></div>
+    ${heroCard(key)}${kbCard(key)}${resCard(key)}${tryCard(key)}${scaleCard(key)}${cadCard(key)}${abCard(key)}
+    ${nameDetails(key)}${tipsHTML(key)}${termsHTML(key)}${PA.rnHelp({alt3:true})}${linksCard(key)}</div>`;
+  PA.paint(document.getElementById('view'),h,'dorian:'+state.keyIdx);
+  if(state.show) PA.follow(document.getElementById('view')); // 音の高さがかわっても鍵が見えるように
+  const acts=(playing?`<button class="btn" data-act="stop">${PA.icon('stop')}とめる</button>`:`<button class="btn night" data-act="cplay">🎵 カデンツ</button>`)+
+    `<button class="btn" data-act="play" data-hot="listen">${PA.icon('listen')}いっしょに</button><button class="btn primary" data-act="resolve">${PA.icon('next')}Ⅴへ</button>`;
+  if(acts!==lastActions){PA.paint(document.getElementById('actions'),acts,'bar');lastActions=acts;}
+}
+
+/* ===== 鳴らす ===== */
+let token=0;
+function stop(){token++;state.show=null;state.res=null;state.cad=null;state.abPlaying=null;PA.stopSound();}
+// seq:[{ns,col,lab,res,cad,ms}]。show＝false ならけんばんに出さない（聴きわけ）
+async function playSeq(seq,o={}){
+  stop(); const my=token;
+  if(o.ab) state.abPlaying=o.ab;
+  for(let i=0;i<seq.length;i++){
+    const s=seq[i], last=i===seq.length-1;
+    state.show=o.ab?null:{ns:s.ns,col:s.col,lab:s.lab}; state.res=s.res==null?null:s.res; state.cad=s.cad==null?null:s.cad;
+    render();
+    if(s.cad===0){const d=document.querySelector('details[data-d="cad"]'); if(d) d.open=true;} // カデンツを鳴らしはじめたらひらく
+    PA.chord(midisOf(s.ns),{dur:last?2.2:(s.ms||1300)/1000+0.1});
+    await PA.sleep(s.ms||1300); if(my!==token) return;
+  }
+  await PA.sleep(900); if(my!==token) return;
+  stop(); render();
+}
+function playChord(){stop();render();PA.chord(midisOf(ivOf(curKey(),state.on)),{dur:2});}
+function playResolve(on){
+  const key=curKey(), b=on?2:0;
+  playSeq([{ns:ivOf(key,on),col:colOf(on),lab:rnP(key,on),res:b},{ns:vOf(key),col:V_COL,lab:'Ⅴ',res:b+1}]);
+}
+function playCad(){
+  const key=curKey(), on=state.on, seq=cadOf(key,on);
+  const L=[['Ⅰ',I_COL,1000],[rnP(key,on),colOf(on),1300],['Ⅴ',V_COL,1200],['Ⅰ',I_COL,2200]];
+  playSeq(seq.map((ns,i)=>({ns,lab:L[i][0],col:L[i][1],ms:L[i][2],cad:i})));
+}
+// 聴きくらべ：答えがわからないように、けんばんには出さない
+function playAB(v){
+  const ab=state.ab; if(!ab||!['A','B'].includes(v)) return;
+  const key=curKey(), on=v===ab.d;
+  playSeq([{ns:ivOf(key,on)},{ns:vOf(key)}],{ab:AB_NM[v]});
+}
+
+/* ===== 操作 ===== */
+PA.mountBar({title:'ドリアのⅣ',app:'dorian'});
+PA.onSettings=render;
+PA.onPageShow=()=>{stop();render();}; // 「もどる」でもどってきたとき、とちゅうの画面をのこさない
+PA.onStopDown=stop;
+PA.onStopCancel=render; // ⏹ をおしたのに click が来なかったとき画面をもどす
+PA.onKeySheet=()=>PA.openKeySheet({minor:true,idx:state.keyIdx,both:false,onPick:(minor,idx)=>{
+  if(!minor) return;
+  stop(); state.keyIdx=idx; state.ab=null; save(); render(); PA.chord(midisOf(ivOf(curKey(),state.on)),{dur:2});
+}});
+document.addEventListener('click',e=>{
+  const g=e.target.closest('[data-go]');
+  if(g){ // おなじ調をひらく（リンクはそのまま進む）
+    const go=g.dataset.go, obj=k=>{const p=PA.store.get(k,{});return p&&typeof p==='object'?p:{};};
+    stop();
+    if(go==='neapolitan') PA.store.set('neapolitan',{...obj('neapolitan'),minor:true,keyIdx:state.keyIdx});
+    else if(go==='minor-why') PA.store.set('minor-why',{...obj('minor-why'),keyIdx:state.keyIdx});
+    return;
+  }
+  const el=e.target.closest('[data-act]'); if(!el) return;
+  const a=el.dataset.act, v=el.dataset.v;
+  if(a==='raise'){stop();state.on=!state.on;save();render();PA.chord(midisOf(ivOf(curKey(),state.on)),{dur:2});}
+  else if(a==='cmode'){if(!['on','off'].includes(v))return;stop();state.on=v==='on';save();render();}
+  else if(a==='play') playChord();
+  else if(a==='resolve') playResolve(v==null?state.on:v==='on');
+  else if(a==='cplay') playCad();
+  else if(a==='stop'){stop();render();}
+  else if(a==='qnext'){stop();state.ab={d:Math.random()<0.5?'A':'B',answer:null};render();}
+  else if(a==='abplay') playAB(v);
+  else if(a==='qchoose'){if(state.ab&&state.ab.answer==null){stop();state.ab.answer=v;state.abN++;if(v===state.ab.d)state.abOk++;render();}}
+});
+render();
+</script>
+</body>
+</html>

@@ -11,7 +11,7 @@ const PA=loadPA();
 const html=fs.readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)),'..','chroma-quiz.html'),'utf8');
 const m=html.match(/\/\/ <cq-link>[^\n]*\n([\s\S]*?)\/\/ <\/cq-link>/);
 assert.ok(m,'chroma-quiz.html に<cq-link>のしるしがない');
-const L=new Function('PA',m[1]+'\nreturn {GROUPS,TYPES,AUG,KLV,OLD_KLV,EAR_LV,EAR_NAME,EAR_ORDER,linkOf};')(PA);
+const L=new Function('PA',m[1]+'\nreturn {GROUPS,TYPES,AUG,KLV,KLV_VIEW,stepNo,OLD_KLV,EAR_LV,EAR_NAME,EAR_ORDER,linkOf};')(PA);
 const J=x=>JSON.parse(JSON.stringify(x));
 const eq=(a,b,msg)=>assert.deepStrictEqual(J(a),J(b),msg);
 const TIERS=['easy','normal','hard','all'];
@@ -20,17 +20,19 @@ const NONE={mode:null,kLv:null,types:null,earLv:null,tier:null,key:null,n:null,c
 const W=o=>Object.assign({},NONE,o);
 
 test('ステップのなかみ（先生のじゅん。学ぶページの step= とそろえる）',()=>{
-  // Ⅱ7・ドッペル → 副属和音 → 準固有和音 → ナポリの六 → 増六 → Ⅶ7（異名同音はいちばん最後）
-  eq(L.TYPES,['ii7','dd','ddim','s2','s3','s4','s6','ivm','bvi','n6','it','fr','ger','vii7']);
-  eq(L.KLV.map(x=>x.lv),[1,2,3,4,5,6]);
+  // Ⅱ7・ドッペル → 副属和音 → 準固有和音 → ドリアのⅣ → ナポリの六 → 増六 → Ⅶ7（異名同音はいちばん最後）
+  eq(L.TYPES,['ii7','dd','ddim','s2','s3','s4','s6','ivm','bvi','ivd','n6','it','fr','ger','vii7']);
+  eq(L.KLV.map(x=>x.lv),[1,2,3,4,5,6,7],'KLV[lv-1]（リンクの step の番号はかえない）');
+  eq(L.KLV_VIEW,[1,2,3,7,4,5,6],'画面のならび：ドリアのⅣ（あとから足した 7）は準固有のつぎ');
   eq(L.KLV[0].types,['ii7','dd','ddim'],'1：doppel');
   eq(L.KLV[1].types,['s2','s3','s4','s6'],'2：secondary');
   eq(L.KLV[2].types,['ivm','bvi'],'3：borrowed');
   eq(L.KLV[3].types,['n6'],'4：neapolitan');
   eq(L.KLV[4].types,['it','fr','ger'],'5：aug6');
   eq(L.KLV[5].types,L.TYPES,'6：ぜんぶ（enharmonic）');
-  // まえのステップより先の和音は出さない：ステップ1〜5の和音は、TYPES のならびで前から順に出てくる
-  const seen=L.KLV.slice(0,5).flatMap(x=>x.types);
+  eq(L.KLV[6].types,['ivd'],'7：dorian（短調だけ）');
+  // まえのステップより先の和音は出さない：画面のならびで「ぜんぶ」のまえまでの和音は、TYPES のならびで前から順に出てくる
+  const seen=L.KLV_VIEW.filter(lv=>lv!==6).flatMap(lv=>L.KLV[lv-1].types);
   eq(seen,L.TYPES.slice(0,seen.length),'ステップのじゅん＝TYPES のじゅん');
   assert.equal(new Set(seen).size,seen.length,'1つの和音は1つのステップだけ');
   // 画面に「半減七」を出さない
@@ -41,7 +43,7 @@ test('ステップのなかみ（先生のじゅん。学ぶページの step= �
   // まえの「レベル」1〜5の和音（まえのリンク・保存をおなじ和音でひらく）
   eq(L.OLD_KLV,{1:['ii7','dd'],2:['ii7','dd','ddim'],3:['it','fr','ger'],4:['it','fr','ger','n6','ivm','bvi'],5:L.TYPES});
   // ヘッダーの chord= の例はどれも40文字（PA.params の上限）いないで、ぜんぶつかえる
-  ['n6','ivm,bvi','s2,s3,s4,s6','dd,s2,s3,s4,s6','ger,ddim,vii7'].forEach(c=>{
+  ['n6','ivm,bvi','ivd','s2,s3,s4,s6','dd,s2,s3,s4,s6','ger,ddim,vii7'].forEach(c=>{
     assert.ok(c.length<=40);
     eq(link(PA.parseParams('?chord='+encodeURIComponent(c))).types,L.TYPES.filter(t=>c.split(',').includes(t)),c);
   });
@@ -52,7 +54,8 @@ test('linkOf：mode・step・まえの level',()=>{
   assert.equal(link({x:'1'}),null);
   eq(link({mode:'keys',step:'3'}),W({mode:'keys',kLv:3}));
   eq(link({step:'6'}),W({mode:'keys',kLv:6}),'mode がなければ keys');
-  eq(link({step:'7'}),W({mode:'keys'}));
+  eq(link({step:'7'}),W({mode:'keys',kLv:7}),'7＝ドリアのⅣ');
+  eq(link({step:'8'}),W({mode:'keys'}));
   eq(link({step:'0'}),W({mode:'keys'}),'0（じぶんでえらぶ）はリンクでは chord で');
   eq(link({step:'2.5'}),W({mode:'keys'}));
   // まえのリンクの level（🎹）：そのときとおなじ和音。ステップとおなじならそのステップ

@@ -88,7 +88,7 @@ test('index.html：はじめての人には「長調の4つの和音から始め
   assert.ok(h.indexOf('class="card xmap"')>h.indexOf('class="card map"'));
   assert.match(h,/<details class="card xmap" data-d="xmap-extra" data-u="extra">/);
   const x=h.slice(h.indexOf('class="card xmap"'));
-  const order=['doppel','secondary','borrowed','neapolitan','aug6','enharmonic','chroma-quiz'].map(id=>x.indexOf(`href="${id}.html"`));
+  const order=['doppel','secondary','borrowed','dorian','neapolitan','aug6','enharmonic','chroma-quiz'].map(id=>x.indexOf(`href="${id}.html"`));
   assert.ok(order.every((v,i)=>v>0&&(i===0||v>order[i-1])),String(order));
   // ひらいていないので ★ はなし
   assert.ok(!/<span class="on">★/.test(h));

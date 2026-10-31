@@ -27,8 +27,8 @@ test('目次：PA.UNITS・PA.APPS・PA.app（先生のじゅん：docs/TEACHER-F
   eq(PA.unit('pieces').tasks.map(t=>t.href),['piece.html?id=k545-1']);
   assert.equal(PA.unit('pieces').soon,'これから、ベートーヴェン・シューベルト・ショパンの曲もふえるよ');
   PA.unit('pieces').tasks.forEach(t=>assert.ok(fs.existsSync(path.join(root,'assets','pieces',PA.parseParams(t.href.split('?')[1]).id+'.json')),t.href));
-  // レベルアップ：Ⅱ7とドッペル → 副属和音 → 準固有和音 → ナポリの六 → 増六 → 異名同音（いちばん最後）（＋変化和音クイズ）
-  eq(apps('extra'),['doppel','secondary','borrowed','neapolitan','aug6','enharmonic','chroma-quiz']);
+  // レベルアップ：Ⅱ7とドッペル → 副属和音 → 準固有和音 → ドリアのⅣ → ナポリの六 → 増六 → 異名同音（いちばん最後）（＋変化和音クイズ）
+  eq(apps('extra'),['doppel','secondary','borrowed','dorian','neapolitan','aug6','enharmonic','chroma-quiz']);
   assert.equal(PA.unit('nope'),null);
   // 和音クイズは①（長調）と②（短調）に、べつの設定で出る。ほかのアプリは1回だけ
   const tasks=PA.UNITS.flatMap(u=>u.tasks);

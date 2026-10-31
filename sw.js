@@ -41,7 +41,7 @@ const AUDIO=[
   'assets/piano/Fs6.mp3',
   'assets/piano/Fs7.mp3',
 ];
-const VERSION='027e37da3a';
+const VERSION='59f371651e';
 const PRECACHE=[
   './',
   'accompaniment.html',
@@ -55,6 +55,7 @@ const PRECACHE=[
   'diatonic.html',
   'dim-halfdim.html',
   'doppel.html',
+  'dorian.html',
   'ear.html',
   'ending-quiz.html',
   'ending.html',
