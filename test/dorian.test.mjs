@@ -120,7 +120,7 @@ test('変化和音クイズ：chord=ivd（ドリアのページのためして�
   const P=openQuiz('?key=m9&mode=keys&chord=ivd&n=5'), Q=P.__Q;
   assert.equal(Q.q.type,'ivd'); assert.equal(Q.q.minor,true); assert.equal(Q.q.keyIdx,9); assert.equal(Q.kLv,7,'ステップ7とおなじ和音');
   P.__render();
-  assert.match(P.__html,/ステップ4<\/b>：ドリアのⅣ/,'画面の番号は準固有のつぎの4');
+  assert.match(P.__html,/ステップ5<\/b>：ドリアのⅣ/,'画面の番号はナポリのつぎの5');
   const key=P.keyOf(true,9), d=P.henka.dorian(key);
   // ふつうのⅣ（ファ・ラ♭・ド）をおさえる → 第3音を上げるヒント
   Q.picked=new Set(P.henka.dorian(key,false).map(n=>n.midi)); P.__check(); P.__render();
@@ -141,4 +141,51 @@ test('ドリアのⅣ：そのあとはⅤ・Ⅴ7。短調のⅤ9（根音省略
   const h=read('dorian.html');
   assert.match(h,/<b>Ⅴ<\/b>（Ⅴ7も）へすすむよ/);
   assert.ok(!/Ⅴ9/.test(h),'Ⅴ9 は出さない');
+});
+
+// 学ぶページをひらいて、click のしょりをつかまえる（PA.go はページをうつらずに行き先だけおぼえる）
+function openPage(file,mem){
+  const js=read(file).match(/<script>\n([\s\S]*?)<\/script>/)[1];
+  const P=loadPA(STUB+read('assets/core.js')+'\nwindow.scrollTo=function(){};window.innerHeight=800;'
+    +'PA.__clicks=[];document.addEventListener=function(t,f){if(t==="click")PA.__clicks.push(f);};PA.go=function(p){PA.__went=p;};\n'+js,
+    {storage:mem,href:'https://example.test/'+file});
+  // sel＝'[data-go]' か '[data-act]'。ほかの closest は null
+  P.click=(sel,dataset)=>P.__clicks.forEach(f=>f({target:{closest:s=>s===sel?{dataset}:null}}));
+  return P;
+}
+const got=(mem,k)=>JSON.parse(mem.get('pianoapps.'+k));
+test('レベルアップのじゅん（2026-11-01（4）先生）：ナポリの六 → 次はドリアのⅣ → 次は増六。おなじ調でひらく',()=>{
+  // ナポリの六（短調・m5）の「次はドリアのⅣ」：ドリアのページをおなじ短調で（on などほかのほぞんはのこす）
+  let mem=new Map([['pianoapps.neapolitan',JSON.stringify({minor:true,keyIdx:5})],['pianoapps.dorian',JSON.stringify({keyIdx:2,on:false})]]);
+  let P=openPage('neapolitan.html',mem);
+  P.click('[data-act]',{act:'go',v:'dorian'});
+  assert.equal(P.__went,'dorian.html');
+  assert.deepEqual(got(mem,'dorian'),{keyIdx:5,on:false});
+  // 長調のときは、同じ主音の短調でひらく（ドリアのⅣは短調だけ。ハ長調 → ハ短調）
+  mem=new Map([['pianoapps.neapolitan',JSON.stringify({minor:false,keyIdx:0})],['pianoapps.dorian',JSON.stringify({keyIdx:2})]]);
+  P=openPage('neapolitan.html',mem);
+  P.click('[data-act]',{act:'go',v:'dorian'});
+  assert.equal(P.__went,'dorian.html');
+  const cm=got(mem,'dorian').keyIdx, ck=P.keyOf(true,cm), cM=P.keyOf(false,0);
+  assert.ok(cm!==2&&ck.l===cM.l&&ck.a===cM.a,'同じ主音の短調');
+  // 同じ主音の短調がない長調（ほかの調）でも、こわれない
+  mem=new Map([['pianoapps.neapolitan',JSON.stringify({minor:false,keyIdx:7})],['pianoapps.dorian',JSON.stringify({keyIdx:2})]]);
+  P=openPage('neapolitan.html',mem);
+  P.click('[data-act]',{act:'go',v:'dorian'});
+  assert.equal(P.__went,'dorian.html');
+  // ナポリの「増六の和音」もいままでどおり
+  P.click('[data-act]',{act:'go',v:'aug6'});
+  assert.equal(P.__went,'aug6.html');
+  assert.deepEqual(got(mem,'aug6'),{minor:false,keyIdx:7,type:'it'});
+  // ドリアのⅣ（m3）の「次は増六の和音」：増六のページを短調・おなじ調で（えらんでいた種類はのこす）
+  mem=new Map([['pianoapps.dorian',JSON.stringify({keyIdx:3,on:true})],['pianoapps.aug6',JSON.stringify({minor:false,keyIdx:0,type:'ger'})]]);
+  P=openPage('dorian.html',mem);
+  P.click('[data-go]',{go:'aug6'});
+  assert.deepEqual(got(mem,'aug6'),{minor:true,keyIdx:3,type:'ger'});
+  mem=new Map([['pianoapps.dorian',JSON.stringify({keyIdx:4})],['pianoapps.aug6',JSON.stringify({type:'xx'})]]);
+  openPage('dorian.html',mem).click('[data-go]',{go:'aug6'});
+  assert.deepEqual(got(mem,'aug6'),{minor:true,keyIdx:4,type:'it'},'しらない種類はイタリア');
+  // ナポリの六へのリンクものこる（短調・おなじ調）
+  openPage('dorian.html',mem).click('[data-go]',{go:'neapolitan'});
+  assert.deepEqual(got(mem,'neapolitan'),{minor:true,keyIdx:4});
 });

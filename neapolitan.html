@@ -417,8 +417,9 @@ function tryCard(key){
     links:[{to:'chroma-quiz',params:{mode:'ear',level:3,key:PA.keyDeck.id(state.minor,state.keyIdx),n:5},label:PA.icon('ear')+'耳で聴きわける'}]});
 }
 function linksCard(){
-  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>次は増六の和音</small></h2></summary><div class="links">
-    <button class="btn" data-act="go" data-v="aug6"><span aria-hidden="true">↔️</span> 次は増六の和音<small>同じ「下げた第6音」を使う和音</small></button>
+  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>次はドリアのⅣ</small></h2></summary><div class="links">
+    <button class="btn" data-act="go" data-v="dorian"><span aria-hidden="true">🌗</span> 次はドリアのⅣ<small>こんどは短調のⅣの6ばんめを半音上げる和音</small></button>
+    <button class="btn" data-act="go" data-v="aug6"><span aria-hidden="true">↔️</span> 増六の和音<small>同じ「下げた第6音」を使う和音</small></button>
   </div></details>`;
 }
 // がくふの下に：その楽譜にダブルシャープ・ダブルフラットが出ているときだけ、書きかたのメモ（出ていなければ ''）
@@ -590,7 +591,13 @@ document.addEventListener('click',e=>{
   else if(a==='qchoose'){if(state.ab&&state.ab.answer==null){stop();state.ab.answer=v;state.abN++;if(v===state.ab.n6)state.abOk++;render();}}
   else if(a==='go'){
     stop(); render();
-    if(v==='aug6'){const p=PA.store.get('aug6',{}), t=p&&['it','fr','ger'].includes(p.type)?p.type:'it';PA.store.set('aug6',{minor:state.minor,keyIdx:state.keyIdx,type:t});PA.go('aug6.html');}
+    // ドリアのⅣは短調だけ：短調ならおなじ調、長調なら同じ主音の短調をひらく
+    if(v==='dorian'){
+      const key=curKey(), mi=state.minor?state.keyIdx:PA.MINOR_KEYS.findIndex(([l,a])=>l===key.l&&a===key.a);
+      if(mi>=0){const p=PA.store.get('dorian',{});PA.store.set('dorian',{...(p&&typeof p==='object'?p:{}),keyIdx:mi});}
+      PA.go('dorian.html');
+    }
+    else if(v==='aug6'){const p=PA.store.get('aug6',{}), t=p&&['it','fr','ger'].includes(p.type)?p.type:'it';PA.store.set('aug6',{minor:state.minor,keyIdx:state.keyIdx,type:t});PA.go('aug6.html');}
   }
 });
 const AUTO=PA.store.get('neapolitan-auto',false);

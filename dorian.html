@@ -327,8 +327,9 @@ function termsHTML(key){
 }
 function linksCard(key){
   const n6=H.neapolitan(key), b2=n6[n6.length-1];
-  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>次はナポリの六</small></h2></summary><div class="links">
-    <a class="btn" href="neapolitan.html" data-go="neapolitan">🌋 <span>次はナポリの六 ›<small>2ばんめを半音下げた和音（${PA.nmH(b2)}）。こちらは下げる和音</small></span></a>
+  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>次は増六の和音</small></h2></summary><div class="links">
+    <a class="btn" href="aug6.html" data-go="aug6">↔️ <span>次は増六の和音 ›<small>ドッペルの第5音を半音下げた形。外へひらいてⅤへ</small></span></a>
+    <a class="btn" href="neapolitan.html" data-go="neapolitan">🌋 <span>ナポリの六 ›<small>2ばんめを半音下げた和音（${PA.nmH(b2)}）。こちらは下げる和音</small></span></a>
     <a class="btn" href="borrowed.html" data-go="borrowed">🎁 <span>準固有和音 ›<small>長調で、同じ主音の短調から6ばんめなどをかりる和音</small></span></a>
     <a class="btn" href="minor-why.html" data-go="minor-why">❓ <span>なぜ7ばんめを上げるの？ ›<small>短調のⅤで7ばんめを上げるわけ</small></span></a>
   </div></details>`;
@@ -400,6 +401,7 @@ document.addEventListener('click',e=>{
     const go=g.dataset.go, obj=k=>{const p=PA.store.get(k,{});return p&&typeof p==='object'?p:{};};
     stop();
     if(go==='neapolitan') PA.store.set('neapolitan',{...obj('neapolitan'),minor:true,keyIdx:state.keyIdx});
+    else if(go==='aug6'){const p=obj('aug6');PA.store.set('aug6',{...p,minor:true,keyIdx:state.keyIdx,type:['it','fr','ger'].includes(p.type)?p.type:'it'});}
     else if(go==='minor-why') PA.store.set('minor-why',{...obj('minor-why'),keyIdx:state.keyIdx});
     return;
   }

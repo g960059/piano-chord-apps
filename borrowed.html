@@ -480,10 +480,10 @@ function abCard(key,id){
 }
 function linksCard(key){
   const n6=H.neapolitan(key), b2=n6[n6.length-1];
-  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>次はドリアのⅣ・ナポリの六・増六など</small></h2></summary><div class="links">
-    <a class="btn" href="dorian.html" data-go="dorian">🌗 <span>次はドリアのⅣ ›<small>こんどは短調。Ⅳの第3音（6ばんめ）を半音上げる和音</small></span></a>
-    <a class="btn" href="neapolitan.html" data-go="neapolitan">🌋 <span>ナポリの六 ›<small>2ばんめを半音下げた和音（${PA.nmH(b2)}）。長調では6ばんめもかりる</small></span></a>
+  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>次はナポリの六・増六・ドリアのⅣなど</small></h2></summary><div class="links">
+    <a class="btn" href="neapolitan.html" data-go="neapolitan">🌋 <span>次はナポリの六 ›<small>2ばんめを半音下げた和音（${PA.nmH(b2)}）。長調では6ばんめもかりる</small></span></a>
     <a class="btn" href="aug6.html" data-go="aug6">↔️ <span>増六の和音 ›<small>長調では、6ばんめを下げた音をかりてつくる</small></span></a>
+    <a class="btn" href="dorian.html" data-go="dorian">🌗 <span>ドリアのⅣ ›<small>こんどは短調。Ⅳの第3音（6ばんめ）を半音上げる和音</small></span></a>
     <a class="btn" href="dim-halfdim.html" data-go="dim-halfdim">⚖️ <span>Ⅴ9の根音省略 ›<small>長調の形と、短調の形（減七）をくらべる</small></span></a>
     <a class="btn" href="minor-why.html" data-go="minor-why">🌙 <span>なぜ7ばんめを上げるの？ ›<small>短調のⅤが長調と同じ導音を使うわけ</small></span></a>
   </div></details>`;

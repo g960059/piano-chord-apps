@@ -48,12 +48,17 @@ test('変化和音クイズ：🔥 チャレンジになるのは、読みかえ
 });
 
 test('変化和音クイズ：ステップの名前とならびは先生のじゅん（異名同音の読みかえはいちばん最後）',()=>{
-  // KLV は lv（リンクの step）のじゅん。ドリアのⅣ（lv 7）はあとから足したので、画面では KLV_VIEW のじゅん（準固有のつぎ）で番号もそのじゅん
+  // KLV は lv（リンクの step）のじゅん。ドリアのⅣ（lv 7）はあとから足したので、画面では KLV_VIEW のじゅん（ナポリのつぎ）で番号もそのじゅん
   assert.deepEqual(L.KLV.map(x=>x.name),['Ⅱ7・ドッペル','副属和音','準固有','ナポリ','増六','ぜんぶ','ドリア']);
-  assert.deepEqual(L.KLV_VIEW.map(lv=>L.KLV[lv-1].name),['Ⅱ7・ドッペル','副属和音','準固有','ドリア','ナポリ','増六','ぜんぶ']);
+  assert.deepEqual(L.KLV_VIEW.map(lv=>L.KLV[lv-1].name),['Ⅱ7・ドッペル','副属和音','準固有','ナポリ','ドリア','増六','ぜんぶ']);
   assert.deepEqual(L.KLV_VIEW.map(L.stepNo),[1,2,3,4,5,6,7]);
   assert.match(L.KLV[5].desc,/ほかのステップの和音ぜんぶと、異名同音の読みかえで出てくるⅤ9の根音省略/);
-  assert.match(cq,/Ⅱ7・ドッペル → 副属和音 → 準固有和音 → ドリアのⅣ → ナポリの六 → 増六 → 異名同音/);
+  assert.match(cq,/Ⅱ7・ドッペル → 副属和音 → 準固有和音 → ナポリの六 → ドリアのⅣ → 増六 → 異名同音/);
+  // 💡 のメモと「くわしくは」のリンクも、ナポリの六のつぎにドリアのⅣ
+  const tips=cq.slice(cq.indexOf('function tipsHTML'));
+  assert.ok(tips.indexOf('<b>ナポリの六</b>')>0&&tips.indexOf('<b>ナポリの六</b>')<tips.indexOf('<b>ドリアのⅣ</b>')&&tips.indexOf('<b>ドリアのⅣ</b>')<tips.indexOf('<b>増六の和音</b>'),'💡 のメモのじゅん');
+  const more=['borrowed','neapolitan','dorian','aug6','enharmonic'].map(id=>tips.indexOf(`href="${id}.html"`));
+  assert.ok(more.every((v,i)=>v>0&&(i===0||v>more[i-1])),'くわしくは：'+more);
 });
 
 // ページをひらく（変化和音クイズ）
@@ -213,12 +218,12 @@ test('異名同音の読みかえ：チャレンジ問題の音（ドイツの6�
 /* ===== レベルアップの順番（ほかのページの文） ===== */
 test('レベルアップの順番：地図・ページの「次は」も先生のじゅん（異名同音の読みかえはいちばん最後）',()=>{
   const PA=loadPA();
-  assert.deepEqual(JSON.parse(JSON.stringify(PA.unit('extra').tasks.map(t=>t.app))),['doppel','secondary','borrowed','dorian','neapolitan','aug6','enharmonic','chroma-quiz']);
+  assert.deepEqual(JSON.parse(JSON.stringify(PA.unit('extra').tasks.map(t=>t.app))),['doppel','secondary','borrowed','neapolitan','dorian','aug6','enharmonic','chroma-quiz']);
   const dp=screenOf(read('doppel.html'));
   assert.ok(!/次は増六/.test(dp),'ドッペルのつぎは副属和音（増六ではない）');
   assert.match(dp,/href="secondary\.html" data-go="secondary"><span aria-hidden="true">🧭<\/span> <span>次は副属和音/);
   assert.match(scriptOf(read('doppel.html')),/PA\.store\.set\('secondary',\{minor:state\.minor,keyIdx:state\.keyIdx,target:5,kind:'V7'\}\)/);
-  // 副属和音 → 次は準固有和音（どの目標でも）、準固有 → 次はドリアのⅣ、ドリア → 次はナポリの六、ナポリ → 次は増六
+  // 副属和音 → 次は準固有和音（どの目標でも）、準固有 → 次はナポリの六、ナポリ → 次はドリアのⅣ、ドリア → 次は増六（2026-11-01（4）先生がきめた）
   const sc=read('secondary.html');
   assert.match(sc,/<a class="btn" href="borrowed\.html" data-go="borrowed"><span aria-hidden="true">🎁<\/span> <span>次は準固有和音 ›<small>同じ主音の短調からかりる\$\{PA\.rn\(\{deg:4,borrowed:true\}\)\}・\$\{PA\.rn\(\{deg:6,borrowed:true\}\)\}<\/small><\/span><\/a>/);
   assert.ok(!/if\(I\.t===5\) return '';/.test(sc),'目標がⅤのときもつながるアプリを出す');
@@ -230,11 +235,23 @@ test('レベルアップの順番：地図・ページの「次は」も先生�
   assert.match(sc,/k==='vii7'\?'短調のⅤ9の根音省略':'長調のⅤ9の根音省略'/);
   assert.ok(!/半減七/.test(screenOf(sc)));
   const bw=read('borrowed.html');
-  assert.match(bw,/href="dorian\.html" data-go="dorian">🌗 <span>次はドリアのⅣ ›/);
-  assert.ok(bw.indexOf('次はドリアのⅣ')<bw.indexOf('href="neapolitan.html" data-go="neapolitan"'),'次はをいちばん上に');
-  assert.ok(!/次はナポリの六/.test(bw),'準固有のつぎはドリアのⅣ');
-  assert.match(read('dorian.html'),/href="neapolitan\.html" data-go="neapolitan">🌋 <span>次はナポリの六 ›/);
-  assert.match(read('neapolitan.html'),/data-act="go" data-v="aug6"><span aria-hidden="true">↔️<\/span> 次は増六の和音/);
+  assert.match(bw,/href="neapolitan\.html" data-go="neapolitan">🌋 <span>次はナポリの六 ›/);
+  assert.ok(bw.indexOf('次はナポリの六')<bw.indexOf('href="dorian.html" data-go="dorian"'),'次はをいちばん上に');
+  assert.ok(!/次はドリアのⅣ/.test(bw),'準固有のつぎはナポリの六');
+  assert.match(bw,/href="dorian\.html" data-go="dorian">🌗 <span>ドリアのⅣ ›/,'ドリアのⅣへのリンクはのこす（次は、ではない）');
+  const np=read('neapolitan.html');
+  assert.match(np,/data-act="go" data-v="dorian"><span aria-hidden="true">🌗<\/span> 次はドリアのⅣ/);
+  assert.ok(np.indexOf('次はドリアのⅣ')<np.indexOf('data-act="go" data-v="aug6"'),'次はをいちばん上に');
+  assert.match(np,/data-act="go" data-v="aug6"><span aria-hidden="true">↔️<\/span> 増六の和音/);
+  assert.ok(!/次は増六/.test(np),'ナポリのつぎはドリアのⅣ');
+  assert.match(scriptOf(np),/if\(v==='dorian'\)\{[\s\S]*?PA\.go\('dorian\.html'\)/,'go:dorian のしょり');
+  assert.doesNotThrow(()=>new Function(scriptOf(np)));
+  const dr=read('dorian.html');
+  assert.match(dr,/href="aug6\.html" data-go="aug6">↔️ <span>次は増六の和音 ›/);
+  assert.ok(dr.indexOf('次は増六の和音')<dr.indexOf('href="neapolitan.html" data-go="neapolitan"'),'次はをいちばん上に');
+  assert.ok(!/次はナポリの六/.test(dr),'ドリアのつぎは増六');
+  assert.match(scriptOf(dr),/go==='aug6'\)\{[^\n]*PA\.store\.set\('aug6',\{[^\n]*minor:true,keyIdx:state\.keyIdx/,'data-go="aug6" で増六のページを短調・おなじ調に');
+  assert.doesNotThrow(()=>new Function(scriptOf(dr)));
   const a6=read('aug6.html');
   assert.match(a6,/data-v="enharmonic"><span aria-hidden="true">🔀<\/span> 次は異名同音の読みかえ/);
   assert.match(a6,/<span class="chalbadge"><span aria-hidden="true">🔥<\/span> チャレンジ<\/span>けんばんでは/,'増六のページの読みかえもチャレンジのしるし');

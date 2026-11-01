@@ -123,7 +123,7 @@
 <script>
 /* 変化和音クイズ：Ⅱ7・ドッペルドミナント・減七/Ⅴ・増六（イタリア・フランス・ドイツ）・ナポリの六・準固有（○Ⅳ・○Ⅵ）・
  *   副属和音（x度調のⅤ7）・Ⅴ9の根音省略（長調の形・減七）を 🎹 けんばんでおさえる／ 👂 ひびきで聴きわける。
- *   ならびとステップは先生のじゅん（docs/TEACHER-FEEDBACK.md）：Ⅱ7・ドッペル → 副属和音 → 準固有和音 → ドリアのⅣ → ナポリの六 → 増六 → 異名同音（ぜんぶ）。
+ *   ならびとステップは先生のじゅん（docs/TEACHER-FEEDBACK.md）：Ⅱ7・ドッペル → 副属和音 → 準固有和音 → ナポリの六 → ドリアのⅣ → 増六 → 異名同音（ぜんぶ）。
  *   まえにならっていない和音が、さきのステップで出ないようにする。画面に「半減七」ということばは出さない
  *   和音のつづりと高さはぜんぶ PA.chroma・PA.henka から（ほかのページとそろえる）
  *   保存（'chroma-quiz'）：kStep（おさえるのステップ1〜7・0＝じぶんでえらぶ）・types・tier（PA.keyDeck のむずかしさ）・weak（にがてな調を多めに）。
@@ -136,7 +136,7 @@
  *   リンクのパラメータ（先生の宿題・学ぶページの「ためしてみる」。しらべかたは linkOf）：
  *     mode＝keys（🎹 おさえる）｜ear（👂 聴きわけ）。mode がなくて step・level・chord・tier のどれか、または key と n のりょうほうがあれば keys
  *     step＝🎹 のステップ1〜7（KLV）：1＝Ⅱ7・ドッペル（Ⅱ7とⅤのⅤ7だけ）  2＝副属和音（ⅤのⅤ9の根音省略も）  3＝準固有（○Ⅳ・○Ⅵ）  4＝ナポリの六  5＝増六3しゅるい  6＝ぜんぶ（Ⅴ9の根音省略も）
- *       7＝ドリアのⅣ（あとから足した。リンクの番号はかえない。画面では準固有のつぎ＝4ばんめにならべ、番号もならびのじゅん（KLV_VIEW）で見せる）
+ *       7＝ドリアのⅣ（あとから足した。リンクの番号はかえない。画面ではナポリのつぎ＝5ばんめにならべ、番号もならびのじゅん（KLV_VIEW）で見せる）
  *     level＝👂 は1〜3（EAR_LV）：1＝Ⅱ7・ドッペル  2＝増六3しゅるい  3＝Ⅳ・○Ⅳ・ナポリ（長調だけ）。画面では先生のじゅん（1・3・2）にならべる
  *       🎹 の level（1〜5）はまえのリンク：そのときとおなじ和音（OLD_KLV）にする（ステップとおなじならそのステップ）。step があれば step
  *       学ぶページから：doppel → step 1・ear 1、secondary → chord dd,s2,s3,s4,s6,ddim、borrowed → step 3、
@@ -192,12 +192,12 @@ const LONG_H={ii7:()=>`${PA.rn(RN.ii7)}（にどしち）`,dd:()=>`ドッペル�
 const longH=(t,key)=>LONG_H[t]?LONG_H[t](key||null):T[t].long;
 // <cq-link>（test/chroma-quiz.test.mjs がここだけ切りだして、レベルのなかみとリンクのしらべかたをたしかめる）
 // 設定でならべるまとまり（TYPES のじゅんばんもこれ。先生のじゅん）
-const GROUPS=[['Ⅱ7・ドッペル',['ii7','dd']],['副属和音',['s2','s3','s4','s6','ddim']],['準固有・ドリア・ナポリ',['ivm','bvi','ivd','n6']],['増六',['it','fr','ger']],['Ⅴ9の根音省略（減七など）',['vii7']]];
+const GROUPS=[['Ⅱ7・ドッペル',['ii7','dd']],['副属和音',['s2','s3','s4','s6','ddim']],['準固有・ナポリ・ドリア',['ivm','bvi','n6','ivd']],['増六',['it','fr','ger']],['Ⅴ9の根音省略（減七など）',['vii7']]];
 const TYPES=GROUPS.flatMap(g=>g[1]), AUG=['it','fr','ger'];
 // 🎹 おさえるのステップ（lv＝ステップの番号。リンクの step）。0＝じぶんでえらぶ（🎛 もんだいのえらびかたの和音のボタン）
 //   先生のじゅん。そのステップでならう和音だけを出す（さきのステップの和音は出さない）。さいごは「ぜんぶ」
 //   学ぶページのリンクがこのばんごうをつかうので、ならびをかえない（ふやすならうしろに）。KLV[lv-1] がそのステップ
-//   画面のならびと見せる番号は KLV_VIEW（先生のじゅん）：ドリアのⅣ（lv 7・あとから足した）は準固有のつぎ（4ばんめ）
+//   画面のならびと見せる番号は KLV_VIEW（先生のじゅん）：ドリアのⅣ（lv 7・あとから足した）はナポリのつぎ（5ばんめ。2026-11-01（4）先生がきめた）
 const KLV=[
   {lv:1,types:['ii7','dd'],name:'Ⅱ7・ドッペル',desc:'Ⅱ7とドッペルドミナント'},
   {lv:2,types:['s2','s3','s4','s6','ddim'],name:'副属和音',desc:'副属和音（ⅡのⅤ7・ⅣのⅤ7・ⅥのⅤ7など。ⅤのⅤ9の根音省略も）'},
@@ -207,7 +207,7 @@ const KLV=[
   {lv:6,types:TYPES,name:'ぜんぶ',desc:'ぜんぶ（ほかのステップの和音ぜんぶと、異名同音の読みかえで出てくるⅤ9の根音省略）'},
   {lv:7,types:['ivd'],name:'ドリア',desc:'ドリアのⅣ（短調のⅣの第3音を半音上げる。短調だけ）'}
 ];
-const KLV_VIEW=[1,2,3,7,4,5,6];
+const KLV_VIEW=[1,2,3,4,7,5,6];
 const stepNo=lv=>KLV_VIEW.indexOf(lv)+1; // 画面に見せるステップの番号（1〜7。リンクの step はそのまま lv）
 // 🔥 チャレンジ：読みかえの和音（減七）といっしょに出すドイツの6（増六 に読みかえる）。kLv＝いまのステップ（0＝じぶんで選ぶ）、sel＝えらんだ和音、
 //   fromChal＝読みかえのチャレンジのリンク（chal=1）から来た。ドイツだけのときは、チャレンジから来たときだけしるしをつける
@@ -1104,13 +1104,13 @@ function tipsHTML(){
     <li>Ⅴの家族と同じで、第9音をのせた<b>${PA.rn({of:5,deg:5,form:9})}</b>、その根音をはぶいた<b>${PA.rn(RN.ddim)}</b>（減七）もあるよ。</li>
     <li><b>副属和音</b>（${PA.rn({of:2,deg:5,form:7})}など）は、Ⅱ・Ⅲ・Ⅳ・Ⅴ・Ⅵ（短調はⅢ・Ⅳ・Ⅴ・Ⅵ・Ⅶ）をいっときⅠにみたてたⅤ7（${PA.rn(RN.dd)}がドッペル）。その音を主音とする調のⅤ7をつくるよ。記号は上の小さい数字が目標、下の大きい数字がⅤ7。このクイズでは${[2,4,6].map(x=>PA.rn({of:x,deg:5,form:7})).join('・')}（短調は${[3,4,6].map(x=>PA.rn({of:x,deg:5,form:7})).join('・')}）を出すよ。</li>
     <li><b>準固有和音</b>は長調で<b>同じ主音の短調からかりる</b>和音（${PA.rn(RN.ivm)}・${PA.rn(RN.bvi)}など）。かりた音（半音下げた6ばんめ）は半音下の5ばんめへすすむ。</li>
-    <li><b>ドリアのⅣ</b>（${PA.rn(RN.ivd)}）は短調で、Ⅳの<b>第3音（音階の6ばんめ）を半音上げた</b>明るいⅣ。上げた音はⅤの導音へ2度上がるよ（長調では使わない）。</li>
     <li><b>ナポリの六</b>（${PA.rn({deg:2,rootDown:true,inv:1})}）は音階の2ばんめを半音下げた音を根音にした長三和音（ナポリの和音）を、<b>第3音（調の4ばんめ）がいちばん下</b>になるようにおいた和音（第1転回形）。根音は文字で2つ下のⅤの導音へ下がるよ。長調では第5音（6ばんめを半音下げた音）も同じ主音の短調からかりる。</li>
+    <li><b>ドリアのⅣ</b>（${PA.rn(RN.ivd)}）は短調で、Ⅳの<b>第3音（音階の6ばんめ）を半音上げた</b>明るいⅣ。上げた音はⅤの導音へ2度上がるよ（長調では使わない）。</li>
     <li><b>増六の和音</b>はドッペルの<b>第5音を半音下げて</b>、その音を<b>いちばん下</b>においた形。<br>イタリア＝根音なし（3つ）、フランス＝根音あり、ドイツ＝根音のかわりに第9音。</li>
     <li>下げた音と上げた音のあいだが<b>増6度</b>。外へひらいてⅤのオクターブへ。ドイツの6は、そのままⅤへすすむと2つの声が5度のままならんで動いてしまうので、あいだに${I64H}をはさむことが多いよ。</li>
     <li>長調の増六は、下げた音（ドイツは第9音も）を同じ主音の短調からかりてくるよ。</li>
     <li><b>Ⅴ9の根音省略</b>（${PA.rn(RN.vii7)}）は、導音からひとつとばしに4つ（導音からつむ形）。短調＝<b>減七</b>（導音は半音上げ、第9音（音階の6ばんめ）は調号どおり）。長調は、第9音が半音高いので減七にならない（長調の形）。ちがうのはその音だけ。</li>
-  </ul><div class="row"><span class="note" style="margin:0">くわしくは</span><a class="btn small" href="doppel.html"><span aria-hidden="true">🔺</span> Ⅱ7とドッペルドミナント</a><a class="btn small" href="secondary.html"><span aria-hidden="true">🧭</span> 副属和音</a><a class="btn small" href="borrowed.html"><span aria-hidden="true">🎁</span> 準固有和音</a><a class="btn small" href="dorian.html"><span aria-hidden="true">🌗</span> ドリアのⅣ</a><a class="btn small" href="neapolitan.html"><span aria-hidden="true">🌋</span> ナポリの六</a><a class="btn small" href="aug6.html"><span aria-hidden="true">↔️</span> 増六の和音</a><a class="btn small" href="enharmonic.html"><span aria-hidden="true">🔀</span> 異名同音の読みかえ</a><a class="btn small" href="dim-halfdim.html"><span aria-hidden="true">⚖️</span> Ⅴ9の根音省略</a></div></details>`;
+  </ul><div class="row"><span class="note" style="margin:0">くわしくは</span><a class="btn small" href="doppel.html"><span aria-hidden="true">🔺</span> Ⅱ7とドッペルドミナント</a><a class="btn small" href="secondary.html"><span aria-hidden="true">🧭</span> 副属和音</a><a class="btn small" href="borrowed.html"><span aria-hidden="true">🎁</span> 準固有和音</a><a class="btn small" href="neapolitan.html"><span aria-hidden="true">🌋</span> ナポリの六</a><a class="btn small" href="dorian.html"><span aria-hidden="true">🌗</span> ドリアのⅣ</a><a class="btn small" href="aug6.html"><span aria-hidden="true">↔️</span> 増六の和音</a><a class="btn small" href="enharmonic.html"><span aria-hidden="true">🔀</span> 異名同音の読みかえ</a><a class="btn small" href="dim-halfdim.html"><span aria-hidden="true">⚖️</span> Ⅴ9の根音省略</a></div></details>`;
 }
 // 📝 の回がおわったときのけっかのカード
 const summaryHTML=()=>sess.summaryHTML({title:'変化和音クイズ',page:QUIZ,params:linkParams(),settings:settingsText()});

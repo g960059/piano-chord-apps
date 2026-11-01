@@ -897,9 +897,9 @@ PA.UNITS=[
     {app:'piece',href:'piece.html?id=k545-1',title:'モーツァルトのソナタ K.545 第1楽章'}],
    soon:'これから、ベートーヴェン・シューベルト・ショパンの曲もふえるよ'},
   // レベルアップしたい人へ（変化和音。先生のじゅん：準固有和音がナポリの六よりさき、異名同音の読みかえはいちばん最後）
-  //   ドリアのⅣ（2026-11-01 先生が「入れてほしい」）は、準固有和音のあと・ナポリの六のまえ（短調の6ばんめの話をつづけて。島岡『和声 理論と実習』Ⅱも Ⅳ7・＋Ⅳ7 → ナポリのじゅん）
+  //   ドリアのⅣ（2026-11-01 先生が「入れてほしい」）は、ナポリの六のあと・増六のまえ（2026-11-01（4）先生がきめた）
   {id:'extra',kind:'extra',title:'🌈 レベルアップしたい人へ',sub:'変化和音：調の音を半音動かす・よその調からかりる',tasks:[
-    {app:'doppel'},{app:'secondary'},{app:'borrowed'},{app:'dorian'},{app:'neapolitan'},{app:'aug6'},{app:'enharmonic'},{app:'chroma-quiz'}]}
+    {app:'doppel'},{app:'secondary'},{app:'borrowed'},{app:'neapolitan'},{app:'dorian'},{app:'aug6'},{app:'enharmonic'},{app:'chroma-quiz'}]}
 ];
 // ステップのあるクイズ：長調・短調のステップの数と、✓ になる数（5もん中）。ホームの★★★（ステップがぜんぶ ✓）でつかう。
 //   chord-quiz.html の STEPS・STEP_PASS とおなじ数にする（test/chord-quiz-cats.test.mjs でたしかめる）
@@ -923,8 +923,8 @@ PA.APPS=[
   {id:'doppel',ic:'🔺',title:'Ⅱ7とドッペルドミナント',d:'Ⅱ7の第3音を上げると「ⅤのためのⅤ7」になる',type:'learn',practice:'chroma-quiz'},
   {id:'secondary',ic:'🧭',title:'副属和音',d:'Ⅱ・Ⅲ・Ⅳ・Ⅵを、いっときⅠにみたてる「その和音のためのⅤ7」',type:'learn',practice:'chroma-quiz'},
   {id:'borrowed',ic:'🎁',title:'準固有和音（借用和音）',d:'長調で、同じ主音の短調からかりる○Ⅳ・○Ⅵなど',type:'learn',practice:'chroma-quiz'},
-  {id:'dorian',ic:'🌗',title:'ドリアのⅣ',d:'短調のⅣの第3音（6ばんめ）を半音上げた、明るいⅣ。導音へなめらかに上がる',type:'learn',practice:'chroma-quiz'},
   {id:'neapolitan',ic:'🌋',title:'ナポリの六',d:'2ばんめを半音下げたナポリの和音。いちばん下の音とⅤへのすすみかた',type:'learn',practice:'chroma-quiz'},
+  {id:'dorian',ic:'🌗',title:'ドリアのⅣ',d:'短調のⅣの第3音（6ばんめ）を半音上げた、明るいⅣ。導音へなめらかに上がる',type:'learn',practice:'chroma-quiz'},
   {id:'aug6',ic:'↔️',title:'増六の和音',d:'イタリア・フランス・ドイツの6。外へひらいてⅤへ',type:'learn',practice:'chroma-quiz'},
   {id:'enharmonic',ic:'🔀',title:'異名同音の読みかえ',d:'同じけんばんでも、書き方とすすむ先で役わりがかわる',type:'learn',practice:'chroma-quiz'},
   {id:'chroma-quiz',ic:'🎯',title:'変化和音クイズ',d:'Ⅱ7・ドッペルから順に、けんばんでおさえる／耳で聴きわける',type:'quiz'},

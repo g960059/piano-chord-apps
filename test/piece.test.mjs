@@ -15,10 +15,23 @@ const read=f=>fs.readFileSync(path.join(root,f),'utf8');
 const CORE=read('assets/core.js'), PIECE=read('assets/piece.js'), SCORE=read('assets/score.js'), VEX=read('assets/vendor/vexflow-bravura.js');
 const FAKE=read('test/_fakedom.mjs').replace(/^export /m,'');
 const load=(opts)=>loadPA(CORE+'\n'+PIECE,opts);
-const DATA=read('assets/pieces/k545-1.json');
+const DATA=read('assets/pieces/k545-1.json'), DATA_REAL=DATA;
 const K545=()=>JSON.parse(DATA);
 const J=x=>JSON.parse(JSON.stringify(x));
 const nm=(PA,t)=>PA.LET_EN[t.letter]+({'-1':'b','0':'','1':'#'})[t.acc];
+// テスト用につくったデータ（本物の K.545 ではない）：4小節の1〜2拍めを、まえの形の Ⅴ¹（1拍め・accept Ⅴ₇¹）と Ⅴ₇¹（2拍め・hear）に分ける。
+// 先生（2026-11-01）：K.545 の4小節1〜2拍めは1つのⅤ7。でも accept・acceptNote・altAccepts・「…でも正解」・hear はアプリにのこるので、このデータでたしかめる
+function SPLIT4(pc){
+  pc=pc||K545();
+  const i=pc.events.findIndex(e=>e.id==='m4a');
+  pc.events.splice(i,1,
+    {id:'m4a',m:4,beat:1,dur:1,key:'C',rn:{deg:5,inv:1},bass:'B3',sop:'G5',skel:{lh:['B3'],rh:['G4','D5','G5']},
+      blank:true,level:'deg',accept:[{deg:5,form:7,inv:1}],acceptNote:'2拍めのファまでいっしょに見て',note:'左手はシ・ソ・レ・ソ。2拍めで右手にファが入る'},
+    {id:'m4b',m:4,beat:2,dur:1,key:'C',rn:{deg:5,form:7,inv:1},bass:'B3',sop:'F5',skel:{lh:['B3'],rh:['G4','D5','F5']},
+      blank:true,level:'full',hear:[1,3],note:'右手のファ（トリル）が入って、Ⅴ7になった'});
+  return pc;
+}
+const DATA_SPLIT=JSON.stringify(SPLIT4());
 
 test('曲のデータ：K.545 はデータのきまりどおり（PA.piece.validate）',()=>{
   const PA=load(), pc=K545();
@@ -39,7 +52,7 @@ test('曲のデータ：K.545 はデータのきまりどおり（PA.piece.valid
 test('曲のデータ：骨組みの音は、書いた調の和音の音（つづりも）。いちばん下が転回形の音',()=>{
   const PA=load(), P=PA.piece, pc=K545();
   // 楽譜で見た和音（手でたしかめたもの。DCML の記号とも同じ）
-  const want={m1:'Ⅰ',m2a:'Ⅴ₇²',m2b:'Ⅰ',m3a:'Ⅳ²',m3b:'Ⅰ',m4a:'Ⅴ¹',m4b:'Ⅴ₇¹',m4c:'Ⅰ',m5:'Ⅳ',m6:'Ⅰ¹',m7a:'Ⅱ₇',m7b:'Ⅴ₇²',m8:'Ⅰ',
+  const want={m1:'Ⅰ',m2a:'Ⅴ₇²',m2b:'Ⅰ',m3a:'Ⅳ²',m3b:'Ⅰ',m4a:'Ⅴ₇¹',m4c:'Ⅰ',m5:'Ⅳ',m6:'Ⅰ¹',m7a:'Ⅱ₇',m7b:'Ⅴ₇²',m8:'Ⅰ',
     m9:'Ⅱ¹',m10a:'Ⅳ',m10b:'Ⅳ¹',m10c:'ⅤのⅤ₇¹',m11a:'Ⅴ',m11b:'Ⅰ²',m11c:'Ⅴ',m11d:'Ⅰ²',m12:'Ⅴ'};
   assert.deepEqual(pc.events.map(e=>e.id),Object.keys(want));
   pc.events.forEach(e=>{
@@ -81,14 +94,18 @@ test('曲のデータ：validate はまちがいを見つける',()=>{
   assert.ok(bad(pc=>{pc.events[1].skel.rh=['F4','B4'];}).some(e=>/根音がない/.test(e)));
   assert.ok(bad(pc=>{pc.events[0].sop='E5';}).some(e=>/いちばん上が sop/.test(e)));
   // オクターブちがいの bass・sop も見つける（音名だけでくらべない）
-  assert.ok(bad(pc=>{pc.events[4].bass='F4';}).some(e=>/いちばん下が bass/.test(e)),'m5：bass F4・骨組み F3');
+  assert.ok(bad(pc=>{pc.events.find(x=>x.id==='m5').bass='F4';}).some(e=>/いちばん下が bass/.test(e)),'m5：bass F4・骨組み F3');
   assert.ok(bad(pc=>{pc.events[0].sop='C6';}).some(e=>/いちばん上が sop/.test(e)));
   assert.ok(bad(pc=>{pc.events[0].acceptNote='x';}).some(e=>/acceptNote/.test(e)),'accept がないのに acceptNote');
   assert.ok(bad(pc=>{pc.titleShort='';}).some(e=>/titleShort/.test(e)));
-  assert.ok(bad(pc=>{pc.events[16].level='deg';}).some(e=>/level:full/.test(e)),'ⅤのⅤ は「ぜんぶ」だけ');
+  assert.equal(K545().events[15].id,'m10c');
+  assert.ok(bad(pc=>{pc.events[15].level='deg';}).some(e=>/level:full/.test(e)),'ⅤのⅤ は「ぜんぶ」だけ');
   assert.ok(bad(pc=>{pc.events[1].dur=3;}).some(e=>/すきま・かさなり|小節の外/.test(e)));
   assert.ok(bad(pc=>{pc.events[1].rn={deg:5,form:8};}).some(e=>/rn の部品/.test(e)));
-  assert.ok(bad(pc=>{pc.events[5].accept=[{deg:5,inv:1}];}).some(e=>/accept/.test(e)),'おなじ記号を accept に入れない');
+  assert.ok(bad(pc=>{pc.events.find(x=>x.id==='m4a').accept=[{deg:5,form:7,inv:1}];}).some(e=>/accept/.test(e)),'おなじ記号を accept に入れない');
+  assert.ok(bad(pc=>{pc.events.find(x=>x.id==='m4a').accept=[{deg:5,form:8}];}).some(e=>/accept/.test(e)),'accept の部品がおかしい');
+  // べつの正解のあるデータ（テスト用につくった4小節の分け方）はきまりどおり
+  assert.deepEqual(J(V(SPLIT4())),[]);
   assert.ok(bad(pc=>{pc.events[2].rn={deg:1,omit:true,alt5:'down'};pc.events[2].level='full';}).length>0);
   assert.ok(bad(pc=>{pc.questions[1].choices=['half','nope'];}).some(e=>/choices|おわりかた/.test(e)));
   assert.ok(bad(pc=>{pc.events[3].m=13;}).some(e=>/ぬき出しの外/.test(e)));
@@ -98,7 +115,7 @@ test('曲のデータ：validate はまちがいを見つける',()=>{
 
 test('記号：どの和音も PA.rn で描けて、読み上げのことばがある',()=>{
   const PA=load(), pc=K545();
-  pc.events.forEach(e=>[e.rn].concat(e.accept||[]).forEach(p=>{
+  pc.events.concat(SPLIT4().events).forEach(e=>[e.rn].concat(e.accept||[]).forEach(p=>{
     const h=PA.rn(p);
     assert.match(h,/^<span class="rnum" role="img" aria-label="[^"]+"><svg/,e.id);
   }));
@@ -117,9 +134,14 @@ test('こたえあわせ：答えかたごとにくらべる部品がちがう�
   assert.ok(P.check(m2a,{deg:5},'deg')); assert.ok(P.check(m2a,{deg:5,inv:1},'deg')); assert.ok(!P.check(m2a,{deg:4},'deg'));
   assert.ok(P.check(m2a,{deg:5,inv:2},'inv')); assert.ok(!P.check(m2a,{deg:5},'inv')); assert.ok(P.check(m2a,{deg:5,form:7,inv:2},'inv'));
   assert.ok(P.check(m2a,{deg:5,form:7,inv:2},'full')); assert.ok(!P.check(m2a,{deg:5,inv:2},'full')); assert.ok(!P.check(m2a,{deg:5,form:7,inv:2,borrowed:true},'full'));
-  // 4小節1拍め：Ⅴ¹（2拍めのファまで見て Ⅴ₇¹ も正解）
+  // 4小節1〜2拍め：まとめて1つの Ⅴ₇¹（先生 2026-11-01）。ぜんぶでは Ⅴ¹ はちがう
   const m4a=E('m4a');
-  assert.ok(P.check(m4a,{deg:5,inv:1},'full')); assert.ok(P.check(m4a,{deg:5,form:7,inv:1},'full')); assert.ok(!P.check(m4a,{deg:5,form:7},'full'));
+  assert.ok(P.check(m4a,{deg:5,form:7,inv:1},'full')); assert.ok(!P.check(m4a,{deg:5,inv:1},'full')); assert.ok(!P.check(m4a,{deg:5,form:7},'full'));
+  assert.ok(P.check(m4a,{deg:5,inv:1},'inv'),'転回形も：7の和音はえらべない'); assert.ok(P.check(m4a,{deg:5},'deg'));
+  // accept：テスト用につくったデータの4小節1拍め Ⅴ¹（2拍めのファまで見て Ⅴ₇¹ も正解）
+  const s4a=SPLIT4().events.find(e=>e.id==='m4a');
+  assert.ok(P.check(s4a,{deg:5,inv:1},'full')); assert.ok(P.check(s4a,{deg:5,form:7,inv:1},'full')); assert.ok(!P.check(s4a,{deg:5,form:7},'full'));
+  assert.ok(!P.check(s4a,{deg:5,form:9,inv:1},'full'));
   // ⅤのⅤ₇¹：ⅤのⅤ がなければちがう
   const m10c=E('m10c');
   assert.ok(P.check(m10c,{of:5,deg:5,form:7,inv:1},'full')); assert.ok(!P.check(m10c,{deg:5,form:7,inv:1},'full'));
@@ -139,8 +161,11 @@ test('問題のならび：答えかたで数がかわる。調の問題がさ�
   const ids=lv=>P.items(pc,lv).map(x=>x.id);
   assert.deepEqual(ids('deg'),['m1','m2a','m2b','m3a','m4a','m4c','m5','m6','m7a','m7b','m9','m10a','m11a']);
   assert.deepEqual(ids('inv'),['m1','m2a','m2b','m3a','m4a','m4c','m5','m6','m7a','m7b','m9','m10a','m10b','m11a']);
-  assert.deepEqual(ids('full'),['key','m1','m2a','m2b','m3a','m4a','m4b','m4c','cad4','m5','m6','m7a','m7b','m9','m10a','m10b','m10c','m11a','cad12']);
+  assert.deepEqual(ids('full'),['key','m1','m2a','m2b','m3a','m4a','m4c','cad4','m5','m6','m7a','m7b','m9','m10a','m10b','m10c','m11a','cad12']);
   assert.deepEqual(J(P.items(pc,'nope')),[]);
+  // テスト用の4小節を分けたデータ：ぜんぶだけ m4b（level:full）がふえる。おわりかたは4小節のさいごの和音のあと
+  assert.deepEqual(P.items(SPLIT4(),'full').map(x=>x.id).slice(5,9),['m4a','m4b','m4c','cad4']);
+  assert.equal(P.items(SPLIT4(),'deg').length,13);
   assert.equal(P.beatText(4.5),'4拍めのうら'); assert.equal(P.beatText(3),'3拍め');
 });
 
@@ -164,9 +189,10 @@ test('ことば：やさしい日本語（分かち書きなし・半減七な�
   assert.match(js,/PA\.staffSVG\(key,cols,o\)/);
 });
 
-// ページの<script>を core・piece.js のあとにうごかす。fetch は曲のデータをかえす。クリックは document の click をよぶ
+// ページの<script>を core・piece.js のあとにうごかす。fetch は曲のデータ（opts.data があればそれ）をかえす。クリックは document の click をよぶ
 function runPage(mem,search,opts){
   const js=read('piece.html').match(/<script>([\s\S]*?)<\/script>/)[1];
+  const DATA=opts&&opts.data||DATA_REAL;
   const stub=`(function(){const els={};document.getElementById=function(id){return els[id]||(els[id]={id,innerHTML:'',style:{},parentNode:null,addEventListener:function(){}});};
     window.__els=els;window.__clicks=[];window.__dl={};window.__wl={};
     document.addEventListener=function(t,f){if(t==='click') window.__clicks.push(f);(window.__dl[t]=window.__dl[t]||[]).push(f);};
@@ -222,10 +248,12 @@ test('ページ：読みこみ → 「？」 → 答える → きろく（和�
   click('adeg',5); // もうこたえたので、かわらない
   let st=PA.store.get('piece-k545-1');
   assert.deepEqual(J(st.ans.deg.m2a),{a:{deg:4},ok:false});
-  // 4小節1拍め：番号だけでは7の和音をえらべないので「…でも正解」は出さない
-  click('pick','m4a'); click('adeg',5);
-  assert.ok(!/でも正解/.test(view()),'番号だけ：accept の行を出さない');
-  assert.match(view(),/せいかい！ <span class="rnum" role="img" aria-label="Ⅴ">[\s\S]*?記号でかくと <span class="rnum" role="img" aria-label="Ⅴ、第1転回形">/);
+  // 4小節1〜2拍め：1つの Ⅴ₇¹。番号だけでは Ⅴ、記号はあとにそえる
+  click('pick','m4a');
+  assert.match(view(),/<h3 id="pick-h" tabindex="-1">4小節1拍めの和音は？<\/h3>/);
+  click('adeg',5);
+  assert.ok(!/でも正解/.test(view()),'K.545 にはべつの正解がない');
+  assert.match(view(),/せいかい！ <span class="rnum" role="img" aria-label="Ⅴ">[\s\S]*?記号でかくと <span class="rnum" role="img" aria-label="Ⅴ、7の和音、第1転回形">/);
   click('pick','m2a');
   click('pnext');
   assert.match(view(),/2小節3拍めの和音は？/);
@@ -263,10 +291,11 @@ test('ページ：ぜんぶ（部品で記号をつくる・調とおわりか�
   click('aq','C',{q:'key'});
   assert.match(view(),/<span class="kpre"[^>]*>C:<\/span>/);
   assert.match(view(),/<h2 id="ph">ピアノ・ソナタ K\.545（ハ長調）<small>/,'答えたら調も');
-  // 4小節1拍め：ぜんぶでは「2拍めのファまでいっしょに見て、Ⅴ₇¹でも正解」。べつの正解で答えたら、えらんだ記号を先に
+  // 4小節1〜2拍め：ぜんぶでは Ⅴ₇¹（Ⅴ¹ はちがう。べつの正解の行もない）
   click('pick','m4a'); click('bdeg',5); click('binv',1); click('bok');
-  assert.match(view(),/せいかい！ <span class="rnum" role="img" aria-label="Ⅴ、第1転回形">/);
-  assert.match(view(),/<p class="note">2拍めのファまでいっしょに見て、<span class="rnum" role="img" aria-label="Ⅴ、7の和音、第1転回形">[\s\S]*?<\/span>でも正解<\/p>/);
+  assert.match(view(),/class="fb bad"/); assert.equal(PA.store.get('piece-k545-1').ans.full.m4a.ok,false);
+  assert.match(view(),/ざんねん。こたえは <span class="rnum" role="img" aria-label="Ⅴ、7の和音、第1転回形">/);
+  assert.ok(!/でも正解/.test(view()));
   assert.ok(!/記号でかくと/.test(view()),'ぜんぶでは記号をそえない（おなじ記号）');
   click('pick','m10c');
   h=view();
@@ -294,10 +323,10 @@ test('ページ：ぜんぶ（部品で記号をつくる・調とおわりか�
   click('plv','deg');
   assert.match(view(),/こたえた 0 \/ 13もん/);
   click('plv','full');
-  assert.match(view(),/こたえた 7 \/ 19もん/);
+  assert.match(view(),/こたえた 7 \/ 18もん/);
   // ひらきなおす（mode なし）→ さいごの答えかた・こたえ
   PA=loadPA2(mem,'?id=k545-1'); await tick(); await tick();
-  assert.match(PA.__el('view').innerHTML,/こたえた 7 \/ 19もん/);
+  assert.match(PA.__el('view').innerHTML,/こたえた 7 \/ 18もん/);
   // さいしょから（この答えかただけけす）
   click=clicker(PA);
   click('preset');
@@ -372,19 +401,52 @@ test('曲のデータ：K.545 の見なおし（楽譜にある高さの骨組�
   assert.ok(!/13小節から、ト長調の新しいメロディー/.test(E('m12').note));
   // 「…と答えても正解」は note ではなく accept の行（答えかたで出しわける）
   pc.events.forEach(e=>assert.ok(!/正解/.test(e.note||''),e.id));
-  assert.equal(E('m4a').acceptNote,'2拍めのファまでいっしょに見て');
 });
 
-test('こたえあわせ：「こう答えても正解」は、その答えかたでちがいがわかるときだけ（PA.piece.altAccepts）',()=>{
-  const PA=load(), P=PA.piece, pc=K545(), m4a=pc.events.find(e=>e.id==='m4a');
+test('曲のデータ：K.545 の4小節1〜2拍めは、まとめて1つの Ⅴ₇¹（先生 2026-11-01：和音は1拍ずつとはかぎらない）。m4b はない',()=>{
+  const PA=load(), pc=K545(), E=id=>pc.events.find(e=>e.id===id);
+  const m4a=E('m4a');
+  assert.deepEqual(J(m4a.rn),{deg:5,form:7,inv:1}); assert.equal(PA.rnText(m4a.rn),'Ⅴ₇¹');
+  assert.equal(m4a.m,4); assert.equal(m4a.beat,1); assert.equal(m4a.dur,2,'1〜2拍め');
+  assert.equal(m4a.level,'deg'); assert.equal(m4a.blank,true);
+  assert.equal(m4a.bass,'B3'); assert.equal(m4a.sop,'G5');
+  assert.deepEqual(J(m4a.skel),{lh:['B3'],rh:['D5','F5','G5']});
+  assert.equal(E('m4b'),undefined,'m4b はない');
+  assert.equal(E('m4c').beat,3,'つぎは3拍めの Ⅰ');
+  assert.deepEqual(pc.events.filter(e=>e.m===4).map(e=>e.id),['m4a','m4c']);
+  assert.equal(pc.events.length,21);
+  // いまの K.545 には、べつの正解（accept・acceptNote）も hear もない
+  pc.events.forEach(e=>{assert.equal(e.accept,undefined,e.id);assert.equal(e.acceptNote,undefined,e.id);assert.equal(e.hear,undefined,e.id);});
+});
+
+test('こたえあわせ：「こう答えても正解」は、その答えかたでちがいがわかるときだけ（PA.piece.altAccepts。テスト用のデータ）',()=>{
+  const PA=load(), P=PA.piece, pc=SPLIT4(), m4a=pc.events.find(e=>e.id==='m4a');
   assert.deepEqual(J(P.altAccepts(m4a,'deg')),[]);
   assert.deepEqual(J(P.altAccepts(m4a,'inv')),[],'転回形も：7の和音はえらべないので Ⅴ¹ と Ⅴ₇¹ はおなじ');
   assert.deepEqual(J(P.altAccepts(m4a,'full')),[{deg:5,form:7,inv:1}]);
   pc.events.filter(e=>e.id!=='m4a').forEach(e=>assert.deepEqual(J(P.altAccepts(e,'full')),[],e.id));
+  K545().events.forEach(e=>assert.deepEqual(J(P.altAccepts(e,'full')),[],'K.545：'+e.id));
 });
 
-test('ページ：ぜんぶでべつの正解（accept）で答えたら、えらんだ記号を先に「せいかい！Ⅴ₇¹（Ⅴ¹でも正解）」',async()=>{
-  const PA=loadPA2(new Map(),'?id=k545-1&mode=full'); await tick(); await tick();
+test('ページ：べつの正解（accept）があるとき（テスト用のデータ）。ぜんぶでは「…でも正解」の行、番号だけでは出さない',async()=>{
+  const mem=new Map();
+  let PA=loadPA2(mem,'?id=k545-1&mode=full',{data:DATA_SPLIT}); await tick(); await tick();
+  let view=()=>PA.__el('view').innerHTML, click=clicker(PA);
+  assert.match(view(),/こたえた 0 \/ 19もん/,'m4b（ぜんぶだけ）で1もんふえる');
+  // ぜんぶ：rn（Ⅴ¹）で答えたら「2拍めのファまでいっしょに見て、Ⅴ₇¹でも正解」
+  click('pick','m4a'); click('bdeg',5); click('binv',1); click('bok');
+  assert.match(view(),/せいかい！ <span class="rnum" role="img" aria-label="Ⅴ、第1転回形">/);
+  assert.match(view(),/<p class="note">2拍めのファまでいっしょに見て、<span class="rnum" role="img" aria-label="Ⅴ、7の和音、第1転回形">[\s\S]*?<\/span>でも正解<\/p>/);
+  assert.ok(!/記号でかくと/.test(view()),'ぜんぶでは記号をそえない（おなじ記号）');
+  // 番号だけ：7の和音をえらべないので「…でも正解」は出さない
+  click('plv','deg');
+  click('pick','m4a'); click('adeg',5);
+  assert.ok(!/でも正解/.test(view()),'番号だけ：accept の行を出さない');
+  assert.match(view(),/せいかい！ <span class="rnum" role="img" aria-label="Ⅴ">[\s\S]*?記号でかくと <span class="rnum" role="img" aria-label="Ⅴ、第1転回形">/);
+});
+
+test('ページ：ぜんぶでべつの正解（accept）で答えたら、えらんだ記号を先に「せいかい！Ⅴ₇¹（Ⅴ¹でも正解）」（テスト用のデータ）',async()=>{
+  const PA=loadPA2(new Map(),'?id=k545-1&mode=full',{data:DATA_SPLIT}); await tick(); await tick();
   const view=()=>PA.__el('view').innerHTML, click=clicker(PA);
   click('pick','m4a'); click('bdeg',5); click('bform',7); click('binv',1); click('bok');
   const h=view();
@@ -495,10 +557,16 @@ test('本物の楽譜：validate は、本物の楽譜と骨組み・記号の�
   // 骨組み・記号のまちがい（骨組みだけならあっている形でも、本物の楽譜とあわない）
   assert.ok(bad(pc=>{const e=pc.events.find(x=>x.id==='m5');e.bass='F2';e.skel.lh=['F2'];}).some(e=>/m5.*いちばん下（F3）が bass（F2）/.test(e)),'オクターブちがいの bass');
   assert.ok(bad(pc=>{const e=pc.events.find(x=>x.id==='m9');e.rn={deg:4};e.bass='F3';e.skel={lh:['F3','A3'],rh:['C4']};e.sop='C4';}).some(e=>/m9.*鳴りはじめるD4が和音の音ではない/.test(e)),'Ⅱ¹ を Ⅳ と書いた');
-  // hear：4小節2拍めのⅤ₇¹ は、1拍めの左手のシ（第3音）もいっしょに見る
-  assert.deepEqual(J(K545().events.find(x=>x.id==='m4b').hear),[1,3]);
-  assert.ok(bad(pc=>{delete pc.events.find(x=>x.id==='m4b').hear;}).some(e=>/m4b/.test(e)),'hear がないと、2拍めだけではシが鳴っていない');
-  assert.ok(bad(pc=>{pc.events.find(x=>x.id==='m4b').hear=[3,4];}).some(e=>/m4b.*hear/.test(e)));
+  // hear（テスト用のデータ）：4小節2拍めだけの Ⅴ₇¹ は、1拍めの左手のシ（第3音）もいっしょに見る
+  const sp=f=>{const pc=SPLIT4();f(pc);return V(pc);}, m4b=pc=>pc.events.find(x=>x.id==='m4b');
+  assert.deepEqual(J(m4b(SPLIT4()).hear),[1,3]);
+  assert.deepEqual(J(sp(()=>{})),[]);
+  assert.ok(sp(pc=>{delete m4b(pc).hear;}).some(e=>/m4b/.test(e)),'hear がないと、2拍めだけではシが鳴っていない');
+  assert.ok(sp(pc=>{m4b(pc).hear=[3,4];}).some(e=>/m4b.*hear/.test(e)),'hear がその和音のあいだをふくまない');
+  assert.ok(sp(pc=>{m4b(pc).hear=[1];}).some(e=>/m4b.*hear/.test(e)),'hear の形');
+  assert.ok(sp(pc=>{m4b(pc).hear=[1,9];}).some(e=>/m4b.*hear/.test(e)),'小節の外');
+  // いまの K.545：1〜2拍めをまとめた Ⅴ₇¹ は hear なしで、1拍めのシも2拍めのファも見える
+  assert.deepEqual(J(V(K545())),[]);
 });
 
 test('本物の楽譜：VexFlow で描く（スマホ＝1段1小節で12段・広い画面＝2小節で6段。どの「？」も拍の位置）',async()=>{
@@ -528,9 +596,13 @@ test('本物の楽譜：VexFlow で描く（スマホ＝1段1小節で12段・�
       if(k) assert.ok(v.x>s.evs[k-1].x&&v.x0>=s.evs[k-1].x1-1e-6,'じゅんに・かさならない');
     }));
   });
-  // 4小節：Ⅴ¹（1拍め）・Ⅴ₇¹（2拍め）・Ⅰ（3拍め）。1拍ぶんは、せまい画面（276px）でも「？」（52px）が入るはば
+  // 4小節：Ⅴ₇¹（1〜2拍め）・Ⅰ（3拍め）
   const s4=L1.systems[3], u=276/L1.W;
-  assert.equal(s4.evs.length,3); assert.ok((s4.evs[1].x-s4.evs[0].x)*u>=40,'となりの拍との間');
+  assert.equal(s4.evs.length,2); assert.deepEqual(J(s4.evs.map(v=>pc.events[v.i].id)),['m4a','m4c']);
+  assert.ok((s4.evs[1].x-s4.evs[0].x)*u>=40,'となりの和音との間');
+  // 1拍ぶんの和音（テスト用のデータ：Ⅴ¹ 1拍め・Ⅴ₇¹ 2拍め）でも、せまい画面（276px）で「？」（52px）が入るはば
+  const sp=SPLIT4(), S4=PA.score.layout(sp,1).systems[3], u2=276/PA.score.layout(sp,1).W;
+  assert.equal(S4.evs.length,3); assert.ok((S4.evs[1].x-S4.evs[0].x)*u2>=40,'となりの拍との間');
   // 5小節4拍め：左手のヘ音記号は和音の前にそえるだけ。和音（F3・C4）は右手の4拍め（D5）とおなじ列（16分おくれない）
   [L1,L2].forEach(L=>{
     const hs=[].concat(...L.systems.map(s=>s.heads)).filter(h=>h.m===5), at=(hand,t)=>hs.filter(h=>h.hand===hand&&h.t===t).map(h=>h.x);
@@ -554,10 +626,10 @@ test('ページ：本物の楽譜がふつう。「？」は楽譜の下の列�
   assert.equal((h.match(/<div class="sys" /g)||[]).length,12,'スマホ：1段に1小節');
   assert.equal((h.match(/<div class="sheet" /g)||[]).length,12);
   assert.equal((h.match(/<svg [^>]*class="vfsvg"/g)||[]).length,12);
-  assert.equal((h.match(/<div class="lslot" style="left:[\d.]+%">/g)||[]).length,22,'和音がかわる所ぜんぶ（答えるのも、見せるだけのも）');
+  assert.equal((h.match(/<div class="lslot" style="left:[\d.]+%">/g)||[]).length,21,'和音がかわる所ぜんぶ（答えるのも、見せるだけのも）');
   assert.equal((h.match(/class="slot[^"]* q"/g)||[]).length,13,'「？」は13（1小節めのⅠも）');
-  assert.equal((h.match(/<i class="tick" style="left:[\d.]+%" aria-hidden="true"><\/i>/g)||[]).length,22,'拍の位置のしるし');
-  assert.equal((h.match(/<i class="hl" data-ev="\d+"/g)||[]).length,22);
+  assert.equal((h.match(/<i class="tick" style="left:[\d.]+%" aria-hidden="true"><\/i>/g)||[]).length,21,'拍の位置のしるし');
+  assert.equal((h.match(/<i class="hl" data-ev="\d+"/g)||[]).length,21);
   // 楽曲分析とおなじく、記号の列は楽譜の下。調（C:）は列の左はし、さいしょの段だけ
   assert.ok(h.indexOf('<div class="lane">')>h.indexOf('<div class="sheet" '),'列は楽譜の下');
   assert.equal((h.match(/<span class="kpre" aria-hidden="true">C:<\/span>/g)||[]).length,1);
@@ -579,7 +651,7 @@ test('ページ：本物の楽譜がふつう。「？」は楽譜の下の列�
   h=view();
   assert.match(h,/10小節4拍めのうらの和音は？/);
   assert.match(h,/data-act="pplay" data-v="m10c"/); assert.match(h,/data-act="pskel" data-v="m10c" aria-pressed="false">[\s\S]*?和音にして聴く/);
-  assert.match(h,/<i class="hl" data-ev="16" style="left:[\d.]+%;width:[\d.]+%;background:#e6eefc"/,'えらんだ和音の所に色');
+  assert.match(h,/<i class="hl" data-ev="15" style="left:[\d.]+%;width:[\d.]+%;background:#e6eefc"/,'えらんだ和音の所に色');
   click('pskel','m10c'); await tick();
   assert.equal(PA.__ctx('__chords'),1,'骨組みの和音'); assert.equal(PA.__ctx('__notes').length,0);
   click('pskel','m10c');
