@@ -52,6 +52,7 @@
 .soundhint .btn{background:#fff;border:2px solid #ecc967}
 .sessrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;margin-top:8px}
 .sessrow .btn{min-height:44px;padding-top:6px;padding-bottom:6px}
+.sessrow .pa-week{margin-right:auto}
 /* ならび（カード） */
 .seq{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-top:12px}
 .seq.n5{grid-template-columns:repeat(5,minmax(0,1fr))}
@@ -127,6 +128,7 @@
  * 保存（'progression'）：step（1〜5）・slow（🐢 ゆっくり）・rec（ステップごとの {right, hint, total, streak, best}）・openSet・mixAt（その回のとちゅうでステップをかえた：回の startedAt）・
  *   いまのもんだい q（PA.prog.validQ でたしかめる）・ans・hint（こたえる前に「ためしに入れて聴く」をつかった）・played・bags（こたえのふくろ）
  * れんしゅうの回（📝 きょうの5もん・リンクの n）は PA.session（sig＝'step=…'）。回のステップは sig からよむ（とっておいた回にもどったときも）。
+ *   さいごまでやった日は PA.earDays.mark()（'ear-days'。和音の聴きわけとおなじ今週の丸・つづけた日数）。
  * こたえる前は、カードの名前をかくす（P.shown。ほかの和音の名前からこたえがわかってしまわないように）
  * リンク：step＝1〜5、n＝1〜20、slow＝1（PA.prog.readLink）。よんだらアドレスからはずす */
 const P=PA.prog, E=PA.ending, QUIZ='progression', mod=PA.mod;
@@ -152,6 +154,8 @@ function cleanRec(r){
   return {right:r.right,hint,total:r.total,streak,best:isInt(r.best,streak,1e6)?r.best:streak};
 }
 let sess;
+// dayFx：5もんをさいごまでやって、その日はじめてのしるしがついた（けっかのカードをはじめて出すときだけ紙ふぶき）
+let dayFx=false;
 // れんしゅうの回のステップ（回の sig＝'step=…' から。回がなければ 0）
 const sessStepOf=()=>{const st=sess&&sess.state(), m=st&&/^step=([1-5])$/.exec(st.sig||'');return m?+m[1]:0;};
 // その回のとちゅうでステップをかえたか（mixAt＝その回の startedAt）
@@ -206,7 +210,8 @@ function answer(v){
   if(sess.active()){
     const data=dataOf(), what=q.type==='chord'?'？の和音':q.type==='bass'?'？のいちばん下':'いちばん上';
     const label=`${PA.keyName(keyOfQ())}　${seqText(data)}　${what}：${recLabel(q,P.answer(q))}${ok?'':'（選んだ：'+recLabel(q,v)+'）'}`;
-    sess.record({ok,hint,label:label.slice(0,80),key:KD?KD.id(q.minor,q.keyIdx):undefined});
+    const rr=sess.record({ok,hint,label:label.slice(0,80),key:KD?KD.id(q.minor,q.keyIdx):undefined});
+    if(rr&&rr.finished) dayFx=PA.earDays.mark().first; // さいごまでやった日にしるし（その日はじめてなら、けっかで紙ふぶき）
   }
 }
 
@@ -283,7 +288,8 @@ function scoreHTML(){
   return `<div class="score">⭐ ${r.right} / ${r.total}もん正解${r.hint?` <span class="note" style="margin:0">💡 ヒントでできた${r.hint}</span>`:''} <span class="note" style="margin:0">れんぞく${r.streak}</span></div>`
     +(!rec?'':`<div class="rec">📒 ステップ${Q.step}のさいこう：<b>${r.best?`${r.best}もんれんぞく`:'まだないよ'}</b>${r.best>=CLEAR?'✓':`<span>（${CLEAR}もんれんぞくで ✓）</span>`}</div>`);
 }
-const sessHTML=()=>`<div class="sessrow">${sess.active()||sess.finished()?sess.progressHTML():`<button class="btn small" data-act="sess5">${PA.icon('session')}きょうの5もん</button>`}</div>`;
+// 今週の丸（きょうの5もんをやった日。いちどでもやったことがあるときだけ）と、きょうの5もんのボタン・すすみぐあい
+const sessHTML=()=>`<div class="sessrow">${PA.earDays.list().length?PA.earDays.weekHTML():''}${sess.active()||sess.finished()?sess.progressHTML():`<button class="btn small" data-act="sess5">${PA.icon('session')}きょうの5もん</button>`}</div>`;
 const titleText=q=>q.type==='chord'?'「？」の和音は？':q.type==='bass'?'「？」の和音の、いちばん下の音は？':'いちばん上の音は、どう動いた？';
 function subText(q){
   if(q.type==='chord') return 'ならびが鳴るよ。「？」のところをよく聴こう。ほかの和音の名前は、こたえたあとに出るよ。';
@@ -302,7 +308,7 @@ function cardsHTML(data,reveal){
     const nm=reveal?`<span class="nm"><span class="lh">${N(c.lh[0])}</span>${c.rh.map(n=>`<span>${N(n)}</span>`).join('')}</span>`:'';
     const al=`${i+1}つめ${ask&&hideName?'「？」':hideName?'':c.label}${hideBass?'。いちばん下は？':''}${form?'（'+form+'）':''}`;
     return `<div class="scw"><button class="scard ${ask?'ask':''} ${hideName&&!ask?'hid':''} ${i===curCard()?'on':''}" style="--c:${cc};--l:${ll};--t:${tc}" data-act="pcard" data-v="${i}" aria-label="${al}。タップで鳴らす">`
-      +`<span class="num">${ask&&hideName?'？':hideName?'♪':c.label}</span>${hideBass?'<span class="inv">下は？</span>':form?`<span class="inv fm">${form}</span>`:''}${nm}</button></div>`;
+      +`<span class="num">${ask&&hideName?'？':hideName?'♪':PA.rnH(c.label)}</span>${hideBass?'<span class="inv">下は？</span>':form?`<span class="inv fm">${form}</span>`:''}${nm}</button></div>`;
   }).join('')+`</div>`;
 }
 // いちばん上の音の動き（小さな線）
@@ -354,7 +360,7 @@ function staffHTML(data){
   const q=Q.q, key=keyOfQ();
   const cols=data.map((c,i)=>{
     const ask=q.type!=='top'&&i===q.i;
-    return {notes:c.rh,lh:c.lh,color:PA.COL[c.ch],accColor:'#d1495b',op:curStaff()<0||i===curStaff()?1:0.35,label:c.label,
+    return {notes:c.rh,lh:c.lh,color:PA.COL[c.ch],accColor:'#d1495b',op:curStaff()<0||i===curStaff()?1:0.35,label:c.label==='？'?c.label:E.rnOf(c),
       sub:c.inv?P.BASS_ROLES[P.roleOf(c)].form:'',labelColor:PA.COL[c.ch],hl:ask?'#fff3c4':null,lhRing:ask&&q.type==='bass'?'#c98500':null};
   });
   const arrows=q.type==='top'?data.slice(1).map((c,i)=>({c1:i,i1:2,c2:i+1,i2:2,color:'#3b4fa8'})):[];
@@ -386,7 +392,8 @@ function render(){
   const view=document.getElementById('view');
   if(Q.sum&&sess.finished()){ // れんしゅうの回がおわった：けっかのカード
     const L=sessStepOf()||Q.step;
-    PA.paint(view,`<div class="stack">${sess.summaryHTML({title:'ならびの聴きわけ',page:QUIZ,params:linkParams(L),settings:settingsText(L)+(sessMixed()?'・とちゅうでステップをかえた':'')})}${settingsHTML()}</div>`,'sum');
+    const extra=PA.earDays.cheerHTML({fx:dayFx,n:sess.n()}); dayFx=false;
+    PA.paint(view,`<div class="stack">${sess.summaryHTML({title:'ならびの聴きわけ',page:QUIZ,params:linkParams(L),settings:settingsText(L)+(sessMixed()?'・とちゅうでステップをかえた':''),extra})}${settingsHTML()}</div>`,'sum');
     renderActions(); return;
   }
   Q.sum=false;

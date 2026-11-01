@@ -67,21 +67,18 @@ test('かたち：おなじ音のまま、いちばん下を1オクターブ上�
   }
 });
 
-test('数字のしるし：いちばん下から文字で数えたへだたり',()=>{
+test('へだたりの数と、和音記号（藝大式：右上の小さい数字＝転回形、右下の7）',()=>{
   const EXP3=[[3,5],[3,6],[4,6]], EXP7=[[3,5,7],[3,5,6],[3,4,6],[2,4,6]];
   for(const key of KEYS) for(const ch of CHS){
     INV.shapes(key,ch).forEach((s,i)=>{
-      const nums=INV.nums(s), exp=(ch==='V7'?EXP7:EXP3)[i];
-      assert.deepEqual(nums,exp,kn(key)+' '+ch+' '+i);
-      assert.deepEqual(INV.fig(ch,i).all,exp);
+      assert.deepEqual(INV.nums(s),(ch==='V7'?EXP7:EXP3)[i],kn(key)+' '+ch+' '+i);
     });
   }
-  assert.deepEqual([0,1,2].map(i=>INV.labelText('I',i)),['Ⅰ','Ⅰ6','Ⅰ6/4']);
-  assert.deepEqual([0,1,2].map(i=>INV.labelText('IV',i)),['Ⅳ','Ⅳ6','Ⅳ6/4']);
-  assert.deepEqual([0,1,2,3].map(i=>INV.labelText('V7',i)),['Ⅴ7','Ⅴ6/5','Ⅴ4/3','Ⅴ2']);
-  assert.equal(INV.fig('I',2).alt,'46'); assert.equal(INV.fig('V7',1).alt,'65');
-  // 書く数はぜんぶの数の中から
-  for(const ch of CHS) for(let i=0;i<INV.CHORDS[ch].n;i++) INV.fig(ch,i).fig.forEach(x=>assert.ok(INV.fig(ch,i).all.includes(x)));
+  assert.deepEqual([0,1,2].map(i=>INV.labelText('I',i)),['Ⅰ','Ⅰ¹','Ⅰ²']);
+  assert.deepEqual([0,1,2].map(i=>INV.labelText('IV',i)),['Ⅳ','Ⅳ¹','Ⅳ²']);
+  assert.deepEqual([0,1,2,3].map(i=>INV.labelText('V7',i)),['Ⅴ₇','Ⅴ₇¹','Ⅴ₇²','Ⅴ₇³']);
+  assert.deepEqual(INV.rnOf('V7',2),{deg:5,form:7,inv:2});
+  assert.deepEqual(INV.rnOf('I',0),{deg:1});
 });
 
 test('コードネーム（/ の右がいちばん下）',()=>{
@@ -114,8 +111,8 @@ test('なぜかたちをかえるの？：かえると手がほとんど動か�
   for(const key of KEYS){
     const inv=INV.cadence(key,'inv'), root=INV.cadence(key,'root'), tag=kn(key);
     assert.deepEqual(inv.map(c=>c.ch),['I','IV','V7','I']);
-    assert.deepEqual(inv.map(c=>c.bass),[0,2,1,0],tag+'Ⅰ → Ⅳ6/4 → Ⅴ6/5 → Ⅰ');
-    assert.deepEqual(inv.map(c=>INV.labelText(c.ch,c.bass)),['Ⅰ','Ⅳ6/4','Ⅴ6/5','Ⅰ']);
+    assert.deepEqual(inv.map(c=>c.bass),[0,2,1,0],tag+'Ⅰ → Ⅳ² → Ⅴ₇¹ → Ⅰ');
+    assert.deepEqual(inv.map(c=>INV.labelText(c.ch,c.bass)),['Ⅰ','Ⅳ²','Ⅴ₇¹','Ⅰ']);
     assert.deepEqual(root.map(c=>c.bass),[0,0,0,0],tag);
     // 和音の音だけをつかう
     for(const seq of [inv,root]) seq.forEach(c=>{

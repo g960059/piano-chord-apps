@@ -50,7 +50,8 @@
 .topbtn .ts-go{flex:none;padding:6px 12px;border-radius:999px;background:var(--soft);font-size:14px}
 .topclose{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-top:10px}
 .actionbar[hidden]{display:none}
-.sessline{display:flex;justify-content:flex-end;margin-top:6px}
+.sessline{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:6px 10px;margin-top:6px}
+.sessline .pa-week{margin-right:auto}
 .soundhint{background:#fff4d6;color:#6e4c00;border-radius:12px;padding:2px 4px 2px 10px}
 .soundhint .btn{min-height:44px;background:#fff;border:2px solid #ecc967}
 /* まちがえたとき：えらんだ和音とせいかいをおなじ高さでくらべる */
@@ -180,12 +181,6 @@ body{display:flex;flex-direction:column;min-height:calc(100vh - env(safe-area-in
 .kbwrap{margin-top:12px}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:14px;color:var(--sub);margin-top:4px}
 .legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px}
-.cmp{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
-.cmp .btn{flex-direction:column;gap:0;color:var(--c);padding:6px 6px;font-size:15px;border-radius:16px;min-height:56px}
-.cmp .btn small{font-size:12.5px;font-weight:700;color:var(--sub)}
-.hints{margin:8px 0 0;padding:0;list-style:none;font-size:15px}
-.hints li{padding:5px 0;border-bottom:1px solid var(--line)}
-.hints li:last-child{border-bottom:none}
 @media (max-width:420px){.echoice{min-height:92px}}
 @media (prefers-reduced-motion:reduce){.celebrate,.hearts .gone{animation:none}}
 @media (min-width:700px){
@@ -204,7 +199,6 @@ body{display:flex;flex-direction:column;min-height:calc(100vh - env(safe-area-in
   .echoices.n10 .echoice{grid-column:span 2}
   .echoices.n10 .echoice:nth-child(9){grid-column:3/span 2}
   .echoices.many .echoice{min-height:96px}
-  .cmp{grid-template-columns:repeat(5,1fr)}
 }
 </style>
 </head>
@@ -217,17 +211,17 @@ body{display:flex;flex-direction:column;min-height:calc(100vh - env(safe-area-in
 <script>
 /* 和音の聴きわけ：10しゅるいの和音を「ひびきの感じ」で当てる（レベル1〜8）。
  * 毎回根音・転回形・高さをかえるので、音名を計算せずに耳で答えるれんしゅうになる。
- * 📝 れんしゅう＝すきなレベルをえらぶ。なんどでもきける。こたえる前に「くらべてきく」をつかうと「ヒントでできた」
- *   （⭐ はふえないが、れんぞくはそのまま）。「📝 きょうの5もん」で5もんの回とけっかのカード。
+ * 📝 れんしゅう＝すきなレベルをえらぶ。なんどでもきける。「📝 きょうの5もん」で5もんの回とけっかのカード。
+ *   （「くらべてきく」はなくした：クイズに集中したい人にはじゃまになるので。2026-11-01）
  * 🏆 チャレンジ＝ランキング（もとの「和音ききわけ」）。ライフ3つ。5もんれんぞく正解でつぎのレベルへ、
  *   まちがえたらライフがへって1つ前のレベルへ。ライフ0でおわり → ニックネームでランキングにのせる。
  *   きまり（しゅるいの列・ライフ・レベル・もういちどきける回数）は assets/ear-game.js（サーバー src/worker.js とおなじ）。
  *   POST api/run でもらった seed からしゅるいをきめ、おわったら POST api/score に答えの列をおくる（サーバーが採点しなおす）。
  *   サーバーにつながらない（オフライン・file://・ふつうの静的サーバー）ときは、ランキングなしであそべる。
- *   こたえるまで「くらべてきく」はつかえない。
  * 📊 ランキング＝GET api/ranking（今週・ぜんぶ、上位50人とじぶんの順位）。
  * きろく：PA.store 'ear'（せってい・れんしゅう・とちゅうのチャレンジ）、'ear-best'（じぶんのチャレンジのきろく）、
- *   'ear-player'（ランダムな端末の番号）、'ear-name'（さいごにつかったニックネーム）、'ear-rank-intro'（なまえのせつめいを見た）。
+ *   'ear-player'（ランダムな端末の番号）、'ear-name'（さいごにつかったニックネーム）、'ear-rank-intro'（なまえのせつめいを見た）、
+ *   'ear-days'（きょうの5もんをさいごまでやった日。PA.earDays。ならびの聴きわけとおなじきろく）。
  * つづりは3度ずつ（sus4は根音・4度・5度）つみかさねて正しく書き、重嬰・重変（x・𝄫）が出ない根音だけをつかう。
  * リンク：mode＝practice｜challenge、level＝1〜8（れんしゅう）、n＝1〜20（れんしゅうの回）。 */
 /* ===== ここから test/ear.test.mjs もよむ（画面をつかわないところ） ===== */
@@ -242,7 +236,7 @@ const T={
   dom7:{label:'Ⅴ7',word:'次へ行きたい',emoji:'➡️',color:PA.COL.V7,sym:'7',desc:'「次の和音へ行きたい！」とひっぱる',ints:[[0,0],[2,4],[4,7],[6,10]],fam:'V7'},
   maj7:{label:'長七',word:'おしゃれ',emoji:'✨',color:'#a86a00',sym:'M7',desc:'キラキラおしゃれ。明るくて、すこしせつない',ints:[[0,0],[2,4],[4,7],[6,11]]},
   min7:{label:'短七',word:'やさしいおとな',emoji:'🌙',color:'#2b6cb0',sym:'m7',desc:'やわらかくて、おとなっぽい',ints:[[0,0],[2,3],[4,7],[6,10]]},
-  hdim7:{label:'半減七',word:'くもり・なぞ',emoji:'🌫️',color:'#5f6577',sym:'m7(♭5)',desc:'くもり空みたいな、なぞめいたひびき',ints:[[0,0],[2,3],[4,6],[6,10]]},
+  hdim7:{label:'m7(♭5)',word:'くもり・なぞ',emoji:'🌫️',color:'#5f6577',sym:'m7(♭5)',desc:'「マイナーセブン・フラットファイブ」とよむよ。くもり空みたいな、なぞめいたひびき。長調のⅤ9から根音をはぶくと、このひびき',ints:[[0,0],[2,3],[4,6],[6,10]]},
   dim7:{label:'減七',word:'ドキドキ',emoji:'😱',color:'#b0307a',sym:'dim7',desc:'あやしくてドキドキ。もりあがる場面やこわい場面で',ints:[[0,0],[2,3],[4,6],[6,9]],fam:'DIM'}
 };
 const ORDER=['maj','min','dim','aug','sus4','dom7','maj7','min7','hdim7','dim7'];
@@ -297,8 +291,6 @@ function pickRoot(type,r){
   const nAcc=rt=>build(rt,type).filter(n=>n.acc).length, best=Math.min(...cs.map(nAcc));
   return pick(cs.filter(rt=>nAcc(rt)===best),r);
 }
-// くらべてきく：おなじ「ド」からつくった10しゅるい（音名は出さない）
-const CMP={}; ORDER.forEach(t=>{CMP[t]=T[t].ints.map(([,s])=>60+s);});
 
 const isInt=(v,lo,hi)=>Number.isInteger(v)&&v>=lo&&v<=hi;
 function sameTones(want,notes){
@@ -402,13 +394,12 @@ const RUN_KEEP=12*3600e3; // とちゅうのチャレンジをのこす時間（
 
 /* ===== 状態（保存する：和音クイズとおなじきまり） ===== */
 // mode：'free'＝📝 れんしゅう、'ch'＝🏆 チャレンジ、'rank'＝📊 ランキング
-// q・answer・left・resShown・hinted：いま見えているもんだい（チャレンジのときはチャレンジのもんだい）
-// hinted：こたえる前に「くらべてきく」をつかった（れんしゅうだけ）
+// q・answer・left・resShown：いま見えているもんだい（チャレンジのときはチャレンジのもんだい）
 // lvBest[lv]：れんしゅうでそのレベルのさいこうれんぞく（CLEAR いじょうで ✓）、lvRun：いまのレベルのれんぞく
 // topOpen：上のせっていのカードをひらいているか（はじめてのときだけひらいて出す。2回めからは1行にたたむ）
 // sessLv：📝 きょうの5もんをはじめたときのレベル（けっかのカードとリンクにつかう）、sessMix：とちゅうでレベルをかえた
 const state={mode:'free',level:1,q:null,answer:null,left:null,right:0,hint:0,total:0,streak:0,resShown:false,qn:0,fresh:false,askedAt:0,
-  hinted:false,lvBest:[0,0,0,0,0,0,0,0,0],lvRun:0,topOpen:true,sessLv:0,sessMix:false};
+  lvBest:[0,0,0,0,0,0,0,0,0],lvRun:0,topOpen:true,sessLv:0,sessMix:false};
 /* 🏆 チャレンジ（1回ぶん）。ライフ3つ・5もんれんぞく正解でレベルアップ・まちがえたら1つ前のレベルへ。
  *  phase：'intro'（はじめる前）｜'connecting'（サーバーにつないでいる）｜'offline'（つながらなかった）｜'play'｜'result'
  *  runId（サーバーの番号。ランキングなしのときは null）・seed（しゅるいの列のたね）・offline・offWhy（'net'＝つながらない｜'busy'＝こみあっている｜'time'＝2時間すぎた）・startedAt
@@ -444,7 +435,7 @@ function chHide(){
 function chShow(){
   // とちゅうなのにもんだいがない（ふつうはない）：つぎのもんだいを用意して「▶️ きく」をまつ
   if(ch.phase==='play'&&ch.run&&!ch.q){ch.q=chNewQ();ch.answer=null;ch.left=replaysOf(ch.q.lv,'ch');ch.heard=false;}
-  state.q=ch.q; state.answer=ch.answer; state.left=ch.left; state.resShown=ch.resShown; state.hinted=false; state.askedAt=0; state.qn++;
+  state.q=ch.q; state.answer=ch.answer; state.left=ch.left; state.resShown=ch.resShown; state.askedAt=0; state.qn++;
   ch.q=null; ch.answer=null; ch.left=null; ch.resShown=false;
 }
 const unsent=()=>!NO_RANK&&!!ch.run&&ch.phase==='result'&&!ch.offline&&!ch.submitted&&!ch.closed&&ch.run.answers.length>0;
@@ -509,7 +500,6 @@ function load(){
     state.q=normQ(d.q,state.level);
     if(LEVELS[state.level].types.includes(d.answer)) state.answer=d.answer;
     state.resShown=!!state.answer&&state.q.keyIdx!=null&&d.resShown===true;
-    state.hinted=d.hinted===true;
     state.qn=1;
   }
   // v3までのチャレンジ（ライフなし・ランキングなし）はつづけない。とちゅうのチャレンジ（v4）はつづきから
@@ -519,17 +509,17 @@ function load(){
 const save=()=>PA.store.set('ear',{v:4,mode:state.mode,level:state.level,right:state.right,hint:state.hint,total:state.total,streak:state.streak,
   lvBest:state.lvBest,lvRun:state.lvRun,seen:true,sessLv:state.sessLv,sessMix:state.sessMix,rkPeriod:rk.period,
   ch:{best:ch.best,run:chSaved()},
-  q:state.mode==='free'?state.q:null,answer:state.mode==='free'?state.answer:null,resShown:state.mode==='free'&&state.resShown,hinted:state.hinted});
+  q:state.mode==='free'?state.q:null,answer:state.mode==='free'?state.answer:null,resShown:state.mode==='free'&&state.resShown});
 
 function newEar(){
   const lv=curLevel();
   state.q=makeQ(lv,state.q&&state.q.type,state.mode);
-  state.answer=null; state.resShown=false; state.left=replaysOf(lv,state.mode); state.hinted=false; state.qn++; save();
+  state.answer=null; state.resShown=false; state.left=replaysOf(lv,state.mode); state.qn++; save();
 }
 // チャレンジがピアノではじまったのに、まだ録音が読めていない（とちゅうでページをひらきなおした）：
 // 読めるまで、チャレンジの音を出すボタン（CH_SOUND）はうけつけない（音色がとちゅうでかわらないように・回数だけへらないように）。
 // 読めなければ、このチャレンジはさいごまで合成の音にする（あとから読めてもかえない）
-const CH_SOUND=new Set(['chhear','eplay','earp','eans','eab','eres','ecmp','enew']);
+const CH_SOUND=new Set(['chhear','eplay','earp','eans','eab','eres','enew']);
 const chGated=()=>state.mode==='ch'&&ch.phase==='play'&&ch.voice==='piano'&&!PA.pianoReady();
 let chGateBusy=false;
 function chGateLoad(){
@@ -647,7 +637,7 @@ function chBegin(runId,seed,offline){
 function chAsk(play){
   const q=chNewQ(), R=replaysOf(q.lv,'ch');
   ch.event=null; ch.capped=false; ch.heard=!!play;
-  if(state.mode==='ch'){state.q=q;state.answer=null;state.left=R;state.resShown=false;state.hinted=false;state.qn++;}
+  if(state.mode==='ch'){state.q=q;state.answer=null;state.left=R;state.resShown=false;state.qn++;}
   else{ch.q=q;ch.answer=null;ch.left=R;ch.resShown=false;}
   state.askedAt=Date.now(); save(); render();
   if(play&&state.mode==='ch'){
@@ -751,19 +741,21 @@ function setMode(v){
     if(ch.phase==='play'&&ch.run&&state.answer&&(ch.run.state.over||ch.capped)) finishRun(false,true);
     else chHide();
   }
-  state.mode=v; state.q=null; state.answer=null; state.resShown=false; state.left=null; state.hinted=false;
+  state.mode=v; state.q=null; state.answer=null; state.resShown=false; state.left=null;
   if(v==='ch') chShow();
   if(v==='rank') loadRanking();
   save();
 }
 function setLevel(lv){
   if(sess&&sess.active()&&state.sessLv&&lv!==state.sessLv) state.sessMix=true; // 5もんのとちゅうでレベルをかえた
-  state.level=lv; state.lvRun=0; state.q=null; state.answer=null; state.resShown=false; state.left=null; state.hinted=false; save();
+  state.level=lv; state.lvRun=0; state.q=null; state.answer=null; state.resShown=false; state.left=null; save();
 }
 load();
 // リンクで来たとき：このせっていにする（いまのせっていとしてほぞんもする。ほかのクイズとおなじ）
 const LINK=readLink(PA.params());
 let sess=null;
+// dayFx：5もんをさいごまでやって、その日はじめてのしるしがついた（けっかのカードをはじめて出すときだけ紙ふぶき）
+let dayFx=false;
 if(LINK.mode&&LINK.mode!==state.mode) setMode(LINK.mode);
 if(LINK.level&&LINK.level!==state.level) setLevel(LINK.level);
 if(state.mode==='rank'&&rk.loading===false&&!rk.data[rk.period]) loadRanking();
@@ -839,7 +831,7 @@ function chMsgHTML(){
 }
 function feedbackHTML(){
   const q=state.q, ok=state.answer===q.type, E=T[q.type], K=q.keyIdx!=null?KEYS[q.keyIdx]:null;
-  const head=!ok?'🤔 おしい！':state.hinted?'💡 正解！「ヒントでできた」だよ。':'🎉 正解！';
+  const head=ok?'🎉 正解！':'🤔 おしい！';
   let h=`<div class="fb ${ok?'good':'bad'}${state.fresh?'':' still'}" role="status">${head}これは<b>${E.label}</b>（${E.word}）。音は<b>${PA.namesH(q.notes)}</b>`;
   h+=`<br><span class="sm">根音（和音の土台の音）は<b>${PA.nmH(q.root)}</b>・コードネーム<b>${symOf(q.root,q.type)}</b>${q.open?'・ひらいた形':''}</span>`;
   if(K) h+=`<br><span class="sm">${PA.keyName(K)}の${q.type==='dom7'?'Ⅴ7':'減七'}だよ。${q.type==='dim7'?`<b>${FAM_NO[mod(K.lt.midi,3)]}のなかま</b>。`:''}</span>`;
@@ -998,7 +990,8 @@ function heroHTML(){
     // 「せってい」とリンクは、5もんをはじめたときのレベル（あとでレベルをかえてもかわらない）
     const L=state.sessLv||state.level;
     // けっかのカードのボタンにはキー（→）をつけない（2かいおして先生に見せるまえにきえないように）
-    return sess.summaryHTML({title:'和音の聴きわけ',page:'ear',params:linkParams(L),settings:`れんしゅう・レベル${L}（${lvWords(L)}）${state.sessMix?'・とちゅうでレベルをかえた':''}`});
+    const extra=PA.earDays.cheerHTML({fx:dayFx,n:sess.n()}); dayFx=false;
+    return sess.summaryHTML({title:'和音の聴きわけ',page:'ear',params:linkParams(L),settings:`れんしゅう・レベル${L}（${lvWords(L)}）${state.sessMix?'・とちゅうでレベルをかえた':''}`,extra});
   }
   if(state.mode==='rank') return rankHTML();
   const inCh=state.mode==='ch';
@@ -1017,7 +1010,8 @@ function heroHTML(){
   const R=replaysOf(lv,state.mode);
   let h=`<section class="card hero"><div class="qhead"><h2>👂 この和音はどれ？</h2>${score}</div>`;
   if(inCh&&ch.offline&&!NO_RANK) h+=`<span class="offtag">${ch.offWhy==='time'?'⏰ 2時間をすぎたのでランキングなし':ch.offWhy==='busy'?'⏳ こみあっているので、ランキングなしであそんでいるよ':'📴 オフライン：ランキングなしであそんでいるよ'}</span>`;
-  if(!inCh) h+=`<div class="sessline">${sess.n()?sess.progressHTML():'<button type="button" class="btn small" data-act="esess">'+PA.icon('session')+'きょうの5もん</button>'}</div>`;
+  // 今週の丸（きょうの5もんをやった日。いちどでもやったことがあるときだけ）と、きょうの5もんのボタン・すすみぐあい
+  if(!inCh) h+=`<div class="sessline">${PA.earDays.list().length?PA.earDays.weekHTML():''}${sess.n()?sess.progressHTML():'<button type="button" class="btn small" data-act="esess">'+PA.icon('session')+'きょうの5もん</button>'}</div>`;
   if(!q) h+=`<div class="msg" style="margin-top:10px">下の<b>${PA.icon('play')}始める</b>をおすと、和音が鳴るよ。</div>`;
   else if(waitHear()) h+=`<div class="msg" style="margin-top:10px">下の<b>${PA.icon('play')}きく</b>をおすと、和音が鳴るよ。</div>`;
   else if(!state.answer){
@@ -1059,19 +1053,9 @@ function actionsHTML(){
 function render(){
   PA.lockVoice(state.mode==='ch'&&ch.phase==='play'?ch.voice:null); // チャレンジの画面だけ、はじめた時の音色（れんしゅう・せっていはふつうの音色）
   chGateLoad();
-  // チャレンジでこたえる前は「くらべてきく」をつかえない。れんしゅうではつかえるが「ヒントでできた」になる
-  const open=!!state.q&&!state.answer&&!sumView(), lock=open&&state.mode==='ch';
-  const cmp=state.mode==='rank'?'':`<section class="card">
-      <h2>🎧 くらべてきく<small>同じ「${PA.nmH({letter:0,acc:0})}」からつくった10しゅるい</small></h2>
-      ${lock?'<p class="note" style="margin:0 0 8px">🏆 チャレンジでは、こたえた後できけるよ</p>':open?PA.once('hint-rule',`<p class="note" style="margin:0 0 8px">💡 ${PA.HINT_NOTE}</p>`):''}
-      <div class="cmp">${ORDER.map(t=>`<button class="btn" style="--c:${T[t].color}" data-act="ecmp" data-v="${t}" aria-label="${T[t].label}（${T[t].word}）をきく"${lock?' disabled':''}><span>${T[t].emoji} ${T[t].label}</span><small>${T[t].word}</small></button>`).join('')}</div>
-      <details class="more" style="margin-top:10px"><summary>💡 ひびきのことばヒント</summary>
-        <ul class="hints">${ORDER.map(t=>`<li>${T[t].emoji} <b style="color:${T[t].color}">${T[t].label}</b>：${T[t].desc}</li>`).join('')}</ul></details>
-    </section>`;
   const h=`<div class="stack">
     ${topCardHTML()}
     ${heroHTML()}
-    ${cmp}
   </div>`;
   PA.paint(document.getElementById('view'),h,'ear:'+state.mode+':'+(state.mode==='ch'?ch.phase:'')+':'+state.qn);
   state.fresh=false;
@@ -1154,7 +1138,7 @@ document.addEventListener('click',e=>{
     }
     // 5もんおわったら：つぎのもんだいのかわりにけっかのカード
     else if(sess.finished()&&state.q&&state.answer){
-      PA.stopSound(); state.q=null; state.answer=null; state.resShown=false; state.hinted=false; save(); render();
+      PA.stopSound(); state.q=null; state.answer=null; state.resShown=false; save(); render();
       const c=document.querySelector('#view .sess-card'); if(c) c.scrollIntoView({block:'start',behavior:PA.reduceMotion()?'auto':'smooth'});
       return;
     }
@@ -1184,10 +1168,11 @@ document.addEventListener('click',e=>{
       state.answer=v; const ok=v===q.type; PA.answerFx(ok);
       state.total++;
       if(!ok){state.streak=0;state.lvRun=0;}
-      else if(!state.hinted){state.right++;state.streak++;state.lvRun++;if(state.lvRun>state.lvBest[q.lv]) state.lvBest[q.lv]=state.lvRun;}
-      else state.hint++;
-      // ヒントでできた：⭐ はふえないが、れんぞくもそのまま（💡 の数にかぞえる）
-      if(sess.active()) sess.record({ok,hint:ok&&state.hinted,label:`レベル${q.lv}　${T[q.type].word}（${T[q.type].label}）${PA.namesT(q.notes)}${ok?'':`　選んだ：${T[v].word}`}`});
+      else{state.right++;state.streak++;state.lvRun++;if(state.lvRun>state.lvBest[q.lv]) state.lvBest[q.lv]=state.lvRun;}
+      if(sess.active()){
+        const r=sess.record({ok,label:`レベル${q.lv}　${T[q.type].word}（${T[q.type].label}）${PA.namesT(q.notes)}${ok?'':`　選んだ：${T[v].word}`}`});
+        if(r&&r.finished) dayFx=PA.earDays.mark().first; // さいごまでやった日にしるし（その日はじめてなら、けっかで紙ふぶき）
+      }
     }
     save(); state.fresh=true; render(); playEar();
     const fb=document.querySelector('#view .fb'); reveal(fb,fb,true);
@@ -1200,15 +1185,6 @@ document.addEventListener('click',e=>{
   else if(a==='efam'){
     const q=state.q; if(!q||q.keyIdx==null) return;
     PA.stopSound(); PA.store.set('minor-family',{keyIdx:q.keyIdx,fam:T[q.type].fam}); PA.go('minor-family.html');
-  }
-  else if(a==='ecmp'){
-    const c=CMP[v]; if(!c) return;
-    if(state.mode==='ch'&&state.q&&!state.answer) return;
-    // 音がオフのときは鳴らないので「ヒントでできた」にもしない
-    if(!PA.settings.sound){PA.announce('音がオフだよ');return;}
-    // れんしゅうでこたえる前にきいたら「ヒントでできた」
-    if(state.mode==='free'&&state.q&&!state.answer&&!state.hinted){state.hinted=true;save();}
-    PA.stopSound(); PA.chord(c,{dur:2});
   }
 });
 // なまえの自分で入れるらん：入力中は描きなおさない（日本語の変換がとぎれないように）

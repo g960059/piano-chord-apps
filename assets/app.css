@@ -122,6 +122,14 @@ svg text{pointer-events:none}
 details.more{border-radius:14px;background:var(--soft2);padding:0 14px}
 details.more>summary{min-height:48px;display:flex;align-items:center;font-weight:700;cursor:pointer}
 details.more[open]{padding-bottom:12px}
+/* 和音記号（藝大式・PA.rn）：字の大きさにあわせてのびちぢみ。色はまわりの字とおなじ */
+.rnum{white-space:nowrap}
+svg.rnum-svg{display:inline-block;overflow:visible}
+.rnum-k{margin-right:.25em;font-weight:700}
+.rnum-nat{font-size:.7em;font-weight:700}
+.rnh{margin:6px 0 0;padding:0;list-style:none}
+.rnh li{display:flex;gap:10px;align-items:center;margin:6px 0;line-height:1.5;font-size:15px}
+.rnh-ex{flex:none;min-width:3.2em;text-align:center;font-size:24px;font-weight:800}
 
 @keyframes pop{0%{transform:scale(.95)}60%{transform:scale(1.03)}100%{transform:scale(1)}}
 @media (prefers-reduced-motion:reduce){.fb.good{animation:none}}
@@ -237,6 +245,35 @@ dialog.sheet.pa-fb>.sheet-in{width:100%;max-width:640px;background:var(--card);b
 .sess-teacher dd{margin:0}
 .sess-btns{margin-top:12px}
 .sess-btns .btn{flex:1 1 140px}
+
+/* ===== 耳のひろば：つづけた日（PA.earDays）。今週の7つの丸（月〜日）と、5もんのけっかの「できたね！」 =====
+   丸：できた日＝金色でぬる・まだ＝白（ふち --sub は白の上で5.6:1）・これからの日＝点線・きょう＝青い輪。dark＝耳のひろばの夜空の上 */
+.pa-week{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:14px;font-weight:700;line-height:1.3}
+.pa-week .pw-l{font-size:13px}
+.pa-week .pw-dots{display:inline-flex;gap:3px}
+.pa-week .pw-d{display:flex;flex-direction:column;align-items:center;gap:1px;width:22px}
+.pa-week .pw-d i{display:block;width:16px;height:16px;border-radius:50%;border:2px solid var(--sub);background:#fff}
+.pa-week .pw-d.on i{background:#f2b600;border-color:#7a4f00}
+.pa-week .pw-d.fut i{border-style:dashed}
+.pa-week .pw-d.now i{box-shadow:0 0 0 2px #fff,0 0 0 4px var(--c5)}
+.pa-week .pw-d small{font-size:11px;color:var(--sub)}
+.pa-week b{font-size:18px}
+.pa-week .pw-run{color:#9a3d0c}
+.pa-week.dark{color:#fff}
+.pa-week.dark .pw-d i{border-color:rgba(255,255,255,.85);background:transparent}
+.pa-week.dark .pw-d.on i{background:#ffd66b;border-color:#fff}
+.pa-week.dark .pw-d.now i{box-shadow:0 0 0 2px #2a1b5e,0 0 0 4px #ffd66b}
+.pa-week.dark .pw-d small{color:#f3e8ff}
+.pa-week.dark .pw-run{color:#ffe58a}
+.pa-cheer{position:relative;overflow:hidden;margin:4px 0 10px;padding:12px 14px;border-radius:16px;background:linear-gradient(135deg,#fff3c4,#ffe0ef);animation:pop .5s ease}
+.pa-cheer.still{animation:none}
+.pa-cheer .pc-t{margin:0 0 6px;font-size:19px;font-weight:800;line-height:1.4;word-break:keep-all;overflow-wrap:anywhere}
+.pa-cheer .pc-s{margin:6px 0 0;font-size:14px;font-weight:700}
+.pa-cheer .pa-week .pw-d.now i{box-shadow:0 0 0 2px #fff3c4,0 0 0 4px var(--c5)}
+.pa-confetti{position:absolute;inset:0;pointer-events:none}
+.pa-confetti i{position:absolute;top:-14px;left:var(--x);width:8px;height:12px;border-radius:2px;background:var(--c);opacity:0;animation:pa-fall 1.9s ease-in var(--d) 1 forwards}
+@keyframes pa-fall{0%{opacity:1;transform:translateY(0) rotate(0)}80%{opacity:1}100%{opacity:0;transform:translateY(170px) rotate(var(--r))}}
+@media (prefers-reduced-motion:reduce){.pa-cheer{animation:none}.pa-confetti{display:none}}
 
 /* チェック表のます（pickable） */
 .kd-cell{cursor:pointer}

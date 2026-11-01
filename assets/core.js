@@ -39,8 +39,13 @@
  *
  * ----- アプリの目次（ホーム・つぎへのリンク・もどるにつかう） -----
  *   PA.APP_TYPES … {learn,quiz,play,ref,ear}：{label, c(色), l(うすい色), dk(白い字をのせられるこい色)}
- *   PA.UNITS … [{id, title, sub, apps:[app の id]}]（ホームにならべるじゅん）
+ *   PA.UNITS … [{id, kind, title, sub, tasks:[{app, href, title}], apps:[app の id]}]（ホームにならべるじゅん）
+ *     kind：'basic'＝基本の地図（①〜⑥）、'daily'＝毎日たのしむところ（耳のひろば）、'pieces'＝名曲で楽曲分析（基本の地図のあと）、'extra'＝レベルアップしたい人へ
+ *     soon＝'pieces' のこれから足す曲のメモ（1行の文。リンクにしない。ホームでうすく出すだけ。iOS アプリ（PA.native）では出さない）
+ *     tasks＝島の中の課題。おなじアプリを、べつの設定（href の ?keyset=… など）でいくつかの単元に出せる（和音クイズは①長調・②短調）
+ *     apps＝tasks のアプリの id（おなじものは1つ）。PA.unit(id) → その単元（なければ null）
  *   PA.APPS  … [{id, ic, title, d, type:'learn'|'quiz'|'play'|'ref'|'ear', unit, practice?(れんしゅうのページの id), href?(外のページ)}]
+ *     unit＝そのアプリがさいしょに出てくる単元（アプリ1つに1つ）
  *     title はただの文字。d は HTML（<span class="ds">…</span>などが入る）なので PA.esc をとおさずにそのまま入れる
  *   PA.app(id) → そのアプリ（なければ null）
  *
@@ -60,11 +65,12 @@
  *   PA.absUrl(rel) → https://… のながいアドレス（いまのページの場所から）
  *   PA.params() → location.search の {名前:文字}（名前は /^[a-z][a-z0-9-]{0,20}$/、値は40文字まで。ちがうものはすてる）
  *   PA.parseParams(search) … PA.params とおなじ（'?a=1&b=2' の文字をわたす）
- *   PA.PARAM_KEYS＝['key','chord','mode','level','tier','n']（下のことば）。PA.fromLink() → このどれかがリンクにあれば true
+ *   PA.PARAM_KEYS＝['key','chord','mode','level','tier','n','step']（下のことば）。PA.fromLink() → このどれかがリンクにあれば true
  *   PA.paramInt(name, lo, hi) → 整数（lo〜hi の外・ないときは null）
  *   ことば（どのページもおなじ意味。その1回だけつかい、ほぞんした設定はかえない）：
  *     key＝調（keyDeck の id：M0〜M12長調、m0〜m12短調）、chord＝そのページの和音の id、mode＝そのページのこたえかた、
- *     level＝レベル（1から）、tier＝easy｜normal｜hard｜all、n＝れんしゅうのもんだいの数（1〜20）
+ *     level＝レベル（1から）、tier＝easy｜normal｜hard｜all、n＝れんしゅうのもんだいの数（1〜20）、
+ *     step＝ステップ（1から。学ぶじゅんの段階：変化和音クイズ・ならびの聴きわけ）
  *   PA.shareHTML(page, params, label?) → リンクをおくるボタン（data-pa="share" data-url="https://…"）。
  *     おすと navigator.share、なければコピー（navigator.clipboard、だめなら prompt）して「コピーしたよ」。クリックは core があつかう
  *
@@ -85,6 +91,7 @@
  *       まちがえたの数、まちがえた／ヒントを見たもんだい、ひとこと、「👩‍🏫 先生に見せる」（日づけ・ページ・せってい・けっか）、
  *       おなじれんしゅうの PA.shareHTML（params に n をたす）、ボタン data-act="session-again"（もういちど）・data-act="session-free"（じゆうにれんしゅう）。
  *       settings（ただの文字）がなければ params からつくる（key・tier・level・n）。2つのボタンはページであつかう
+ *       extra（HTML）はひとことの下に入れる（耳のひろばの PA.earDays.cheerHTML）
  *     s.start(n) / s.clear() / s.tally() → {n, done, self, hint, wrong, ok, stars(1〜3), msg}
  *   PA.sessionTally(done, n) … tally とおなじ（ページの外でつかうとき）。PA.sessionSig(params) … 上の sig
  *   PA.paramsText(params) … 「調：ト長調・むずかしさ：…・レベル2」（先生に見せる「せってい」の文。ただの文字）
@@ -564,12 +571,28 @@ PA.accGlyph=(x,y,a,color='#3a3245')=>{
   return '';
 };
 // ト音記号（y0＝ソ4の線）／ヘ音記号（y0＝ファ3の線）。フォントに頼らない線画
+// 全音符（先生の決め：和音の図は全音符）。まわりは横長でかたむけない、中の穴だけ左上へかたむける。
+//   穴は evenodd でぬかない（透明）：線の上の音は、五線・加線が穴の中を通って見える
+PA.wholeNote=(x,y,col,o={})=>{
+  const a=o.rx||8, b=o.ry||5.3, ha=2.7, hb=4.3, t=-32*Math.PI/180, ct=Math.cos(t), st=Math.sin(t), f=v=>Math.round(v*100)/100;
+  const ell=(rx,ry,deg,dx,dy)=>`M${f(x+dx)} ${f(y+dy)}A${rx} ${ry} ${deg} 1 0 ${f(x-dx)} ${f(y-dy)}A${rx} ${ry} ${deg} 1 0 ${f(x+dx)} ${f(y+dy)}Z`;
+  return `<path d="${ell(a,b,0,a,0)}${ell(hb,ha,f(-32+90),-hb*st,hb*ct)}" fill="${col}" fill-rule="evenodd"/>`;
+};
 PA.gClef=(x,y0)=>`<g transform="translate(${x} ${y0})" fill="none" stroke="#3a3245" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3 C8 3 7 -5 13 -7 C21 -9 25 0 20 7 C14 14 2 10 2 0 C2 -10 12 -17 17 -27 C20 -34 19 -44 15 -44 C10 -44 8 -34 10 -24 L16 24 C17 31 11 33 8 29"/><circle cx="9.5" cy="27.5" r="3.2" fill="#3a3245" stroke="none"/></g>`;
 PA.fClef=(x,y0)=>`<g transform="translate(${x} ${y0})"><circle cx="5" cy="0" r="4" fill="#3a3245"/><path d="M3 -2 C4 -10 14 -12 19 -7 C25 -1 22 10 14 17 C9 21 4 24 -1 26" fill="none" stroke="#3a3245" stroke-width="2.8" stroke-linecap="round"/><circle cx="27" cy="-5" r="2.2" fill="#3a3245"/><circle cx="27" cy="5" r="2.2" fill="#3a3245"/></g>`;
-/* cols: [{notes:[...ト音記号], lh:[...ヘ音記号], color, ltColor(導音の色), accColor, accRing, label, sub(和音名の下の小さな字), labelColor, op, noAcc, carry:{文字:変化記号},
+/* cols: [{notes:[...ト音記号], lh:[...ヘ音記号], color, ltColor(導音の色), accColor, accRing, label（文字か、PA.rn の部品）, sub(和音名の下の小さな字), labelColor, op, noAcc, carry:{文字:変化記号},
  *         hl(その列のうしろをぬる色), lhRing(ヘ音記号の音をかこむ色)}]
- * opts: {grand, colW, minW, arrows:[{c1,i1,c2,i2,color,text,dash,dy}], sigOverride:{letter,acc}, noSig, maxScale, autoCarry}
+ * opts: {grand, colW, minW, arrows:[{c1,i1,c2,i2,color,text,dash,dy}], sigOverride:{letter,acc}, noSig, maxScale, autoCarry,
+ *         measures:[{ci, n}]（小節：ci の列の前にたて線、上に小節の番号 n。さいごの右はしにもたて線）}
+ * PA.staffGeom(key,ncols,o) → {nx（1つめの列の左はし）, cw（列のはば）, W（ぜんたいのはば）}。がくふの列の下に HTML をならべるとき（名曲で楽曲分析の「？」） 
  * autoCarry：ぜんぶの列を1つの小節とみて、前の臨時記号をもどす音に♮など（おなじ段・高さはきまりどおり、音名がおなじならねんのためも。c.carry はつかわない） */
+// 調号のはばと列のはば（staffSVG とおなじ計算。列の下に HTML をならべるページはこれで位置をあわせる）
+PA.staffGeom=(key,ncols,o={})=>{
+  const sig=o.noSig?{letters:[]}:PA.sigInfo(key), ov=o.sigOverride;
+  const ns=sig.letters.length+(ov&&sig.letters.indexOf(ov.letter)<0?1:0), cw=o.colW||70, nx=50+ns*10+(ns?24:14);
+  return {nx,cw,W:Math.max(nx+ncols*cw+8,o.minW||0)};
+};
+const RNPX=16; // がくふの和音名の記号の数字の高さ（17px の太字よりすこし大きめ。2段の小さい数字も読めるように）
 PA.staffSVG=(key,cols,o={})=>{
   const sig=o.noSig?{type:1,letters:[]}:PA.sigInfo(key), ov=o.sigOverride, grand=!!o.grand;
   const TSs=[38,35,39,36,33,37,34], TSf=[34,37,33,36,32,35,31];
@@ -580,7 +603,7 @@ PA.staffSVG=(key,cols,o={})=>{
     if(hit){hit.a=ov.acc;hit.red=true;}
     else sigDraw.push({L:ov.letter,st:TSs[PA.SHARP_ORDER.indexOf(ov.letter)],a:ov.acc,red:true});
   }
-  const ns=sigDraw.length, TB=grand?96:110, BT=TB+82, cw=o.colW||70, sx=50, nx=sx+ns*10+(ns?24:14);
+  const G=PA.staffGeom(key,cols.length,o), TB=grand?96:110, BT=TB+82, cw=G.cw, sx=50, nx=G.nx;
   const hasLabel=cols.some(c=>c.label);
   const ty=s=>TB-(s-30)*5, by=s=>BT-(s-26)*5;
   // いちばん低い音符の下に余白と和音名をおく（低いベースと名前が重ならないように）
@@ -589,16 +612,34 @@ PA.staffSVG=(key,cols,o={})=>{
     (c.notes||[]).forEach(n=>{lowY=Math.max(lowY,ty(PA.stepOf(n)));});
     if(grand)(c.lh||[]).forEach(n=>{lowY=Math.max(lowY,by(PA.stepOf(n)));});
   });
-  const baseH=grand?BT+48:TB+48, labelY=Math.max(baseH+16,lowY+30);
+  // 和音名：parts（オブジェクト）か、Ⅰ〜Ⅶ（＋7／9）だけの文字は藝大式の記号（PA.rn）で描く。2段の記号は上に高いので、名前を下げる
+  const rnp=cols.map(c=>c.label?(typeof c.label==='object'?c.label:PA.rnOf(c.label)):null);
+  const rise=Math.max(0,...rnp.map(p=>p?PA.rnRise(p,RNPX)-20:0));
+  const baseH=grand?BT+48:TB+48, labelY=Math.max(baseH+16,lowY+30)+Math.ceil(rise);
   const hasSub=hasLabel&&cols.some(c=>c.sub); // c.sub＝和音名の下の小さな字（なければ前とおなじ図）
-  const W=Math.max(nx+cols.length*cw+8,o.minW||0), H=hasLabel?labelY+6+(hasSub?15:0):Math.max(baseH,lowY+16);
-  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="がくふ" style="max-width:${Math.round(W*(o.maxScale||1.5))}px;margin:0 auto">`;
-  // c.hl：列のうしろの色は、五線より先にぬる（五線が見えるように）
-  cols.forEach((c,ci)=>{if(c.hl) svg+=`<rect x="${nx+ci*cw+3}" y="4" width="${cw-6}" height="${H-8}" rx="12" fill="${c.hl}"/>`;});
+  const fdy=rnp.some(p=>p&&p.form)?7:0; // 記号の右下の7・9のぶん、下の小さな字とその下のあきをさげる
+  const W=G.W, H=hasLabel?labelY+6+fdy+(hasSub?15:0):Math.max(baseH,lowY+16);
+  // 読み上げ：role=img の子は読まれない（ARIA の Children Presentational）ので、和音名はここ（外の svg の aria-label）に入れる。
+  //   中の記号・文字は aria-hidden。例「がくふ：Ⅰ。Ⅴ、7の和音、第2転回形。Ⅰ」
+  const aria='がくふ'+(hasLabel?'：'+cols.filter(c=>c.label).map(c=>PA.rnA(c.label)+(c.sub?'（'+c.sub+'）':'')).join('。'):'');
+  let svg=`<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${PA.esc(aria)}" style="max-width:${Math.round(W*(o.maxScale||1.5))}px;margin:0 auto">`;
+  // c.hl：列のうしろの色は、五線より先にぬる（五線が見えるように）。'none' でも rect は描く（あとで色だけかえるページのため）。
+  //   c.hlAttr：その rect につける属性（piece.html の data-ev）
+  cols.forEach((c,ci)=>{if(c.hl) svg+=`<rect data-hl="${ci}" ${c.hlAttr||''} x="${nx+ci*cw+3}" y="4" width="${cw-6}" height="${H-8}" rx="12" fill="${c.hl}"/>`;});
   // かわった調号のうしろの赤い丸も、五線より先に（線の上の記号か、間の記号かがわかるように）
   sigDraw.forEach((d,i)=>{if(d.red) svg+=`<circle cx="${sx+i*10}" cy="${ty(d.st)}" r="10" fill="#fde4e7"/>`;});
   for(let i=0;i<5;i++) svg+=`<line x1="6" x2="${W-4}" y1="${TB-i*10}" y2="${TB-i*10}" stroke="#6b6273" stroke-width="1.2"/>`;
   svg+=PA.gClef(10,TB-10);
+  // 小節のたて線と番号（番号は上の線より上。音符より先に描く）
+  if(o.measures&&o.measures.length){
+    const y1=TB-40, y2=grand?BT+40:TB;
+    o.measures.forEach(m=>{
+      const x=nx+m.ci*cw;
+      if(m.ci>0) svg+=`<line x1="${x}" x2="${x}" y1="${y1}" y2="${y2}" stroke="#6b6273" stroke-width="1.4"/>`;
+      svg+=`<text x="${m.ci>0?x+3:x-2}" y="14" font-size="13" font-weight="700" fill="#5f5869">${PA.esc(m.n)}</text>`;
+    });
+    svg+=`<line x1="${W-4}" x2="${W-4}" y1="${y1}" y2="${y2}" stroke="#6b6273" stroke-width="1.4"/>`;
+  }
   if(grand){
     for(let i=0;i<5;i++) svg+=`<line x1="6" x2="${W-4}" y1="${BT+i*10}" y2="${BT+i*10}" stroke="#6b6273" stroke-width="1.2"/>`;
     svg+=`<line x1="6" x2="6" y1="${TB-40}" y2="${BT+40}" stroke="#6b6273" stroke-width="2"/>`;
@@ -628,14 +669,14 @@ PA.staffSVG=(key,cols,o={})=>{
     let ps=-99,po=false; P.forEach(p=>{p.off=(p.s-ps===1&&!po);po=p.off;ps=p.s;});
     const anyOff=P.some(p=>p.off), minS=P[0].s, maxS=P[P.length-1].s;
     let r='';
-    for(let q=lo-2;q>=minS;q-=2) r+=`<line x1="${x-12}" x2="${x+12+(anyOff?13:0)}" y1="${yf(q)}" y2="${yf(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
-    for(let q=hi+2;q<=maxS;q+=2) r+=`<line x1="${x-12}" x2="${x+12+(anyOff?13:0)}" y1="${yf(q)}" y2="${yf(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
+    for(let q=lo-2;q>=minS;q-=2) r+=`<line x1="${x-12}" x2="${x+12+(anyOff?16:0)}" y1="${yf(q)}" y2="${yf(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
+    for(let q=hi+2;q<=maxS;q+=2) r+=`<line x1="${x-12}" x2="${x+12+(anyOff?16:0)}" y1="${yf(q)}" y2="${yf(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
     const accCols=[];
     [...P].reverse().forEach(p=>{
       const sigAcc=o.noSig?0:(key.sig[p.n.letter]||0);
       const was=A?[A.at[st+p.s],A.any[p.n.letter]]:[c.carry&&c.carry[p.n.letter]];
       const need=(p.n.acc!==sigAcc)||was.some(w=>w!==undefined&&w!==p.n.acc);
-      const hx=x+(p.off?13:0), hy=yf(p.s);
+      const hx=x+(p.off?16:0), hy=yf(p.s);
       if(need&&!c.noAcc){
         let k=0; while(accCols.some(q=>q.k===k&&Math.abs(q.s-p.s)<6)) k++;
         accCols.push({k,s:p.s});
@@ -644,8 +685,8 @@ PA.staffSVG=(key,cols,o={})=>{
         if(p.n.raised&&c.accRing) r+=`<circle cx="${x-18-k*11}" cy="${hy}" r="11" fill="none" stroke="${ac}" stroke-width="2" opacity=".6"/>`;
       }
       const col=p.n.raised&&c.ltColor?c.ltColor:(c.color||'#3a3245');
-      // 白い符頭は中をぬらない：線の上の音は、五線・加線が符頭の中を通って見える（白でぬると間の音に見える）
-      r+=`<ellipse cx="${hx}" cy="${hy}" rx="7" ry="5" fill="none" stroke="${col}" stroke-width="3" transform="rotate(-18 ${hx} ${hy})"/>`;
+      // 全音符。穴はぬらない：線の上の音は、五線・加線が穴の中を通って見える（白でぬると間の音に見える）
+      r+=PA.wholeNote(hx,hy,col);
       if(yf===by&&c.lhRing) r+=`<circle cx="${hx}" cy="${hy}" r="12" fill="none" stroke="${c.lhRing}" stroke-width="2.5"/>`;
       if(yf===ty){pos[ci]=pos[ci]||[];pos[ci][p.i]={x:hx,y:hy};}
     });
@@ -654,8 +695,9 @@ PA.staffSVG=(key,cols,o={})=>{
   cols.forEach((c,ci)=>{
     const x=nx+ci*cw+cw/2;
     svg+=`<g data-col="${ci}" opacity="${c.op==null?1:c.op}">`+drawNotes(ci,c,c.notes,ty,30,38)+(grand?drawNotes(ci,c,c.lh,by,18,26):'');
-    if(c.label) svg+=`<text x="${x}" y="${labelY}" text-anchor="middle" font-size="17" font-weight="800" fill="${c.labelColor||'#3a3245'}">${PA.Svg(c.label)}</text>`;
-    if(c.label&&c.sub) svg+=`<text x="${x}" y="${labelY+15}" text-anchor="middle" font-size="11.5" font-weight="700" fill="${c.labelColor||'#3a3245'}">${PA.Svg(c.sub)}</text>`;
+    if(rnp[ci]) svg+=PA.rnSvgAt(rnp[ci],x,labelY,RNPX,`color="${c.labelColor||'#3a3245'}" aria-hidden="true"`);
+    else if(c.label) svg+=`<text aria-hidden="true" x="${x}" y="${labelY}" text-anchor="middle" font-size="17" font-weight="800" fill="${c.labelColor||'#3a3245'}">${PA.Svg(c.label)}</text>`;
+    if(c.label&&c.sub) svg+=`<text aria-hidden="true" x="${x}" y="${labelY+15+fdy}" text-anchor="middle" font-size="11.5" font-weight="700" fill="${c.labelColor||'#3a3245'}">${PA.Svg(c.sub)}</text>`;
     svg+=`</g>`;
   });
   (o.arrows||[]).forEach(a=>{
@@ -668,6 +710,165 @@ PA.staffSVG=(key,cols,o={})=>{
   return svg+'</svg>';
 };
 
+/* ===== 和音記号（藝大式）：PA.rn =====
+ * 先生の決め（docs/TEACHER-FEEDBACK.md 2026-10-31）：アプリ全体を藝大式（島岡『和声 理論と実習』の書きかた）にそろえる。
+ * 記号は文字から作らず、かならず部品（parts）から描く：
+ *   {deg:1〜7（Ⅰ〜Ⅶ）, form:7|9（右下の小さい数字）, inv:1〜3（右上の小さい数字＝転回形。根音省略の和音は、はぶいた根音を入れて数える）,
+ *    omit:true（根音省略＝斜線。大きい数字だけにかける）, borrowed:true（準固有＝前に小さい○）,
+ *    of:1〜7（2段の上の小さい数字。「ⅤのⅤ」の上のⅤ。下の大きい数字が和音そのもので、7・9・転回・斜線・変位の印はぜんぶ下につける）,
+ *    ofDown:true（上の小さい数字の根音下方変位。ナポリの調＝下げたⅡ度調）,
+ *    alt5:'down'（第5音下方変位：下の大きい数字の、上の横棒の左はしに左むきのチョン。先生の写真のとおり）,
+ *    rootDown:true（根音下方変位：ナポリの和音。印の形は先生に確認まち。いまは下の横棒の左はしにチョン）,
+ *    alt3:'up'（第3音上方変位：ドリアのⅣ。島岡『和声 理論と実習』の書きかたを文字にすると「＋Ⅳ」。
+ *      いまは大きい数字の左、たての まん中（根音＝下・第3音＝まん中・第5音＝上 のならび）に小さい「＋」。印の形・場所は先生に確認まち。
+ *      かえるときは layout の「第3音上方変位」の1か所だけをなおす）,
+ *    natural:true（短調のⅢ・Ⅶ＝自然的短音階の長三和音。記号のあとに「（自然）」）, name:'it6'|'fr6'|'ger6'|'n6'（読み上げで名前をそえるとき）}
+ * PA.rn(parts,{key, name}) → HTML（<span class="rnum" role="img" aria-label="…"><svg>…</svg></span>）。字の大きさにあわせてのびちぢみする（em）。色は currentColor
+ * PA.rnText(parts) → ただの文字（Ⅴ₇²（第5音下方変位・根音省略）など。title・きろく用）
+ * PA.rnAria(parts) → 読み上げのことば（「ⅤのⅤ、7の和音、第2転回形、第5音下方変位、根音省略」）
+ * PA.rnKey(key) → 調のしるし（C: c: Es: fis: …。大文字＝長調、小文字＝短調。ドイツ語の音名）
+ * PA.rnSvgAt(parts,cx,baseY,px,attrs) → SVG の中にそのまま入れる（がくふの和音名。baseY＝数字の下のはし、px＝数字の高さ）
+ * PA.staffSVG の列の label に parts（オブジェクト）をわたすと、この記号で描く。
+ *   文字の label でも「Ⅰ〜Ⅶ」だけか「Ⅴ7・Ⅴ9」のような1文字＋7／9だけのときは、この記号（右下の小さい数字）で描く。
+ * 副属和音（Ⅱ度調のⅤ7 など）は「ⅤのⅤ」とおなじ2段で書く（上の小さい数字＝何度調か、下の大きい数字＝その調での和音）。
+ *   ネットでは藝大式の副属和音の記号の決まった説明が見つからなかった（2026-11-01 しらべ）。ⅤのⅤの書きかた（先生の写真）にそろえた。先生に確認まち。 */
+PA.RN=['Ⅰ','Ⅱ','Ⅲ','Ⅳ','Ⅴ','Ⅵ','Ⅶ'];
+(function(){
+  const CELLS=['I','II','III','IV','V','VI','VII'], SUP=['','¹','²','³'], SUB={7:'₇',9:'₉'};
+  const r2=v=>Math.round(v*100)/100;
+  const okDeg=d=>Number.isInteger(d)&&d>=1&&d<=7;
+  // 部品をたしかめる（へんな値は描かない）
+  const norm=p=>{
+    p=p||{};
+    const q={deg:okDeg(p.deg)?p.deg:1};
+    if(p.form===7||p.form===9) q.form=p.form;
+    if(Number.isInteger(p.inv)&&p.inv>=1&&p.inv<=3) q.inv=p.inv;
+    if(p.omit) q.omit=true;
+    if(p.borrowed) q.borrowed=true;
+    if(okDeg(p.of)) q.of=p.of;
+    if(q.of&&p.ofDown) q.ofDown=true;
+    if(p.alt5==='down') q.alt5='down';
+    if(p.rootDown) q.rootDown=true;
+    if(p.alt3==='up') q.alt3='up';
+    if(p.natural) q.natural=true;
+    if(p.name) q.name=String(p.name);
+    return q;
+  };
+  // ローマ数字を線で描く（高さ20）。たて棒（Ⅰ）は上下の横棒つき（Ⅱ・Ⅲはつながった横棒）、Ⅴは2本の腕の上に小さい横棒。x,y＝左上
+  //   「上の横棒の左はし」＝いちばん左の上の横棒の左はし（x＝-1.2）。第5音下方変位のチョンはここにつける
+  const glyph=(deg,x,y,s)=>{
+    let cx=0; const stem=[], diag=[], runs=[], ser=[];
+    CELLS[deg-1].split('').forEach(c=>{
+      if(c==='I'){stem.push(`M${r2(cx+3.25)} 0V20`);const L=runs[runs.length-1];if(L&&L[1]===cx)L[1]=cx+6.5;else runs.push([cx,cx+6.5]);cx+=6.5;}
+      else{diag.push(`M${r2(cx+1.6)} 0L${r2(cx+7.5)} 20L${r2(cx+13.4)} 0`);ser.push([cx-.6,cx+4.4],[cx+10.8,cx+15.2]);cx+=15;}
+    });
+    const bars=runs.map(([a,b])=>`M${r2(a-.6)} 0H${r2(b+.6)}M${r2(a-.6)} 20H${r2(b+.6)}`).join('')+ser.map(([a,b])=>`M${r2(a)} 0H${r2(b)}`).join('');
+    const svg=`<g transform="translate(${r2(x)} ${r2(y)})${s!==1?` scale(${s})`:''}" fill="none" stroke="currentColor">${stem.length?`<path d="${stem.join('')}" stroke-width="2.7"/>`:''}${diag.length?`<path d="${diag.join('')}" stroke-width="2.5" stroke-linejoin="round"/>`:''}<path d="${bars}" stroke-width="1.9"/></g>`;
+    return {w:cx*s,h:20*s,svg};
+  };
+  // 部品 → {svg（中身）, W, y0（上のはし）, H, base（大きい数字の下のはし）}
+  const layout=p=>{
+    const SM=.66, top=p.of?Math.round(20*SM+3.5):0, big=glyph(p.deg,0,0,1); // SM＝2段の上の小さい数字の大きさ
+    let x=0, s='';
+    if(p.borrowed){s+=`<circle cx="3.4" cy="${top+3.6}" r="3" fill="none" stroke="currentColor" stroke-width="1.4"/>`;x+=8;}
+    if(p.alt5||p.rootDown) x+=6.5;
+    if(p.alt3) x=Math.max(x,(p.borrowed?8:0)+10); // 左の「＋」のぶん
+    const W0=big.w, sw=p.of?glyph(p.of,0,0,SM).w:0;
+    x=Math.max(x,(sw-W0)/2+1); // 上の小さい数字が下の数字より広いとき（Ⅶ など）も左がきれないように
+    if(p.of&&p.ofDown) x=Math.max(x,(sw-W0)/2+5); // 上の小さい数字のチョン（左へ4）も左がきれないように
+    const gx=x;
+    if(p.of){
+      const sx=gx+W0/2-sw/2;
+      s+=glyph(p.of,sx,0,SM).svg;
+      // 上の小さい数字の根音下方変位：下の横棒の左はしから左へ、ちょっと下がる（alt5・rootDown とおなじ向き）
+      if(p.ofDown) s+=`<path d="M${r2(sx-.5)} ${r2(20*SM)}L${r2(sx-4)} ${r2(20*SM+1.2)}" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>`;
+    }
+    s+=glyph(p.deg,gx,top,1).svg;
+    // 第5音下方変位：上の横棒の左はしから左へ、ちょっと下がる「チョン」
+    if(p.alt5==='down') s+=`<path class="rn-alt5" d="M${r2(gx-1.2)} ${top+.3}L${r2(gx-6.2)} ${top+2.2}" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>`;
+    // 根音下方変位：下の横棒の左はしから左へ、ちょっと下がる（alt5 とおなじ「下方変位」の向き。形は先生に確認まち）
+    if(p.rootDown) s+=`<path class="rn-root" d="M${r2(gx-1.2)} ${top+19.7}L${r2(gx-6.2)} ${top+21.6}" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>`;
+    // 第3音上方変位（ドリアのⅣ）：大きい数字の左、たてのまん中に小さい「＋」（先生に確認まち。ここだけで描く）
+    if(p.alt3==='up') s+=`<path class="rn-alt3" d="M${r2(gx-9)} ${top+10}H${r2(gx-2.4)}M${r2(gx-5.7)} ${top+6.7}V${top+13.3}" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"/>`;
+    // 根音省略：大きい数字だけにかける斜線
+    if(p.omit) s+=`<path class="rn-omit" d="M${r2(gx-2.5)} ${top+23}L${r2(gx+W0+2.5)} ${top-3}" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>`;
+    let W=gx+W0+1;
+    const dx=gx+W0+2.4;
+    if(p.inv||p.form){
+      const t=(y,v,c)=>`<text class="${c}" x="${r2(dx)}" y="${y}" font-size="14" font-weight="700" fill="currentColor" stroke="none" font-family="Arial,Helvetica,sans-serif">${v}</text>`;
+      if(p.inv) s+=t(top+10,p.inv,'rn-inv');
+      if(p.form) s+=t(top+27.5,p.form,'rn-form');
+      W=dx+8.5;
+    }
+    W=Math.max(W,gx+W0/2+sw/2+1);
+    const y0=p.of?-1:-4;
+    return {svg:s,W:r2(W),y0,H:top+29-y0,base:top+20};
+  };
+  PA.rnKey=key=>{
+    if(!key) return '';
+    const L=['C','D','E','F','G','A','H'][key.l], a=key.a||0;
+    let n=L;
+    if(a===1) n=L+'is';
+    else if(a===-1) n=L==='H'?'B':L==='E'?'Es':L==='A'?'As':L+'es';
+    return (key.minor?n.toLowerCase():n)+':';
+  };
+  const base=p=>(p.of?(p.ofDown?'（下げた）':'')+PA.RN[p.of-1]+'の':'')+PA.RN[p.deg-1];
+  PA.rnText=p=>{
+    p=norm(p);
+    const fl=[p.rootDown&&'根音下方変位',p.alt3&&'第3音上方変位',p.alt5&&'第5音下方変位',p.omit&&'根音省略'].filter(Boolean);
+    return (p.borrowed?'○':'')+base(p)+(p.form?SUB[p.form]:'')+(p.inv?SUP[p.inv]:'')+(p.natural?'（自然）':'')+(fl.length?'（'+fl.join('・')+'）':'');
+  };
+  PA.rnAria=p=>{
+    p=norm(p);
+    return [(p.borrowed?'準固有の':'')+base(p)+(p.natural?'（自然）':''),p.form&&p.form+'の和音',p.inv&&'第'+p.inv+'転回形',
+      p.rootDown&&'根音下方変位',p.alt3&&'第3音上方変位',p.alt5&&'第5音下方変位',p.omit&&'根音省略'].filter(Boolean).join('、');
+  };
+  const EM=22; // 22 単位＝1em（数字の高さ20＝0.9em。2段の小さい数字も読めるように、まわりの字より少し大きめ）
+  PA.rnSvg=p=>{
+    p=norm(p); const L=layout(p);
+    return `<svg class="rnum-svg" viewBox="0 ${L.y0} ${L.W} ${L.H}" style="width:${r2(L.W/EM)}em;height:${r2(L.H/EM)}em;vertical-align:${r2(-(L.y0+L.H-L.base)/EM)}em" aria-hidden="true" focusable="false">${L.svg}</svg>`;
+  };
+  PA.rn=(p,o={})=>{
+    p=norm(p);
+    const k=o.key?PA.rnKey(o.key):'', nm=o.name||'';
+    const aria=(o.key?PA.keyName(o.key)+'、':'')+(nm?nm+'、':'')+PA.rnAria(p);
+    return `<span class="rnum" role="img" aria-label="${PA.esc(aria)}">${k?`<span class="rnum-k">${k}</span>`:''}${PA.rnSvg(p)}${p.natural?'<span class="rnum-nat">（自然）</span>':''}</span>`;
+  };
+  // SVG の中に置く（cx＝まんなか、baseY＝大きい数字の下のはし、px＝大きい数字の高さ）
+  PA.rnSvgAt=(p,cx,baseY,px,attrs='')=>{
+    p=norm(p); const L=layout(p), f=px/20, w=L.W*f, h=L.H*f;
+    return `<svg x="${r2(cx-w/2)}" y="${r2(baseY-(L.base-L.y0)*f)}" width="${r2(w)}" height="${r2(h)}" viewBox="0 ${L.y0} ${L.W} ${L.H}" overflow="visible" ${attrs}>${L.svg}</svg>`;
+  };
+  // 大きい数字の上にどれだけ出るか（数字の高さ px のとき）。2段や右上の数字のぶん、がくふの名前を下げる
+  PA.rnRise=(p,px)=>{p=norm(p);const L=layout(p);return (L.base-L.y0)*px/20;};
+  // 文字の label のうち、Ⅰ〜Ⅶ・Ⅰ〜Ⅶ＋7／9 だけは記号の部品にする（それ以外の文字は null＝文字のまま描く）
+  PA.rnOf=s=>{
+    const m=/^([ⅠⅡⅢⅣⅤⅥⅦ])([79])?$/.exec(String(s==null?'':s));
+    return m?{deg:PA.RN.indexOf(m[1])+1,...(m[2]?{form:+m[2]}:{})}:null;
+  };
+  PA.rnNorm=norm;
+  // 和音名（文字か部品）→ HTML。部品と「Ⅴ7」のような文字は記号、ほかの文字（ドイツ・？など）はそのまま
+  PA.rnH=l=>{if(l&&typeof l==='object') return PA.rn(l);const p=PA.rnOf(l);return p?PA.rn(p):PA.H(String(l==null?'':l));};
+  // 和音名（文字か部品）→ 読み上げ・title 用のことば
+  PA.rnA=l=>{if(l&&typeof l==='object') return PA.rnAria(l);const p=PA.rnOf(l);return p?PA.rnAria(p):String(l==null?'':l);};
+  // 「記号のみかた」：記号をつかうページの下におく、とじた説明
+  PA.rnHelp=(o={})=>{
+    const ex=(p,t)=>`<li><span class="rnh-ex">${PA.rn(p)}</span><span>${t}</span></li>`;
+    return `<details class="more rnhelp" data-d="rnhelp"${o.open?' open':''}><summary><span aria-hidden="true">🔤</span> 記号のみかた</summary>
+      <p class="note" style="margin-top:0">和音の記号は、音楽大学（藝大）でつかう書きかたにそろえているよ。大きい数字が、何ばんめの音の上の和音か。</p>
+      <ul class="rnh">
+        ${ex({deg:1,inv:2},'<b>右上の小さい数字</b>＝転回形。1は第1転回形、2は第2転回形、3は第3転回形。数字がなければ基本形')}
+        ${ex({deg:5,form:7},'<b>右下の小さい数字</b>＝7の和音・9の和音（Ⅴ7・Ⅴ9）')}
+        ${ex({deg:5,form:9,omit:true,inv:1},'<b>ななめの線</b>＝根音省略（和音のもとになる音＝根音を、はぶいた形）。右上の数字は、はぶいた根音もあるつもりで数えるよ（いちばん下が第3音なら1）')}
+        ${ex({deg:4,borrowed:true},'<b>前の小さい○</b>＝準固有和音（同じ主音の短調からかりた和音）')}
+        ${ex({of:5,deg:5,form:7},'<b>2だん</b>＝ⅤのⅤ。上の小さい数字の調（Ⅴの調）で、下の大きい数字の和音。7などの数字や線は、下の大きい数字につける')}
+        ${ex({of:5,deg:5,form:7,inv:2,alt5:'down'},'<b>左上のチョン</b>＝第5音下方変位（和音の第5音を半音下げた）。大きい数字の上の横棒の左はしにつける')}
+        ${o.alt3?ex({deg:4,alt3:'up'},'<b>左の＋</b>＝第3音上方変位（和音の第3音を半音上げた）。ドリアのⅣで使うよ'):''}
+      </ul>
+      <p class="note">記号の前の <b>C:</b> や <b>c:</b> は調。大文字は長調、小文字は短調（C:＝ハ長調、c:＝ハ短調）。調はドイツ語の音名で書くよ（H:＝ロ長調、Es:＝変ホ長調、fis:＝嬰ヘ短調、B:＝変ロ長調）。</p></details>`;
+  };
+})();
+
 /* ===== アプリの目次（ホーム・もどる・つぎへのリンク） ===== */
 // c＝目じるしの色、l＝うすい色、dk＝白い字をのせても読めるこい色（4.5:1いじょう）
 PA.APP_TYPES={
@@ -678,17 +879,34 @@ PA.APP_TYPES={
   ear:{label:'耳',c:'#c98500',l:'#fff1cc',dk:'#8a5a00'}
 };
 PA.UNITS=[
-  {id:'u1',title:'🎹 はじめの和音（Ⅰ・Ⅳ・Ⅴ・Ⅴ7）',sub:'まずはここから',apps:['chord-build','chord-quiz','cadence','chord-table']},
-  {id:'u2',title:'🎼 曲につけてみる',sub:'知っている曲に和音をつける',apps:['accompaniment']},
-  {id:'u3',title:'🧩 和音をもっと知る',sub:'7つの和音・和音のかたち・音のへだたり',apps:['diatonic','inversion','interval']},
-  {id:'u4',title:'🌙 短調と臨時記号',sub:'Ⅴ・Ⅴ7・Ⅴ9・減七',apps:['minor-why','minor-signature','minor-family','minor-quiz']},
-  {id:'u5',title:'🏁 おわりかた',sub:'曲のおわりの6つの形',apps:['ending','ending-quiz']},
-  {id:'u6',title:'🌈 変化和音',sub:'調の音を半音動かす・よその調からかりる和音',apps:['doppel','secondary','aug6','neapolitan','borrowed','dim-halfdim','enharmonic','chroma-quiz']},
-  {id:'ear',title:'👂 耳をきたえる（毎日すこしずつ）',sub:'聴いてパッとわかる',apps:['ear','progression']}
+  // 基本の地図（①〜⑥）。①②③がいちばん手厚くする「基本」（先生のじゅん：docs/TEACHER-FEEDBACK.md）
+  {id:'major',kind:'basic',title:'🎹 長調のⅠ・Ⅳ・Ⅴ・Ⅴ7',sub:'いちばん大事な4つの和音。まずはここから',tasks:[
+    {app:'chord-build'},{app:'chord-quiz',href:'chord-quiz.html?keyset=major',title:'和音クイズ（長調）'},{app:'cadence'},{app:'chord-table'}]},
+  {id:'minor',kind:'basic',title:'🌙 短調のⅠ・Ⅳ・Ⅴ・Ⅴ7',sub:'7ばんめを上げるので、Ⅴ・Ⅴ7にはかならず臨時記号',tasks:[
+    {app:'minor-why'},{app:'minor-signature'},{app:'chord-quiz',href:'chord-quiz.html?keyset=minor',title:'和音クイズ（短調）'}]},
+  {id:'minor9',kind:'basic',title:'🏠 短調のⅤ9と減七',sub:'短調では、Ⅴ9の根音を省略（はぶく）すると減七',tasks:[{app:'minor-family'},{app:'dim-halfdim'},{app:'minor-quiz'}]},
+  {id:'more',kind:'basic',title:'🧩 和音をもっと知ろう',sub:'7つの和音・和音のかたち・音のへだたり',tasks:[{app:'diatonic'},{app:'inversion'},{app:'interval'}]},
+  {id:'ending',kind:'basic',title:'🏁 おわりかた',sub:'曲のおわりの6つの形',tasks:[{app:'ending'},{app:'ending-quiz'}]},
+  {id:'accomp',kind:'basic',title:'🎼 曲につけてみよう',sub:'知っている曲のメロディーに和音をつける',tasks:[{app:'accompaniment'}]},
+  // 毎日たのしむところ（学ぶじゅんとはべつ。いつでもあそべる）
+  {id:'ear',kind:'daily',title:'👂 耳のひろば',sub:'毎日すこしずつ。聴いてパッとわかる',tasks:[{app:'ear'},{app:'progression'}]},
+  // 名曲で楽曲分析（先生の案：コンクールでひくような曲の和音を穴うめ。docs/REPERTOIRE-ANALYSIS.md）。基本の地図のあと、レベルアップの前
+  //   曲は piece.html?id=…（データは assets/pieces/<id>.json）。soon＝これから足す曲のメモ（1行。まだリンクにしない）
+  //   きまっているつぎの曲：ベートーヴェン Op.2-1（ヘ短調）・シューベルト（曲はこれから）・ショパン Op.10-8（ヘ長調）・ショパン スケルツォ第2番（いちばん最後）
+  {id:'pieces',kind:'pieces',title:'🎼 名曲で楽曲分析',sub:'本物の曲の和音を、記号で穴うめ',tasks:[
+    {app:'piece',href:'piece.html?id=k545-1',title:'モーツァルトのソナタ K.545 第1楽章'}],
+   soon:'これから、ベートーヴェン・シューベルト・ショパンの曲もふえるよ'},
+  // レベルアップしたい人へ（変化和音。先生のじゅん：準固有和音がナポリの六よりさき、異名同音の読みかえはいちばん最後）
+  //   ドリアのⅣ（2026-11-01 先生が「入れてほしい」）は、ナポリの六のあと・増六のまえ（2026-11-01（4）先生がきめた）
+  {id:'extra',kind:'extra',title:'🌈 レベルアップしたい人へ',sub:'変化和音：調の音を半音動かす・よその調からかりる',tasks:[
+    {app:'doppel'},{app:'secondary'},{app:'borrowed'},{app:'neapolitan'},{app:'dorian'},{app:'aug6'},{app:'enharmonic'},{app:'chroma-quiz'}]}
 ];
+// ステップのあるクイズ：長調・短調のステップの数と、✓ になる数（5もん中）。ホームの★★★（ステップがぜんぶ ✓）でつかう。
+//   chord-quiz.html の STEPS・STEP_PASS とおなじ数にする（test/chord-quiz-cats.test.mjs でたしかめる）
+PA.STEP_INFO={'chord-quiz':{major:13,minor:15,pass:4}};
 PA.APPS=[
   {id:'chord-build',ic:'🐸',title:'和音のしくみ',d:'音階のなんばんめから「ひとつとばし」で和音をつくる',type:'learn',practice:'chord-quiz'},
-  {id:'chord-quiz',ic:'🎯',title:'和音クイズ',d:'「ト長調のⅤ7は？」を、けんばんでおさえる／選ぶ',type:'quiz'},
+  {id:'chord-quiz',ic:'🎯',title:'和音クイズ',d:'Ⅰ・Ⅳ・Ⅴ・Ⅴ7を、いろいろな問題で。やさしいじゅんのステップつき',type:'quiz'},
   {id:'cadence',ic:'🎵',title:'カデンツ',d:'「おしまい」になる和音のならび（Ⅰ→Ⅳ→Ⅰ→Ⅴ7→Ⅰ）を聴いて、伴奏の形を見る',type:'play',practice:'chord-quiz'},
   {id:'chord-table',ic:'📋',title:'和音いちらん表',d:'ぜんぶの調のⅠ・Ⅳ・Ⅴ・Ⅴ7。かくして、れんしゅうもできる',type:'ref',practice:'chord-quiz'},
   {id:'accompaniment',ic:'🎼',title:'伴奏づけ',d:'知っている曲のメロディーにⅠ・Ⅳ・Ⅴ7をつける',type:'play'},
@@ -697,23 +915,32 @@ PA.APPS=[
   {id:'interval',ic:'📏',title:'音のへだたり',d:'ドからミは3度。文字をかぞえて、広い・せまいを知る',type:'learn'},
   {id:'minor-why',ic:'❓',title:'なぜ7ばんめを上げるの？',d:'長調と短調の「7ばんめ→主音」をくらべて聴く',type:'learn',practice:'minor-quiz'},
   {id:'minor-signature',ic:'♮',title:'調号と臨時記号',d:'調号に書けないわけ。♯・♮・<span class="ds">x</span>のいちらん',type:'learn',practice:'minor-quiz'},
-  {id:'minor-family',ic:'🏠',title:'Ⅴの家族',d:'Ⅴ→Ⅴ7→Ⅴ9→減七と、Ⅰへのすすみかた',type:'learn',practice:'minor-quiz'},
+  {id:'minor-family',ic:'🏠',title:'Ⅴの家族',d:'短調のⅤ→Ⅴ7→Ⅴ9→減七と、Ⅰへのすすみかた',type:'learn',practice:'minor-quiz'},
+  {id:'dim-halfdim',ic:'⚖️',title:'Ⅴ9の根音省略',d:'短調では減七になる。長調ではならない。ちがうのは第9音だけ',type:'learn',practice:'minor-quiz'},
   {id:'minor-quiz',ic:'🎯',title:'短調クイズ',d:'短調のⅤの家族をおさえる／臨時記号を選ぶ',type:'quiz'},
   {id:'ending',ic:'🏁',title:'おわりかた',d:'完全終止・半終止・偽終止など6つのおわりかたを、聴いて・がくふで見る',type:'learn',practice:'ending-quiz'},
   {id:'ending-quiz',ic:'🎯',title:'おわりかたクイズ',d:'4つの和音を聴いて／がくふを見て、おわりかたの名前を当てる',type:'quiz'},
   {id:'doppel',ic:'🔺',title:'Ⅱ7とドッペルドミナント',d:'Ⅱ7の第3音を上げると「ⅤのためのⅤ7」になる',type:'learn',practice:'chroma-quiz'},
   {id:'secondary',ic:'🧭',title:'副属和音',d:'Ⅱ・Ⅲ・Ⅳ・Ⅵを、いっときⅠにみたてる「その和音のためのⅤ7」',type:'learn',practice:'chroma-quiz'},
+  {id:'borrowed',ic:'🎁',title:'準固有和音（借用和音）',d:'長調で、同じ主音の短調からかりる○Ⅳ・○Ⅵなど',type:'learn',practice:'chroma-quiz'},
+  {id:'neapolitan',ic:'🌋',title:'ナポリの六',d:'2ばんめを半音下げたナポリの和音。いちばん下の音とⅤへのすすみかた',type:'learn',practice:'chroma-quiz'},
+  {id:'dorian',ic:'🌗',title:'ドリアのⅣ',d:'短調のⅣの第3音（6ばんめ）を半音上げた、明るいⅣ。導音へなめらかに上がる',type:'learn',practice:'chroma-quiz'},
   {id:'aug6',ic:'↔️',title:'増六の和音',d:'イタリア・フランス・ドイツの6。外へひらいてⅤへ',type:'learn',practice:'chroma-quiz'},
-  {id:'neapolitan',ic:'🌋',title:'ナポリの六',d:'2ばんめを半音下げた♭Ⅱ。いちばん下の音とⅤへのすすみかた',type:'learn',practice:'chroma-quiz'},
-  {id:'borrowed',ic:'🎁',title:'準固有和音（借用和音）',d:'長調で、同じ主音の短調からかりるⅣ・♭Ⅵなど',type:'learn',practice:'chroma-quiz'},
-  {id:'dim-halfdim',ic:'⚖️',title:'減七と半減七',d:'にているひびき。ちがうのは第7音だけ',type:'learn',practice:'chroma-quiz'},
   {id:'enharmonic',ic:'🔀',title:'異名同音の読みかえ',d:'同じけんばんでも、書き方とすすむ先で役わりがかわる',type:'learn',practice:'chroma-quiz'},
-  {id:'chroma-quiz',ic:'🎯',title:'変化和音クイズ',d:'けんばんでおさえる／耳で聴きわける',type:'quiz'},
+  {id:'chroma-quiz',ic:'🎯',title:'変化和音クイズ',d:'Ⅱ7・ドッペルから順に、けんばんでおさえる／耳で聴きわける',type:'quiz'},
+  {id:'piece',ic:'🎼',title:'名曲で楽曲分析',d:'本物の曲の和音を、記号で穴うめ。じぶんの楽譜もひらいて、いっしょに見よう',type:'quiz'},
   {id:'ear',ic:'👂',title:'和音の聴きわけ',d:'10しゅるいの和音を音で当てる。8レベルとチャレンジ',type:'ear'},
   {id:'progression',ic:'🧩',title:'ならびの聴きわけ',d:'Ⅰ→Ⅳ→Ⅴ7→Ⅰ などのならびを聴いて、「？」の和音を当てる。おちつく・もどりたい感じ、いちばん下と上の音の動きも',type:'ear'}
 ];
-PA.UNITS.forEach(u=>u.apps.forEach(id=>{const a=PA.APPS.find(x=>x.id===id);if(a) a.unit=u.id;}));
 PA.app=id=>PA.APPS.find(a=>a.id===id)||null;
+// 課題：href・title がなければアプリのページと名前。u.apps＝課題のアプリの id（おなじものは1つ）。
+// a.unit＝そのアプリがさいしょに出てくる単元（1つのアプリに1つ。和音クイズは①）
+PA.UNITS.forEach(u=>{
+  u.tasks=u.tasks.filter(t=>PA.app(t.app)).map(t=>{const a=PA.app(t.app);return {app:a.id,href:t.href||a.href||a.id+'.html',title:t.title||a.title};});
+  u.apps=u.tasks.map(t=>t.app).filter((id,i,arr)=>arr.indexOf(id)===i);
+  u.apps.forEach(id=>{const a=PA.app(id);if(!a.unit) a.unit=u.id;});
+});
+PA.unit=id=>PA.UNITS.find(u=>u.id===id)||null;
 
 /* ===== 画面のしくみ ===== */
 PA.seg=(act,opts,cur,cls='')=>`<div class="seg ${cls}" role="group">`+opts.map(([v,l])=>`<button class="${String(v)===String(cur)?'on':''}" data-act="${act}" data-v="${v}" aria-pressed="${String(v)===String(cur)}">${l}</button>`).join('')+`</div>`;
@@ -1024,7 +1251,7 @@ PA.url=(page,obj)=>{
   return q.length?p+(p.indexOf('?')>=0?'&':'?')+q.join('&'):p;
 };
 const PARAM_RE=/^[a-z][a-z0-9-]{0,20}$/;
-PA.PARAM_KEYS=['key','chord','mode','level','tier','n'];
+PA.PARAM_KEYS=['key','chord','mode','level','tier','n','step'];
 const hasOwn=(o,k)=>Object.prototype.hasOwnProperty.call(o,k);
 PA.parseParams=search=>{
   const out={};
@@ -1358,7 +1585,7 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
   };
   // ベース（Ⅱ・Ⅴ/Ⅴの根音）をラ2〜ソ♯3におく
   const rootBase=key=>{const r=PA.mod(key.tpc+2,12);return 45+PA.mod(r-45,12)-2;}; // 主音の高さ（根音＝主音＋2が45〜56）
-  C.TYPES={ii7:'Ⅱ7',dd:'ドッペルドミナント',dd9:'Ⅴ9/Ⅴ',ddim:'減七/Ⅴ',it:'イタリアの6',fr:'フランスの6',ger:'ドイツの6'};
+  C.TYPES={ii7:'Ⅱ7',dd:'ドッペルドミナント',dd9:'ⅤのⅤ9',ddim:'ⅤのⅤ9の根音省略',it:'イタリアの6',fr:'フランスの6',ger:'ドイツの6'};
   // ----- Ⅱ7とドッペルドミナント（根音をベースに、上に5音・7音・3音の形） -----
   C.ii7=key=>{
     const b=rootBase(key), fifth=key.minor?8:9;
@@ -1423,14 +1650,15 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
     return '';
   };
 })();
-/* ===== 変化和音（芸大和声の考え方）：ナポリの六・準固有和音・副属和音・減七と半減七・異名同音の読み替え =====
+/* ===== 変化和音（芸大和声の考え方）：ナポリの六・準固有和音・副属和音・Ⅴ9の根音省略（長調の形と減七）・異名同音の読み替え =====
  * key（PA.majorKey / PA.minorKey）をわたすと、正しいつづりと高さの音をかえす。
  * 音：{letter, acc, midi, role(日本語の役わり), tag}
  *   tag：'lt'＝導音（上へすすむ）、'seventh'＝第7音（下へすすむ）、'b9'／'ninth'＝短9度／長9度（下へ）、
  *        'low'＝下げた音、'borrowed'＝同主短調からかりた音、'raised'＝短調で上げた第6音・第7音、'chrom'＝そのほかの調にない音
- *   減七・半減七（Ⅶ7）は芸大和声どおりⅤ9の根音省略として名前と tag をつける（導音＝第3音、4＝第7音 'seventh'、6＝第9音 'b9'／'ninth'、2＝第5音）。
+ *   減七・長調の形（導音からつむ七の和音）は藝大式どおりⅤ9の根音省略として名前と tag をつける（導音＝第3音、4＝第7音 'seventh'、6＝第9音 'b9'／'ninth'、2＝第5音）。
+ *   id の 'vii7'・'vii7h' はまえからの名前（かえない）。画面では「Ⅴ9の根音省略」とよび、「半減七」「Ⅶ7」とは書かない
  *   vii7・rootless9・borrowed('vii_dim7')・viiCompare・secondary(…,'vii7'|'vii7h')・dimReadings のどれでも、おなじ音にはおなじ tag。
- * 和音記号：芸大（島岡）の書きかた。○＝準固有（同主短調からかりた）。転回形は6・6/4（Ⅱ6、Ⅰ6/4）。
+ * 和音記号：藝大（島岡）の書きかた（PA.rn で部品から描く）。○＝準固有（同主短調からかりた）。転回形は右上の数字（Ⅱ¹、Ⅰ²）。
  *   短調の目標Ⅲ・Ⅶ（自然的短音階の長三和音）は「Ⅲ（自然）」「Ⅶ（自然）」と書いて、和声的短音階のⅢ（増）・Ⅶ（減）と区別する。
  *   コードネーム（dim7・m7(♭5) など）は H.symbol だけでつかう。
  * ならび：[ベース, 上の声（低い→高い）]。解決（すすみ先）はおなじならびで、それぞれの声がどこへ行くかをかえす。
@@ -1542,14 +1770,17 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
   H.BORROWED_IDS=['iv','ii_dim','ii_hdim7','bVI','V9_b9','vii_dim7'];
   // label：芸大の和音記号（○＝準固有）。ii_dim は第1転回形（ベース＝第3音）で鳴らすのでⅡ6
   H.JUN='○';
+  // rn：記号の部品（藝大式。PA.rn）。ii_dim は第1転回形（ベース＝第3音）で鳴らすので inv:1。vii_dim7 はⅤ9の根音省略（斜線）
+  //   label・diatonic：ただの文字（PA.rnText とおなじ。前のバージョンの呼び名のかわり）
   H.BORROWED={
-    iv:{label:'○Ⅳ',diatonic:'Ⅳ',next:'Ⅰ'},
-    ii_dim:{label:'○Ⅱ6',diatonic:'Ⅱ6',next:'Ⅴ',inv:1},
-    ii_hdim7:{label:'○Ⅱ7',diatonic:'Ⅱ7',next:'Ⅴ7'},
-    bVI:{label:'○Ⅵ',diatonic:'Ⅵ',next:'Ⅴ'},
-    V9_b9:{label:'○Ⅴ9',diatonic:'Ⅴ9',next:'Ⅰ'},
-    vii_dim7:{label:'○Ⅶ7',diatonic:'Ⅶ7',next:'Ⅰ'}
+    iv:{rn:{deg:4},next:'Ⅰ'},
+    ii_dim:{rn:{deg:2,inv:1},next:'Ⅴ',inv:1},
+    ii_hdim7:{rn:{deg:2,form:7},next:'Ⅴ7'},
+    bVI:{rn:{deg:6},next:'Ⅴ'},
+    V9_b9:{rn:{deg:5,form:9},next:'Ⅰ'},
+    vii_dim7:{rn:{deg:5,form:9,omit:true},next:'Ⅰ'}
   };
+  Object.values(H.BORROWED).forEach(B=>{B.label=PA.rnText({...B.rn,borrowed:true});B.diatonic=PA.rnText(B.rn);});
   // b＝true でかりた形、false で長調のふつうの形（6・3のほかはおなじならび・おなじ高さ）
   const BSPEC={
     iv:b=>[V(3,5,'根音'),V(0,0,'第5音'),V(3,5,'根音'),b?V(5,8,'第3音（下げた第6音）','borrowed'):V(5,9,'第3音')],
@@ -1558,7 +1789,7 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
     bVI:b=>b?[V(5,8,'根音（下げた第6音）','borrowed'),V(0,0,'第3音'),V(2,3,'第5音（下げた第3音）','borrowed'),V(0,0,'第3音')]
             :[V(5,9,'根音'),V(0,0,'第3音'),V(2,4,'第5音'),V(0,0,'第3音')],
     V9_b9:b=>[V(4,7,'根音'),V(6,11,'第3音（導音）','lt'),V(3,5,'第7音','seventh'),b?V(5,8,'第9音（下げた第6音）','borrowed'):V(5,9,'第9音','ninth')],
-    // Ⅶ7＝Ⅴ9の根音省略（名前・tag はⅤ9から見たもの。H.vii7とおなじ）
+    // 導音からつむ形＝Ⅴ9の根音省略（名前・tag はⅤ9から見たもの。H.vii7とおなじ）
     vii_dim7:b=>[V(6,11,'第3音（導音）','lt'),V(3,5,'第7音','seventh'),b?V(5,8,'第9音（下げた第6音）','borrowed'):V(5,9,'第9音（たかいほう）','ninth'),V(1,2,'第5音')]
   };
   const NEXT={
@@ -1575,12 +1806,46 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
   // つぎの和音（かりた形・ふつうの形のどちらからすすんでもおなじ音。b＝false はふつうの形からすすんだばあい）
   H.nextOf=(key,id,b=true)=>{const f=bfam(key,id);return f&&f[b?0:1][1];};
 
-  /* ----- 3) 副属和音（Ⅴ7/x とⅦ7/x） -----
+  /* ----- 2b) ドリアのⅣ（短調だけ）：Ⅳの第3音（音階の6ばんめ）を半音上げた長三和音（第3音上方変位。島岡の書きかたで「＋Ⅳ」） -----
+   * 上げた第6音は導音へ2度上がる（旋律的短音階ののぼる形：6→7）。ふつうのⅣのままだと、6→導音が増2度になる。
+   * カデンツ Ⅰ → Ⅳ（ドリア／ふつう）→ Ⅴ → Ⅰ。ならび [ベース | 主音, 第4音, 第6音]（第3音＝6ばんめをソプラノに）
+   *   Ⅰ [1 | 1, 3, 5] → Ⅳ [4 | 1, 4, 6]（主音はそのまま、3→4、5→6）→ Ⅴ [5 | 5, 2, 7]（主音→5へ下、4→2へ下、6→7へ上）→ Ⅰ [1 | 5, 3, 1]
+   *   （Ⅳ→Ⅴで主音→2へ上がると、ベースと連続5度。主音→7は導音が2つになる）
+   * 長調ではつかわない（長調のⅣはもともと長三和音）：長調の key では null */
+  const DOR_I=()=>[V(0,0,'Ⅰの根音（いちばん下）'),V(0,0,'Ⅰの根音'),V(2,3,'Ⅰの第3音'),V(4,7,'Ⅰの第5音')];
+  const DOR_IV=(raised,bmv)=>[V(3,5,'根音（いちばん下）',null,bmv),V(0,0,'第5音',null,'near'),V(3,5,'根音',null,'up'),
+    raised?V(5,9,'第3音（上げた6ばんめ）','raised','up'):V(5,8,'第3音',null,'up')];
+  const DOR_V=()=>[V(4,7,'Ⅴの根音',null,'up'),V(4,7,'Ⅴの根音',null,'down'),V(1,2,'Ⅴの第5音',null,'down'),V(6,11,'Ⅴの第3音（導音）','lt','up')];
+  const DOR_I2=()=>[V(0,0,'Ⅰの根音',null,'leap'),V(4,7,'Ⅰの第5音',null,'near'),V(2,3,'Ⅰの第3音',null,'up'),V(0,0,'Ⅰの根音',null,'up')];
+  // Ⅰ→Ⅳのベースは4度上か5度下。音域（ベース40〜55・上の声55〜79）からのはみだしがすくないほう
+  //   （Ⅳ→Ⅴで上の声の主音が5へ4度下がるので、ベースが高いとⅤのベースと上の声がぶつかる）
+  const dfam=key=>{
+    if(!key.minor) return null;
+    let best=null;
+    ['up','down'].forEach(bmv=>{
+      const f=fam(key,[[DOR_I(),DOR_IV(true,bmv),DOR_V(),DOR_I2()],[DOR_I(),DOR_IV(false,bmv),DOR_V(),DOR_I2()]]);
+      let pen=0;
+      f.flat().forEach(ch=>{
+        ch.forEach((n,i)=>{const lo=i?U_LO:B_LO, hi=i?U_HI:B_HI;pen+=Math.max(0,lo-n.midi)+2*Math.max(0,n.midi-hi);}); // 高すぎる音（加線の多い音）をより重く
+        if(ch[0].midi>=ch[1].midi) pen+=100;
+      });
+      if(!best||pen<best.pen) best={pen,f};
+    });
+    return best.f;
+  };
+  // ドリアのⅣ（[4 | 1, 4, ♮6]）。raised＝false でふつうのⅣ（[4 | 1, 4, 6]。おなじならび・おなじ高さ）
+  H.dorian=(key,raised=true)=>{const f=dfam(key);return f&&f[raised?0:1][1];};
+  // ドリアのⅣ（ふつうのⅣ）→ Ⅴ（どちらからでもおなじ音）
+  H.dorianToV=key=>{const f=dfam(key);return f&&f[0][2];};
+  // カデンツ [Ⅰ, Ⅳ（ドリア／ふつう）, Ⅴ, Ⅰ]
+  H.dorianCad=(key,raised=true)=>{const f=dfam(key);return f&&f[raised?0:1];};
+
+  /* ----- 3) 副属和音（x度調のⅤ7と、x度調のⅤ9の根音省略。記号は2段） -----
    * target：目標の和音の度数（2〜7）。長調ⅡⅢⅣⅤⅥ、短調ⅢⅣⅤⅥⅦ（Ⅶ＝自然的短音階の長三和音）
    * kind：'V7'＝目標のⅤ7（4つの音がそろった形 [根音 | 5, 7, 3]。PA.chroma.dd とおなじならび → 第5音をはぶいた目標の和音）、'vii7'＝目標の導音の七の和音＝Ⅴ9の根音省略で短9度の減七（目標が長・短どちらでも。
    *        PA.chroma の減七/Ⅴとおなじきまり）、'vii7h'＝長9度の根音省略＝半減七（目標が長三和音で、長9度が調の音のときだけ。
-   *        短調のⅦ7/Ⅴは短9度だけ：PA.chroma.ddStack(key,'dd9',true) とおなじきまりで null）
-   * Ⅶ7/x → x：ならび [導音 | 7, 9, 5] → [根音 | 3, 5, 根音]（根音を重ねる）。9は5の完全4度下にあるので、
+   *        短調のⅤ度調のⅤ9の根音省略は短9度だけ：PA.chroma.ddStack(key,'dd9',true) とおなじきまりで null）
+   * x度調のⅤ9の根音省略 → x：ならび [導音 | 7, 9, 5] → [根音 | 3, 5, 根音]（根音を重ねる）。9は5の完全4度下にあるので、
    *   5 → 根音と9 → 5は平行4度（よい）。連続5度になるのは9が5より上にあるときだけ。
    *   目標の第3音へ上げると、目標がⅤのとき調の導音が2つになるのでしない */
   H.targets=key=>key.minor?[3,4,5,6,7]:[2,3,4,5,6];
@@ -1631,10 +1896,11 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
   // 短調のⅢ・Ⅶ（自然的短音階の長三和音）か
   H.targetIsNatural=(key,target)=>{const T=tgt(key,target);return T?T.natural:null;};
 
-  /* ----- 4) 減七と半減七（Ⅶ7）＝Ⅴ9の根音省略 -----
+  /* ----- 4) Ⅴ9の根音省略（短調＝減七、長調＝長調の形）。id は 'vii7'（まえからの名前） -----
    * 長調：半減七（7・2・4・6）、短調：減七（♯7・2・4・♭6）。ならび [導音 | 4, 6, 2]
    * 名前と tag はⅤ9から見たもの（導音＝第3音 'lt'、4＝第7音 'seventh'、6＝第9音 'ninth'／'b9'、2＝第5音）。
-   *   H.vii7(key,'vii') だけ、名前を「Ⅶ7から見た名前」（導音＝根音、2＝第3音、4＝第5音、6＝第7音）にする（tag はかわらない）。
+   *   H.vii7(key,'vii') だけ、名前を導音を根音として見た名前（導音＝根音、2＝第3音、4＝第5音、6＝第7音）にする（tag はかわらない）。
+   *   藝大式では使わない見かたなので、画面ではつかわない（テストでくらべるためにのこす）。
    * Ⅰへ：導音 → 主音（上へ）、4 → 3（下へ）、6 → 5（下へ）、2 → 主音（下へ）＝根音を重ねたⅠ。
    *   このならびでは6が2の完全4度（短調は増4度）下にあるので、6→5と2→1は平行4度（よい）。
    *   2が6の下にあって5度になるならびなら、2→1は連続5度（長調）になる */
@@ -1644,7 +1910,7 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
   ];
   const IRES=key=>[V(0,0,'Ⅰの根音',null,'up'),V(2,semi(key,2),'Ⅰの第3音',null,'down'),V(4,7,'Ⅰの第5音',null,'down'),V(0,0,'Ⅰの根音',null,'down')];
   const sixOf=key=>semi(key,5); // 長調♮6、短調♭6
-  // 調のⅦ7（＝根音省略のⅤ9）・半減七・減七をいっしょにつくって、おなじ高さにそろえる
+  // 調のⅤ9の根音省略・長調の形・減七をいっしょにつくって、おなじ高さにそろえる
   const vfam=key=>fam(key,[
     [viiSpec(key,sixOf(key),key.minor?'第9音（ひくいほう）':'第9音（たかいほう）',key.minor?'b9':'ninth'),IRES(key)],
     [viiSpec(key,9,key.minor?'第9音（上げた第6音）':'第9音（たかいほう）',key.minor?'raised':'ninth'),IRES(key)],
@@ -1661,7 +1927,7 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
   H.v9ToI=key=>v9fam(key)[1];
   // 半減七と減七のくらべ：ちがうのは第9音（♮6と♭6）だけ。diff＝その音のならびの番号
   // halfInKey／dimInKey＝その調の和音か。短調の half（♮6＝旋律的短音階の上げた第6音）は音のくらべだけで、
-  //   短調の和音（和音記号）としてはつかわない。長調の dim は準固有（○Ⅶ7）
+  //   短調の和音（和音記号）としてはつかわない。長調の dim は準固有（○Ⅴ9の根音省略）
   H.viiCompare=key=>{const f=vfam(key);return {half:f[1][0],dim:f[2][0],diff:2,toI:f[0][1],halfInKey:!key.minor,dimInKey:key.minor};};
 
   /* ----- 5) 異名同音の読み替え ----- */
@@ -1681,8 +1947,8 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
     return {idx,l,a,tpc,tonicMidi,minor:true,nat,harm,scale:harm,sig,rel,par,lt:harm[6],natLT:nat[6],ltType:harm[6].acc,enh:true};
   };
   H.minorOf=minorOf;
-  /* 減七の4つの読みかた：おなじけんばん（おなじ高さ）を、4つの短調のⅦ7（Ⅴ9の根音省略）として書く
-   * input：ピッチクラス4つの配列／減七の音（{letter,acc,midi}）の配列／key（長調なら同主短調の減七＝準固有の ○Ⅶ7、短調ならその調のⅦ7）
+  /* 減七の4つの読みかた：おなじけんばん（おなじ高さ）を、4つの短調のⅤ9の根音省略として書く
+   * input：ピッチクラス4つの配列／減七の音（{letter,acc,midi}）の配列／key（長調なら同主短調の減七＝準固有の ○Ⅴ9の根音省略、短調ならその調のⅤ9の根音省略）
    * かえす：[{keyIdx, key, lt, spelling, resolution, given, resInv, ninthInBass, next}]
    *   given（わたしたつづり・調）の読みがさいしょ、あとは主音が短3度ずつ上へ。
    *   given の読みはわたしたつづりのまま（必要なら PA.MINOR_KEYS にない調：key.enh＝true、keyIdx＝おなじ高さの調の番号）。
@@ -1692,7 +1958,7 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
    *   主音へ下りると♭6→5とバスをふくむ減5度→完全5度になる）。
    *   resInv：解決のⅠの形（0＝基本形、1＝Ⅰ6、2＝Ⅰ6/4）。
    *   ninthInBass：ベースが第9音（♭6）＝Ⅴ9の第4転回形にあたる形（芸大ではふつうつかわない）。解決はⅠ6/4になるので、
-   *   next にそのあとのⅤ（おなじならび）を入れる（それ以外は next＝null）。ふつうのⅦ7→Ⅰとして見せないこと。
+   *   next にそのあとのⅤ（おなじならび）を入れる（それ以外は next＝null）。ふつうのⅤ9の根音省略→Ⅰとして見せないこと。
    *   密集（短3度でとなりあう声がある）のときは、その2つの声が同度になることがある（ほかによいすすみかたがない） */
   const DIM_REL={11:[6,'第3音（導音）','lt'],2:[1,'第5音',null],5:[3,'第7音','seventh'],8:[5,'第9音（ひくいほう）','b9']};
   H.dimReadings=input=>{
@@ -1801,16 +2067,16 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
     const ger=low(raw);
     const v7=[
       {...sp(key,5,8),midi:ger[0].midi,role:'根音',tag:null},
-      {...sp(key,0,0),midi:ger[1].midi,role:'第3音（♭Ⅱへの導音）',tag:'lt'},
+      {...sp(key,0,0),midi:ger[1].midi,role:'第3音（ナポリの和音への導音）',tag:'lt'},
       {...sp(key,2,3),midi:ger[2].midi,role:'第5音',tag:null},
       {...sp(key,4,6),midi:ger[3].midi,role:'第7音','tag':'seventh'}
     ];
     const tn=(lo,so,from,mv,role)=>{const s=sp(key,lo,so);return {...s,midi:move(s,from,mv,B_C),role,tag:null};};
     const v7Res=[
-      tn(1,1,v7[0].midi,'leap','♭Ⅱの根音'),
-      tn(1,1,v7[1].midi,'up','♭Ⅱの根音'),
-      tn(1,1,v7[2].midi,'down','♭Ⅱの根音'),
-      tn(3,5,v7[3].midi,'down','♭Ⅱの第3音')
+      tn(1,1,v7[0].midi,'leap','ナポリの和音の根音'),
+      tn(1,1,v7[1].midi,'up','ナポリの和音の根音'),
+      tn(1,1,v7[2].midi,'down','ナポリの和音の根音'),
+      tn(3,5,v7[3].midi,'down','ナポリの和音の第3音')
     ];
     return {ger,gerRes:[low(C.gerToI64(key)),low(C.aug6ToV(key,'ger'))],v7,v7Res,diff:3,bassShift:sh};
   };
@@ -1829,7 +2095,10 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
     vii_dim7:[k=>cs(d(k,6,11),'dim7'),k=>cs(d(k,6,11),'m7(♭5)')]
   };
   // what：'N6'｜'borrowed'(a＝id)｜'diatonic'(a＝id)｜'secondary'(a＝target, b＝kind)｜'target'(a＝target)｜'vii7'｜'v9'｜'v7bII'｜'bII'
+  //   ｜'dorian'（ドリアのⅣ。短調だけ）｜'minorIV'（短調のふつうのⅣ）
   H.symbol=(key,what,a,b)=>{
+    if(what==='dorian') return key.minor?cs(d(key,3,5),''):'';
+    if(what==='minorIV') return key.minor?cs(d(key,3,5),'m'):'';
     if(what==='N6') return cs(d(key,1,1),'',d(key,3,5));
     if(what==='bII') return cs(d(key,1,1),'');
     if(what==='borrowed'||what==='diatonic') return key.minor||!BSYM[a]?'':BSYM[a][what==='borrowed'?0:1](key);
@@ -1844,25 +2113,40 @@ window.addEventListener('pageshow',()=>{pressOff(false);keyDowns.clear();documen
     if(what==='v7bII') return cs(d(key,5,8),'7');
     return '';
   };
-  // 和音記号（ローマ数字。芸大の書きかた：○＝準固有、和音の種類（減・半減）は書かない）
-  //   target：短調のⅢ・Ⅶは「Ⅲ（自然）」「Ⅶ（自然）」（自然的短音階の長三和音）
-  //   secondary：'V7'＝Ⅴ7/x、'vii7'＝Ⅶ7/x（目標が長三和音で短9度が調にない音なら目標の同主短調からかりた形なので ○Ⅶ7/x）、'vii7h'＝Ⅶ7/x
-  //   vii7：長調・短調ともその調のⅦ7（＝Ⅴ9の根音省略）。長調でかりた減七は label(key,'borrowed','vii_dim7')＝○Ⅶ7
-  const tName=(T,a)=>ROMAN[a-1]+(T.natural?'（自然）':'');
-  H.label=(key,what,a,b)=>{
-    if(what==='N6') return 'N6（♭Ⅱ6）';
-    if(what==='borrowed') return !key.minor&&H.BORROWED[a]?H.BORROWED[a].label:'';
-    if(what==='diatonic') return !key.minor&&H.BORROWED[a]?H.BORROWED[a].diatonic:'';
-    if(what==='target'){const T=tgt(key,a);return T?tName(T,a):'';}
-    if(what==='secondary'){
-      const T=tgt(key,a), k=b||'V7'; if(!T||!secSpec(T,k)) return '';
-      return (k==='V7'?'Ⅴ7':(k==='vii7'&&!T.minor&&!T.min9InKey?H.JUN:'')+'Ⅶ7')+'/'+tName(T,a);
+  // 和音記号（藝大式・PA.rn の部品。○＝準固有、和音の種類（減・半減）は書かない）
+  //   N6：ナポリの六＝Ⅱの根音下方変位・第1転回形（長調では下げた第6音をかりるので ○ もつける。先生に確認まち）。bII：その基本形
+  //   target：短調のⅢ・Ⅶは natural（「（自然）」。自然的短音階の長三和音）
+  //   secondary：'V7'＝○度調のⅤ7（2段：上の小さい数字＝目標、下の大きい数字＝Ⅴ）、'vii7'・'vii7h'＝○度調のⅤ9の根音省略
+  //     （'vii7' は短9度。目標が長三和音で短9度が調にない音なら、目標の同主短調からかりた形なので ○）
+  //   vii7：その調のⅤ9の根音省略（減七・長調の形）。v9：Ⅴ9。v7bII：ナポリの調（下げたⅡ度調）のⅤ7
+  //   o.voiced：このアプリのならび（いちばん下が導音）で鳴らす和音の記号。根音省略のⅤ9は第3音がいちばん下なので第1転回形（¹）をつける
+  //   dorian：ドリアのⅣ＝Ⅳの第3音上方変位（短調だけ。印の形は先生に確認まち：PA.rn の alt3）
+  H.rnParts=(key,what,a,b,o={})=>{
+    const v1=o.voiced?{inv:1}:{};
+    if(what==='dorian') return key.minor?{deg:4,alt3:'up',name:'ivd'}:null;
+    if(what==='N6') return {deg:2,rootDown:true,inv:1,...(key.minor?{}:{borrowed:true}),name:'n6'};
+    if(what==='bII') return {deg:2,rootDown:true,...(key.minor?{}:{borrowed:true})};
+    if(what==='borrowed'||what==='diatonic'){
+      const B=!key.minor&&H.BORROWED[a]; if(!B) return null;
+      const p={...B.rn,...(B.rn.omit?v1:{})};
+      return what==='borrowed'?{...p,borrowed:true}:p;
     }
-    if(what==='vii7') return 'Ⅶ7';
-    if(what==='v9') return 'Ⅴ9';
-    if(what==='v7bII') return 'Ⅴ7/♭Ⅱ';
-    return '';
+    if(what==='target'){const T=tgt(key,a);return T?{deg:a,...(T.natural?{natural:true}:{})}:null;}
+    if(what==='secondary'){
+      const T=tgt(key,a), k=b||'V7'; if(!T||!secSpec(T,k)) return null;
+      const nat=T.natural?{natural:true}:{};
+      if(k==='V7') return {of:a,deg:5,form:7,...nat};
+      return {of:a,deg:5,form:9,omit:true,...v1,...(k==='vii7'&&!T.minor&&!T.min9InKey?{borrowed:true}:{}),...nat};
+    }
+    if(what==='vii7') return {deg:5,form:9,omit:true,...v1};
+    if(what==='v9') return {deg:5,form:9};
+    if(what==='v7bII') return {of:2,ofDown:true,deg:5,form:7};
+    return null;
   };
+  // ただの文字（○Ⅳ、ⅡのⅤ₇ など）。画面の記号は H.rn（PA.rn）で描く
+  H.label=(key,what,a,b,o)=>{const p=H.rnParts(key,what,a,b,o);return p?PA.rnText(p):'';};
+  H.rn=(key,what,a,b,o)=>{const p=H.rnParts(key,what,a,b,o);return p?PA.rn(p):'';};
+  H.aria=(key,what,a,b,o)=>{const p=H.rnParts(key,what,a,b,o);return p?PA.rnAria(p):'';};
 })();
 /* ===== 調の出しかた（クイズ用の調のふくろ）と24調チェック表 =====
  * 調の id：'M0'〜'M12'＝PA.MAJOR_KEYS の番号、'm0'〜'm12'＝PA.MINOR_KEYS の番号（26こ。嬰ヘ長調／変ト長調・嬰ニ短調／変ホ短調は
@@ -2188,7 +2472,7 @@ PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
     if(Number.isFinite(r.endedAt)) out.endedAt=r.endedAt;
     return out;
   };
-  // リンクのしるし：n いがいの PARAM_KEYS（key・chord・mode・level・tier）をならべた文字。ちがう宿題のリンクなら新しい回
+  // リンクのしるし：n いがいの PARAM_KEYS（key・chord・mode・level・tier・step）をならべた文字。ちがう宿題のリンクなら新しい回
   const sigOf=p=>(PA.PARAM_KEYS||[]).filter(k=>k!=='n'&&p&&p[k]!=null&&p[k]!=='').map(k=>k+'='+p[k]).join('&');
   PA.sessionSig=sigOf;
   const AFTER_END=10*6e4; // おわってから10分まではけっかのカードをまた出す（「もどる」で読みなおしたとき）
@@ -2268,6 +2552,7 @@ PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
           +`<h2 id="sess-h">🎉 ${d.n}もんおわり！</h2>`
           +`<p class="sess-big"><b>${d.n}もん中${T.ok}もん</b> <span class="sess-stars" role="img" aria-label="ほし3つのうち${T.stars}つ">${stars}</span></p>`
           +`<p class="sess-msg">${T.msg}</p>`
+          +(p.extra||'') // ページがつくる HTML（耳のひろばの「きょうの5もん、できたね！」）
           +`<div class="sess-counts">`
           +`<div class="sc-self"><b>${T.self}</b><span>じぶんでできた</span></div>`
           +`<div class="sc-hint"><b>${T.hint}</b><span>ヒントを見てできた</span></div>`
@@ -2298,6 +2583,75 @@ PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
     }
     return s;
   };
+})();
+/* ===== 耳のひろば：つづけた日（毎日のやる気） =====
+ * 耳のひろばの「きょうの5もん」（和音の聴きわけ・ならびの聴きわけの PA.session の回。どのレベル・ステップでも、リンクの n でも）を
+ * さいごまでやった日に、しるしをつける。ページは s.record(…) が finished をかえしたときに PA.earDays.mark() をよぶ。
+ * PA.store 'ear-days'＝['2026-11-01', …]（その端末の日づけ＝ローカル時刻。古いじゅん・おなじ日は1つ・さいごの KEEP 日ぶんまで）
+ * 休んでも、しるしは消さない。「とぎれた」とは言わない（つづけた日数は、2日いじょうつづいているときだけ出す）。ランキングはない。
+ * 日のけいさんは、年・月・日からつくる（new Date(年, 月, 日＋n)）。24時間をたさないので、月・年のさかいめや夏時間でもずれない。
+ *   PA.earDays.key(t?) → 'YYYY-MM-DD'（t＝ミリ秒か Date。なければ Date.now()）
+ *   PA.earDays.list() → しるしの日（きれいにした配列。ほんとうにある日だけ・古いじゅん・おなじ日は1つ）
+ *   PA.earDays.mark(t?) → {first：その日はじめてのしるし, info}
+ *   PA.earDays.info(t?) → {key：きょう, today：きょうできた, week:[{key, wd:'月'…, on, now：きょう, future}×7（月曜〜日曜）], weekCount, run, total}
+ *     run：きょうまで（きょうまだなら、きのうまで）毎日つづけた日数。つづいていなければ 0。total：のこっているしるしの数
+ *   PA.earDays.weekHTML(info?, {dark}) → 「今週」と7つの丸（月〜日）・「3日」（0日なら「これから」）・「つづけて4日」（読み上げは1つの文）。dark＝耳のひろばの夜空の上
+ *   PA.earDays.cheerHTML({fx, n, info}) → 5もんのけっかに入れる「きょうの5もん、できたね！」と今週の丸（きょうのしるしがなければ今週の丸だけ）。
+ *     fx＝その日はじめてできた：紙ふぶきと「ぽん」のうごき（うごきをへらす設定では出さない。app.css） */
+(function(){
+  const SK='ear-days', KEEP=400, WD='月火水木金土日';
+  const pad=n=>(n<10?'0':'')+n;
+  const keyOfDate=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+  const dayOf=d=>new Date(d.getFullYear(),d.getMonth(),d.getDate());
+  const shift=(d,n)=>new Date(d.getFullYear(),d.getMonth(),d.getDate()+n);
+  const dateOf=t=>{
+    const d=t instanceof Date?new Date(t.getTime()):new Date(t==null?Date.now():+t);
+    return isNaN(d.getTime())?new Date(Date.now()):d;
+  };
+  // ほんとうにある日だけ（2月30日などはすてる）
+  const valid=k=>{
+    const m=typeof k==='string'&&/^(\d{4})-(\d{2})-(\d{2})$/.exec(k); if(!m) return false;
+    const y=+m[1], mo=+m[2]-1, da=+m[3]; if(y<2000) return false;
+    const d=new Date(y,mo,da); return d.getFullYear()===y&&d.getMonth()===mo&&d.getDate()===da;
+  };
+  const list=()=>{
+    const v=PA.store.get(SK,[]); if(!Array.isArray(v)) return [];
+    const out=[]; v.slice(-2*KEEP).forEach(k=>{if(valid(k)&&out.indexOf(k)<0) out.push(k);});
+    return out.sort().slice(-KEEP);
+  };
+  const info=t=>{
+    const today=dayOf(dateOf(t)), tk=keyOfDate(today), all=list(), set={};
+    all.forEach(k=>{set[k]=true;});
+    const wi=(today.getDay()+6)%7, mon=shift(today,-wi); // 月曜はじまり（ランキングの「今週」とおなじ）
+    const week=[0,1,2,3,4,5,6].map(i=>{const k=keyOfDate(shift(mon,i));return {key:k,wd:WD[i],on:!!set[k],now:i===wi,future:i>wi};});
+    let run=0, d=set[tk]?today:shift(today,-1);
+    while(run<KEEP&&set[keyOfDate(d)]){run++;d=shift(d,-1);}
+    return {key:tk,today:!!set[tk],week,weekCount:week.filter(x=>x.on).length,run,total:all.length};
+  };
+  const mark=t=>{
+    const k=keyOfDate(dateOf(t)), all=list(), first=all.indexOf(k)<0;
+    if(first){all.push(k);PA.store.set(SK,all.sort().slice(-KEEP));}
+    return {first,info:info(t)};
+  };
+  const weekHTML=(I,o)=>{
+    I=I||info(); o=o||{};
+    const on=I.week.filter(x=>x.on).map(x=>x.wd);
+    // 今週まだ0日（週がかわった月曜など）は数を出さない：「0日できた」はがっかりするので「これから」（先生：休んでも責めない）
+    const al=(I.weekCount?`今週は${I.weekCount}日できたよ（${on.join('・')}）`:'今週はまだこれから')+(I.run>=2?`。つづけて${I.run}日`:'');
+    return `<div class="pa-week${o.dark?' dark':''}" role="img" aria-label="${al}"><span class="pw-l">今週</span><span class="pw-dots">`
+      +I.week.map(x=>`<span class="pw-d${x.on?' on':''}${x.now?' now':''}${x.future?' fut':''}"><i></i><small>${x.wd}</small></span>`).join('')
+      +`</span><span class="pw-n">${I.weekCount?`<b>${I.weekCount}</b>日できた`:'これから'}</span>${I.run>=2?`<span class="pw-run"><span aria-hidden="true">🔥</span>つづけて<b>${I.run}</b>日</span>`:''}</div>`;
+  };
+  const CONF=['#ff6b6b','#ffd166','#06d6a0','#4cc9f0','#b388ff','#ff8fab'];
+  const cheerHTML=(o={})=>{
+    const I=o.info||info(), n=Number.isInteger(o.n)&&o.n>0?o.n:5;
+    if(!I.today) return `<div class="pa-cheer still">${weekHTML(I)}</div>`;
+    const fx=!!o.fx;
+    const conf=fx?`<span class="pa-confetti" aria-hidden="true">`+Array.from({length:14},(_,i)=>`<i style="--x:${4+i*7}%;--d:${(i%5)*0.12}s;--c:${CONF[i%CONF.length]};--r:${i%2?'':'-'}${200+i*20}deg"></i>`).join('')+`</span>`:'';
+    const sub=I.run>=2?'毎日つづいているね！':'またあしたも、まってるよ';
+    return `<div class="pa-cheer${fx?'':' still'}">${conf}<p class="pc-t"><span aria-hidden="true">🎉 </span>きょうの${n}もん、できたね！</p>${weekHTML(I)}<p class="pc-s">${sub}</p></div>`;
+  };
+  PA.earDays={key:t=>keyOfDate(dateOf(t)),list,info,mark,weekHTML,cheerHTML,KEEP};
 })();
 /* ===== おわりかた（終止形）：6つの終止の和音のならび =====
  * key は PA.keyOf(minor, idx, 60)（主音はド4〜シ4）。短調の key.scale は和声的短音階なので、Ⅴ・Ⅴ7の7ばんめは上げた音（raised）。
@@ -2406,6 +2760,8 @@ PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
   };
   // 和音の名前（てんかい＝いちばん下が根音ではない形）
   E.labelText=c=>c.label+(c.inv?'（てんかい）':'');
+  // がくふの和音記号（藝大式・PA.rn の部品）：右上に転回形の数字（Ⅴ₇¹ など）
+  E.rnOf=c=>{const p=PA.rnOf(c.label);return p?{...p,...(c.inv?{inv:c.inv}:{})}:c.label;};
   // さいごの2つの和音で名前がきまるわけ（だから ○○終止、のまえのところ）
   E.why=(key,typeId,variant)=>{
     const d=E.build(key,typeId,variant); if(!d) return '';

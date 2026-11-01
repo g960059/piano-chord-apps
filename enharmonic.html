@@ -73,6 +73,12 @@
 .links{display:flex;flex-direction:column;gap:8px}
 .links .btn{justify-content:flex-start;text-align:left;flex-wrap:wrap;row-gap:0}
 .links .btn small{font-weight:400;color:var(--sub);font-size:13px}
+/* 🔥 チャレンジ（増六に読みかえる）：ほかの問題とはっきり分かるように、わくの色とバッジをかえる */
+details.card.chal{box-shadow:inset 0 0 0 3px #c4462a}
+.chalbadge{display:inline-block;font-size:12.5px;font-weight:800;line-height:1.4;color:#fff;background:#b3361d;border-radius:999px;padding:1px 10px;margin:0 6px 2px 0;vertical-align:.1em}
+h2 .chalbadge{display:table;margin:0 0 4px} /* 見出しでは、バッジの下に名前（「増六」のとちゅうで折りかえさない） */
+.chalq{margin-top:12px;padding-top:10px;border-top:2px dashed var(--line)}
+.chalq h3{margin:0 0 4px;font-size:16px}
 @media (min-width:600px){.rt td{font-size:19px}.rk{font-size:15px}}
 /* 📖 ことばメモ（本や楽譜で見かける名前。ふだんはとじておく） */
 .terms dl{margin:0}
@@ -90,7 +96,10 @@
 <script>
 /* 異名同音の読みかえ（画面では減七のなかまを ①②③ とよぶので、2つの話は 🔀・↔️ でわける）：
  *  🔀 減七の和音は3つのなかまだけ。おなじけんばんを4つの短調の減七（Ⅴ9の根音省略）として書きわけると、4つの調へ解決する（第9音がいちばん下の読みはⅠ6/4 → Ⅴ → Ⅰ）
- *  ↔️ ドイツの6とⅤ7/♭Ⅱ（ふだんはたたんでおく）：おなじけんばん、♯4と♭5の書きかえで、行き先がⅤと♭Ⅱにわかれる
+ *  🔥 チャレンジ：増六に読みかえる（ドイツの6とⅤ7/♭Ⅱ。ふだんはたたんでおく）：おなじけんばん、♯4と♭5の書きかえで、行き先がⅤと♭Ⅱにわかれる。
+ *     画面では「♭Ⅱ」と書かず「ナポリの和音」とよぶ（先生：♭のついた記号はコードネームのようになるので使わない。藝大式の記号は先生にたしかめる）
+ *     先生の意見（docs/TEACHER-FEEDBACK.md）：読みかえのクイズに増六が入る問題は「チャレンジ」としてわける。
+ *     ふつうの読みかえ（🎲 どこへ行った？・ためしてみる）は減七だけ。増六の問題（🎲 どっちに読んだ？・ドイツの6を5問）はこのカードの中だけ
  * 和音のつづり・高さ・解決はすべて PA.henka（dimReadings・ger6Vs7）と PA.chroma（↔️ は aug6.html とおなじ高さ・名前：gerSet）、Ⅴ→Ⅰは vToI */
 const H=PA.henka;
 const NIGHT='#3b4fa8', LT='#d1495b', LOW='#2f7ee8', VCOL='#2f7ee8', GER='#8a4fe0', V7C='#1f8a5b', GHOST='#9b9184', ICOL=PA.COL.I;
@@ -105,7 +114,8 @@ const famPcs=f=>[0,3,6,9].map(x=>x+f);
 
 const saved=PA.store.get('enharmonic',{})||{};
 // res／resT：鳴らしおわったあとも解決の和音を見せる（resT＝その読みかたの主音の高さ）。quiz.ans・pick も主音の高さ
-const state={fam:2,keyIdx:0,res:0,resT:null,anim:null,autoWait:false,play:null,g:null,quiz:null,qOk:0,qN:0};
+// gq＝🔥 チャレンジの問題（{ans:'ger'|'v7', pick}）。gOk・gN＝そのせいかいの数
+const state={fam:2,keyIdx:0,res:0,resT:null,anim:null,autoWait:false,play:null,g:null,quiz:null,qOk:0,qN:0,gq:null,gOk:0,gN:0};
 if(Number.isInteger(saved.keyIdx)&&saved.keyIdx>=0&&saved.keyIdx<NK) state.keyIdx=saved.keyIdx;
 state.fam=famOf(state.keyIdx); // 家族は調からきまる（保存した fam がずれていても調にあわせる）
 const save=()=>PA.store.set('enharmonic',{fam:state.fam,keyIdx:state.keyIdx});
@@ -168,9 +178,15 @@ const DIM_RANGE=kbRange([0,1,2].flatMap(f=>H.dimReadings(famPcs(f)).flatMap(r=>[
 const nH=n=>{const c=n.tag==='lt'?'up':n.tag==='low'?'lo':'';return `<span class="nw ${c}">${PA.nmH(n)}</span>`;};
 const q=n=>`「${nH(n)}」`;
 const namesC=(ns,sep='・')=>ns.map(nH).join(sep);
-const I64H='Ⅰ<span class="fig"><span>6</span><span>4</span></span>';
-const I64S='Ⅰ<tspan font-size="11" dy="-7">6</tspan><tspan font-size="11" dx="-6.5" dy="11">4</tspan>';
-const resLabel=(r,svg)=>r.resInv===2?(svg?I64S:I64H):r.resInv===1?'Ⅰ6':'Ⅰ';
+// 和音記号（藝大式・PA.rn）：Ⅰ²＝Ⅰの第2転回形、Ⅰ¹＝第1転回形
+const I64S={deg:1,inv:2}, I64H=PA.rn(I64S);
+const resP=r=>r.resInv===2?I64S:r.resInv===1?{deg:1,inv:1}:{deg:1};
+const resLabel=(r,svg)=>svg?resP(r):PA.rn(resP(r));
+// 減七＝Ⅴ9の根音省略（斜線・右下9）。右上はいちばん下の音（はぶいた根音を入れて数える）：導音＝第3音→1、第5音→2、第7音→3。
+//   第9音がいちばん下の形は記号の数字がないので、ことばの「減七」のまま
+const dimP=r=>{const b=r.spelling[0];return b.tag==='b9'?'減七':{deg:5,form:9,omit:true,inv:b.tag==='lt'?1:b.tag==='seventh'?3:2};};
+// ドイツの6（増六の記号。先生の写真のとおり：ⅤのⅤ・第5音下方変位・根音省略・右下9・右上2、長調は○）
+const gerP=key=>({of:5,deg:5,form:9,inv:2,alt5:'down',omit:true,...(key.minor?{}:{borrowed:true})});
 const tonicOf=key=>key.nat[0];
 const sigAcc=(key,L)=>key.sig[L]||0;
 // C♭・F♭・E♯・B♯・重変・重嬰：けんばんのふつうの名前もそえる（ハ長調の名前＝♯）
@@ -231,7 +247,7 @@ function famButtons(){
 function staticMsg(r){
   const key=r.key, t=tonicOf(key), root=PA.at(key.harm,4);
   let m=`<b>${PA.keyName(key)}</b>として読むと、${q(r.lt)}が<b class="up">導音</b>。導音は半音上の${q(t)}へすすむから、行き先は<b>${PA.keyName(key)}</b>。`;
-  m+=`<br>減七はⅤ9から根音（和音の土台の音）をはぶいた和音。${PA.keyName(key)}なら、かくれた根音は${q(root)}だよ。`;
+  m+=`<br>減七は、短調のⅤ9から根音（和音の土台の音）をはぶいた和音。${PA.keyName(key)}なら、かくれた根音は${q(root)}だよ。`;
   if(r.ninthInBass) m+=`<br>※ この読みかたは、第9音${q(r.spelling[0])}がいちばん下になる形。ふつうはあまり使わない形だけれど、同じけんばんのまま、くらべるために鳴らしているよ。${I64H} → Ⅴ → Ⅰとすすんで、さいごのⅠにおちつくよ。`;
   return m;
 }
@@ -292,7 +308,7 @@ function staffCard(){
   const {si,r,res}=view(), rc=RCOL[si], key=r.key;
   const op=i=>state.anim||state.play||res>0?(i===res?1:.4):1;
   // 和音記号：減七（＝Ⅴ9の根音省略。Ⅴの家族のページとおなじよびかた）
-  const cols=[{notes:r.spelling,color:NIGHT,label:'減七',op:op(0)},{notes:r.resolution,color:rc,label:resLabel(r,true),op:op(1)}];
+  const cols=[{notes:r.spelling,color:NIGHT,label:dimP(r),op:op(0)},{notes:r.resolution,color:rc,label:resLabel(r,true),op:op(1)}];
   if(r.next) cols.push({notes:r.next,color:VCOL,label:'Ⅴ',op:op(2)},{notes:r.fin,color:rc,label:'Ⅰ',op:op(3)});
   const arrows=r.spelling.map((n,i)=>{
     const to=r.resolution[i];
@@ -361,43 +377,75 @@ function gerCard(){
     cap=g.plain?`むらさき＝ドイツの6。けんばんの下の字は、${v7Name}での名前`:`むらさき＝ドイツの6。赤いけんばんの下の字は、${v7Name}での名前`;
   }
   const how=g.plain?`<b style="color:${GER}">ドイツの6</b>をけんばんのふつうの名前（${namesC(g.v7)}）で書きかえると`:`<b style="color:${GER}">ドイツの6</b>の${q(gn)}を${q(vn)}と書きかえると`;
-  let h=`<details class="card fold" id="ger" data-d="ger"><summary><h2>↔️ もうひとつの読みかえ：ドイツの6とⅤ7/♭Ⅱ<small>${PA.keyName(key)}で。同じけんばん、ちがう名前、ちがう行き先</small></h2></summary>
-    <p class="note" style="margin-top:0;color:var(--ink)">ドイツの6は増六の和音（Ⅴへひろがってすすむ和音）の1つ。${PA.keyName(key)}の${how}、<b style="color:${V7C}">${v7Name}</b>（♭Ⅱ＝${bII}のためのⅤ7）とまったく同じけんばん。耳で聴くとまったく同じ和音だね。でも名前がちがうと、すすむ方向がぎゃくになるよ。</p>
+  let h=`<details class="card fold chal" id="ger" data-d="ger"><summary><h2><span class="chalbadge"><span aria-hidden="true">🔥</span> チャレンジ</span>増六に読みかえる<small>つぎのレベル。増六の和音をならったら挑戦しよう</small></h2></summary>
+    <p class="note" style="margin-top:0;color:var(--ink)"><b>ドイツの6と、ナポリの和音のためのⅤ7</b>（${PA.keyName(key)}で）。同じけんばん、ちがう名前、ちがう行き先。</p>
+    <p class="note" style="color:var(--ink)">ドイツの6は増六の和音（Ⅴへひろがってすすむ和音）の1つ。${PA.keyName(key)}の${how}、<b style="color:${V7C}">${v7Name}</b>（ナポリの和音＝${bII}のためのⅤ7）とまったく同じけんばん。耳で聴くとまったく同じ和音だね。でも名前がちがうと、すすむ方向がぎゃくになるよ。</p>
     <div class="vs">
-      <div style="--c:${GER}"><h3>ドイツの6</h3><div class="ns">${namesC(g.ger)}</div>
+      <div style="--c:${GER}"><h3>ドイツの6 ${PA.rn(gerP(key))}</h3><div class="ns">${namesC(g.ger)}</div>
         <p class="to">${q(gn)}（Ⅴへの導音）は<b>半音上へ</b> → ${I64H} → <b>Ⅴ</b></p>
         <button class="btn small" data-act="gplay" data-v="ger">${PA.icon('listen')}ドイツの6 → Ⅴ</button></div>
-      <div style="--c:${V7C}"><h3>${v7Name}（Ⅴ7/♭Ⅱ）</h3><div class="ns">${g.v7.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}</div>
-        <p class="to">${q(vn)}（第7音）は<b>半音下へ</b> → <b>${bII}</b>（♭Ⅱ）</p>
+      <div style="--c:${V7C}"><h3>${v7Name}（ナポリの和音のためのⅤ7）</h3><div class="ns">${g.v7.map(n=>`<span class="nw">${PA.nmH(n)}</span>`).join('・')}</div>
+        <p class="to">${q(vn)}（第7音）は<b>半音下へ</b> → <b>${bII}</b>（ナポリの和音）</p>
         <button class="btn small" data-act="gplay" data-v="v7">${PA.icon('listen')}${v7Name} → ${bII}</button></div>
     </div>
     ${odds.length?`<p class="note">${odds.map(n=>`${q(n)}は${q(plainOf(n))}`).join('、')}のけんばんだよ。</p>`:''}
     <div class="scroll" data-sk="gkb" style="margin-top:8px">${PA.kbSVG(lo,hi,mk)}</div>
     <p class="note" style="margin-top:2px">${cap}${PA.once('tap-sound','　さわると音が出るよ')}</p>
-    ${staff(key,[{notes:g.ger,color:GER,label:'ドイツ'},{notes:i64,color:ICOL,label:I64S},{notes:V,color:VCOL,label:'Ⅴ'}],
+    ${staff(key,[{notes:g.ger,color:GER,label:gerP(key)},{notes:i64,color:ICOL,label:I64S},{notes:V,color:VCOL,label:'Ⅴ'}],
       [{c1:0,n1:gn,c2:1,n2:i64[d],color:LT,text:'半音↑'},{c1:0,n1:g.ger[0],c2:1,n2:i64[0],color:LOW,text:'半音↓'}],{sk:'g1',cw:100})}
-    ${staff(key,[{notes:g.v7,color:V7C,label:'Ⅴ7/♭Ⅱ'},{notes:g.v7Res,color:V7C,label:'♭Ⅱ'}],
+    ${staff(key,[{notes:g.v7,color:V7C,label:v7Name},{notes:g.v7Res,color:V7C,label:bII}],
       [{c1:0,n1:vn,c2:1,n2:g.v7Res[d],color:V7C,text:'半音↓'},{c1:0,n1:g.v7[1],c2:1,n2:g.v7Res[1],color:LT,text:'半音↑',dy:-14}],{sk:'g2',cw:110})}
-    <p class="note">${q(g.v7[1])}と${q(g.v7[2])}はどちらも♭Ⅱの根音${q(g.v7Res[1])}へすすむので、${bII}では2つの声が同じ音になるよ（2つの声が5度のはばのまま、いっしょに動くのをさけるため）。ドイツの6も同じわけで、${I64H}をとおってからⅤへ行くのがふつう。</p>
+    <p class="note">${q(g.v7[1])}と${q(g.v7[2])}はどちらもナポリの和音の根音${q(g.v7Res[1])}へすすむので、${bII}では2つの声が同じ音になるよ（2つの声が5度のはばのまま、いっしょに動くのをさけるため）。ドイツの6も同じわけで、${I64H}をとおってからⅤへ行くのがふつう。</p>
+    ${chalQuizHTML(key,g)}
   </details>`;
   return h;
 }
+// 🔥 チャレンジの問題「どっちに読んだ？」：同じけんばんの和音のあとに、すすむ先が鳴る。ドイツの6（→ Ⅰ6/4）か、Ⅴ7/♭Ⅱ（→ ♭Ⅱ）か
+//   答え＝'ger'｜'v7'。けんばんには出さない（どちらも同じけんばんなので、すすむ先を聴いて当てる）
+//   問題では、どちらも「和音 → つぎの1つ」の2つだけ鳴らす（鳴る数で答えがわからないように）。こたえたあとは、さいごまで（ドイツの6 → Ⅰ6/4 → Ⅴ）
+const GQ_ANS=['ger','v7'];
+const gqSeq=(g,ans,full)=>ans==='ger'?(full?[g.ger,g.gerRes[0],g.gerRes[1]]:[g.ger,g.gerRes[0]]):[g.v7,g.v7Res];
+function chalQuizHTML(key,g){
+  const Q=state.gq, d=g.diff, gn=g.ger[d], vn=g.v7[d], {v7Name,bII}=g;
+  let h=`<div class="chalq"><h3><span aria-hidden="true">🎲</span> チャレンジ問題：どっちに読んだ？</h3>
+    <p class="note" style="margin-top:0">同じけんばんの和音のあとに、すすむ先が鳴るよ。ドイツの6として読んだか、${v7Name}（ナポリの和音のためのⅤ7）として読んだかを当てよう。</p>`;
+  if(state.gN) h+=`<p class="note score">${state.gOk} / ${state.gN}問正解</p>`;
+  if(!Q) return h+`<div class="ab one"><button class="btn night" data-act="gqnext">${PA.icon('dice')}チャレンジ問題を出す</button></div>`+chalTry()+`</div>`;
+  h+=`<div class="ab one"><button class="btn" data-act="gqplay">${PA.icon('repeat')}${Q.pick!=null?'さいごまできく':'もういちどきく'}</button></div><div class="choices">`+GQ_ANS.map(a=>{
+    const cls=Q.pick==null?'':a===Q.ans?'right':a===Q.pick?'wrong':'';
+    const lab=a==='ger'?`ドイツの6<small>→ ${I64H}（このあとⅤ）</small>`:`${v7Name}（ナポリの和音のためのⅤ7）<small>→ ${bII}（ナポリの和音）</small>`;
+    return `<button class="choice ${cls}" data-act="gqchoose" data-v="${a}" ${Q.pick!=null?'aria-disabled="true"':''}>${lab}</button>`;
+  }).join('')+`</div>`;
+  if(Q.pick!=null){
+    const ok=Q.pick===Q.ans;
+    const why=Q.ans==='ger'
+      ?`ドイツの6として読むと、${q(gn)}は<b>Ⅴへの導音</b>。<b>半音上へ</b>すすんで、${I64H}へ行ったね。このあとⅤへすすむよ。`
+      :`${v7Name}（ナポリの和音＝${bII}のためのⅤ7）として読むと、${q(vn)}は<b>第7音</b>。<b>半音下へ</b>すすんで、ナポリの和音の${bII}へ行ったね。`;
+    h+=`<div class="fb ${ok?'good':'bad'}" role="status" style="margin-top:10px">${ok?'🎉 そのとおり！':'🤔 おしい！'}${why}</div>
+      <div class="ab one"><button class="btn night" data-act="gqnext">${PA.icon('dice')}次のチャレンジ問題</button></div>`;
+  }
+  return h+chalTry()+`</div>`;
+}
+// 🔥 チャレンジ：変化和音クイズで、いまの短調のドイツの6をけんばんで5問（クイズでも 🔥 チャレンジのしるしが出る）
+function chalTry(){
+  const href=PA.url('chroma-quiz',{key:PA.keyDeck.id(true,state.keyIdx),mode:'keys',chord:'ger',chal:1,n:5}); // chal=1：クイズでも 🔥 チャレンジのしるし
+  return `<div class="row" style="margin-top:10px"><a class="btn small" href="${PA.esc(href)}"><span aria-hidden="true">🔥</span> ドイツの6をけんばんで5問</a></div>`;
+}
 function linksCard(){
-  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>Ⅴの家族・増六の和音・減七と半減七</small></h2></summary><div class="links">
-    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族<small>Ⅴ9の根音をはぶくと減七（3つのなかま）</small></button>
+  return `<details class="card fold" data-d="links"><summary><h2>🔗 つながるアプリ<small>Ⅴの家族・増六の和音・Ⅴ9の根音省略</small></h2></summary><div class="links">
+    <button class="btn" data-act="go" data-v="minor-family">🏠 Ⅴの家族<small>短調では、Ⅴ9の根音をはぶくと減七（3つのなかま）</small></button>
     <button class="btn" data-act="go" data-v="aug6">↔️ 増六の和音<small>イタリア・フランス・ドイツの6</small></button>
-    <button class="btn" data-act="go" data-v="dim-halfdim">⚖️ 減七と半減七<small>ちがうのは第7音だけ</small></button>
+    <button class="btn" data-act="go" data-v="dim-halfdim">⚖️ Ⅴ9の根音省略<small>長調と短調で、のこる音はどうちがう？</small></button>
   </div></details>`;
 }
 
-// 「ためしてみる」：変化和音クイズでいまの短調のⅦ7（減七）を5もん。減七の読みかえのレベルはないので chord＝vii7。
-// ドイツの6はレベル3（増六3しゅるい）
+// 「ためしてみる」：変化和音クイズでいまの短調のⅤ9の根音省略（減七）を5もん。減七の読みかえのレベルはないので chord＝vii7。
+// 増六（ドイツの6）は入れない（先生：読みかえのクイズに増六が入る問題は 🔥 チャレンジとしてわける。チャレンジのカードの中にリンク）
 function tryCard(){
   const key=PA.keyDeck.id(true,state.keyIdx);
   return PA.tryHTML({to:'chroma-quiz',params:{key,mode:'keys',chord:'vii7',n:5},
-    sub:`けんばんで、${PA.keyName(curKey())}の減七（Ⅶ7）をおさえてみよう。5問。`,
-    btn:PA.icon('target')+'5問ためしてみる',
-    links:[{to:'chroma-quiz',params:{key,mode:'keys',level:3,n:5},label:'↔️ レベル3（ドイツの6など増六）'}]});
+    sub:`けんばんで、${PA.keyName(curKey())}の減七（Ⅴ9の根音省略）をおさえてみよう。5問。`,
+    btn:PA.icon('target')+'5問ためしてみる'});
 }
 // 📖 ことばメモ：本や楽譜で見かける名前を、やさしいことばで（いまの調の音をれいに）。よみかたは小さく
 function termsHTML(){
@@ -406,7 +454,7 @@ function termsHTML(){
     <dt>異名同音<span class="yomi">（いめいどうおん）</span></dt>
       <dd>名前（書き方）はちがうけれど、けんばんは同じ音（${ex.map(q).join('と')}など）。調にもあって、嬰ヘ長調と変ト長調は同じけんばんの調。</dd>
     <dt>転調<span class="yomi">（てんちょう）</span></dt>
-      <dd>曲のとちゅうでべつの調へうつること。このページの2つの読みかえ（🔀 減七・↔️ ドイツの6）は、音の名前を書きかえて、べつの調へうつるやりかた（本では「異名同音的転調<span class="yomi">（いめいどうおんてきてんちょう）</span>」と書く）。1つの減七は、書き方をかえると4つの短調のⅦ7になる（${FAM_NO[state.fam]}のなかまなら${rs.map(x=>PA.keyName(x.key)).join('・')}）ので、遠い調へもいっきに行けるよ。同じ主音の長調の○Ⅶ7（準固有和音）と読めば、長調へも行ける。</dd>
+      <dd>曲のとちゅうでべつの調へうつること。このページの読みかえ（🔀 減七と、<span aria-hidden="true">🔥</span> チャレンジのドイツの6）は、音の名前を書きかえて、べつの調へうつるやりかた（本では「異名同音的転調<span class="yomi">（いめいどうおんてきてんちょう）</span>」と書く）。1つの減七は、書き方をかえると4つの短調のⅤ9の根音省略（減七）になる（${FAM_NO[state.fam]}のなかまなら${rs.map(x=>PA.keyName(x.key)).join('・')}）ので、遠い調へもいっきに行けるよ。同じ主音の長調の○Ⅴ9の根音省略（準固有和音）と読めば、長調へも行ける。</dd>
     <dt>解決<span class="yomi">（かいけつ）</span></dt>
       <dd>ドキドキする和音が、おちつく和音（Ⅰなど）へすすむこと。このページの「Ⅰへすすむ」のこと。</dd>
     <dt>増2度<span class="yomi">（ぞう2ど）</span></dt>
@@ -428,7 +476,7 @@ function render(){
     ${quizCard()}
     ${gerCard()}
     ${linksCard()}
-    ${termsHTML()}`;
+    ${termsHTML()}${PA.rnHelp()}`;
   // この画面に出てくる記号だけ、音の名前の表の下で説明する（出てこないときは出さない）
   const ds=h.includes('class="ds"'), df=h.includes('class="df"');
   h=h.replace('<!--sym-->',(ds?'<span><span class="ds">x</span>＝ダブルシャープ（楽譜での書き方）</span>':'')+(df?'<span><span class="df" style="letter-spacing:-.12em">♭♭</span>＝ダブルフラット（楽譜での書き方）</span>':''));
@@ -499,7 +547,7 @@ async function playGer(which){
   const key=curKey(), g=gerSet(key), {v7Name,bII}=g;
   const steps=which==='ger'
     ?[{notes:g.ger,color:GER,cap:'ドイツの6'},{notes:g.gerRes[0],color:ICOL,cap:`${I64H}（Ⅰの第2転回形＝第5音がいちばん下）`},{notes:g.gerRes[1],color:VCOL,cap:'Ⅴ'}]
-    :[{notes:g.v7,color:V7C,cap:`${v7Name}（♭ⅡのためのⅤ7）`},{notes:g.v7Res,color:V7C,cap:`${bII}（♭Ⅱ）`}];
+    :[{notes:g.v7,color:V7C,cap:`${v7Name}（ナポリの和音のためのⅤ7）`},{notes:g.v7Res,color:V7C,cap:`${bII}（ナポリの和音）`}];
   for(let i=0;i<steps.length;i++){
     state.g={steps,i}; render();
     PA.chord(midis(steps[i].notes),{dur:i===steps.length-1?2.2:1.4});
@@ -516,8 +564,16 @@ function quizPlay(){
   const seq=stagesOf(r);
   seq.forEach((ns,s)=>setTimeout(()=>{if(my===token)PA.chord(midis(ns),{dur:s===seq.length-1?2.2:1.4});},s*1300));
 }
+// 🔥 チャレンジの問題：同じけんばんの和音 → すすむ先（けんばんには出さない）。こたえたあとはさいごまで
+function gqPlay(){
+  const Q=state.gq; if(!Q) return;
+  stop(); render(); const my=token;
+  const seq=gqSeq(gerSet(curKey()),Q.ans,Q.pick!=null);
+  seq.forEach((ns,s)=>setTimeout(()=>{if(my===token)PA.chord(midis(ns),{dur:s===seq.length-1?2.2:1.4});},s*1300));
+}
 const dimMidis=()=>midis(view().r.spelling);
 function pickKey(idx,sound=true){
+  if(idx!==state.keyIdx) state.gq=null; // 調がかわったら 🔥 チャレンジの問題はおしまい（音がかわるので）
   stop(); state.keyIdx=idx; state.fam=famOf(idx); state.res=0; save(); render();
   if(sound) PA.chord(dimMidis());
 }
@@ -558,6 +614,13 @@ document.addEventListener('click',e=>{
     state.quiz={ans,pick:null}; quizPlay();
   }
   else if(a==='qplay'){quizPlay();}
+  else if(a==='gqnext'){state.gq={ans:GQ_ANS[Math.floor(Math.random()*GQ_ANS.length)],pick:null}; gqPlay();}
+  else if(a==='gqplay'){gqPlay();}
+  else if(a==='gqchoose'){
+    const Q=state.gq; if(!Q||Q.pick!=null||!GQ_ANS.includes(v)) return;
+    stop(); Q.pick=v; state.gN++; if(v===Q.ans) state.gOk++; render();
+    gqPlay(); // こたえたら、すすむ先をさいごまで鳴らす
+  }
   else if(a==='qchoose'){
     const Q=state.quiz; if(!Q||Q.pick!=null) return;
     if(!readingsOf(state.keyIdx).some(r=>r.key.tpc===n)) return;

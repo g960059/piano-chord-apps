@@ -179,7 +179,7 @@ function render(){
       :'マスをタップすると音が出るよ。選んだマスの作り方は<b>🐸 つくりかた</b>で見られるよ。調の名前をタップすると、その調の「和音のしくみ」へ。'}</div>`;
   if(state.hide) h+=`<div class="toprow"><span class="count">ひらいたマス：${openedCount()} / ${total()}</span></div>`;
   h+=`<div class="list" role="list" aria-label="${minor?'短調':'長調'}のいちらん表">
-    <div class="colhead" aria-hidden="true"><span class="k0">調</span>${CH.map(k=>`<span style="${colVars(k)}">${CHORDS[k].label}</span>`).join('')}</div>`;
+    <div class="colhead" aria-hidden="true"><span class="k0">調</span>${CH.map(k=>`<span style="${colVars(k)}">${PA.rnH(CHORDS[k].label)}</span>`).join('')}</div>`;
   for(let i=0;i<n;i++){
     if(i===0) h+=`<div class="sep">調号なし・♯の調</div>`;
     if(i===flatFrom) h+=`<div class="sep">♭の調</div>`;

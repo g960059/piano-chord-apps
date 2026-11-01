@@ -564,7 +564,8 @@ function scoreRows(){
       for(let q=28;q>=it.st;q-=2) g+=`<line x1="${it.x-11}" x2="${it.x+11}" y1="${ty(q)}" y2="${ty(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
       for(let q=40;q<=it.st;q+=2) g+=`<line x1="${it.x-11}" x2="${it.x+11}" y1="${ty(q)}" y2="${ty(q)}" stroke="#6b6273" stroke-width="1.4"/>`;
       const hollow=it.n.beats>=2;
-      g+=`<ellipse cx="${it.x}" cy="${it.y}" rx="6.4" ry="4.7" fill="${hollow?'none':it.color}" stroke="${it.color}" stroke-width="${hollow?2.4:1}" transform="rotate(-20 ${it.x} ${it.y})"/>`;
+      if(it.n.beats>=4) g+=PA.wholeNote(it.x,it.y,it.color,{rx:7.4,ry:4.9}); // 全音符：まわりはかたむけず、穴だけかたむける
+      else g+=`<ellipse cx="${it.x}" cy="${it.y}" rx="6.4" ry="4.7" fill="${hollow?'none':it.color}" stroke="${it.color}" stroke-width="${hollow?2.4:1}" transform="rotate(-20 ${it.x} ${it.y})"/>`;
       if(it.n.beats===1.5||it.n.beats===3) g+=`<circle cx="${it.x+11}" cy="${it.st%2===0?it.y-4:it.y}" r="2.2" fill="${it.color}"/>`;
       return g;
     };

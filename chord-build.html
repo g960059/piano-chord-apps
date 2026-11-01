@@ -189,10 +189,10 @@ function render(){
   // 広い画面：左に説明（和音・かいだん）、右にけんばん・がくふ（下へすすんでもついてくる）。スマホではこれまでどおりたてにならぶ
   let h=`<div class="duo-grid"><div class="stack">
     <div class="toprow">${PA.keyChip(key)}<span class="note ken" style="margin:0">英語で書くと<b>${PA.keyEn(key)}</b></span></div>
-    <div class="chords">`+Object.keys(CHORDS).map(k=>`<button class="cbtn ${k===ch?'on':''}" style="--c:${PA.COL[k]};--l:${PA.LCOL[k]};--d:${DK[k]}" data-act="chord" data-v="${k}" aria-pressed="${k===ch}"><span class="num">${CHORDS[k].label}</span><span class="nm">${namesW(chordTones(key,k),'<wbr>')}</span></button>`).join('')+`</div>
+    <div class="chords">`+Object.keys(CHORDS).map(k=>`<button class="cbtn ${k===ch?'on':''}" style="--c:${PA.COL[k]};--l:${PA.LCOL[k]};--d:${DK[k]}" data-act="chord" data-v="${k}" aria-pressed="${k===ch}"><span class="num">${PA.rnH(CHORDS[k].label)}</span><span class="nm">${namesW(chordTones(key,k),'<wbr>')}</span></button>`).join('')+`</div>
     <section class="card hero" style="--c:${col}">
-      <div class="hero-top"><span class="badge" style="--c:${col}">${c.label}</span>
-        <div style="min-width:0"><div class="hk">${PA.keyName(key)}の${c.label}</div><div class="hn">${namesW(tones,'・')}</div><div class="hs">コードネーム${chordSym(tones)}</div></div></div>
+      <div class="hero-top"><span class="badge" style="--c:${col}">${PA.rnH(c.label)}</span>
+        <div style="min-width:0"><div class="hk">${PA.keyName(key)}の${PA.rnH(c.label)}</div><div class="hn">${namesW(tones,'・')}</div><div class="hs">コードネーム${chordSym(tones)}</div></div></div>
       <div class="msg" style="margin-top:10px">${A?A.msg:state.autoWait?'👆 どこかをタッチすると<b>つくりかた</b>がはじまるよ':(state.msg||staticMsg(key,ch,tones))}</div>
       <div class="row" style="margin-top:10px">${PA.seg('speed',[['normal','🐇 ふつう'],['slow','🐢 ゆっくり']],state.speed)}</div>
     </section>`;

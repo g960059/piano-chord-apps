@@ -41,7 +41,7 @@ const AUDIO=[
   'assets/piano/Fs6.mp3',
   'assets/piano/Fs7.mp3',
 ];
-const VERSION='4bb6b4bbea';
+const VERSION='f2a7c1aa17';
 const PRECACHE=[
   './',
   'accompaniment.html',
@@ -55,6 +55,7 @@ const PRECACHE=[
   'diatonic.html',
   'dim-halfdim.html',
   'doppel.html',
+  'dorian.html',
   'ear.html',
   'ending-quiz.html',
   'ending.html',
@@ -67,6 +68,7 @@ const PRECACHE=[
   'minor-signature.html',
   'minor-why.html',
   'neapolitan.html',
+  'piece.html',
   'privacy.html',
   'progression.html',
   'secondary.html',
@@ -75,6 +77,10 @@ const PRECACHE=[
   'assets/core.js',
   'assets/ear-game.js',
   'assets/mic.js',
+  'assets/piece.js',
+  'assets/score.js',
+  'assets/vendor/vexflow-bravura.js',
+  'assets/pieces/k545-1.json',
   'manifest.webmanifest',
   'favicon.svg',
   'assets/icons/favicon-32.png',
