@@ -21,7 +21,7 @@
   "events": [
     {"id": "m1", "m": 1, "beat": 1, "dur": 4, "key": "C", "rn": {"deg": 1},
      "bass": "C4", "sop": "C5", "skel": {"lh": ["C4"], "rh": ["E4", "G4", "C5"]},
-     "blank": false, "level": "deg", "note": "さいしょは主和音のⅠ。左手のド・ソ・ミ・ソ（アルベルティ・バス）が、ドミソの和音"},
+     "blank": true, "level": "deg", "note": "さいしょは主和音のⅠ。左手のド・ソ・ミ・ソ（アルベルティ・バス）が、ドミソの和音"},
     {"id": "m2a", "m": 2, "beat": 1, "dur": 2, "key": "C", "rn": {"deg": 5, "form": 7, "inv": 2},
      "bass": "D4", "sop": "B4", "skel": {"lh": ["D4"], "rh": ["F4", "G4", "B4"]},
      "blank": true, "level": "deg", "note": "左手はレ・ソ・ファ・ソ、右手はシ"},
