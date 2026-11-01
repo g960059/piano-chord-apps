@@ -24,7 +24,9 @@
  * PA.piece.items(piece, lv) → その答えかたで出す問題 [{kind:'ev'|'q', id, m, item}]（調の問題 → 小節のじゅん。おわりかたはその小節の和音のあと）
  * PA.piece.check(item, ans, lv) → 正解か（和音は accept もみる）
  * PA.piece.altAccepts(ev, lv) → その答えかたでくらべる部品で、ev.rn とちがう accept（なければ []。「こう答えても正解」を出すときだけ）
- * PA.piece.degChoices(ev) → 和音の番号だけの4択 [deg…]
+ * PA.piece.degChoices(ev, pc) → 和音の番号だけのえらぶボタン [部品…]。pc があれば、その曲に出てくる和音（番号＋ⅤのⅤ・○のしるし）に
+ *   Ⅰ・Ⅳ・Ⅴ（4つより少なければⅡも）をたしたもの。どの和音でもおなじボタンになる（ⅤのⅤのボタンが、そこだけ出て答えがわかる、にならない）。
+ *   pc がなければ4択（Ⅰ・Ⅳ・Ⅴ＋こたえ。しるしつきは、しるしつきの番号がこたえ）
  * PA.piece.explainHTML(ev) → 「ソ・シ・レ・ファの和音。いちばん下がレ（第5音）なので第2転回形」（HTML） */
 (function(){
 'use strict';
@@ -116,9 +118,10 @@ function validate(pc){
     if(ev.note!=null&&typeof ev.note!=='string') e(w+'note');
     if(ev.acceptNote!=null&&(typeof ev.acceptNote!=='string'||!ev.acceptNote||!ev.accept)) e(w+'acceptNote');
     if(ev.accept!=null&&(!Array.isArray(ev.accept)||ev.accept.some(a=>!isObj(a)||!normEq(a)||J(PA.rnNorm(a))===J(PA.rnNorm(ev.rn))))) e(w+'accept');
-    // 番号だけ・転回形の答えでは、○・ⅤのⅤ・斜線などは答えられない → 'full' だけで穴にする
-    const p=PA.rnNorm(ev.rn), fancy=p.of||p.borrowed||p.omit||p.alt5||p.rootDown||p.natural;
-    if(ev.blank&&fancy&&ev.level!=='full') e(w+'○・ⅤのⅤ・斜線などのある和音は level:full');
+    // 番号だけ・転回形の答えでも、ⅤのⅤ・○はえらべる（番号だけは4択に、転回形は「しるし」のボタン）。
+    //   斜線（根音省略）・下方変位などはえらべない → 'full' だけで穴にする
+    const p=PA.rnNorm(ev.rn), fancy=p.omit||p.alt5||p.rootDown||p.natural;
+    if(ev.blank&&fancy&&ev.level!=='full') e(w+'斜線・下方変位などのある和音は level:full');
     if(ev.blank&&Object.keys(p).some(f=>!PICKABLE.includes(f)&&f!=='name')) e(w+'答えのボタンでつくれない部品');
     if(ev.blank&&p.of&&p.of!==5) e(w+'答えのボタンは ⅤのⅤ だけ');
     // 音：和音の音だけ。いちばん下＝bass（転回形の音）、いちばん上＝sop
@@ -172,9 +175,11 @@ function items(pc,lv){
 const asked=(ev,lv)=>!!ev.blank&&LV_RANK[ev.level]<=LV_RANK[lv];
 
 // こたえあわせ。和音：lv の部品だけくらべる（番号だけ＝deg、転回形も＝deg・inv、ぜんぶ＝ぜんぶの部品）
+//   ⅤのⅤ（of）・○（borrowed）は「何の和音か」なので、どの答えかたでもくらべる（ドッペルドミナントを Ⅴ と答えたらまちがい）
+const MARKS=['of','borrowed'];
 function matchParts(p,a,lv){
   p=PA.rnNorm(p); a=PA.rnNorm(a);
-  if(p.deg!==a.deg) return false;
+  if(p.deg!==a.deg||MARKS.some(f=>(p[f]||null)!==(a[f]||null))) return false;
   if(lv==='deg') return true;
   if((p.inv||0)!==(a.inv||0)) return false;
   if(lv==='inv') return true;
@@ -187,11 +192,24 @@ function check(it,ans,lv){
 }
 // その答えかたで ev.rn とくらべてちがいがわかる accept だけ（番号だけ・転回形もでは7の和音をえらべないので、Ⅴ¹ と Ⅴ₇¹ はおなじ）
 const altAccepts=(ev,lv)=>(ev.accept||[]).filter(p=>!matchParts(ev.rn,p,lv));
-// 和音の番号だけ：Ⅰ・Ⅳ・Ⅴに、こたえ（なければⅡ）をたした4つ
-function degChoices(ev){
-  const d=ev.rn.deg, s=[1,4,5];
-  s.push(s.includes(d)?(d===2?6:2):d);
-  return s.sort((a,b)=>a-b);
+// 和音の番号だけのボタン。ⅤのⅤ・○のしるしがある和音は、しるしつきの番号がこたえ（ふつうのⅤはまちがいの1つ）
+const markOf=rn=>{const p=PA.rnNorm(rn), o={deg:p.deg};MARKS.forEach(f=>{if(p[f]) o[f]=p[f];});return o;};
+const isMarked=c=>MARKS.some(f=>c[f]);
+const byDeg=(x,y)=>x.deg-y.deg||(isMarked(x)?1:0)-(isMarked(y)?1:0)||J(x).localeCompare(J(y));
+function degChoices(ev,pc){
+  const a=markOf(ev.rn);
+  if(!pc||!Array.isArray(pc.events)){
+    const d=a.deg, s=[1,4,5];
+    if(!isMarked(a)) s.push(s.includes(d)?(d===2?6:2):d);
+    return s.sort((x,y)=>x-y).map(x=>({deg:x})).concat(isMarked(a)?[a]:[]);
+  }
+  // その曲に出てくる和音ぜんぶ（どの「？」でもおなじボタン）＋Ⅰ・Ⅳ・Ⅴ（4つより少なければⅡ）
+  const out=[], add=c=>{if(!out.some(x=>J(x)===J(c))) out.push(c);};
+  [1,4,5].forEach(d=>add({deg:d}));
+  pc.events.forEach(e=>{if(isObj(e)&&isObj(e.rn)) add(markOf(e.rn));});
+  add(a);
+  if(out.length<4) add({deg:2});
+  return out.sort(byDeg);
 }
 function explainHTML(ev){
   const k=key(ev.key), p=PA.rnNorm(ev.rn), T=tones(k,p), on=T.filter(t=>!t.omit), b=T[p.inv||0];
@@ -314,6 +332,6 @@ function validateScore(pc,e){
   });
 }
 
-PA.piece={LEVELS,LV_RANK,CAD,ROLE,INV,key,note,tones,validate,items,asked,check,altAccepts,degChoices,explainHTML,beatText,same,
+PA.piece={LEVELS,LV_RANK,CAD,ROLE,INV,key,note,tones,validate,items,asked,check,altAccepts,degChoices,markOf,explainHTML,beatText,same,
   parseStaff,score,timeline,evSpan,DURS};
 })();

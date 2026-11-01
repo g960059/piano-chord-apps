@@ -71,6 +71,7 @@ button.slot.ng{border-color:var(--ng);background:#fde4e7;color:#8f2233}
 .pv{display:flex;align-items:center;gap:8px;margin:12px 0 8px;font-size:17px;font-weight:800;min-height:44px}
 .pv .rnum{font-size:26px}
 .pchoices .choice{font-size:28px}
+.pchoices.n5,.pchoices.n6{grid-template-columns:repeat(3,1fr)}
 .pq .choice small{display:block;font-size:14px;color:var(--sub)}
 .expl{margin:8px 0 0;font-size:15.5px;line-height:1.6}
 .fb .rnum{font-size:1.25em}
@@ -121,7 +122,7 @@ button.slot.ng{border-color:var(--ng);background:#fde4e7;color:#8f2233}
  *       PA.store 'pieces'＝{<id>:{t（さいごにひらいた時こく）, n（答えた数）, best:{deg|inv|full:{ok, n}}}}（ホームの ★ でつかう） */
 const PC=PA.piece, ESC=PA.esc, LEVELS=PC.LEVELS;
 const LV_NAME={deg:'和音の番号だけ',inv:'転回形も',full:'ぜんぶ'};
-const LV_SUB={deg:'Ⅰ〜Ⅶの番号を、4つからえらぶよ。',inv:'番号と、転回形（いちばん下の音で決まる形）を答えるよ。',full:'番号・7の和音・転回形・○・ⅤのⅤまで、記号をぜんぶつくるよ。調とおわりかたの問題もあるよ。'};
+const LV_SUB={deg:'この曲に出てくる和音（Ⅰ〜Ⅶの番号と、ⅤのⅤなど）から、えらぶよ。',inv:'番号と、転回形（いちばん下の音で決まる形）を答えるよ。ⅤのⅤ・○のしるしもつけてね。',full:'番号・7の和音・転回形・○・ⅤのⅤまで、記号をぜんぶつくるよ。調とおわりかたの問題もあるよ。'};
 const isObj=v=>!!v&&typeof v==='object'&&!Array.isArray(v);
 // 地図にある曲（PA.UNITS の 'pieces' の課題の href から）
 const READY=[];
@@ -159,6 +160,10 @@ function load(){
     });
     S.ans[lv]=out;
   });
+  // ホームの ★：曲のデータをなおして問題の数がかわったら、まえのけっかはけす（ちがう問題のけっかなので）
+  const m=PA.store.get('pieces',{}), me=isObj(m)&&isObj(m[ID])?m[ID]:null;
+  if(me&&isObj(me.best)&&LEVELS.some(lv=>isObj(me.best[lv])&&me.best[lv].n!==PC.items(pc,lv).length))
+    saveMeta(x=>{LEVELS.forEach(lv=>{if(isObj(x.best[lv])&&x.best[lv].n!==PC.items(pc,lv).length) delete x.best[lv];});return x;});
 }
 function save(){PA.store.set(SKEY,{lv:S.lv,tempo:S.tempo,ans:S.ans});}
 // ホームの ★：ひらいた時こく・答えた数・答えかたごとのいちばんよいけっか
@@ -188,7 +193,7 @@ function record(it,id,a){
   const t=tally();
   saveMeta(me=>{
     me.n++;
-    if(t.all){const b=me.best[S.lv];if(!isObj(b)||!(b.ok/b.n>=t.ok/t.n)) me.best[S.lv]={ok:t.ok,n:t.n};}
+    if(t.all){const b=me.best[S.lv];if(!isObj(b)||b.n!==t.n||!(b.ok/b.n>=t.ok/t.n)) me.best[S.lv]={ok:t.ok,n:t.n};} // 問題の数がかわったら（曲のデータのなおし）、まえのけっかはおきかえる
     return me;
   });
   PA.announce(ok?'せいかい':'ざんねん');
@@ -411,7 +416,7 @@ function pickHTML(ev){
     <div class="row">${playBtn('pplay',ev.id,' data-hot="listen"')}${realOK()?playBtn('pskel',ev.id):''}
     <button type="button" class="btn small" data-act="pclose">${PA.icon('close')}とじる</button></div>`;
   if(a) h+=fbHTML(ev,a);
-  else if(S.lv==='deg') h+=`<p class="plab">何の和音？</p><div class="choices pchoices">${PC.degChoices(ev).map(d=>`<button type="button" class="choice" data-act="adeg" data-v="${d}">${PA.rn({deg:d})}</button>`).join('')}</div>`;
+  else if(S.lv==='deg') h+=`<p class="plab">何の和音？</p><div class="choices pchoices n${PC.degChoices(ev,S.pc).length}">${PC.degChoices(ev,S.pc).map((c,k)=>`<button type="button" class="choice" data-act="adeg" data-v="${k}">${PA.rn(c)}</button>`).join('')}</div>`;
   else h+=builderHTML();
   return h+`</div>`;
 }
@@ -423,7 +428,7 @@ function builderHTML(){
   let no=1;
   if(full) h+=`<p class="plab">${'①②③④'[no++]} 7の和音？9の和音？</p>`+PA.seg('bform',[['0','なし'],['7','7の和音'],['9','9の和音']],String(B.form),'full');
   h+=`<p class="plab">${'①②③④'[no++]} 転回形は？（いちばん下の音）</p>`+PA.seg('binv',[['0','基本形'],['1','第1'],['2','第2'],['3','第3']],String(B.inv),'full');
-  if(full) h+=`<p class="plab">${'①②③④'[no++]} しるし（あれば）</p><div class="row">`
+  h+=`<p class="plab">${'①②③④'[no++]} しるし（あれば）</p><div class="row">`
     +`<button type="button" class="tog${B.borrowed?' on':''}" data-act="bborrow" aria-pressed="${B.borrowed}">○ 準固有</button>`
     +`<button type="button" class="tog${B.of?' on':''}" data-act="bof" aria-pressed="${B.of}">Ⅴの調（2だん）</button></div>`;
   h+=`<div class="pv" aria-live="polite">こたえ：${B.deg?PA.rn(built()):'<span class="note" style="margin:0">①をえらんでね</span>'}</div>`
@@ -432,7 +437,7 @@ function builderHTML(){
 }
 // その答えかたで答える部品だけの記号（番号だけ＝Ⅴ、転回形も＝Ⅴ²）。記号ぜんぶとちがえば「（記号でかくと Ⅴ₇²）」をそえる
 function ansRn(rn){
-  const p=PA.rnNorm(rn), q=S.lv==='deg'?{deg:p.deg}:S.lv==='inv'?PA.rnNorm({deg:p.deg,inv:p.inv}):p;
+  const p=PA.rnNorm(rn), q=S.lv==='deg'?PC.markOf(p):S.lv==='inv'?PA.rnNorm({...PC.markOf(p),inv:p.inv}):p;
   return PA.rn(q)+(PA.rnText(q)!==PA.rnText(p)?`<span class="yours">（記号でかくと ${PA.rn(p)}）</span>`:'');
 }
 function fbHTML(ev,a){
@@ -547,14 +552,14 @@ document.addEventListener('click',e=>{
     case 'pnext': goNext(); return;
     case 'psum': S.sel=null; render(); reveal('#sum',true); return;
     case 'adeg': {
-      const ev=evById(S.sel), d=+v; if(!ev||ansOf(ev.id)||!PC.degChoices(ev).includes(d)) return;
-      stop(); record(ev,ev.id,{deg:d}); answered(); return;
+      const ev=evById(S.sel), c=ev&&/^\d$/.test(v)?PC.degChoices(ev,S.pc)[+v]:null; if(!c||ansOf(ev.id)) return;
+      stop(); record(ev,ev.id,c); answered(); return;
     }
     case 'bdeg': {const d=+v; if(!Number.isInteger(d)||d<1||d>7) return; S.B.deg=d; render(); return;}
     case 'bform': if(S.lv!=='full'||!['0','7','9'].includes(v)) return; S.B.form=+v; render(); return;
     case 'binv': if(!['0','1','2','3'].includes(v)) return; S.B.inv=+v; render(); return;
-    case 'bborrow': if(S.lv!=='full') return; S.B.borrowed=!S.B.borrowed; render(); return;
-    case 'bof': if(S.lv!=='full') return; S.B.of=!S.B.of; render(); return;
+    case 'bborrow': if(S.lv==='deg') return; S.B.borrowed=!S.B.borrowed; render(); return;
+    case 'bof': if(S.lv==='deg') return; S.B.of=!S.B.of; render(); return;
     case 'bok': {
       const ev=evById(S.sel); if(!ev||ansOf(ev.id)||!S.B.deg) return;
       stop(); record(ev,ev.id,built()); answered(); return;
