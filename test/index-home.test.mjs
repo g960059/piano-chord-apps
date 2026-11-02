@@ -230,6 +230,56 @@ test('index.html：🐸 はさいごにやった島。クリアした島から�
   assert.match(h,/class="goal [lr] here"/);
 });
 
+// 🐸の span のかわり（document.querySelector('#view .isle .frog') でかえす）と、IntersectionObserver のかわり（io:true のとき。PA.__io に入れる）
+const FROG_STUB=io=>`const __frog={c:new Set(['frog']),classList:null};__frog.classList={add:function(c){__frog.c.add(c);},remove:function(c){__frog.c.delete(c);},contains:function(c){return __frog.c.has(c);}};
+document.querySelector=function(s){return s==='#view .isle .frog'?__frog:{};};PA.__frog=__frog;
+${io?`window.IntersectionObserver=function(cb,o){var me=this;me.o=o;me.cb=cb;me.t=[];me.observe=function(t){me.t.push(t);};me.disconnect=function(){me.off=true;};(PA.__io=PA.__io||[]).push(me);};`:''}`;
+test('index.html：🐸 がうつった島へは1回だけおりてくる（.arrive は🐸の span だけ。ずっとはねない）',()=>{
+  const mem=new Map();
+  const frogs=h=>h.match(/<span class="frog[^"]*">🐸<\/span>/g)||[];
+  const move=()=>{const now=Date.now();PA.store.set('visited',{'chord-build':now-5e3,'minor-family':now-1e3});PA.store.set('last-learn',{app:'minor-family',t:now-1e3});};
+  // はじめて：うごかない。いまの島をおぼえる
+  let PA=renderHome(mem,{},FROG_STUB(true)), h=PA.__html;
+  assert.deepEqual(frogs(h),['<span class="frog">🐸</span>']);
+  assert.equal(PA.store.get('home-frog',null),'major');
+  assert.ok(!PA.__io,'うごかないときは見はらない');
+  // おなじ島のまま描きなおし：うごかない
+  h=renderHome(mem).__html;
+  assert.ok(!/arrive|wait/.test(h));
+  // つぎの島へうつった：その島の🐸だけ .wait（見えるまでかくす）。島（details）や看板の class にはつけない
+  move();
+  PA=renderHome(mem,{},FROG_STUB(true)); h=PA.__html;
+  assert.deepEqual(frogs(h),['<span class="frog wait">🐸</span>']);
+  assert.match(stageOf(h,'minor9'),/class="frog wait"/);
+  assert.match(cls(h,'minor9'),/^stage [lr] here$/);
+  assert.equal((h.match(/wait|arrive/g)||[]).length,1);
+  // まだ見えていない：おりてこない・おぼえない（つぎにひらいたときも、おりてくる）
+  const io=PA.__io[0];
+  assert.equal(io.t.length,1); assert.equal(io.t[0],PA.__frog); assert.equal(io.o.threshold,.6);
+  io.cb([{isIntersecting:true,intersectionRatio:.2}]);
+  assert.ok(!PA.__frog.classList.contains('arrive')); assert.equal(PA.store.get('home-frog',null),'major');
+  // 見えた：おりてくる。ここでおぼえる。もう見はらない
+  io.cb([{isIntersecting:true,intersectionRatio:.7}]);
+  assert.ok(PA.__frog.classList.contains('arrive')); assert.ok(!PA.__frog.classList.contains('wait'));
+  assert.equal(io.off,true); assert.equal(PA.store.get('home-frog',null),'minor9');
+  // もういちど見ても（設定をかえた・もどってきた）1回きり
+  h=renderHome(mem).__html;
+  assert.deepEqual(frogs(h),['<span class="frog">🐸</span>']);
+  // IntersectionObserver がないブラウザ：すぐおりてきて、すぐおぼえる
+  const mem2=new Map();
+  PA=renderHome(mem2,{},'PA.store.set("home-frog","major");'+FROG_STUB(false)); move();
+  PA=renderHome(mem2,{},FROG_STUB(false)); h=PA.__html;
+  assert.deepEqual(frogs(h),['<span class="frog wait">🐸</span>']);
+  assert.ok(PA.__frog.classList.contains('arrive')); assert.equal(PA.store.get('home-frog',null),'minor9');
+  // CSS：くりかえしのうごき（hop・twinkle）はもうない。へらす設定ではふわっと出るだけ。おちるところは ease-in
+  assert.ok(!/infinite/.test(page)&&!/@keyframes (hop|twinkle)/.test(page));
+  assert.match(page,/\.isle \.frog\.wait\{opacity:0\}/);
+  assert.match(page,/\.isle \.frog\.arrive\{animation:pa-frog-land 600ms var\(--ease-out\) 150ms both\}/);
+  assert.match(page,/@keyframes pa-frog-land\{0%\{[^}]*animation-timing-function:ease-in\}55%\{[^}]*animation-timing-function:var\(--ease-out\)\}/);
+  assert.match(page,/prefers-reduced-motion:reduce\)\{\.isle \.frog\.arrive\{animation-name:pa-frog-fade\}/);
+  assert.match(page,/@keyframes pa-frog-fade\{from\{opacity:0\}\}/);
+});
+
 test('index.html：耳のひろばのきろく・とちゅうの5もん・にがて・iOS アプリ',()=>{
   const mem=new Map();
   let PA=renderHome(mem);

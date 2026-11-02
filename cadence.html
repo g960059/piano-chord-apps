@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- meta:start -->
 <meta name="description" content="「おしまい」になる和音のならび（Ⅰ→Ⅳ→Ⅰ→Ⅴ7→Ⅰ）を聴いて、伴奏の形を見る">
 <meta property="og:type" content="website">
@@ -20,10 +20,12 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
-<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
+<meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- meta:end -->
 <title>カデンツ</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
@@ -76,7 +78,7 @@
   .duo-side .kbpair{display:grid;gap:8px;align-items:start} /* れつのはばは白鍵の数のわりあい（インラインの grid-template-columns）。左手はいつもぜんぶ見えるはば、右手は入りきらなければよこにスクロール */
   .duo-side .handblk{margin:0 auto;width:100%}
   .duo-side .handblk.kbl{order:-1} /* ピアノとおなじ：左に左手 */
-  .duo-side .staffw{max-width:440px;max-width:clamp(300px,calc((100vh - 540px) * 1.58),440px)} /* ひくい画面（1024×768など）ではすこし小さく */
+  .duo-side .staffw{max-width:clamp(300px,calc((100svh - 540px) * 1.58),440px)} /* ひくい画面（1024×768など）ではすこし小さく */
 }
 @media (min-width:600px){
   .seq{gap:8px}

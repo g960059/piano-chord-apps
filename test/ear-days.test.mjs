@@ -146,6 +146,9 @@ test('weekHTML・cheerHTML：7つの丸、読み上げは1つの文、紙ふぶ�
   const c1=D.cheerHTML({fx:true,n:5,info:I});
   assert.match(c1,/^<div class="pa-cheer">/);
   assert.match(c1,/<span class="pa-confetti" aria-hidden="true">(<i style="[^"]+"><\/i>){14}<\/span>/);
+  // 紙ふぶきは 0.06びょうずつずらして、5こごとにくりかえす（さいごは 0.24びょう）
+  const ds=[...c1.matchAll(/--d:([\d.]+)s/g)].map(m=>+m[1]);
+  assert.deepEqual(ds.slice(0,6),[0,0.06,0.12,0.18,0.24,0]); assert.ok(Math.max(...ds)<=0.24);
   assert.match(c1,/きょうの5もん、できたね！/); assert.match(c1,/毎日つづいているね！/);
   const c2=D.cheerHTML({fx:false,n:10,info:I});
   assert.match(c2,/^<div class="pa-cheer still">/); assert.ok(!/pa-confetti/.test(c2)); assert.match(c2,/きょうの10もん、できたね！/);
@@ -175,6 +178,10 @@ test('app.css：丸・紙ふぶき。うごきをへらす設定では紙ふぶ�
   const css=fs.readFileSync(path.join(root,'assets','app.css'),'utf8');
   assert.match(css,/\.pa-week \.pw-d i\{[^}]*width:16px/);
   assert.match(css,/@keyframes pa-fall/);
+  // 「できたね！」は pa-celebrate（ふつうの「ぽん」より、すこしゆっくり）
+  assert.match(css,/\.pa-cheer\{[^}]*animation:pa-celebrate var\(--dur-celebrate\) var\(--ease-out\)\}/);
+  assert.match(css,/@keyframes pa-celebrate\{0%\{transform:scale\(\.96\)\}60%\{transform:scale\(1\.02\);animation-timing-function:var\(--ease-in-out\)\}100%\{transform:none\}\}/); // もどるところは、ゆっくりはじまってゆっくりおわる
+  assert.ok(!/@keyframes pop\b/.test(css));
   assert.match(css,/@media \(prefers-reduced-motion:reduce\)\{\.pa-cheer\{animation:none\}\.pa-confetti\{display:none\}\}/);
 });
 

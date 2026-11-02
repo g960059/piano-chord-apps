@@ -11,6 +11,8 @@
  *   PA.onStopDown = ()=>{...}                               … data-act="stop" をおした瞬間（描きなおさずに音を止める）
  *   PA.onStopCancel = ()=>render()                          … ⏹ をおしたのに click が来なかった（指がずれた・スクロール）とき画面をもどす
  *   PA.paint(document.getElementById('actions'), html, 'bar') … 下のボタンバーもこれで描くとフォーカスがのこる
+ *     おわったとき（ステップ・回がおわった）だけ出るカードに data-fx="名前"：はじめて出たとき1回だけ、すっと出る（app.css）。
+ *     描きなおし・ひらいたときにもう出ていたもの（おなじ名前）は .still でうごかない。PA.paint で描いたものだけ
  *   PA.onPageShow = ()=>render()                            … 「もどる」で bfcache からもどってきたとき
  *
  * 音楽：PA.majorKey(i) / PA.minorKey(i)、PA.at(scale,k)、PA.nm(note)、PA.nmH(note)、PA.namesH(notes)
@@ -102,7 +104,7 @@
  *
  * ----- 2回おすボタン・キーボード -----
  *   data-confirm="ほんとうにけす？" のボタンは2回おす：1回めは文字がかわって赤いわく（.armed）、4秒以内にもういちどおすとふつうの click。
- *     PA.paint で描きなおしても（data-act＋data-v がおなじボタン）つづく
+ *     PA.paint で描きなおしても（data-act＋data-v がおなじボタン）つづく（下ののこり時間の線も、つづきから）
  *   キーボード・ページめくりペダル（入力らん・ひらいたシートの中、ctrl・alt・⌘・shift つきではうごかない）：
  *     スペース → 見えている data-hot~="listen"、Enter → data-hot~="check"（どちらもフォーカスがボタン・リンクのときはそのボタン）、
  *     → ／ PageDown → data-hot~="next"、← ／ PageUp → data-hot~="prev"（けんばんの鍵にフォーカスがあるときは鍵のいどう）。
@@ -369,6 +371,9 @@ PA.audioReset=()=>{
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&actx&&actx.state!=='running'&&actx.state!=='closed')actx.resume().catch(()=>{});});
 // ページをひらいたら、さわる前に録音を読んでおく（さいしょの音からピアノになるように）。音を鳴らさないページ（<body data-nosound>）では読まない
 if(typeof window.addEventListener==='function') window.addEventListener('load',()=>{if(S.sound&&wantPiano()&&!noSoundPage()) PA.loadPiano();});
+// 音のしくみを、さわる前からうごかしておく（アプリだけ：WKWebView はタップなしで鳴らせる。native.js がよぶ）。
+// さいしょの1音が、AudioContext をつくってうごきだすのを待たない
+PA.warmAudio=()=>{if(S.sound&&!noSoundPage()) PA.audio();};
 const pianoNote=(ac,midi,t,dur,vel)=>{
   const s=PA.pianoNearest(pianoBufs,midi), src=ac.createBufferSource(), g=ac.createGain(), a=vel/0.22*PIANO.gain;
   src.buffer=s.buf; src.playbackRate.value=PA.pianoRate(midi,s.midi,S.pitchA);
@@ -379,11 +384,12 @@ const pianoNote=(ac,midi,t,dur,vel)=>{
   src.connect(g); g.connect(master); src.start(t); src.stop(t+dur+0.3);
   const voice={os:[src],g,t0:t}; voices.add(voice);
   src.onended=()=>{try{src.disconnect();g.disconnect();}catch(e){}voices.delete(voice);};
+  return voice;
 };
 PA.playNote=(midi,when=0,dur=1.6,vel=0.22)=>{
   if(!S.sound) return; const ac=PA.audio(); if(!ac) return;
   const t=ac.currentTime+when+0.01;
-  if(PA.voice()==='piano'){pianoNote(ac,midi,t,dur,vel);return;}
+  if(PA.voice()==='piano') return pianoNote(ac,midi,t,dur,vel);
   const f=S.pitchA*Math.pow(2,(midi-69)/12); // 平均律・A4＝基準ピッチ
   const g=ac.createGain(), lp=ac.createBiquadFilter();
   lp.type='lowpass';
@@ -403,20 +409,25 @@ PA.playNote=(midi,when=0,dur=1.6,vel=0.22)=>{
     o.onended=()=>{try{o.disconnect();og.disconnect();if(i===parts.length-1){g.disconnect();lp.disconnect();voices.delete(voice);}}catch(e){}};
     voice.os.push(o);
   });
+  return voice;
 };
+// 1つの音をすぐ（0.015びょうで）けす。鳴りはじめていない音は鳴らさない
+const hush=(v,t)=>{try{
+  const p=v.g.gain;
+  if(v.t0>t){p.cancelScheduledValues(0);p.setValueAtTime(0,t);}
+  else{
+    if(p.cancelAndHoldAtTime) p.cancelAndHoldAtTime(t); else {p.cancelScheduledValues(t);p.setValueAtTime(p.value,t);}
+    p.setTargetAtTime(0.0001,t,0.015);
+  }
+  v.os.forEach(o=>o.stop(t+0.12));
+}catch(e){}};
+// PA.playNote がかえした音だけをけす（鍵盤をおしてすぐ横スクロールになったとき）
+PA.hushNote=v=>{if(v&&actx&&voices.has(v)){hush(v,actx.currentTime);voices.delete(v);}};
 PA.stopSound=()=>{
   soundGen++;
   if(actx){
     const t=actx.currentTime;
-    voices.forEach(v=>{try{
-      const p=v.g.gain;
-      if(v.t0>t){p.cancelScheduledValues(0);p.setValueAtTime(0,t);} // まだ鳴りはじめていない音はすぐ消す
-      else{
-        if(p.cancelAndHoldAtTime) p.cancelAndHoldAtTime(t); else {p.cancelScheduledValues(t);p.setValueAtTime(p.value,t);}
-        p.setTargetAtTime(0.0001,t,0.015);
-      }
-      v.os.forEach(o=>o.stop(t+0.12));
-    }catch(e){}});
+    voices.forEach(v=>hush(v,t));
   }
   voices.clear();
 };
@@ -945,7 +956,7 @@ PA.unit=id=>PA.UNITS.find(u=>u.id===id)||null;
 /* ===== 画面のしくみ ===== */
 PA.seg=(act,opts,cur,cls='')=>`<div class="seg ${cls}" role="group">`+opts.map(([v,l])=>`<button class="${String(v)===String(cur)?'on':''}" data-act="${act}" data-v="${v}" aria-pressed="${String(v)===String(cur)}">${l}</button>`).join('')+`</div>`;
 PA.keyChip=key=>`<button class="keychip" data-pa="keysheet" aria-haspopup="dialog">${PA.keyName(key)}<small>${PA.sigLabel(key)}</small></button>`;
-let sheetEl=null, sheetPrev=null;
+let sheetEl=null;
 // とじているとちゅう（すっと下がっているあいだ）は、もうとじたことにする（ためしの音などを鳴らさない）
 const isOpen=el=>!!el&&!el.paClosing&&(el.open===true||(!!el.hasAttribute&&el.hasAttribute('open')));
 let sheetSeq=0;
@@ -953,50 +964,77 @@ function sheet(html){
   sheetSeq++;
   if(!sheetEl){
     sheetEl=document.createElement('dialog');sheetEl.className='sheet';
-    // <dialog>がない古いブラウザ（iOS 15.3までなど）：open の印だけで出し入れする（.pa-fb＝画面いっぱいのうすい幕）
-    if(typeof sheetEl.showModal!=='function'){
-      sheetEl.classList.add('pa-fb'); sheetEl.setAttribute('role','dialog'); sheetEl.setAttribute('aria-modal','true');
-      sheetEl.close=function(){
-        this.removeAttribute('open');
-        if(sheetPrev&&document.contains(sheetPrev)&&sheetPrev.focus) sheetPrev.focus({preventScroll:true});
-        sheetPrev=null;
-      };
-      sheetEl.addEventListener('keydown',e=>{if(e.key==='Escape'||e.key==='Esc'){e.preventDefault();sheetEl.close();}});
-    }
     document.body.appendChild(sheetEl);
     sheetEl.addEventListener('click',e=>{if(e.target===sheetEl) sheetEl.close();});
     animateClose(sheetEl);
+    dragClose(sheetEl);
   }
-  if(sheetEl.paCancelClose) sheetEl.paCancelClose(); // とじているとちゅうにまたひらく：とじるのをやめる
-  sheetEl.innerHTML=`<div class="sheet-in">${html}</div>`;
-  if(!isOpen(sheetEl)){
-    if(!sheetEl.classList.contains('pa-fb')) sheetEl.showModal();
-    else{
-      sheetPrev=document.activeElement; sheetEl.setAttribute('open','');
-      const f=sheetEl.querySelector('button,select,input:not([tabindex="-1"]),[tabindex="0"]'); if(f) f.focus({preventScroll:true});
-    }
-  }
+  if(sheetEl.paCancelClose) sheetEl.paCancelClose(); // とじているとちゅうにまたひらく：とじるのをやめる（いまの場所からもどる）
+  sheetEl.innerHTML=`<div class="sheet-in"><div class="sheet-grab" aria-hidden="true"></div>${html}</div>`;
+  if(!isOpen(sheetEl)) sheetEl.showModal();
   return sheetEl;
 }
 PA.closeSheet=()=>{if(isOpen(sheetEl)) sheetEl.close();};
-// とじるとき、すっと下がってから close（app.css の .closing）。Esc もおなじ。動きをへらす設定・古いブラウザ（.pa-fb）はすぐ
+// つぎの画面が出たあと（うごきが画面にのってから）。requestAnimationFrame がないところ（テスト）はすぐあと
+const afterPaint=f=>typeof requestAnimationFrame==='function'?requestAnimationFrame(()=>requestAnimationFrame(f)):setTimeout(f,0);
+// とじるとき、すっと下がってから close（app.css の .closing は transition。transitionend をまつ）。
+// 出るのも transition なので、上がっているとちゅうにとじても、いまの場所から下がる。
+// 動きをへらす設定は、app.css でうすくなって消える（ここはおなじ）。Esc はブラウザがすぐとじる（キーボードはうごかさない）
 function animateClose(el){
   const real=el.close.bind(el);
   let timer=0;
-  const stop=()=>{clearTimeout(timer);timer=0;el.paClosing=false;el.removeEventListener('animationend',onEnd);el.classList.remove('closing');};
-  const done=()=>{stop();if(isOpen(el)) real();};
-  const onEnd=e=>{if(e.target===el) done();};
-  el.paCancelClose=()=>{if(timer) stop();};
+  const clean=()=>{clearTimeout(timer);timer=0;el.paClosing=false;el.removeEventListener('transitionend',onEnd);el.classList.remove('closing');};
+  const unDrag=()=>{if(el.style){el.style.transform='';el.style.transition='';}};
+  const done=()=>{clean();if(isOpen(el)) real();unDrag();};
+  const onEnd=e=>{if(e.target===el&&!e.pseudoElement&&(e.propertyName==='transform'||e.propertyName==='opacity')) done();};
+  el.paCancelClose=()=>{if(timer) clean();}; // .closing をとると、いまの場所からもとへもどる
   el.close=function(){
     if(!isOpen(el)) return;
-    if(el.classList.contains('pa-fb')||PA.reduceMotion()){real();return;}
-    el.paClosing=true; el.classList.add('closing'); el.addEventListener('animationend',onEnd);
-    timer=setTimeout(done,320); // animationend がこなくても、かならずとじる
+    if(el.style) el.style.transition='';
+    el.paClosing=true; el.classList.add('closing'); el.addEventListener('transitionend',onEnd);
+    timer=setTimeout(done,340); // transitionend がこなくても、かならずとじる（いちばん長い動きより、すこしあと）
   };
-  el.addEventListener('cancel',e=>{e.preventDefault();el.close();});
+  // Esc などでブラウザがじかにとじた：とじるとちゅうの印・ひっぱった位置をのこさない
+  el.addEventListener('close',()=>{if(timer) clean();unDrag();});
   // とじているとちゅうのタップ・えらびなおしはうけつけない（2回えらぶ・またひらくのをふせぐ）
   el.addEventListener('click',e=>{if(el.paClosing){e.preventDefault();e.stopImmediatePropagation();}},true);
   el.addEventListener('change',e=>{if(el.paClosing) e.stopImmediatePropagation();},true);
+}
+// つまみ・見出しを下へひっぱるととじる（iPhone のシートのように）。上へはすこしだけのびる。
+// はやくはらう（0.11px/ms より速い）か、高さの3わりより下げたらとじる。そうでなければ、もとの場所へもどる。8px より小さいのはタップ
+// つかんだときは、いま見えている場所から（上がっているとちゅう・もどっているとちゅうでも、ゆびの下からずれない）
+const nowY=el=>{try{return typeof getComputedStyle==='function'&&typeof DOMMatrixReadOnly==='function'?new DOMMatrixReadOnly(getComputedStyle(el).transform).m42||0:0;}catch(err){return 0;}};
+function dragClose(el){
+  let d=null;
+  el.addEventListener('pointerdown',e=>{
+    if(!isOpen(el)||e.button>0||!e.target.closest) return;
+    const z=e.target.closest('.sheet-grab,.sheet-head');
+    if(!z||e.target.closest('button,select,input,a,[role="button"]')) return;
+    const cur=nowY(el);
+    el.style.transition='none'; el.style.transform=cur?`translateY(${cur}px)`:'';
+    d={id:e.pointerId,y0:e.clientY-cur,t0:e.timeStamp,off:cur,s:cur,h:el.offsetHeight||1};
+    try{z.setPointerCapture(e.pointerId);}catch(err){} // つかんだところ（el にすると、はなしたときの click がうしろの幕のタップになる）
+  });
+  el.addEventListener('pointermove',e=>{
+    if(!d||e.pointerId!==d.id) return;
+    const dy=e.clientY-d.y0;
+    d.off=dy>=0?dy:-Math.min(12,Math.sqrt(-dy)*1.5);
+    el.style.transform=`translateY(${d.off}px)`;
+  });
+  const end=e=>{
+    if(!d||e.pointerId!==d.id) return;
+    const g=d; d=null;
+    const mv=g.off-g.s, v=mv/Math.max(1,e.timeStamp-g.t0); // つかんでからうごいた分（タップ・はやさはこれで見る）
+    el.style.transition='';
+    if(e.type==='pointerup'&&mv>=8&&(v>0.11||g.off>0.3*g.h)){
+      if(!PA.reduceMotion()) el.style.transform=''; // .closing の transition が、いまの場所から下へ（へらす設定は、その場でうすくなる）
+      el.close(); return;
+    }
+    el.style.transition='transform var(--dur-sheet-in) var(--ease-drawer)'; el.style.transform='';
+  };
+  el.addEventListener('pointerup',end);
+  el.addEventListener('pointercancel',end);
+  el.addEventListener('close',()=>{d=null;});
 }
 // 調をえらぶシート：minor（短調か）, idx（いま）, both（長調・短調を切りかえられる）, onPick(minor,idx)
 PA.openKeySheet=o=>{
@@ -1022,7 +1060,9 @@ PA.openKeySheet=o=>{
         // （すっと下がってからとじるときは、とじおわったあと＝close のあとにも）
         const refocus=()=>{const ae=document.activeElement;if(!ae||ae===document.body||!document.contains(ae)){const n=document.querySelector('[data-pa="keysheet"]');if(n)n.focus({preventScroll:true});}};
         el.addEventListener('close',refocus,{once:true});
-        el.close();o.onPick(minor,+b.dataset.v);refocus();
+        // さきにシートを下げはじめてから、ページを描きなおす（重い描きなおしで、下がるうごきがかくかくしない）
+        const v=+b.dataset.v;
+        el.close();afterPaint(()=>{o.onPick(minor,v);refocus();});
       }
     };
   };
@@ -1323,9 +1363,15 @@ let armed=null; // {sig, t, timer}
 const confirmSig=b=>(b.dataset.act||b.dataset.pa||b.id||'')+'|'+(b.dataset.v||'');
 const unArm=()=>{
   if(armed){clearTimeout(armed.timer);armed=null;}
-  document.querySelectorAll('.armed').forEach(b=>{b.classList.remove('armed');if(b.dataset.armHtml!=null){b.innerHTML=b.dataset.armHtml;delete b.dataset.armHtml;}});
+  document.querySelectorAll('.armed').forEach(b=>{b.classList.remove('armed');b.style.removeProperty('--arm-d');if(b.dataset.armHtml!=null){b.innerHTML=b.dataset.armHtml;delete b.dataset.armHtml;}});
 };
-const showArm=b=>{if(b.classList.contains('armed')) return;b.dataset.armHtml=b.innerHTML;b.textContent=b.dataset.confirm;b.classList.add('armed');};
+// 下の赤い線（のこり時間・app.css）は、すぎた時間から（描きなおしても、はじめからにならない）
+const showArm=b=>{
+  if(b.classList.contains('armed')) return;
+  b.dataset.armHtml=b.innerHTML;b.textContent=b.dataset.confirm;
+  b.style.setProperty('--arm-d',-Math.max(0,Date.now()-(armed?armed.t:Date.now()))+'ms');
+  b.classList.add('armed');
+};
 document.addEventListener('click',e=>{
   const b=e.target.closest&&e.target.closest('[data-confirm]'); if(!b||b.disabled) return;
   const sig=confirmSig(b);
@@ -1406,10 +1452,10 @@ const lastSigs=new WeakMap();
 const FOCUS_NEXT={build:['stop'],stop:['build','cplay','wcad'],play:['stop'],cplay:['stop'],enew:['eplay'],eans:['enew'],qchoose:['qnext'],qmark:['qnext'],qcheck:['qnext'],qnext:['qcheck']};
 const dKey=(d,i)=>d.id||(d.dataset&&d.dataset.d)||((d.className||'')+':'+((d.querySelector('summary')||{}).textContent||'').trim())||('#'+i);
 const rove=k=>{const svg=k.closest('svg');if(svg) svg.querySelectorAll('[data-m]').forEach(x=>x.setAttribute('tabindex',x===k?'0':'-1'));};
-// こたえの「ぽん」「ゆれ」（app.css）：描きなおす前にも出ていたものには .still
-const FX_SEL='.choice.right,.choice.wrong,.echoice.right,.echoice.wrong,.fb.good,.fb.bad';
-const fxKey=n=>[n.dataset.act||'',n.dataset.v||'',n.classList.contains('right')?'r':n.classList.contains('wrong')?'w':n.classList.contains('good')?'g':'b',
-  n.classList.contains('fb')?(n.textContent||'').slice(0,80):''].join('|');
+// こたえのタイルの「ぽん」「ゆれ」と、おわったときのカード（data-fx="名前"）の「すっ」（app.css）：
+// はじめて描いたとき（ひらいたときにもう出ていた）・描きなおす前にも出ていたものには .still（うごきをくりかえさない）
+const FX_SEL='.choice.right,.choice.wrong,.echoice.right,.echoice.wrong,[data-fx]';
+const fxKey=n=>n.dataset.fx?'fx|'+n.dataset.fx:[n.dataset.act||'',n.dataset.v||'',n.classList.contains('right')?'r':'w'].join('|');
 PA.paint=(el,html,sig)=>{
   const ae=document.activeElement, ds=ae&&ae.dataset?ae.dataset:{}, inEl=!!ae&&ae!==el&&el.contains(ae);
   const fa=ds.act||null, fv=ds.v, fp=ds.pa||null, wasBtn=inEl&&ae.tagName==='BUTTON';
@@ -1479,12 +1525,13 @@ document.addEventListener('pointerdown',e=>{
   if(e.pointerType==='mouse'){if(e.button!==0)return;keyFlash(k);PA.audio();PA.playNote(m,0,1.4,0.24);if(PA.onKey)PA.onKey(m);return;}
   const box=k.closest('.scroll'), scrollable=!!box&&box.scrollWidth>box.clientWidth+1;
   const d={m,k,x:e.clientX,y:e.clientY,played:false,t0:0,lit:0};
-  if(PA.audioRunning()&&!scrollable){PA.playNote(m,0,1.4,0.24);d.played=true;}
+  // 音はふれた瞬間（横スクロールできる鍵盤も）。スクロールになったら、その音だけすぐけす（下の pointerup・pointercancel）
+  if(PA.audioRunning()){d.v=PA.playNote(m,0,1.4,0.24);d.played=true;}
   // 鍵をへこませる。横にスクロールできる鍵盤は、0.06びょう指がうごかなかったら（スワイプで鍵が光らないように）
   const lit=()=>{if(downs.get(e.pointerId)===d&&!d.on){setDown(m,true);d.on=true;d.t0=Date.now();}};
-  if(scrollable) d.lit=setTimeout(lit,60);
+  if(scrollable&&!d.played) d.lit=setTimeout(lit,60);
   downs.set(e.pointerId,d);
-  if(!scrollable) lit();
+  if(!scrollable||d.played) lit();
 });
 // へこんでいる鍵は高さ（m）でおぼえる：おした鍵で描きなおしても、PA.paint が新しい鍵にもつけなおす
 const keyDowns=new Map(); // m → おしている数（指・マウス・電子ピアノ）
@@ -1506,11 +1553,11 @@ document.addEventListener('pointerup',e=>{
   const tap=Math.hypot(e.clientX-d.x,e.clientY-d.y)<10;
   if(tap&&!d.on){setDown(d.m,true);d.on=true;d.t0=Date.now();} // 0.06びょうより早くはなした（横スクロールの鍵盤）：いま見せる
   keyUp(d,false);
-  if(!tap) return;
+  if(!tap){PA.hushNote(d.v);return;}
   if(!d.played){PA.audio();PA.playNote(d.m,0,1.4,0.24);}
   if(PA.onKey) PA.onKey(d.m);
 });
-document.addEventListener('pointercancel',e=>{const d=downs.get(e.pointerId);if(d) keyUp(d,true);downs.delete(e.pointerId);stopCancel();});
+document.addEventListener('pointercancel',e=>{const d=downs.get(e.pointerId);if(d){keyUp(d,true);PA.hushNote(d.v);}downs.delete(e.pointerId);stopCancel();});
 // キーボード・読み上げソフトでひく：Enter／スペース（読み上げソフトの「タップ」は detail=0の click）、←→ Home End でとなりの鍵へ
 const hitKey=k=>{const m=+k.dataset.m;keyFlash(k);PA.audio();PA.playNote(m,0,1.4,0.24);if(PA.onKey)PA.onKey(m);};
 document.addEventListener('keydown',e=>{
@@ -1522,30 +1569,33 @@ document.addEventListener('keydown',e=>{
   const n=ks[Math.max(0,Math.min(ks.length-1,ks.indexOf(k)+dir))];
   rove(n); n.focus();
 });
-// Pointer Events のないブラウザ（iOS 12の Safari など）では、ふつうのタップ（click）でひく
-document.addEventListener('click',e=>{if(e.detail===0||!window.PointerEvent){const k=e.target.closest&&e.target.closest('.kb [data-m]');if(k) hitKey(k);}});
+// 読み上げソフトの「タップ」（detail=0の click）でひく
+document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&&e.target.closest('.kb [data-m]');if(k) hitKey(k);}});
 
 /* ===== おしたときの手ごたえ（app.css の .is-pressed・.is-nav） =====
+ * おせるもの（PRESS_SEL）はぜんぶ。文の中のリンク（class のない a。行の a.arow はおせる）・鍵盤（.kb。鍵は音といっしょに .down）・
+ *   svg の中（楽譜のますなど。svg の中は左上をまん中にして小さくなるので、さわったところがずれる）・data-nopress はのぞく（PRESS_OFF。app.css もおなじ）。
  * タッチ：指がふれたらすぐ .is-pressed（横いっぱいの行・横スクロールの中は 0.06びょうまってから＝スクロールでは光らない）。
  *   はなす・8px うごく・スクロールになる（pointercancel）でとる。みじかいタップでも 0.1びょうは見せる。マウス・キーボードは :active
  * おなじサイトのページへのリンクは、つぎのページが出るまで .is-nav（ページがかわるのを待つあいだに、もういちどおさない）
  * えらぶボタン（.seg・調のシート）と ⚙️ のえらぶらんは、アプリでは軽くふるえる（PA.haptic('selection')） */
-const PRESS_SEL='.btn,.iconbtn,.backpill,.keychip,a.go,.try-go,.choice,.echoice,.kbtn,.cellbtn,.kd-cell,.namechip,.tool,.topbtn,.seg button,.arow,summary';
+const PRESS_SEL='button,a[href],summary,[role="button"],label.sw';
+const PRESS_OFF='#view :is(p,li,.note,.msg) a:not([class]),.kb *,svg *,[data-nopress]';
+const PRESS_LATE='.arow,summary'; // 横いっぱいの行
 let press=null; // {el, t0, x, y, timer}
 const pressOff=(late)=>{
   if(!press) return; const p=press; press=null; clearTimeout(p.timer);
   if(!late||!p.t0){p.el.classList.remove('is-pressed');return;}
   setTimeout(()=>p.el.classList.remove('is-pressed'),Math.max(0,100-(Date.now()-p.t0)));
 };
-document.addEventListener('touchstart',()=>{},{passive:true}); // iOS で :active がすぐ効くように
 document.addEventListener('pointerdown',e=>{
   if(e.pointerType==='mouse') return;
   pressOff(false);
   const el=e.target&&e.target.closest&&e.target.closest(PRESS_SEL);
-  if(!el||el.disabled||el.getAttribute('aria-disabled')==='true') return;
+  if(!el||el.matches(PRESS_OFF)||el.disabled||el.getAttribute('aria-disabled')==='true') return;
   const p=press={el,t0:0,x:e.clientX,y:e.clientY,timer:0};
   const on=()=>{if(press===p){el.classList.add('is-pressed');p.t0=Date.now();}};
-  if(el.matches('.arow,summary')||el.closest('.scroll')) p.timer=setTimeout(on,60); else on();
+  if(el.matches(PRESS_LATE)||el.closest('.scroll,.songs')) p.timer=setTimeout(on,60); else on();
 },{capture:true,passive:true});
 document.addEventListener('pointermove',e=>{if(press&&Math.hypot(e.clientX-press.x,e.clientY-press.y)>8) pressOff(false);},{capture:true,passive:true});
 document.addEventListener('pointerup',()=>{
@@ -2548,15 +2598,16 @@ PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
         const list=miss.length?`<div class="sess-miss"><h3>もういちど見ておきたい問題</h3><ul>`
           +miss.map(e=>`<li><span class="sess-tag ${e.ok?'h':'x'}">${e.ok?'💡 ヒント':'✗ まちがい'}</span> ${nm(e.label||'（問題）')}</li>`).join('')+`</ul></div>`:'';
         const set=p.settings!=null?PA.esc(p.settings):PA.esc(PA.paramsText(p.params||{}));
-        return `<section class="card sess-card" aria-labelledby="sess-h">`
+        // data-fx：おわったとき1回だけ、すっと出る（PA.paint・app.css。描きなおし・ひらきなおしではうごかない）
+        return `<section class="card sess-card" data-fx="sess" aria-labelledby="sess-h">`
           +`<h2 id="sess-h">🎉 ${d.n}もんおわり！</h2>`
           +`<p class="sess-big"><b>${d.n}もん中${T.ok}もん</b> <span class="sess-stars" role="img" aria-label="ほし3つのうち${T.stars}つ">${stars}</span></p>`
           +`<p class="sess-msg">${T.msg}</p>`
           +(p.extra||'') // ページがつくる HTML（耳のひろばの「きょうの5もん、できたね！」）
           +`<div class="sess-counts">`
-          +`<div class="sc-self"><b>${T.self}</b><span>じぶんでできた</span></div>`
-          +`<div class="sc-hint"><b>${T.hint}</b><span>ヒントを見てできた</span></div>`
-          +`<div class="sc-wrong"><b>${T.wrong}</b><span>まちがえた</span></div></div>`
+          +`<div class="sc-self" style="--i:0"><b>${T.self}</b><span>じぶんでできた</span></div>`
+          +`<div class="sc-hint" style="--i:1"><b>${T.hint}</b><span>ヒントを見てできた</span></div>`
+          +`<div class="sc-wrong" style="--i:2"><b>${T.wrong}</b><span>まちがえた</span></div></div>`
           +list
           // 先生に見せる：日づけ・せってい・リンク（けっかは上の大きな字を見せる）。ふだんはたたんでおく
           +`<details class="sess-teacher" data-d="sess-teacher"><summary>👩‍🏫 先生に見せる</summary><dl>`
@@ -2647,7 +2698,7 @@ PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
     const I=o.info||info(), n=Number.isInteger(o.n)&&o.n>0?o.n:5;
     if(!I.today) return `<div class="pa-cheer still">${weekHTML(I)}</div>`;
     const fx=!!o.fx;
-    const conf=fx?`<span class="pa-confetti" aria-hidden="true">`+Array.from({length:14},(_,i)=>`<i style="--x:${4+i*7}%;--d:${(i%5)*0.12}s;--c:${CONF[i%CONF.length]};--r:${i%2?'':'-'}${200+i*20}deg"></i>`).join('')+`</span>`:'';
+    const conf=fx?`<span class="pa-confetti" aria-hidden="true">`+Array.from({length:14},(_,i)=>`<i style="--x:${4+i*7}%;--d:${(i%5)*0.06}s;--c:${CONF[i%CONF.length]};--r:${i%2?'':'-'}${200+i*20}deg"></i>`).join('')+`</span>`:'';
     const sub=I.run>=2?'毎日つづいているね！':'またあしたも、まってるよ';
     return `<div class="pa-cheer${fx?'':' still'}">${conf}<p class="pc-t"><span aria-hidden="true">🎉 </span>きょうの${n}もん、できたね！</p>${weekHTML(I)}<p class="pc-s">${sub}</p></div>`;
   };
@@ -3118,5 +3169,6 @@ PA.onceReset=()=>{PA.store.set('once',{});onceSeen.clear();};
   };
 })();
 PA.reduceMotion=()=>!!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches);
-PA.scrollTop=()=>window.scrollTo({top:0,behavior:PA.reduceMotion()?'auto':'smooth'});
+// ページの上へ（つぎの問題・画面がかわったとき。何回もあるので、すぐ）
+PA.scrollTop=()=>{if((window.scrollY||0)>0) window.scrollTo(0,0);};
 })();

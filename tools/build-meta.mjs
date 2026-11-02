@@ -79,6 +79,12 @@ function block(m){
     `<link rel="icon" href="favicon.svg" type="image/svg+xml">`,
     `<link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">`,
     `<link rel="apple-touch-icon" href="assets/icons/icon-180.png">`,
+    // スマホ・iPad のアプリのような見た目（上のバーの色・ホーム画面からひらいたとき）。あかるい紙の色だけ
+    `<meta name="theme-color" content="#fdf8f0">`,
+    `<meta name="color-scheme" content="light">`,
+    `<meta name="apple-mobile-web-app-capable" content="yes">`,
+    `<meta name="mobile-web-app-capable" content="yes">`,
+    `<meta name="apple-mobile-web-app-status-bar-style" content="default">`,
     END].join('\n');
 }
 

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- meta:start -->
 <meta name="description" content="短調のⅤの家族をおさえる／臨時記号を選ぶ">
 <meta property="og:type" content="website">
@@ -20,10 +20,12 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
-<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
+<meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- meta:end -->
 <title>短調クイズ</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
@@ -415,7 +417,7 @@ function renderActions(key){
   }
   PA.paint(bar,h,'bar'); bar.hidden=!h; // フォーカスのもどし先は core がきめる
 }
-const showFb=()=>{const fb=document.querySelector('#view .fb'); if(fb&&fb.scrollIntoView) fb.scrollIntoView({block:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});};
+const showFb=()=>{const fb=document.querySelector('#view .fb'); if(fb&&fb.scrollIntoView) fb.scrollIntoView({block:'nearest'});}; // まいかいのこたえなので、すぐに
 const playLT=k=>{PA.playNote(k.lt.midi,0,0.9,0.24);PA.playNote(k.lt.midi+1,0.8,1.4,0.24);};
 // 新しいもんだいで上から（回のはじまり・つぎへ）
 const fresh=()=>{PA.stopSound();newQuestion();render();PA.scrollTop();};

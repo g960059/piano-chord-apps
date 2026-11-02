@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- meta:start -->
 <meta name="description" content="Ⅰ→Ⅳ→Ⅴ7→Ⅰ などのならびを聴いて、「？」の和音を当てる。おちつく・もどりたい感じ、いちばん下と上の音の動きも">
 <meta property="og:type" content="website">
@@ -20,10 +20,12 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
-<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
+<meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- meta:end -->
 <title>ならびの聴きわけ</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
@@ -98,7 +100,6 @@
 .fb,.msg{scroll-margin-bottom:96px;scroll-margin-top:72px}
 .fb{margin-top:12px}
 .fb .sm{display:block;font-size:15px;margin-top:6px}
-.fb.still{animation:none}
 .fb .row{margin-top:10px}
 .abrow{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:10px}
 .abrow .btn{flex-direction:column;gap:0;min-height:56px;padding:6px 8px;border-radius:16px;line-height:1.25;background:#fff;border:3px solid var(--c);color:var(--ink);word-break:keep-all;overflow-wrap:anywhere}
@@ -440,7 +441,7 @@ function showQ(){
 function reveal(el){
   if(!el||!el.getBoundingClientRect) return;
   const r=el.getBoundingClientRect(), ab=document.getElementById('actions'), bottom=innerHeight-(ab?ab.offsetHeight:0);
-  if(r.bottom>bottom&&el.scrollIntoView) el.scrollIntoView({block:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});
+  if(r.bottom>bottom&&el.scrollIntoView) el.scrollIntoView({block:'nearest'});
 }
 
 /* ===== 操作 ===== */
@@ -516,7 +517,7 @@ document.addEventListener('click',e=>{
     case 'pnext': {
       if(!Q.ans) return;
       stop();
-      if(sess.finished()){Q.sum=true; save(); render(); window.scrollTo(0,0); return;} // さいごのもんだいのあと：けっかのカード
+      if(sess.finished()){Q.sum=true; save(); render(); PA.scrollTop(); return;} // さいごのもんだいのあと：けっかのカード
       goNext(); return;
     }
     default: return;

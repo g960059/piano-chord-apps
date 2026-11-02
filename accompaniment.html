@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- meta:start -->
 <meta name="description" content="知っている曲のメロディーにⅠ・Ⅳ・Ⅴ7をつける">
 <meta property="og:type" content="website">
@@ -20,10 +20,12 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
-<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
+<meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- meta:end -->
 <title>伴奏づけ</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
@@ -31,7 +33,7 @@
 .lbl{font-size:14px;font-weight:700;color:var(--sub);margin:0 2px 4px}
 .lbl .cnt{font-weight:400;font-size:13px}
 /* 曲：やさしい順に横にならべてスクロール（スマホ） */
-.songs{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
+.songs{display:flex;gap:8px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x proximity;
   margin-left:-16px;margin-right:-16px;padding:2px 16px 6px;scroll-padding-left:16px;scroll-padding-right:16px;scrollbar-width:thin}
 .song{flex:none;width:160px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;gap:2px;text-align:left;
   min-height:72px;padding:7px 8px;border-radius:14px;background:var(--card);border:2px solid var(--line)}
@@ -97,8 +99,8 @@
 input[type=range]{accent-color:var(--ink);height:32px}
 input[type=checkbox]{flex:none;width:22px;height:22px;accent-color:var(--ink)}
 /* パレット（いつも下にくっつく。親指でえらべる） */
-.palbar{position:-webkit-sticky;position:sticky;bottom:0;z-index:20;margin-left:-16px;margin-right:-16px;padding:6px 12px calc(8px + env(safe-area-inset-bottom,0px));
-  background:rgba(255,255,255,.97);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+.palbar{position:sticky;bottom:0;z-index:20;margin-left:-16px;margin-right:-16px;padding:6px 12px calc(8px + env(safe-area-inset-bottom,0px));
+  background:#fff; /* すりガラスにしない（スクロールがかるくなる） */
   box-shadow:0 -4px 12px rgba(80,60,30,.10);border-radius:16px 16px 0 0;border-top:1px solid var(--line)}
 .selrow{display:flex;flex-wrap:wrap;align-items:center;gap:6px}
 /* ボタンにおされて文が1〜2字ずつの縦長にならないように：せまいときは文が1行ぶんをとって、ボタンは次の行へ */
@@ -888,7 +890,8 @@ function patchScore(sb,html){
 // 再生中、光っているマスが画面の外（上のバーや下のパレットのうら）に出たら見える所へ。がくふを見ていないときは動かさない
 function followSlot(si){
   const box=document.querySelector('[data-sk="score"]'), r=box&&box.querySelector(`[data-slot="${si}"]`); if(!r) return;
-  const pb=document.querySelector('.palbar'), top=70, bot=window.innerHeight-(pb&&pb.offsetHeight?pb.offsetHeight+10:170), bb=box.getBoundingClientRect();
+  // 上のバーの下はし（バーの高さに上のすきま（ノッチ）も入っている）
+  const hb=document.getElementById('appbar'), pb=document.querySelector('.palbar'), top=(hb?hb.getBoundingClientRect().bottom:56)+14, bot=window.innerHeight-(pb&&pb.offsetHeight?pb.offsetHeight+10:170), bb=box.getBoundingClientRect();
   if(bb.bottom<top||bb.top>bot) return;
   const b=r.getBoundingClientRect();
   if(b.top<top||b.bottom>bot){try{r.scrollIntoView({block:'center',inline:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});}catch(e){}}
@@ -899,7 +902,7 @@ function renderSafe(){if(tempoDrag){deferRender=true;return false;}render();retu
 function scrollSelIntoView(){
   const el=document.querySelector(`[data-sk="score"] [data-slot="${state.sel}"]`);
   if(!el) return;
-  try{el.scrollIntoView({block:'nearest',inline:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});}catch(e){}
+  try{el.scrollIntoView({block:'nearest',inline:'nearest'});}catch(e){} // まいかいえらぶので、すぐに
 }
 
 /* ===== 操作 ===== */
