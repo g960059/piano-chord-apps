@@ -230,6 +230,36 @@ test('index.html：🐸 はさいごにやった島。クリアした島から�
   assert.match(h,/class="goal [lr] here"/);
 });
 
+test('index.html：🐸 がうつった島へは1回だけおりてくる（.arrive は🐸の span だけ。ずっとはねない）',()=>{
+  const mem=new Map();
+  const frogs=h=>h.match(/<span class="frog[^"]*">🐸<\/span>/g)||[];
+  // はじめて：うごかない。いまの島をおぼえる
+  let PA=renderHome(mem), h=PA.__html;
+  assert.deepEqual(frogs(h),['<span class="frog">🐸</span>']);
+  assert.equal(PA.store.get('home-frog',null),'major');
+  // おなじ島のまま描きなおし：うごかない
+  h=renderHome(mem).__html;
+  assert.ok(!/arrive/.test(h));
+  // つぎの島へうつった：その島の🐸だけ .arrive。島（details）や看板の class にはつけない
+  const now=Date.now();
+  PA.store.set('visited',{'chord-build':now-5e3,'minor-family':now-1e3});
+  PA.store.set('last-learn',{app:'minor-family',t:now-1e3});
+  h=renderHome(mem).__html;
+  assert.deepEqual(frogs(h),['<span class="frog arrive">🐸</span>']);
+  assert.match(stageOf(h,'minor9'),/class="frog arrive"/);
+  assert.match(cls(h,'minor9'),/^stage [lr] here$/);
+  assert.equal((h.match(/arrive/g)||[]).length,1);
+  assert.equal(PA.store.get('home-frog',null),'minor9');
+  // もういちど見ても（設定をかえた・もどってきた）1回きり
+  h=renderHome(mem).__html;
+  assert.deepEqual(frogs(h),['<span class="frog">🐸</span>']);
+  // CSS：くりかえしのうごき（hop・twinkle）はもうない。へらす設定ではふわっと出るだけ
+  assert.ok(!/infinite/.test(page)&&!/@keyframes (hop|twinkle)/.test(page));
+  assert.match(page,/\.isle \.frog\.arrive\{animation:pa-frog-land 600ms var\(--ease-out\) 150ms both\}/);
+  assert.match(page,/prefers-reduced-motion:reduce\)\{\.isle \.frog\.arrive\{animation-name:pa-frog-fade\}/);
+  assert.match(page,/@keyframes pa-frog-fade\{from\{opacity:0\}\}/);
+});
+
 test('index.html：耳のひろばのきろく・とちゅうの5もん・にがて・iOS アプリ',()=>{
   const mem=new Map();
   let PA=renderHome(mem);

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- meta:start -->
 <meta name="description" content="長調と短調の「7ばんめ→主音」をくらべて聴く">
 <meta property="og:type" content="website">
@@ -20,10 +20,12 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
-<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
+<meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- meta:end -->
 <title>なぜ7ばんめを上げるの？</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
@@ -45,8 +47,8 @@
 .fb{margin-top:12px}
 .sw{gap:8px;background:var(--card);border:2px solid var(--red);color:var(--red);font-size:clamp(13px,3.8vw,15px)}
 .actionbar .btn.sw{flex:1.6 1 0;max-width:340px}
-.sw .knob{width:40px;height:24px;border-radius:12px;background:#d8cfc4;position:relative;flex:none;transition:background .2s}
-.sw .knob::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .2s}
+.sw .knob{width:40px;height:24px;border-radius:12px;background:#d8cfc4;position:relative;flex:none}
+.sw .knob::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25)}
 .sw.on{background:var(--redl)}
 .sw.on .knob{background:var(--red)}
 .sw.on .knob::after{left:19px}
@@ -62,7 +64,6 @@
 }
 .more ul{margin:0;padding-left:1.3em}
 .more li{margin:6px 0}
-@media (prefers-reduced-motion:reduce){.sw .knob,.sw .knob::after{transition:none}}
 /* 📖 ことばメモ（本や楽譜で見かける名前。ふだんはとじておく） */
 .terms dl{margin:0}
 .terms dt{font-weight:800;margin:12px 0 2px}
@@ -306,7 +307,7 @@ function playAB(v){
 function revealMin(){
   const st=document.querySelector('[data-sk="stair-min"]'), p=st&&st.closest('.panel'); if(!p||!st.getBoundingClientRect) return;
   const bar=document.getElementById('appbar'), ab=document.getElementById('actions');
-  const top=(bar&&bar.offsetHeight)||0, bottom=innerHeight-((ab&&ab.offsetHeight)||0), r=st.getBoundingClientRect();
+  const top=bar?bar.getBoundingClientRect().bottom:0, bottom=innerHeight-((ab&&ab.offsetHeight)||0), r=st.getBoundingClientRect();
   if(r.top>=top&&r.bottom<=bottom) return;
   window.scrollBy({top:p.getBoundingClientRect().top-top-8,behavior:PA.reduceMotion()?'auto':'smooth'});
 }

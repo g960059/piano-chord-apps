@@ -9,16 +9,26 @@
   --ok:#15804f; --ng:#c22f45; --pick:#ffd66b; --hint:#fffaf0; --hintline:#f0d9a8; --mifa:#f4a100;
   --font:"Hiragino Maru Gothic ProN","Hiragino Maru Gothic Pro","BIZ UDPGothic","Hiragino Sans","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
   color-scheme:light;
-  padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
+  /* うごきの決まり（うごきはぜんぶこれをつかう。ちがうのは紙ふぶきのおちかた・マイクのメーター・2回おすボタンののこり時間だけ） */
+  --ease-out:cubic-bezier(.23,1,.32,1); --ease-in-out:cubic-bezier(.77,0,.175,1); --ease-drawer:cubic-bezier(.32,.72,0,1);
+  --dur-press-in:70ms; --dur-press-out:160ms;
+  --dur-fast:150ms;      /* 色・うすさ・マウスをのせたとき */
+  --dur-enter:200ms;     /* 小さく出るもの（ひらいた<details>の中など） */
+  --dur-pop:220ms;       /* 正解のタイルの「ぽん」 */
+  --dur-nudge:240ms;     /* まちがいのタイルの「ゆれ」 */
+  --dur-sheet-in:300ms; --dur-sheet-out:200ms;
+  --dur-celebrate:420ms; /* たまにしか出ない、けっか・おいわい */
+  --stagger:50ms;
 }
 *{box-sizing:border-box}
 html{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%;
+  /* ページのはしでひっぱってもページごとうごかない（アプリのように）。タップしたときの灰色の四角を出さない */
+  overscroll-behavior:none;-webkit-tap-highlight-color:transparent;
   /* キーボードでうごいたところが上と下のバーの下にかくれない */
   scroll-padding-top:calc(64px + env(safe-area-inset-top,0px));scroll-padding-bottom:calc(80px + env(safe-area-inset-bottom,0px))}
 html,body{margin:0;background:var(--bg);color:var(--ink)}
-body{font-family:var(--font);font-size:16px;line-height:1.6;-webkit-tap-highlight-color:transparent}
-body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top,0px);z-index:40;background:var(--bg)}
+body{font-family:var(--font);font-size:16px;line-height:1.6}
 button{font:inherit;cursor:pointer;border:none;color:inherit;background:none;padding:0}
 a{color:inherit}
 button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--c5);outline-offset:2px}
@@ -26,12 +36,13 @@ select{font:inherit;font-size:16px;min-height:44px;padding:6px 10px;border-radiu
 [hidden]{display:none!important}
 
 /* ===== 上のバー ===== */
-.appbar{position:-webkit-sticky;position:sticky;top:env(safe-area-inset-top,0px);z-index:30;display:flex;align-items:center;gap:6px;min-height:56px;
-  padding:6px max(10px,env(safe-area-inset-right,0px)) 6px max(10px,env(safe-area-inset-left,0px),var(--pa-corner-left,0px));
-  background:rgba(253,248,240,.94);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+/* 画面のいちばん上（時計・ノッチの下）までバーの色でぬり、中身はそのぶん下げる。ぬりつぶし（すけるぼかしは重いのでつかわない） */
+.appbar{position:sticky;top:0;z-index:30;display:flex;align-items:center;gap:6px;min-height:calc(56px + env(safe-area-inset-top,0px));
+  padding:calc(6px + env(safe-area-inset-top,0px)) max(10px,env(safe-area-inset-right,0px)) 6px max(10px,env(safe-area-inset-left,0px),var(--pa-corner-left,0px));
+  background:var(--bg);border-bottom:1px solid var(--line)}
 .appbar h1{flex:1;min-width:0;margin:0;font-size:18px;line-height:1.25;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-align:center}
 .iconbtn{flex:none;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:20px;background:var(--soft);text-decoration:none}
-@media (hover:hover){.iconbtn:hover{filter:brightness(.97)}}
+@media (hover:hover) and (pointer:fine){.iconbtn:hover{filter:brightness(.97)}}
 
 /* ===== ページ ===== */
 .page{max-width:760px;margin:0 auto;padding-top:12px;padding-bottom:24px;
@@ -48,16 +59,17 @@ select{font:inherit;font-size:16px;min-height:44px;padding:6px 10px;border-radiu
 .grid2>*{min-width:0}
 
 /* ===== 下のボタンバー（親指でおしやすい位置） ===== */
-.actionbar{position:-webkit-sticky;position:sticky;bottom:0;z-index:25;display:flex;gap:8px;justify-content:center;
-  padding:8px max(12px,env(safe-area-inset-right,0px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px));
-  background:rgba(255,255,255,.96);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border-top:1px solid var(--line);
+/* 広い画面（iPad など）はページのはば（760px）にあわせて、ボタンをまん中にまとめる */
+.actionbar{position:sticky;bottom:0;z-index:25;display:flex;gap:8px;justify-content:center;
+  padding:8px max(12px,env(safe-area-inset-right,0px),calc(50% - 380px)) calc(8px + env(safe-area-inset-bottom,0px)) max(12px,env(safe-area-inset-left,0px),calc(50% - 380px));
+  background:#fff;border-top:1px solid var(--line);
   margin-bottom:calc(-1 * env(safe-area-inset-bottom,0px))}
 .actionbar .btn{flex:1 1 0;min-width:0;max-width:280px;padding-left:6px;padding-right:6px;font-size:15px;white-space:nowrap;letter-spacing:-.01em}
 
 /* ===== ボタン ===== */
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:48px;padding:10px 16px;border-radius:999px;
   background:var(--soft);font-weight:700;font-size:16px;line-height:1.2;text-align:center;text-decoration:none}
-@media (hover:hover){.btn:hover{filter:brightness(.97)}}
+@media (hover:hover) and (pointer:fine){.btn:hover{filter:brightness(.97)}}
 .btn.primary{background:var(--ink);color:#fff}
 .btn.night{background:var(--night);color:#fff}
 .btn.ok{background:var(--ok);color:#fff}
@@ -75,10 +87,16 @@ select{font:inherit;font-size:16px;min-height:44px;padding:6px 10px;border-radiu
   border:2px solid var(--ink);font-weight:800;font-size:17px}
 .keychip small{font-weight:400;color:var(--sub);font-size:13px}
 .keychip::after{content:"▾";font-size:14px;color:var(--sub)}
-dialog.sheet{width:100%;max-width:640px;max-height:85vh;margin:auto auto 0;border:none;border-radius:22px 22px 0 0;padding:0;background:var(--card);color:var(--ink);
+dialog.sheet{width:100%;max-width:640px;max-height:85dvh;margin:auto auto 0;border:none;border-radius:22px 22px 0 0;padding:0;background:var(--card);color:var(--ink);
   box-shadow:0 -8px 30px rgba(40,30,50,.2)}
 dialog.sheet::backdrop{background:rgba(40,30,50,.35)}
-.sheet-in{padding:14px 16px calc(16px + env(safe-area-inset-bottom,0px));overflow-y:auto;max-height:85vh}
+/* シートの中だけスクロール（はしまできても、うしろのページはうごかない） */
+.sheet-in{padding:8px 16px calc(16px + env(safe-area-inset-bottom,0px));overflow-y:auto;max-height:85dvh;overscroll-behavior:contain}
+html:has(dialog.sheet[open]){overflow:hidden}
+/* つまみ：つまみ・見出しを下へひっぱるととじる（core.js）。ゆびでおす所はつまみより広い */
+.sheet-grab{position:relative;width:36px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 9px}
+.sheet-grab::before{content:"";position:absolute;inset:-10px -40px}
+.sheet-grab,.sheet-head{touch-action:none}
 .sheet-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .sheet-head h2{flex:1;margin:0;font-size:18px}
 .keygrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
@@ -92,7 +110,7 @@ dialog.sheet::backdrop{background:rgba(40,30,50,.35)}
 .setrow label{font-weight:700}
 
 /* ===== 図 ===== */
-.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.scroll{overflow-x:auto;overscroll-behavior-x:contain}
 svg{display:block;width:100%;height:auto;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 svg text{pointer-events:none}
 .key{cursor:pointer}
@@ -104,7 +122,7 @@ svg text{pointer-events:none}
 .msg{background:var(--hint);border:2px dashed var(--hintline);border-radius:14px;padding:10px 14px;font-size:16px}
 .rule{border-radius:14px;background:var(--nightl);color:#24316f;padding:12px 14px;font-size:16px;font-weight:700}
 .fb{border-radius:14px;padding:12px 14px;font-size:16.5px}
-.fb.good{background:#dcf5e8;color:#0f6b44;animation:pop .45s ease}
+.fb.good{background:#dcf5e8;color:#0f6b44}
 .fb.bad{background:#fde4e7;color:#8f2233}
 .chips{display:flex;gap:6px;flex-wrap:wrap}
 .chip{font-size:13px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--soft2)}
@@ -131,16 +149,18 @@ svg.rnum-svg{display:inline-block;overflow:visible}
 .rnh li{display:flex;gap:10px;align-items:center;margin:6px 0;line-height:1.5;font-size:15px}
 .rnh-ex{flex:none;min-width:3.2em;text-align:center;font-size:24px;font-weight:800}
 
-@keyframes pop{0%{transform:scale(.95)}60%{transform:scale(1.03)}100%{transform:scale(1)}}
-@media (prefers-reduced-motion:reduce){.fb.good{animation:none}}
+/* おいわい（けっか・できたね！）：すこし小さいところから「ぽん」 */
+@keyframes pa-celebrate{0%{transform:scale(.96)}60%{transform:scale(1.02)}100%{transform:none}}
 @media (min-width:700px){
   .choices{grid-template-columns:repeat(4,1fr)}
   .appbar h1{font-size:20px}
 }
 
 /* ===== iPhone・iPad で自然につかえるように ===== */
-/* ボタンを長おししても文字が選ばれない */
-button,.btn,.seg,.keychip,.kbtn,.choice,.echoice,.cellbtn,.iconbtn,.backpill,a.go,.tool,.arow,.weakrow a,.try-go,summary{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+/* おせるもの（core.js の PRESS_SEL とおなじ。文の中のリンクはのぞく）：長おししても文字が選ばれない。
+   すぐ反応する（2回タップでの拡大を待たない。html の決まりは横スクロールの中までとどかないので、ここでも） */
+:where(button,a[href],summary,[role="button"],label.sw):not(:where(#view :is(p,li,.note,.msg) a:not(.btn))){-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+:where(button,a[href],summary,label,[role="button"],[data-act],.kb,.scroll){touch-action:manipulation}
 /* アプリ：リンクを長おししても「リンクをコピー・共有」のメニューを出さない（文の中のリンクも。文はえらべるまま） */
 html.pa-native a[href]{-webkit-touch-callout:none}
 /* アプリでは出さない（ウェブだけの話：ほかのブラウザ・端末など） */
@@ -149,7 +169,7 @@ html.pa-native .pa-webonly{display:none}
 #view p a:not(.btn),#view li a:not(.btn),#view .note a:not(.btn),#view .msg a:not(.btn){display:inline-block;padding:12px 2px;margin:-12px 0;text-underline-offset:3px}
 /* スマホを横にしたとき：上と下のバーをうすくして、見えるはんいを広げる */
 @media (max-height:500px) and (orientation:landscape){
-  .appbar{min-height:46px;padding-top:3px;padding-bottom:3px}
+  .appbar{min-height:calc(46px + env(safe-area-inset-top,0px));padding-top:calc(3px + env(safe-area-inset-top,0px));padding-bottom:3px}
   .appbar h1{font-size:16px}
   .actionbar{padding-top:5px;padding-bottom:calc(5px + env(safe-area-inset-bottom,0px))}
   .actionbar .btn{min-height:44px;padding-top:6px;padding-bottom:6px}
@@ -162,11 +182,6 @@ html.pa-native .pa-webonly{display:none}
   .seg button{padding-left:8px;padding-right:8px}
   .seg.full button{flex:1 1 auto} /* 長いことばのボタンをすこし広く（ことばのとちゅうでおれない） */
 }
-/* iPad など：1行が長くなりすぎないようにページのはばはそのまま、ボタンバーもまん中にまとめる */
-@media (min-width:700px){
-  .actionbar{padding-left:max(12px,calc((100vw - 760px)/2));padding-right:max(12px,calc((100vw - 760px)/2))}
-}
-
 
 /* ===== 音名：♯・♭の前で行がかわらない（PA.nmH） ===== */
 .nw{white-space:nowrap}
@@ -178,7 +193,7 @@ html.pa-native .pa-webonly{display:none}
   background:var(--soft);font-weight:700;font-size:14px;line-height:1.2;text-decoration:none;white-space:nowrap}
 .backpill .bp-ar{flex:none;font-size:22px;line-height:1;margin-top:-2px}
 .backpill .bp-tx{min-width:0;overflow:hidden;text-overflow:ellipsis}
-@media (hover:hover){.backpill:hover{filter:brightness(.97)}}
+@media (hover:hover) and (pointer:fine){.backpill:hover{filter:brightness(.97)}}
 /* 音がオフのおしらせ */
 .soundoff{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:4px 10px;padding:4px max(12px,env(safe-area-inset-right,0px)) 4px max(12px,env(safe-area-inset-left,0px));
   background:#fff4d6;color:#6e4c00;border-bottom:1px solid #ecc967;font-size:14px;font-weight:700}
@@ -186,13 +201,10 @@ html.pa-native .pa-webonly{display:none}
 
 /* ===== 2回おすボタン（data-confirm） ===== */
 .armed,.btn.armed{outline:3px solid var(--ng);outline-offset:2px;background:#fde4e7;color:#8f2233}
-
-/* ===== <dialog>のないブラウザ（シートを下から出す） ===== */
-dialog.sheet.pa-fb{position:fixed;top:0;left:0;right:0;bottom:0;z-index:60;width:auto;max-width:none;max-height:none;margin:0;border-radius:0;
-  background:rgba(40,30,50,.35);box-shadow:none;flex-direction:column;justify-content:flex-end;align-items:center}
-dialog.sheet.pa-fb[open]{display:flex}
-dialog.sheet.pa-fb:not([open]){display:none}
-dialog.sheet.pa-fb>.sheet-in{width:100%;max-width:640px;background:var(--card);border-radius:22px 22px 0 0;box-shadow:0 -8px 30px rgba(40,30,50,.2)}
+/* のこり時間（4びょう）：下の赤い線がみじかくなる。描きなおしても --arm-d（すぎた時間）からつづける（core.js）。時計なので一定のはやさ */
+.armed{position:relative;overflow:hidden}
+.armed::after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:var(--ng);transform-origin:left;animation:pa-arm 4s linear var(--arm-d,0s) forwards}
+@keyframes pa-arm{from{transform:scaleX(1)}to{transform:scaleX(0)}}
 /* せっていのまとまり */
 .setsec{margin-top:12px;padding-top:10px;border-top:1px solid var(--line)}
 .setsec h3{margin:0 0 4px;font-size:16px}
@@ -204,7 +216,7 @@ dialog.sheet.pa-fb>.sheet-in{width:100%;max-width:640px;background:var(--card);b
 @media (min-width:1000px){
   .page.duo{max-width:1180px}
   .duo-grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;align-items:start}
-  .duo-side{position:-webkit-sticky;position:sticky;top:calc(64px + env(safe-area-inset-top,0px))}
+  .duo-side{position:sticky;top:calc(64px + env(safe-area-inset-top,0px))}
 }
 
 /* ===== 学ぶページの「ためしてみる」カード（PA.tryHTML。色は行き先のアプリの種類） ===== */
@@ -246,6 +258,18 @@ dialog.sheet.pa-fb>.sheet-in{width:100%;max-width:640px;background:var(--card);b
 .sess-btns{margin-top:12px}
 .sess-btns .btn{flex:1 1 140px}
 
+/* ===== おわったときのカード（data-fx。PA.paint で描いたものだけ）：はじめて出たときだけ、すっと上がる =====
+   描きなおし・ひらいたときにもう出ていたものは .still（core.js）でうごかない。たまにしか出ないので、すこしゆっくり */
+@keyframes pa-rise{from{opacity:0;transform:translateY(8px) scale(.98)}}
+[data-fx]:not(.still){animation:pa-rise var(--dur-celebrate) var(--ease-out) both}
+/* れんしゅうの回のけっか：3つの数がじゅんに、ほしはあとから「ぽん」 */
+.sess-card[data-fx]:not(.still) .sess-counts>div{animation:pa-rise var(--dur-celebrate) var(--ease-out) both;animation-delay:calc(120ms + var(--i,0)*var(--stagger))}
+.sess-card[data-fx]:not(.still) .sess-stars{display:inline-block;animation:pa-celebrate var(--dur-celebrate) var(--ease-out) 260ms both}
+@media (prefers-reduced-motion:reduce){
+  [data-fx]:not(.still){animation-name:pa-fade-in}
+  .sess-card[data-fx]:not(.still) :is(.sess-counts>div,.sess-stars){animation:none}
+}
+
 /* ===== 耳のひろば：つづけた日（PA.earDays）。今週の7つの丸（月〜日）と、5もんのけっかの「できたね！」 =====
    丸：できた日＝金色でぬる・まだ＝白（ふち --sub は白の上で5.6:1）・これからの日＝点線・きょう＝青い輪。dark＝耳のひろばの夜空の上 */
 .pa-week{display:flex;flex-wrap:wrap;align-items:center;gap:4px 10px;font-size:14px;font-weight:700;line-height:1.3}
@@ -265,87 +289,84 @@ dialog.sheet.pa-fb>.sheet-in{width:100%;max-width:640px;background:var(--card);b
 .pa-week.dark .pw-d.now i{box-shadow:0 0 0 2px #2a1b5e,0 0 0 4px #ffd66b}
 .pa-week.dark .pw-d small{color:#f3e8ff}
 .pa-week.dark .pw-run{color:#ffe58a}
-.pa-cheer{position:relative;overflow:hidden;margin:4px 0 10px;padding:12px 14px;border-radius:16px;background:linear-gradient(135deg,#fff3c4,#ffe0ef);animation:pop .5s ease}
+.pa-cheer{position:relative;overflow:hidden;margin:4px 0 10px;padding:12px 14px;border-radius:16px;background:linear-gradient(135deg,#fff3c4,#ffe0ef);animation:pa-celebrate var(--dur-celebrate) var(--ease-out)}
 .pa-cheer.still{animation:none}
 .pa-cheer .pc-t{margin:0 0 6px;font-size:19px;font-weight:800;line-height:1.4;word-break:keep-all;overflow-wrap:anywhere}
 .pa-cheer .pc-s{margin:6px 0 0;font-size:14px;font-weight:700}
 .pa-cheer .pa-week .pw-d.now i{box-shadow:0 0 0 2px #fff3c4,0 0 0 4px var(--c5)}
 .pa-confetti{position:absolute;inset:0;pointer-events:none}
+/* 紙ふぶきは、ものがおちるうごき（だんだんはやく＝ease-in・1.9びょう。ほかの UI のうごきとはべつ） */
 .pa-confetti i{position:absolute;top:-14px;left:var(--x);width:8px;height:12px;border-radius:2px;background:var(--c);opacity:0;animation:pa-fall 1.9s ease-in var(--d) 1 forwards}
 @keyframes pa-fall{0%{opacity:1;transform:translateY(0) rotate(0)}80%{opacity:1}100%{opacity:0;transform:translateY(170px) rotate(var(--r))}}
 @media (prefers-reduced-motion:reduce){.pa-cheer{animation:none}.pa-confetti{display:none}}
 
 /* チェック表のます（pickable） */
 .kd-cell{cursor:pointer}
-@media (hover:hover){.kd-cell:hover{filter:brightness(.97)}}
-
-/* ===== 古い iPhone・iPad（Safari 14.0まで）：flex の gap がないので、すきまを margin でつくる =====
-   inset は flex の gap とおなじ Safari 14.1から。新しいブラウザにはきかない */
-@supports not (inset:0){
-  .row>*+*,.actionbar>*+*,.appbar>*+*,.sheet-head>*+*,.keychip>*+*{margin-left:8px}
-  .chips>*+*,.btn>*+*{margin-left:6px}
-  .setrow>*+*{margin-left:12px}
-  .seg>*+*{margin-left:2px}
-  .row>*,.chips>*{margin-top:3px;margin-bottom:3px}
-  .stack>*+*,.duo-grid>*+*{margin-top:12px}
-  @media (min-width:1000px){.duo-grid>*+*{margin-top:0}}
-}
+@media (hover:hover) and (pointer:fine){.kd-cell:hover{filter:brightness(.97)}}
 
 /* ===== おしたときの手ごたえ（アプリのボタンのように） =====
- * 指がふれたらすぐ（.07s）しずみ、はなすとやわらかく（.18s）もどる。
- * タッチは .is-pressed（core.js がつける：みじかいタップでも見える・スクロールでは出ない・横いっぱいの行はすこしまってから）。
+ * おせるもの（core.js の PRESS_SEL：button・リンク・summary・role="button"・label.sw）は、ぜんぶ手ごたえがある。
+ *   文の中のリンク・鍵盤（.kb）・data-nopress はのぞく。
+ * 指がふれたらすぐ（70ms）しずみ、はなすとやわらかく（160ms）もどる。
+ * タッチは .is-pressed（core.js がつける：みじかいタップでも見える・スクロールでは出ない・横いっぱいの行と横スクロールの中はすこしまってから）。
  * :active はマウスのある端末だけ（タッチの :active は、スクロールでも光ってしまうので）。
- * A＝まるいボタン（すこし小さく・暗く）、B＝タイル（へこんで、下の影のふちが消える）、C＝横いっぱいの行（色だけ）。
- * 動きをへらす設定では、大きさは変えず色だけ。:is() がない古い Safari は、こたえのタイルだけへこむ（下のふつうの書きかた） */
-:root{--press-in:.07s;--press-out:.18s;--press-ease:cubic-bezier(.25,.8,.25,1)}
-.btn,.iconbtn,.backpill,.keychip,a.go,.try-go,.choice,.echoice,.kbtn,.cellbtn,.kd-cell,.namechip,.tool,.topbtn,.seg button,.arow,summary{
-  transition:transform var(--press-out) var(--press-ease),filter var(--press-out),box-shadow var(--press-out),background-color var(--press-out),opacity .15s}
-.choice:not([disabled]):active,.echoice:not([disabled]):active,.choice.is-pressed:not([disabled]),.echoice.is-pressed:not([disabled]){transform:scale(.97)}
-:is(.btn,.iconbtn,.backpill,.keychip,a.go,.try-go).is-pressed:not([disabled],[aria-disabled="true"]){transform:scale(.96);filter:brightness(.93);transition-duration:var(--press-in)}
+ * 大きさは scale・translate（transform とはべつ）でかえるので、ボタンじしんの transform（えらんだカードがうく など）とぶつからない。
+ * ふつう＝すこし小さく・暗く。まるいボタン＝もうすこし。タイル＝へこむ。えらぶボタン（.seg）＝色だけ。横いっぱいの行＝うしろの色だけ。
+ * 動きをへらす設定では、大きさは変えず色だけ */
+:where(button,a[href],summary,[role="button"],label.sw){transition:scale var(--dur-press-out) var(--ease-out),translate var(--dur-press-out) var(--ease-out),filter var(--dur-press-out) var(--ease-out)}
+:where(.arow,summary,.weakrow a){transition:background-color var(--dur-fast) var(--ease-out)}
+:where(button,a[href],summary,[role="button"],label.sw).is-pressed:not([disabled],[aria-disabled="true"]){scale:.97;filter:brightness(.95);transition-duration:var(--dur-press-in)}
+:is(.btn,.iconbtn,.backpill,.keychip,a.go,.try-go).is-pressed:not([disabled],[aria-disabled="true"]){scale:.96;filter:brightness(.93)}
 :is(.btn.primary,.btn.night,.btn.ok,.btn.warn,a.go,.try-go).is-pressed:not([disabled],[aria-disabled="true"]){filter:brightness(1.18)}
-:is(.choice,.echoice,.kbtn,.cellbtn,.kd-cell,.namechip,.tool,.topbtn).is-pressed:not([disabled],[aria-disabled="true"]){transform:translateY(1px) scale(.97);filter:brightness(.95);box-shadow:0 0 0 #eadfce;transition-duration:var(--press-in)}
-.seg button.is-pressed:not([disabled],[aria-disabled="true"]){filter:brightness(.92);transition-duration:var(--press-in)}
-:is(.arow,summary).is-pressed{background-color:var(--soft2);transition-duration:var(--press-in)}
-@media (hover:hover){
-  :is(.btn,.iconbtn,.backpill,.keychip,a.go,.try-go):active:not([disabled],[aria-disabled="true"]){transform:scale(.96);filter:brightness(.93);transition-duration:var(--press-in)}
+:is(.choice,.echoice,.kbtn,.cellbtn,.kd-cell,.namechip,.topbtn,.scard).is-pressed:not([disabled],[aria-disabled="true"]){translate:0 1px}
+.seg button.is-pressed:not([disabled],[aria-disabled="true"]){scale:none;filter:brightness(.92)}
+:is(.arow,summary,.weakrow a).is-pressed{scale:none;filter:none;background-color:var(--soft2)}
+@media (hover:hover) and (pointer:fine){
+  :where(button,a[href],summary,[role="button"],label.sw):not(:where(#view :is(p,li,.note,.msg) a:not(.btn),.kb *,[data-nopress])):active:not([disabled],[aria-disabled="true"]){scale:.97;filter:brightness(.95);transition-duration:var(--dur-press-in)}
+  :is(.btn,.iconbtn,.backpill,.keychip,a.go,.try-go):active:not([disabled],[aria-disabled="true"]){scale:.96;filter:brightness(.93)}
   :is(.btn.primary,.btn.night,.btn.ok,.btn.warn,a.go,.try-go):active:not([disabled],[aria-disabled="true"]){filter:brightness(1.18)}
-  :is(.choice,.echoice,.kbtn,.cellbtn,.kd-cell,.namechip,.tool,.topbtn):active:not([disabled],[aria-disabled="true"]){transform:translateY(1px) scale(.97);filter:brightness(.95);box-shadow:0 0 0 #eadfce;transition-duration:var(--press-in)}
-  .seg button:active:not([disabled],[aria-disabled="true"]){filter:brightness(.92);transition-duration:var(--press-in)}
-  :is(.arow,summary):active{background-color:var(--soft2);transition-duration:var(--press-in)}
+  :is(.choice,.echoice,.kbtn,.cellbtn,.kd-cell,.namechip,.topbtn,.scard):active:not([disabled],[aria-disabled="true"]){translate:0 1px}
+  .seg button:active:not([disabled],[aria-disabled="true"]){scale:none;filter:brightness(.92)}
+  :is(.arow,summary,.weakrow a):active{scale:none;filter:none;background-color:var(--soft2)}
 }
-/* ページへうつるリンク：つぎのページが出るまで、おしたままに見せる（二度おししない） */
-.is-nav{opacity:.8;filter:brightness(.95)}
-@media (prefers-reduced-motion:reduce){
-  .choice:not([disabled]):active,.echoice:not([disabled]):active,.choice.is-pressed:not([disabled]),.echoice.is-pressed:not([disabled]),
-  :is(.btn,.iconbtn,.backpill,.keychip,a.go,.try-go,.choice,.echoice,.kbtn,.cellbtn,.kd-cell,.namechip,.tool,.topbtn):is(:active,.is-pressed):not([disabled],[aria-disabled="true"]){transform:none}
-}
+/* ページへうつるリンク：つぎのページが出るまで、おしたままに見せる（二度おししない）。すぐかわる */
+.is-nav{opacity:.8;filter:brightness(.95);transition:none}
+@media (prefers-reduced-motion:reduce){:is(:active,.is-pressed){scale:none!important;translate:none!important}}
 
-/* ===== 画面の鍵盤：おしているあいだ、へこむ（fill は属性より CSS がつよい。色つきの鍵はすこしうすく） ===== */
-.kb .key{transition:fill .12s,fill-opacity .12s}
+/* ===== 画面の鍵盤：おしているあいだ、へこむ（音といっしょにすぐ。fill は属性より CSS がつよい。色つきの鍵はすこしうすく） ===== */
 .kb .key.w.down:is(:not([data-mk]),.plain){fill:#e7dfd2}
 .kb .key.b.down:not([data-mk]){fill:#4d4556}
 .kb .key[data-mk]:not(.plain).down{fill-opacity:.72}
 
-/* ===== 下から出るシート（調・⚙️）：すっと上がって、すっと下がる ===== */
+/* ===== 下から出るシート（調・⚙️）：すっと上がって、すっと下がる =====
+ * 出るときは keyframe。とじるときは transition（.closing。core.js が transitionend をまつ）なので、
+ *   とじているとちゅうにまたひらくと、いまの場所からもどる。ひっぱっているあいだは core.js が transform をじかに書く。
+ * 動きをへらす設定では、うごかさずにうすく出る・消える */
 @keyframes pa-sheet-up{from{transform:translateY(100%)}}
-@keyframes pa-sheet-down{to{transform:translateY(100%)}}
 @keyframes pa-fade-in{from{opacity:0}}
-@keyframes pa-fade-out{to{opacity:0}}
-dialog.sheet:not(.pa-fb)[open]{animation:pa-sheet-up .3s cubic-bezier(.32,.72,0,1)}
-dialog.sheet:not(.pa-fb)[open]::backdrop{animation:pa-fade-in .25s ease}
-dialog.sheet:not(.pa-fb)[open].closing{animation:pa-sheet-down .2s ease-in forwards}
-dialog.sheet.closing{pointer-events:none}
-dialog.sheet:not(.pa-fb)[open].closing::backdrop{animation:pa-fade-out .2s ease-in forwards}
-
-/* ===== こたえのタイル：正解は「ぽん」、まちがいは小さく1回ゆれる（描きなおしでくりかえさない＝.still は core.js がつける） ===== */
-@keyframes pa-nudge{0%,100%{transform:none}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
-:is(.choice,.echoice).right:not(.still){animation:pop .32s ease}
-:is(.choice,.echoice).wrong:not(.still),.fb.bad:not(.still){animation:pa-nudge .28s ease}
-.fb.good.still{animation:none}
+dialog.sheet{transition:transform var(--dur-sheet-out) var(--ease-drawer)}
+dialog.sheet::backdrop{transition:opacity var(--dur-sheet-out) var(--ease-drawer)}
+dialog.sheet[open]{animation:pa-sheet-up var(--dur-sheet-in) var(--ease-drawer)}
+dialog.sheet[open]::backdrop{animation:pa-fade-in var(--dur-sheet-in) var(--ease-drawer)}
+dialog.sheet[open].closing{transform:translateY(100%);pointer-events:none}
+dialog.sheet[open].closing::backdrop{opacity:0}
 @media (prefers-reduced-motion:reduce){
-  dialog.sheet:not(.pa-fb)[open],dialog.sheet:not(.pa-fb)[open]::backdrop,dialog.sheet:not(.pa-fb)[open].closing,dialog.sheet:not(.pa-fb)[open].closing::backdrop{animation:none}
-  :is(.choice,.echoice).right:not(.still),:is(.choice,.echoice).wrong:not(.still),.fb.bad:not(.still){animation:none}
+  dialog.sheet{transition:opacity var(--dur-sheet-out) var(--ease-out)}
+  dialog.sheet[open]{animation-name:pa-fade-in}
+  dialog.sheet[open].closing{transform:none;opacity:0}
 }
+
+/* ===== こたえのタイル：正解は「ぽん」（おしてしずんだ大きさから）、まちがいは小さく1回ゆれる =====
+ * 描きなおしでくりかえさない（.still は core.js がつける）。答えあわせのカード（.fb）は読む文なのでうごかさない（色・⭕❌・ふるえでつたわる） */
+@keyframes pa-right{0%{transform:scale(.97)}55%{transform:scale(1.03)}100%{transform:none}}
+@keyframes pa-nudge{0%,100%{transform:none}25%{transform:translateX(-3px)}75%{transform:translateX(3px)}}
+:is(.choice,.echoice).right:not(.still){animation:pa-right var(--dur-pop) var(--ease-out)}
+:is(.choice,.echoice).wrong:not(.still){animation:pa-nudge var(--dur-nudge) var(--ease-in-out)}
+@media (prefers-reduced-motion:reduce){:is(.choice,.echoice):is(.right,.wrong):not(.still){animation:none}}
+
+/* ===== ひらいた<details>：ひらくときだけ中がすっと出る（とじるのはすぐ。描きなおしで、もうひらいていたものは出なおさない） ===== */
+details::details-content{opacity:0}
+details[open]::details-content{opacity:1;transition:opacity var(--dur-enter) var(--ease-out)}
 
 /* ===== ボタンのアイコン（PA.icon。svg のふつうの決まり＝はばいっぱいのブロック、をここだけかえる） ===== */
 svg.ic{display:inline-block;flex:none;width:1.25em;height:1.25em;vertical-align:-.25em;overflow:visible}

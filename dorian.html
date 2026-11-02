@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- meta:start -->
 <meta name="description" content="短調のⅣの第3音（6ばんめ）を半音上げた、明るいⅣ。導音へなめらかに上がる">
 <meta property="og:type" content="website">
@@ -20,10 +20,12 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
-<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
+<meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- meta:end -->
 <title>ドリアのⅣ</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
@@ -48,12 +50,11 @@
 .role.on{background:#fde5e8;outline:2px solid #d1495b}
 .rcap{margin:6px 0 0;font-size:13px}
 .sw{width:100%;gap:10px;margin-top:10px;background:var(--card);border:2px solid var(--c);color:var(--c);font-size:clamp(14px,4vw,16px);min-height:52px}
-.sw .knob{width:44px;height:26px;border-radius:13px;background:#d8cfc4;position:relative;flex:none;transition:background .2s}
-.sw .knob::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .2s}
+.sw .knob{width:44px;height:26px;border-radius:13px;background:#d8cfc4;position:relative;flex:none}
+.sw .knob::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25)}
 .sw.on{background:#fff1dd}
 .sw.on .knob{background:var(--c)}
 .sw.on .knob::after{left:21px}
-@media (prefers-reduced-motion:reduce){.sw .knob,.sw .knob::after{transition:none}}
 .pbtns{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
 .pbtns .btn{padding-left:8px;padding-right:8px;font-size:15px;background:var(--card);border:2px solid var(--line)}
 .pbtns .btn.on{border-color:var(--c);color:var(--c);background:#fff1dd}

@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- meta:start -->
 <meta name="description" content="Ⅰ・Ⅳ・Ⅴ・Ⅴ7を、いろいろな問題で。やさしいじゅんのステップつき">
 <meta property="og:type" content="website">
@@ -20,10 +20,12 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
-<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
+<meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- meta:end -->
 <title>和音クイズ</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
@@ -76,7 +78,7 @@
 .mict{margin:6px 0 0;font-weight:700}
 .micbox .note{margin:6px 0 0}
 .micmeter{height:12px;border-radius:6px;background:var(--line);overflow:hidden}
-.micmeter i{display:block;height:100%;width:0;background:#22a06b;transition:width .08s linear}
+.micmeter i{display:block;height:100%;width:100%;background:#22a06b;transform:scaleX(0);transform-origin:left center;transition:transform 80ms linear} /* 音の大きさ：はばではなく transform でのばす */
 .micv{margin:8px 0 0}
 /* もんだいのしゅるい（たたんだリスト）と 📋 ステップ */
 .catrow{display:flex;flex-wrap:wrap;align-items:flex-start;gap:8px}
@@ -517,7 +519,7 @@ const liveState=s=>{const st=s.state();if(!st) return null;return st.done.length
 
 /* ===== 🎤 マイク（assets/mic.js）。phase：off・intro（はじめての説明）・wait（じゅんび中）・on（きいている）・error ===== */
 const MIC_OK=!!(PA.mic&&PA.mic.supported());
-const MIC={phase:'off',err:'',verdict:null,L:null,qid:-1,lstate:'idle',quietUntil:0,needReset:false};
+const MIC={phase:'off',err:'',verdict:null,L:null,qid:-1,lstate:'idle',quietUntil:0,needReset:false,lv:'0.00'}; // lv＝メーターの長さ（0〜1。描きなおしても0にもどさない）
 function stopMic(){
   if(PA.mic&&(MIC.phase==='on'||MIC.phase==='wait')) PA.mic.stop();
   MIC.phase='off'; MIC.err=''; MIC.L=null; MIC.verdict=null; MIC.lstate='idle';
@@ -754,13 +756,13 @@ function startMic(){ // タップの中でよぶ（iOS はタップの中でな�
   stopMic();
   PA.store.set('mic-intro',true);
   const qid=Q.qid;
-  Object.assign(MIC,{phase:'wait',err:'',verdict:null,qid,lstate:'idle',quietUntil:0,needReset:false});
+  Object.assign(MIC,{phase:'wait',err:'',verdict:null,qid,lstate:'idle',quietUntil:0,needReset:false,lv:'0.00'});
   MIC.L=new PA.mic.Listener({target:micTargets(),onVerdict:onMicVerdict,onState:s=>{MIC.lstate=s;const el=document.getElementById('micst');if(el) el.textContent=micStatus();}});
   PA.mic.start({
     onFrame:f=>{
       if(MIC.qid!==Q.qid||!MIC.L||(MIC.phase!=='on'&&MIC.phase!=='wait')) return;
-      const bar=document.getElementById('micbar');
-      if(bar) bar.style.width=Math.max(0,Math.min(100,(f.level+70)/60*100)).toFixed(0)+'%';
+      const lv=Math.max(0,Math.min(1,(f.level+70)/60)).toFixed(2); // かわったときだけ書く
+      if(lv!==MIC.lv){MIC.lv=lv;const bar=document.getElementById('micbar');if(bar) bar.style.transform=`scaleX(${lv})`;}
       // 画面のけんばんの音が鳴っているあいだはきかない（おわったら新しくひいた音だけ）
       if(Date.now()<MIC.quietUntil){MIC.needReset=true;return;}
       if(MIC.needReset){MIC.needReset=false;MIC.L.reset();}
@@ -800,7 +802,7 @@ function micHTML(key,t){
   const on=MIC.phase==='on'||MIC.phase==='wait';
   let h=`<div class="row microw"><button class="btn small mic" data-act="mic" aria-pressed="${on}">${PA.icon('mic')}ピアノでひいてこたえる</button></div>`;
   if(MIC.phase==='error') h+=`<p class="msg" role="alert" style="margin-top:8px">${PA.esc(MIC.err)}</p>`;
-  if(on) h+=`<div class="micbox"><div class="micmeter" aria-hidden="true"><i id="micbar"></i></div><p id="micst" class="mict" role="status">${micStatus()}</p>${micMissHTML(key,t)}
+  if(on) h+=`<div class="micbox"><div class="micmeter" aria-hidden="true"><i id="micbar" style="transform:scaleX(${MIC.lv})"></i></div><p id="micst" class="mict" role="status">${micStatus()}</p>${micMissHTML(key,t)}
     <div class="row"><button class="btn small" data-act="micoff">${PA.icon('piano')}けんばんでこたえる</button></div></div>`;
   return h;
 }
@@ -1153,7 +1155,7 @@ const clearActions=()=>{if(lastActions!==''){PA.paint(document.getElementById('a
 function stepResHTML(){
   const s=curStep(), st=sess&&sess.state(); if(!s||!st||st.sig!==stepSig(s)) return '';
   const self=sess.tally().self, ok=self>=STEP_PASS, nx=stepOf(s.ks,s.n+1), nm=catOf(s.cat).name;
-  return `<section class="card stepres${ok?' good':''}"><h2>${ok?`✓ ステップ${s.n}「${nm}」クリア！`:`📋 ステップ${s.n}「${nm}」`}</h2>
+  return `<section class="card stepres${ok?' good':''}"${ok?` data-fx="step-clear:${s.ks}:${s.n}"`:''}><h2>${ok?`✓ ステップ${s.n}「${nm}」クリア！`:`📋 ステップ${s.n}「${nm}」`}</h2>
     <p class="note">${ok?'よくできたね！つぎのステップにすすもう。':`5もん中${STEP_PASS}もんいじょう、じぶんで（ヒントなしで）できたら ✓ だよ（こんどは${self}もん）。もういちどやってみよう。`}</p>
     <div class="row">${ok&&nx?`<button class="btn primary" data-act="step-go" data-ks="${nx.ks}" data-v="${nx.n}">つぎのステップへ ›</button>`:''}<button class="btn" data-act="steps">📋 ステップのいちらん</button></div></section>`;
 }
@@ -1269,7 +1271,7 @@ function renderActions(done){
 }
 function showFeedback(){
   const el=document.getElementById('fb')||document.querySelector('#view .dpart.cur');
-  if(el&&el.scrollIntoView) el.scrollIntoView({block:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});
+  if(el&&el.scrollIntoView) el.scrollIntoView({block:'nearest'}); // まいかいのこたえなので、すぐに
 }
 // 「この調だけ」をやめる（その回のれんしゅうもおわり）
 function clearOnly(){
@@ -1403,7 +1405,7 @@ function renderChroma(){
       <div class="scroll" data-sk="kb">${PA.kbSVG(LO,HI,marks)}</div></section>`;
   }else if(ph==='done'&&CR.result){
     const R=CR.result, b=rec.best[R.mode];
-    h+=`<section class="card hero crhero good" style="--c:#15804f">
+    h+=`<section class="card hero crhero good" style="--c:#15804f" data-fx="cr-done">
       <h2><span aria-hidden="true">🎉</span>12の調、ぜんぶおわり！</h2>
       <p class="crtime">${chromaClock(R.ms)}</p>
       <p class="crres">${R.best?'<b><span aria-hidden="true">🏆</span>じぶんのベスト！</b>':`じぶんのベスト：${crBestText(b)}`}　まちがい${R.misses}回</p>

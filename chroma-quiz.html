@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- meta:start -->
 <meta name="description" content="Ⅱ7・ドッペルから順に、けんばんでおさえる／耳で聴きわける">
 <meta property="og:type" content="website">
@@ -20,10 +20,12 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
-<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
+<meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- meta:end -->
 <title>変化和音クイズ</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
@@ -97,7 +99,6 @@
 .echoice.wrong{background:#fde4e7;border-color:var(--ng);color:#a3273a}
 .echoice[disabled]{cursor:default}
 .echoice.wait[disabled]{opacity:.55}
-.fb.still{animation:none}
 .kbwrap{margin-top:12px}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:14px;color:var(--sub);margin-top:4px}
 .legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px}
@@ -1149,9 +1150,9 @@ function reveal(el,target,bottomOnly){
   if(!el||!target||!el.getBoundingClientRect) return;
   const r=el.getBoundingClientRect(), bar=document.getElementById('appbar'), ab=document.getElementById('actions');
   const top=bar?bar.offsetHeight:0, bottom=innerHeight-(ab?ab.offsetHeight:0);
-  if(r.bottom>bottom||(!bottomOnly&&r.top<top)) target.scrollIntoView({block:bottomOnly?'nearest':'start',behavior:PA.reduceMotion()?'auto':'smooth'});
+  if(r.bottom>bottom||(!bottomOnly&&r.top<top)) target.scrollIntoView({block:bottomOnly?'nearest':'start'}); // まいかいのこたえなので、すぐに
 }
-const showFb=()=>{const el=document.getElementById('fb'); if(el&&el.scrollIntoView) el.scrollIntoView({block:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});};
+const showFb=()=>{const el=document.getElementById('fb'); if(el&&el.scrollIntoView) el.scrollIntoView({block:'nearest'});};
 // 「つくりかたを見る」：そのページの保存に調・和音を書いてひらく
 // 変化和音のページ：保存の名前＝ページの名前。{minor, keyIdx}と、borrowed は id（PA.henka.BORROWED_IDS）、
 //   secondary は target（度数）・kind（'V7'。ddim は target 5・kind 'vii7'）。'<ページ>-auto'＝true でひらいたらつくりかたをはじめる

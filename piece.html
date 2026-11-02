@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- meta:start -->
 <meta name="description" content="本物の曲の和音を、記号で穴うめ。じぶんの楽譜もひらいて、いっしょに見よう">
 <meta property="og:type" content="website">
@@ -20,10 +20,12 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
-<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
+<meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- meta:end -->
 <title>名曲で楽曲分析</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
@@ -463,11 +465,13 @@ function qHTML(q){
     <div class="choices">${q.choices.map(c=>`<button type="button" class="choice${a?(c===q.answer?' right':c===a.a?' wrong':''):''}" data-act="aq" data-q="${q.id}" data-v="${c}"${a?' disabled':''}>${name(c)}</button>`).join('')}</div>
     ${a?`<div class="fb ${a.ok?'good':'bad'}" role="status" style="margin-top:10px">${a.ok?'<span aria-hidden="true">⭕ </span>せいかい！':'<span aria-hidden="true">✗ </span>ざんねん。こたえは<b>'+right+'</b>'}<br><span style="font-size:15px;font-weight:400">${ESC(q.note)}</span></div>`:''}</div>`;
 }
+let pcPainted=false; // 曲を1回描いたか（そのまえの「よみこんでいるよ…」はかぞえない）
 function sumHTML(){
   const t=tally(); if(!t.all) return '';
   const r=t.ok/t.n, stars=r>=0.8?3:r>=0.5?2:1, other=LEVELS.filter(l=>l!==S.lv);
   const msg=stars===3?'すばらしい！ほんものの曲でも、和音が読めたね':stars===2?'よくできたね。✗のところを、もういちど楽譜で見てみよう':'さいごまでできたね。まちがえたところの説明を読んで、もういちどやってみよう';
-  return `<section class="card sumc" id="sum" aria-labelledby="sum-h" tabindex="-1"><h2 id="sum-h"><span aria-hidden="true">🎉 </span>さいごまで答えたよ</h2>
+  // さいごまで答えたときだけ、すっと出す（ひらいたときにもうおわっていたら .still でそのまま）
+  return `<section class="card sumc${pcPainted?'':' still'}" id="sum" data-fx="piece-done" aria-labelledby="sum-h" tabindex="-1"><h2 id="sum-h"><span aria-hidden="true">🎉 </span>さいごまで答えたよ</h2>
     <p class="sess-big"><b>${t.ok}</b> / ${t.n}もん正解</p>
     <p class="stars" role="img" aria-label="ほし3こ中${stars}こ" style="font-size:26px;margin:4px 0">${'★'.repeat(stars)}${'☆'.repeat(3-stars)}</p>
     <p>${msg}</p>
@@ -507,7 +511,7 @@ function render(){
     <p class="note">${L?'楽譜の下の「？」をおして、その拍からの和音の記号を答えよう。小節の番号のボタンで、その小節を聴けるよ。':'「？」をおして、和音の記号を答えよう。小節の番号のボタンで、その小節の音を聴けるよ。'}</p>`
     +(S.muteHint&&!PA.settings.sound?`<p class="msg soundhint" role="status" style="margin-top:8px"><span aria-hidden="true">🔇 </span>音がオフだよ <button type="button" class="btn small" data-pa="sound-on">${PA.icon('listen')}音を出す</button></p>`:'')
     +kq.map(qHTML).join('')+body+`</section>${sumHTML()}${srcHTML()}${PA.rnHelp()}</div>`;
-  PA.paint(v,h,'piece:'+S.lv);
+  PA.paint(v,h,'piece:'+S.lv); pcPainted=true;
   renderActions();
 }
 let lastActions=null;
@@ -522,7 +526,7 @@ function renderActions(){
 // 見えるところへ（下のボタンバーにかくれないように）
 function reveal(sel,focus){
   const el=document.querySelector(sel); if(!el) return;
-  if(el.scrollIntoView) el.scrollIntoView({block:'nearest',behavior:PA.reduceMotion()?'auto':'smooth'});
+  if(el.scrollIntoView) el.scrollIntoView({block:'nearest'}); // まいかいのこたえなので、すぐに
   if(focus){const f=typeof focus==='string'?el.querySelector(focus):el;if(f&&f.focus) f.focus({preventScroll:true});}
 }
 

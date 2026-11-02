@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- meta:start -->
 <meta name="description" content="10しゅるいの和音を音で当てる。8レベルとチャレンジ">
 <meta property="og:type" content="website">
@@ -20,10 +20,12 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
-<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
+<meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- meta:end -->
 <title>和音の聴きわけ</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
@@ -69,16 +71,15 @@
 .chtools{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
 .chtools .btn{flex:1 1 140px}
 /* 中身がみじかくても（ランキング・けっか）下のボタンバーが画面のいちばん下（親指のとどくところ）にくるように */
-body{display:flex;flex-direction:column;min-height:calc(100vh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));
-  min-height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+body{display:flex;flex-direction:column;min-height:calc(100dvh - env(safe-area-inset-bottom,0px))} /* 上のすきま（ノッチ）は上のバーの中 */
 #view{flex:1 0 auto;width:100%}
 /* 📝・🏆・📊 のきりかえ（せまい画面でも3つならぶ） */
 .seg.modeseg button{padding:6px 4px;font-size:14.5px;line-height:1.25}
 /* 🏆 チャレンジ：ライフ・ルール・けっか・なまえ（もとの「和音ききわけ」とおなじ見た目） */
 .hearts{display:inline-block;font-size:18px;letter-spacing:1px;white-space:nowrap;line-height:1;vertical-align:middle}
 .hearts .lost{opacity:.35;filter:grayscale(1)}
-.hearts .gone{display:inline-block;animation:heartout .7s ease}
-@keyframes heartout{0%{transform:scale(1.4)}100%{transform:scale(1)}}
+.hearts .gone{display:inline-block;animation:heartout 300ms var(--ease-out)} /* へったハート：こたえたときだけ（描きなおしではくりかえさない） */
+@keyframes heartout{from{transform:scale(1.3)}}
 .offtag{display:inline-block;margin-top:6px;padding:2px 10px;border-radius:999px;background:var(--soft);color:var(--sub);font-size:13px;font-weight:700}
 .rules{margin:8px 0 0;padding:0;list-style:none;font-size:16px}
 .rules li{display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--line)}
@@ -170,19 +171,19 @@ body{display:flex;flex-direction:column;min-height:calc(100vh - env(safe-area-in
 .echoice[disabled]{cursor:default}
 .echoice.wait[disabled]{opacity:.55}
 .fb{margin-top:12px;scroll-margin-top:72px}
-.fb.still{animation:none}
 .fb .sm{font-size:15px}
 .chmsg{margin-top:10px;border-radius:14px;padding:10px 14px;font-size:16px;font-weight:700;background:var(--hint);border:2px dashed var(--hintline)}
-.celebrate{margin-top:10px;border-radius:16px;padding:14px;text-align:center;background:linear-gradient(135deg,#fff3c4,#ffe0ef);font-size:19px;font-weight:800;line-height:1.45;animation:pop .5s ease}
+.celebrate{margin-top:10px;border-radius:16px;padding:14px;text-align:center;background:linear-gradient(135deg,#fff3c4,#ffe0ef);font-size:19px;font-weight:800;line-height:1.45}
 .celebrate .fx{display:block;font-size:30px;letter-spacing:4px}
-.celebrate.still{animation:none}
+.celebrate:not(.still){animation:pa-celebrate var(--dur-celebrate) var(--ease-out)}
+[data-fx]:not(.still) .newbest{animation:pa-celebrate var(--dur-celebrate) var(--ease-out) 260ms both} /* けっかのカードがでてから、すこしあとで */
 .resrow{margin-top:10px}
 .resrow .btn{width:100%}
 .kbwrap{margin-top:12px}
 .legend{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:14px;color:var(--sub);margin-top:4px}
 .legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:4px}
 @media (max-width:420px){.echoice{min-height:92px}}
-@media (prefers-reduced-motion:reduce){.celebrate,.hearts .gone{animation:none}}
+@media (prefers-reduced-motion:reduce){.celebrate:not(.still),.hearts .gone,[data-fx]:not(.still) .newbest{animation:none}}
 @media (min-width:700px){
   .seg.lvseg{grid-template-columns:repeat(4,1fr)}
   .echoices.n2{grid-template-columns:repeat(2,1fr)}
@@ -656,7 +657,7 @@ function finishRun(early,record){
   initName();
 }
 function chResult(early){
-  PA.stopSound(); finishRun(early,true); save(); render(); scrollTop();
+  PA.stopSound(); finishRun(early,true); save(); render(); PA.scrollTop();
 }
 
 /* ----- なまえ（ランキングにのせるニックネーム。きまりは EG.checkName＝サーバーとおなじ） ----- */
@@ -686,7 +687,7 @@ function chSubmit(){
   if(!nm.ok){ch.sendError=nm.error;render();showError();return;}
   if(Date.now()-ch.startedAt>CH.runTtlMs){
     ch.closed={kind:'gone',msg:'始めてから2時間たったので、ランキングにはのせられないよ。またチャレンジしてね'};
-    save(); render(); scrollTop(); return;
+    save(); render(); PA.scrollTop(); return;
   }
   ch.sending=true; ch.sendError=null; render();
   const run=ch.run, runId=ch.runId;
@@ -708,7 +709,7 @@ function chSubmit(){
     .then(()=>{
       if(replaced()) return;
       ch.sending=false; save(); render();
-      if(ch.sendError) showError(); else scrollTop();
+      if(ch.sendError) showError(); else PA.scrollTop();
     });
 }
 // おくれなかったときのメッセージを、下のボタンバーにかくれないところまで
@@ -926,7 +927,7 @@ function nameCardHTML(){
     <div class="namegrid" role="group" aria-label="なまえのこうほ">${n.cands.map((c,i)=>`<button class="namechip ${n.sel===i?'on':''}" data-act="npick" data-v="${i}" aria-pressed="${n.sel===i}">${esc(c)}</button>`).join('')}</div>
     <div class="nametools"><button class="btn small" data-act="nroll">${PA.icon('dice')}ほかのなまえ</button></div>
     <div class="custom"><label for="nameInput">じぶんで入れる（${EG.NAME_MAX}文字まで）</label>
-      <input id="nameInput" class="${n.sel==='custom'?'on':''}" type="text" inputmode="text" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="send" maxlength="40" value="${esc(n.custom)}" placeholder="れい：ピアノすき">
+      <input id="nameInput" class="${n.sel==='custom'?'on':''}" type="text" inputmode="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="send" maxlength="40" value="${esc(n.custom)}" placeholder="れい：ピアノすき">
       <p class="nerr${m.soft?' soft':''}" id="nameErr" role="alert">${esc(m.text)}</p>
       <p class="note" style="margin-top:0">ひらがな・カタカナ・漢字・英数字・「ー」「・」が使えるよ。</p></div>`;
   if(ch.sendError) h+=`<div class="errbox" role="alert">😢 ${esc(ch.sendError)}</div>`;
@@ -935,7 +936,7 @@ function nameCardHTML(){
 }
 function chResultHTML(){
   const r=ch.run.result();
-  let h=`<section class="card hero"><div class="qhead"><h2>🏁 けっか</h2></div>
+  let h=`<section class="card hero" data-fx="ch-result"><div class="qhead"><h2>🏁 けっか</h2></div>
     <div class="bigres"><div class="resbox"><small>とどいたレベル</small>${r.mastered?'<b>8</b><span class="master">🏅 マスター</span>':`<b>${r.level}</b>`}</div>
       <div class="resbox"><small>正解</small><b>${r.correct}</b><small>${r.total}もん中</small></div></div>`;
   if(ch.newBest) h+='<p class="newbest">🎉 じこベストこうしん！</p>';
@@ -1001,7 +1002,7 @@ function heroHTML(){
   let score;
   if(inCh){
     const st=ch.run.state, e=ch.event, streak=state.answer&&(e==='up'||e==='master')?CLEAR:st.streak;
-    score=`<div class="score"><b>🏆 レベル${lv}</b> ${heartsHTML(st.lives,!!state.answer&&state.answer!==q.type)}`
+    score=`<div class="score"><b>🏆 レベル${lv}</b> ${heartsHTML(st.lives,state.fresh&&!!state.answer&&state.answer!==q.type)}`
       +`<span role="img" aria-label="${CLEAR}もん中${streak}もんれんぞく正解">${dots(CLEAR,streak,'pdots')}</span></div>`;
     // ひらきなおしたピアノのチャレンジで、録音を読んでいるあいだ（ボタンはうけつけない）
     if(chGated()) score+=`<div class="msg" role="status" style="margin-top:8px">⏳ ピアノの音を用意しているよ。少しまってね</div>`;
@@ -1069,9 +1070,8 @@ function reveal(el,target,bottomOnly){
   if(!el||!target||!el.getBoundingClientRect) return;
   const r=el.getBoundingClientRect(), bar=document.getElementById('appbar'), ab=document.getElementById('actions');
   const top=bar?bar.offsetHeight:0, bottom=innerHeight-(ab?ab.offsetHeight:0);
-  if(r.bottom>bottom||(!bottomOnly&&r.top<top)) target.scrollIntoView({block:'start',behavior:PA.reduceMotion()?'auto':'smooth'});
+  if(r.bottom>bottom||(!bottomOnly&&r.top<top)) target.scrollIntoView({block:'start'}); // まいかいのこたえなので、すぐに
 }
-function scrollTop(){try{window.scrollTo(0,0);}catch(e){}}
 function ask(){
   if(state.mode==='ch'){chAsk(true);return;}
   state.askedAt=Date.now(); newEar(); render(); playEar(!!LEVELS[state.q.lv].arp);
@@ -1090,7 +1090,7 @@ document.addEventListener('click',e=>{
   }
   else if(a==='emode'){
     if((v!=='free'&&v!=='ch'&&(v!=='rank'||NO_RANK))||v===state.mode) return;
-    PA.stopSound(); setMode(v); render(); if(!el.closest('.seg')) scrollTop();
+    PA.stopSound(); setMode(v); render(); if(!el.closest('.seg')) PA.scrollTop();
   }
   else if(a==='elevel'){
     const lv=+v; if(!isInt(lv,1,MAXLV)||lv===state.level||state.mode!=='free') return;
@@ -1127,7 +1127,7 @@ document.addEventListener('click',e=>{
     ch.sendError=null; render();
   }
   else if(a==='nsend') chSubmit();
-  else if(a==='nskip'){if(unsent()){chClear();save();render();scrollTop();}}
+  else if(a==='nskip'){if(unsent()){chClear();save();render();PA.scrollTop();}}
   // 📊 ランキング
   else if(a==='rper'){if((v==='week'||v==='all')&&v!==rk.period){rk.period=v;save();loadRanking();render();}}
   else if(a==='rreload'){if(state.mode==='rank'&&!rk.loading){loadRanking();render();}}

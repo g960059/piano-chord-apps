@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <!-- meta:start -->
 <meta name="description" content="長調で、同じ主音の短調からかりる○Ⅳ・○Ⅵなど">
 <meta property="og:type" content="website">
@@ -20,10 +20,12 @@
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="icon" href="assets/icons/favicon-32.png" sizes="32x32">
 <link rel="apple-touch-icon" href="assets/icons/icon-180.png">
-<!-- meta:end -->
 <meta name="theme-color" content="#fdf8f0">
+<meta name="color-scheme" content="light">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- meta:end -->
 <title>準固有和音（借用和音）</title>
 <link rel="stylesheet" href="assets/app.css">
 <style>
@@ -56,8 +58,8 @@
 .role.ghost .rv{font-size:17px;color:var(--sub)}
 .roles+.note{margin-top:8px}
 .sw{width:100%;gap:10px;margin-top:10px;background:var(--card);border:2px solid var(--night);color:var(--night);font-size:clamp(14px,4vw,16px);min-height:52px}
-.sw .knob{width:44px;height:26px;border-radius:13px;background:#d8cfc4;position:relative;flex:none;transition:background .2s}
-.sw .knob::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:left .2s}
+.sw .knob{width:44px;height:26px;border-radius:13px;background:#d8cfc4;position:relative;flex:none}
+.sw .knob::after{content:"";position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25)}
 .sw.on{background:var(--nightl)}
 .sw.on .knob{background:var(--night)}
 .sw.on .knob::after{left:21px}
@@ -90,7 +92,6 @@
 .links .btn small{display:block;font-weight:400;color:var(--sub);font-size:12.5px}
 .more ul{margin:0;padding-left:1.3em}
 .more li{margin:6px 0}
-@media (prefers-reduced-motion:reduce){.sw .knob,.sw .knob::after{transition:none}}
 /* 📖 ことばメモ（本や楽譜で見かける名前。ふだんはとじておく） */
 .terms dl{margin:0}
 .terms dt{font-weight:800;margin:12px 0 2px}
