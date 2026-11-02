@@ -969,41 +969,42 @@ PA.closeSheet=()=>{if(isOpen(sheetEl)) sheetEl.close();};
 // つぎの画面が出たあと（うごきが画面にのってから）。requestAnimationFrame がないところ（テスト）はすぐあと
 const afterPaint=f=>typeof requestAnimationFrame==='function'?requestAnimationFrame(()=>requestAnimationFrame(f)):setTimeout(f,0);
 // とじるとき、すっと下がってから close（app.css の .closing は transition。transitionend をまつ）。
+// 出るのも transition なので、上がっているとちゅうにとじても、いまの場所から下がる。
 // 動きをへらす設定は、app.css でうすくなって消える（ここはおなじ）。Esc はブラウザがすぐとじる（キーボードはうごかさない）
 function animateClose(el){
   const real=el.close.bind(el);
-  let timer=0, rev=[];
+  let timer=0;
   const clean=()=>{clearTimeout(timer);timer=0;el.paClosing=false;el.removeEventListener('transitionend',onEnd);el.classList.remove('closing');};
   const unDrag=()=>{if(el.style){el.style.transform='';el.style.transition='';}};
-  const done=()=>{rev=[];clean();if(isOpen(el)) real();unDrag();};
+  const done=()=>{clean();if(isOpen(el)) real();unDrag();};
   const onEnd=e=>{if(e.target===el&&!e.pseudoElement&&(e.propertyName==='transform'||e.propertyName==='opacity')) done();};
-  el.paCancelClose=()=>{if(!timer) return;rev.forEach(a=>{try{a.reverse();}catch(err){}});rev=[];clean();};
+  el.paCancelClose=()=>{if(timer) clean();}; // .closing をとると、いまの場所からもとへもどる
   el.close=function(){
     if(!isOpen(el)) return;
     if(el.style) el.style.transition='';
-    // まだ上がっているとちゅう（出てすぐ）にとじる：その動きを逆まわしにする（transition は keyframe のあいだはきかないので）
-    rev=el.getAnimations?el.getAnimations({subtree:true}).filter(a=>a.playState==='running'&&/^pa-(sheet-up|fade-in)$/.test(a.animationName||'')):[];
-    rev.forEach(a=>{try{a.reverse();}catch(err){}});
     el.paClosing=true; el.classList.add('closing'); el.addEventListener('transitionend',onEnd);
-    timer=setTimeout(done,rev.length?320:260); // transitionend がこなくても、かならずとじる
+    timer=setTimeout(done,340); // transitionend がこなくても、かならずとじる（いちばん長い動きより、すこしあと）
   };
   // Esc などでブラウザがじかにとじた：とじるとちゅうの印・ひっぱった位置をのこさない
-  el.addEventListener('close',()=>{if(timer){rev=[];clean();}unDrag();});
+  el.addEventListener('close',()=>{if(timer) clean();unDrag();});
   // とじているとちゅうのタップ・えらびなおしはうけつけない（2回えらぶ・またひらくのをふせぐ）
   el.addEventListener('click',e=>{if(el.paClosing){e.preventDefault();e.stopImmediatePropagation();}},true);
   el.addEventListener('change',e=>{if(el.paClosing) e.stopImmediatePropagation();},true);
 }
 // つまみ・見出しを下へひっぱるととじる（iPhone のシートのように）。上へはすこしだけのびる。
 // はやくはらう（0.11px/ms より速い）か、高さの3わりより下げたらとじる。そうでなければ、もとの場所へもどる。8px より小さいのはタップ
+// つかんだときは、いま見えている場所から（上がっているとちゅう・もどっているとちゅうでも、ゆびの下からずれない）
+const nowY=el=>{try{return typeof getComputedStyle==='function'&&typeof DOMMatrixReadOnly==='function'?new DOMMatrixReadOnly(getComputedStyle(el).transform).m42||0:0;}catch(err){return 0;}};
 function dragClose(el){
   let d=null;
   el.addEventListener('pointerdown',e=>{
     if(!isOpen(el)||e.button>0||!e.target.closest) return;
     const z=e.target.closest('.sheet-grab,.sheet-head');
     if(!z||e.target.closest('button,select,input,a,[role="button"]')) return;
-    d={id:e.pointerId,y0:e.clientY,t0:e.timeStamp,off:0,h:el.offsetHeight||1};
+    const cur=nowY(el);
+    el.style.transition='none'; el.style.transform=cur?`translateY(${cur}px)`:'';
+    d={id:e.pointerId,y0:e.clientY-cur,t0:e.timeStamp,off:cur,s:cur,h:el.offsetHeight||1};
     try{z.setPointerCapture(e.pointerId);}catch(err){} // つかんだところ（el にすると、はなしたときの click がうしろの幕のタップになる）
-    el.style.transition='none';
   });
   el.addEventListener('pointermove',e=>{
     if(!d||e.pointerId!==d.id) return;
@@ -1014,9 +1015,9 @@ function dragClose(el){
   const end=e=>{
     if(!d||e.pointerId!==d.id) return;
     const g=d; d=null;
-    const v=g.off/Math.max(1,e.timeStamp-g.t0);
+    const mv=g.off-g.s, v=mv/Math.max(1,e.timeStamp-g.t0); // つかんでからうごいた分（タップ・はやさはこれで見る）
     el.style.transition='';
-    if(e.type==='pointerup'&&g.off>=8&&(v>0.11||g.off>0.3*g.h)){
+    if(e.type==='pointerup'&&mv>=8&&(v>0.11||g.off>0.3*g.h)){
       if(!PA.reduceMotion()) el.style.transform=''; // .closing の transition が、いまの場所から下へ（へらす設定は、その場でうすくなる）
       el.close(); return;
     }
@@ -1562,14 +1563,15 @@ document.addEventListener('keydown',e=>{
 document.addEventListener('click',e=>{if(e.detail===0){const k=e.target.closest&&e.target.closest('.kb [data-m]');if(k) hitKey(k);}});
 
 /* ===== おしたときの手ごたえ（app.css の .is-pressed・.is-nav） =====
- * おせるもの（PRESS_SEL）はぜんぶ。文の中のリンク・鍵盤（.kb。鍵は音といっしょに .down）・data-nopress はのぞく（PRESS_OFF。app.css もおなじ）。
+ * おせるもの（PRESS_SEL）はぜんぶ。文の中のリンク（class のない a。行の a.arow はおせる）・鍵盤（.kb。鍵は音といっしょに .down）・
+ *   svg の中（楽譜のますなど。svg の中は左上をまん中にして小さくなるので、さわったところがずれる）・data-nopress はのぞく（PRESS_OFF。app.css もおなじ）。
  * タッチ：指がふれたらすぐ .is-pressed（横いっぱいの行・横スクロールの中は 0.06びょうまってから＝スクロールでは光らない）。
  *   はなす・8px うごく・スクロールになる（pointercancel）でとる。みじかいタップでも 0.1びょうは見せる。マウス・キーボードは :active
  * おなじサイトのページへのリンクは、つぎのページが出るまで .is-nav（ページがかわるのを待つあいだに、もういちどおさない）
  * えらぶボタン（.seg・調のシート）と ⚙️ のえらぶらんは、アプリでは軽くふるえる（PA.haptic('selection')） */
 const PRESS_SEL='button,a[href],summary,[role="button"],label.sw';
-const PRESS_OFF='#view :is(p,li,.note,.msg) a:not(.btn),.kb *,[data-nopress]';
-const PRESS_LATE='.arow,summary,.weakrow a'; // 横いっぱいの行
+const PRESS_OFF='#view :is(p,li,.note,.msg) a:not([class]),.kb *,svg *,[data-nopress]';
+const PRESS_LATE='.arow,summary'; // 横いっぱいの行
 let press=null; // {el, t0, x, y, timer}
 const pressOff=(late)=>{
   if(!press) return; const p=press; press=null; clearTimeout(p.timer);

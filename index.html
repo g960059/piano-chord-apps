@@ -100,9 +100,11 @@ details.stage.here>summary{padding-top:22px}
 .stage.here .isle::after,.goal.here .isle::after{content:"";position:absolute;inset:-10px;border-radius:50%;border:3px dashed var(--c)}
 .isle .frog{position:absolute;top:-24px;right:-14px;font-size:30px;line-height:1}
 .isle .ok{position:absolute;right:-6px;bottom:-6px;width:24px;height:24px;border-radius:50%;background:var(--ok);color:#fff;font-size:14px;font-weight:800;display:grid;place-items:center;border:2px solid #fff}
-/* 🐸がつぎの島へうつったときだけ、1回ぴょんとおりてくる（ずっとはねつづけない） */
+/* 🐸がつぎの島へうつったときだけ、1回ぴょんとおりてくる（ずっとはねつづけない）。
+   画面に見えるまでは .wait でかくしておき、見えたら .arrive（render）。おちるところはだんだん速く（ease-in）、そのあとはやわらかく */
+.isle .frog.wait{opacity:0}
 .isle .frog.arrive{animation:pa-frog-land 600ms var(--ease-out) 150ms both}
-@keyframes pa-frog-land{0%{opacity:0;transform:translateY(-24px) scale(.9)}55%{opacity:1;transform:translateY(2px) scale(1.06,.94)}80%{transform:translateY(-3px)}100%{transform:none}}
+@keyframes pa-frog-land{0%{opacity:0;transform:translateY(-24px) scale(.9);animation-timing-function:ease-in}55%{opacity:1;transform:translateY(2px) scale(1.06,.94);animation-timing-function:var(--ease-out)}80%{transform:translateY(-3px)}100%{transform:none}}
 @keyframes pa-frog-fade{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){.isle .frog.arrive{animation-name:pa-frog-fade}}
 .sign{flex:1;min-width:0;position:relative;background:#fff;border:2px solid var(--l);border-radius:16px;padding:8px 42px 8px 12px;box-shadow:0 2px 0 var(--line)}
@@ -156,9 +158,10 @@ details.stage[open] .sign{border:3px solid var(--c);box-shadow:none}
 .goal .isle{--c:#c97a00;--l:#fff1cc}
 .goal .sign{padding-right:12px;border-color:#fff1cc}
 .goal .sign::after{content:none}
-/* 島と島のあいだ：S字の点線（左→右。右→左は鏡にうつす） */
+/* 島と島のあいだ：S字の点線（左→右。右→左は鏡にうつす）。
+   ::before・::after は * の border-box がきかないので、ここで書く（書かないと、まん中の横線が上下に8pxずれる） */
 .link{position:relative;height:30px;margin:0 28px}
-.link::before,.link::after{content:"";position:absolute;width:calc(50% + 2px);height:calc(50% + 2px);border:0 dashed #d6c6b0}
+.link::before,.link::after{content:"";position:absolute;box-sizing:border-box;width:50%;height:calc(50% + 2px);border:0 dashed #d6c6b0}
 .link::before{left:0;top:0;border-left-width:4px;border-bottom-width:4px;border-bottom-left-radius:16px}
 .link::after{right:0;bottom:0;border-top-width:4px;border-right-width:4px;border-top-right-radius:16px}
 .link.r{transform:scaleX(-1)}
@@ -208,7 +211,7 @@ details.xmap>summary::after{top:50%;right:12px;margin-top:-14px}
  *   島の名前・色（LOOK）だけこのページのもの。しらない単元は PA.UNITS の名前と PALETTE の色。app.title・task.title はただの文字、app.d は HTML
  *   ひらいたアプリ：PA.store 'visited'（PA.mountBar がきろく）。まえからの人は 'last'・'keystats-…' なども見る
  *   島・レベルアップの地図のひらく／とじる：PA.store 'home-units'＝{unit の id: true/false}（じぶんでおしたときだけほぞん）
- *   🐸のいた島：PA.store 'home-frog'＝島の id か 'goal'（かわったときだけ🐸が1回おりてくる .arrive）
+ *   🐸のいた島：PA.store 'home-frog'＝島の id か 'goal'（かわったときだけ🐸が1回おりてくる .arrive。画面に見えてから。見えるまではおぼえない）
  *   耳のひろばのきろく（よむだけ）：'ear'（right・total・ch.best）、'progression'（rec[ステップ].best）、'session-ear'（とちゅうの5もん）、
  *     'ear-days'（きょうの5もんをさいごまでやった日。PA.earDays：今週の丸・つづけた日数。きょうできたらカードに灯り）
  *
@@ -523,7 +526,7 @@ function mapHTML(vis,stars,here,arrive){
     +`<p class="legend"><span><b aria-hidden="true">★</b>見た</span><span><b aria-hidden="true">★★</b>5もんやった</span><span><b aria-hidden="true">★★★</b>自分でできた</span></p>`
     +`<div class="trail"><div class="start"><span aria-hidden="true">🚩</span>スタート</div>`;
   // ひらく島は1つだけ（じぶんでひらいた島。なければ🐸の島）
-  const frog=`<span class="frog${arrive?' arrive':''}">🐸</span>`; // うつってきたばかりなら .arrive（🐸のspanだけに）
+  const frog=`<span class="frog${arrive?' wait':''}">🐸</span>`; // うつってきたばかりなら .wait（🐸のspanだけに。見えたら render が .arrive にする）
   const opened=BASIC.filter(s=>typeof sv[s.id]==='boolean'?sv[s.id]:s.id===here).map(s=>s.id);
   const openId=opened.length>1&&opened.includes(here)?here:opened[0];
   BASIC.forEach((s,i)=>{
@@ -587,15 +590,27 @@ function footHTML(){
     <p><a href="support.html">🛟 こまったとき・おといあわせ</a>　<a href="privacy.html">🔒 プライバシーポリシー</a></p></details>`;
 }
 
+// 🐸がおりてきた島（このページで1回だけ。描きなおし・きろくがのこせないときも、くりかえさない）と、見えるのをまっている IntersectionObserver
+let frogLanded=null, frogIO=null;
 function render(){
   const vis=visitedSet(), times=lastTimes(), stars={};
   BASIC.concat(PIECES,EXTRA).forEach(s=>{stars[s.id]=islandStars(s,vis);});
   const here=hereId(stars,times);
   // 🐸のいる島がこのまえホームを見たときからかわったら、1回だけおりてくる（はじめてのときはうごかない）
-  const fk=here||'goal', last=PA.store.get('home-frog',null), arrive=typeof last==='string'&&last!==fk;
+  const fk=here||'goal', last=PA.store.get('home-frog',null), arrive=typeof last==='string'&&last!==fk&&frogLanded!==fk;
   const h=`<div class="stack home">${topHTML(vis,here)}${plazaHTML()}${mapHTML(vis,stars,here,arrive)}${piecesHTML(vis,stars,times)}${extraHTML(vis,stars,times)}${footHTML()}</div>`;
   PA.paint(document.getElementById('view'),h,'home');
-  if(last!==fk) PA.store.set('home-frog',fk);
+  if(frogIO){frogIO.disconnect();frogIO=null;} // まえの🐸（描きなおしでなくなった）はもう見ない
+  if(!arrive){if(last!==fk) PA.store.set('home-frog',fk);return;}
+  // 地図は下のほうなので、🐸が画面に見えてからおりてくる。おりはじめたらおぼえる（見ないうちは、つぎもおりてくる）
+  const f=document.querySelector('#view .isle .frog');
+  const land=()=>{frogLanded=fk;if(f&&f.classList){f.classList.remove('wait');f.classList.add('arrive');}PA.store.set('home-frog',fk);};
+  if(!f||typeof IntersectionObserver!=='function'){land();return;}
+  const io=frogIO=new IntersectionObserver(es=>{
+    if(!es.some(en=>en.isIntersecting&&en.intersectionRatio>=.5)) return; // さいしょのしらせは、すこししか見えていなくてもくるので
+    io.disconnect(); if(frogIO===io) frogIO=null; land();
+  },{threshold:.6});
+  io.observe(f);
 }
 // じぶんでひらいた／とじた島・地図だけおぼえる
 const saveOpen=ds=>{const s=PA.store.get('home-units',{}), sv=isObj(s)?s:{};ds.forEach(d=>{sv[d.dataset.u]=d.open;});PA.store.set('home-units',sv);};

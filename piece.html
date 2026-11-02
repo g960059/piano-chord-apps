@@ -465,7 +465,7 @@ function qHTML(q){
     <div class="choices">${q.choices.map(c=>`<button type="button" class="choice${a?(c===q.answer?' right':c===a.a?' wrong':''):''}" data-act="aq" data-q="${q.id}" data-v="${c}"${a?' disabled':''}>${name(c)}</button>`).join('')}</div>
     ${a?`<div class="fb ${a.ok?'good':'bad'}" role="status" style="margin-top:10px">${a.ok?'<span aria-hidden="true">⭕ </span>せいかい！':'<span aria-hidden="true">✗ </span>ざんねん。こたえは<b>'+right+'</b>'}<br><span style="font-size:15px;font-weight:400">${ESC(q.note)}</span></div>`:''}</div>`;
 }
-let pcPainted=false; // 曲を1回描いたか（そのまえの「よみこんでいるよ…」はかぞえない）
+let pcPainted=false; // 曲を1回描いたか（そのまえの「よみこんでいるよ…」はかぞえない。答えかたをかえたら、はじめから）
 function sumHTML(){
   const t=tally(); if(!t.all) return '';
   const r=t.ok/t.n, stars=r>=0.8?3:r>=0.5?2:1, other=LEVELS.filter(l=>l!==S.lv);
@@ -548,7 +548,7 @@ document.addEventListener('click',e=>{
   if(a==='reload'){location.reload();return;}
   if(!S.pc) return;
   switch(a){
-    case 'plv': if(!LEVELS.includes(v)||v===S.lv) return; stop(); S.lv=v; S.sel=null; resetB(); save(); render(); return;
+    case 'plv': if(!LEVELS.includes(v)||v===S.lv) return; stop(); S.lv=v; S.sel=null; resetB(); save(); pcPainted=false; render(); return; // 答えかたをかえた：まえにおわっていたカードはうごかさない
     case 'ptempo': if(v!=='slow'&&v!=='normal') return; S.tempo=v; save(); render(); return;
     case 'preset': stop(); S.ans[S.lv]={}; S.sel=null; resetB(); save(); render(); PA.scrollTop(); return;
     case 'pick': if(S.sel===v){S.sel=null;render();return;} pick(v); return;

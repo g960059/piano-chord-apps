@@ -177,15 +177,20 @@ test('app.css：おしたときの見た目（scale・translate。:active と .i
   const sel=core.match(/const PRESS_SEL='([^']+)'/)[1];
   assert.equal(sel,'button,a[href],summary,[role="button"],label.sw');
   const off=core.match(/const PRESS_OFF='([^']+)'/)[1];
-  assert.equal(off,'#view :is(p,li,.note,.msg) a:not(.btn),.kb *,[data-nopress]');
+  assert.equal(off,'#view :is(p,li,.note,.msg) a:not([class]),.kb *,svg *,[data-nopress]'); // 文の中のリンク＝class のない a（行の a.arow はおせる）。svg の中はのぞく
+  assert.equal(core.match(/const PRESS_LATE='([^']+)'/)[1],'.arow,summary'); // にがての丸いボタン（.weakrow a）はふつうのおしかた
   const press=noCm(css.slice(css.lastIndexOf('/*',css.indexOf('おしたときの手ごたえ')),css.lastIndexOf('/*',css.indexOf('画面の鍵盤'))));
-  assert.ok(press.includes(`:where(${sel}){transition:scale var(--dur-press-out) var(--ease-out),translate var(--dur-press-out) var(--ease-out),filter var(--dur-press-out) var(--ease-out)}`));
-  assert.ok(press.includes(`:where(${sel}).is-pressed:not([disabled],[aria-disabled="true"]){scale:.97;filter:brightness(.95);transition-duration:var(--dur-press-in)}`));
+  // svg の中（楽譜のますなど）は左上をまん中にして小さくなるので、うごかさない
+  assert.ok(press.includes(`:where(${sel}):not(:where(svg *)){transition:scale var(--dur-press-out) var(--ease-out),translate var(--dur-press-out) var(--ease-out),filter var(--dur-press-out) var(--ease-out)}`));
+  assert.ok(press.includes(`:where(${sel}):not(:where(svg *)).is-pressed:not([disabled],[aria-disabled="true"]){scale:.97;filter:brightness(.95);transition-duration:var(--dur-press-in)}`));
   assert.ok(press.includes(`:where(${sel}):not(:where(${off})):active`),'マウスの :active も、文の中のリンク・鍵盤はのぞく');
   assert.match(press,/\.scard\)\.is-pressed:not\(\[disabled\],\[aria-disabled="true"\]\)\{translate:0 1px\}/); // タイルはへこむ
   assert.match(press,/\.seg button\.is-pressed:not\([^)]*\)\{scale:none;filter:brightness\(\.92\)\}/);
   assert.ok(!/transform|box-shadow|opacity[^:]*,|transition:all/.test(press.replace(/\.is-nav\{[^}]*\}/,'')),'おすときは transform・影・うすさをうごかさない');
-  assert.match(press,/\.is-nav\{opacity:\.8;filter:brightness\(\.95\);transition:none\}/);
+  // ページへうつるリンク：うすくなるのはすぐ。大きさはやわらかくもどる（はなしたときの動きをとめない）
+  assert.ok(press.includes('.is-nav{opacity:.8;filter:brightness(.95);transition:scale var(--dur-press-out) var(--ease-out),translate var(--dur-press-out) var(--ease-out)}'));
+  // a.go（ホームの黄色いボタン）は明るくしない（まるいボタンとおなじく暗く）。にがての丸いボタンは行のあつかいにしない
+  assert.ok(!/a\.go[^{]*\{filter:brightness\(1\.18\)\}/.test(press)); assert.ok(!/weakrow/.test(press));
   // :active・:hover はマウスのある端末だけ
   assert.ok(!/@media \(hover:hover\)(?! and \(pointer:fine\))/.test(css),'(hover:hover) and (pointer:fine)');
   assert.ok(!/:active/.test(press.replace(/@media \(hover:hover\) and \(pointer:fine\)\{[\s\S]*?\n\}/,'').replace(/@media \(prefers-reduced-motion:reduce\)\{.*\}\}/,'')),':active はマウスの media の中だけ');
@@ -193,12 +198,17 @@ test('app.css：おしたときの見た目（scale・translate。:active と .i
   assert.match(rm,/:is\(:active,\.is-pressed\)\{scale:none!important;translate:none!important\}/);
   // 鍵盤は音といっしょにすぐ（色のうごきなし）
   assert.match(css,/\.kb \.key\.w\.down/); assert.ok(!/\.kb \.key\{transition/.test(css));
-  // シート：出るのは keyframe、とじるのは transform の transition（とちゅうでまたひらくと、いまの場所からもどる）
-  assert.match(css,/dialog\.sheet\{transition:transform var\(--dur-sheet-out\) var\(--ease-drawer\)\}/);
-  assert.match(css,/dialog\.sheet\[open\]\{animation:pa-sheet-up var\(--dur-sheet-in\) var\(--ease-drawer\)\}/);
-  assert.match(css,/dialog\.sheet\[open\]\.closing\{transform:translateY\(100%\);pointer-events:none\}/);
-  assert.match(css,/dialog\.sheet\[open\]\.closing::backdrop\{opacity:0\}/);
+  // シート：出るのも、とじるのも transition（出るのは @starting-style から）。とちゅうでとじる・またひらく・ひっぱるも、いまの場所からつづく
+  assert.match(css,/dialog\.sheet\{transition:transform var\(--dur-sheet-in\) var\(--ease-drawer\)\}/);
+  assert.match(css,/dialog\.sheet::backdrop\{transition:opacity var\(--dur-sheet-in\) var\(--ease-out\)\}/);
+  assert.match(css,/@starting-style\{\s*dialog\.sheet\[open\]\{transform:translateY\(100%\)\}\s*dialog\.sheet\[open\]::backdrop\{opacity:0\}\s*\}/);
+  assert.match(css,/dialog\.sheet\[open\]\.closing\{transform:translateY\(100%\);transition-duration:var\(--dur-sheet-out\);pointer-events:none\}/);
+  assert.match(css,/dialog\.sheet\[open\]\.closing::backdrop\{opacity:0;transition-duration:var\(--dur-sheet-out\)\}/);
+  assert.ok(!/pa-sheet-up|dialog\.sheet[^{]*\{[^}]*animation/.test(css),'シートは keyframe でうごかさない（逆まわしもしない）');
+  assert.ok(!/getAnimations|a\.reverse\(\)/.test(core),'うごきの逆まわし（Animation.reverse）はしない');
+  assert.match(rm,/@starting-style\{dialog\.sheet\[open\]\{transform:none;opacity:0\}\}/); // へらす設定はうすく出る
   assert.match(rm,/dialog\.sheet\[open\]\.closing\{transform:none;opacity:0\}/); // へらす設定はうすくなるだけ
+  assert.match(css,/\.sheet-grab,\.sheet-head\{touch-action:none;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none\}/);
   assert.match(css,/max-height:85dvh/); assert.ok(!/\d(vh|vw)\b/.test(noCm(css)),'100vh・85vh・100vw はつかわない');
   assert.match(css,/html:has\(dialog\.sheet\[open\]\)\{overflow:hidden\}/);
   assert.ok(!/pa-sheet-down|pa-fade-out|pa-fb|-webkit-sticky|-webkit-overflow-scrolling|backdrop-filter|@supports not \(inset:0\)/.test(css));
@@ -220,6 +230,7 @@ test('app.css：うごきは --dur-*・--ease-* をつかう（紙ふぶき・2�
   assert.ok(decl.length>15);
   for(const [,prop,v] of decl){
     if(/^(none|pa-fade-in)$/.test(v.trim())||/^var\(--dur-[a-z-]+\)$/.test(v.trim())) continue;
+    if(prop==='animation-timing-function'){assert.match(v.trim(),/^var\(--ease-[a-z-]+\)$/,`${prop}:${v}`);continue;} // keyframe のとちゅうからのうごきかた
     if(/pa-fall 1\.9s ease-in|pa-arm 4s linear/.test(v)) continue; // おちるうごき・時計
     for(const part of v.split(/,(?![^(]*\))/)){
       const t=part.match(/var\(--dur-[a-z-]+\)|\d*\.?\d+m?s\b/);
@@ -237,10 +248,10 @@ test('app.css：スマホのアプリのように（ノッチの下までバー�
   assert.match(css,/\.appbar\{position:sticky;top:0;[^}]*min-height:calc\(56px \+ env\(safe-area-inset-top,0px\)\);[^}]*padding:calc\(6px \+ env\(safe-area-inset-top,0px\)\)[^}]*background:var\(--bg\);/);
   assert.match(css,/\.appbar\{min-height:calc\(46px \+ env\(safe-area-inset-top,0px\)\);padding-top:calc\(3px \+ env\(safe-area-inset-top,0px\)\)/); // 横にしたとき
   assert.match(css,/\.actionbar\{[^}]*calc\(50% - 380px\)[^}]*background:#fff;/);
-  assert.match(css,/html\{[^}]*overscroll-behavior:none;-webkit-tap-highlight-color:transparent;/);
+  assert.match(css,/html\{[^}]*overscroll-behavior:auto none;-webkit-tap-highlight-color:transparent;scrollbar-gutter:stable;/); // 横ははらってもどれる。シートでバーが消えてもずれない
   assert.match(css,/\.sheet-in\{[^}]*overscroll-behavior:contain\}/);
   assert.match(css,/:where\(button,a\[href\],summary,label,\[role="button"\],\[data-act\],\.kb,\.scroll\)\{touch-action:manipulation\}/);
-  assert.match(css,/:where\(button,a\[href\],summary,\[role="button"\],label\.sw\):not\(:where\(#view :is\(p,li,\.note,\.msg\) a:not\(\.btn\)\)\)\{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none\}/);
+  assert.match(css,/:where\(button,a\[href\],summary,\[role="button"\],label\.sw\):not\(:where\(#view :is\(p,li,\.note,\.msg\) a:not\(\[class\]\)\)\)\{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none\}/);
   assert.ok(!/body\{[^}]*user-select/.test(css),'文はえらべるまま');
 });
 

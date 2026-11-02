@@ -183,7 +183,7 @@ test('data-confirm：のこり時間の線は、描きなおしても --arm-d（
 
 /* ----- シート ----- */
 const keySheet=(PA,picks)=>{PA.openKeySheet({minor:false,idx:0,onPick:(mi,i)=>picks.push([mi,i])});return PA.__doc.body.querySelector('dialog');};
-test('シート：つまみがある。とじるのは transition（.closing）がおわってから（transitionend・こなくても 0.26びょうで）',async()=>{
+test('シート：つまみがある。とじるのは transition（.closing）がおわってから（transitionend・こなくても 0.34びょうで）',async()=>{
   const {PA}=load(), picks=[];
   const el=keySheet(PA,picks);
   assert.equal(el.open,true);
@@ -196,7 +196,7 @@ test('シート：つまみがある。とじるのは transition（.closing）�
   el.fire('transitionend',{propertyName:'transform'});
   assert.equal(el.open,false); assert.ok(!el.classList.contains('closing')); assert.equal(el.paClosing,false);
   // transitionend がこない（うごかなかった）ときも、かならずとじる
-  keySheet(PA,picks); el.close(); await sleep(300);
+  keySheet(PA,picks); el.close(); await sleep(200); assert.equal(el.open,true); await sleep(170);
   assert.equal(el.open,false); assert.ok(!el.classList.contains('closing'));
   // 動きをへらす設定でも、すぐはとじない（app.css でうすくなって消える）
   PA.__win.matchMedia=()=>({matches:true});
@@ -209,11 +209,11 @@ test('シート：とじているとちゅうにまたひらく・Esc（ブラ�
   const el=keySheet(PA,picks);
   el.close(); keySheet(PA,picks); // またひらく
   assert.ok(!el.classList.contains('closing')); assert.equal(el.paClosing,false); assert.equal(el.open,true);
-  await sleep(300); assert.equal(el.open,true,'まえのとじる時計はとまっている');
+  await sleep(370); assert.equal(el.open,true,'まえのとじる時計はとまっている');
   el.close();
   Dialog.prototype.close.call(el); // Esc：ブラウザがすぐとじる（'close' がくる）
   assert.equal(el.open,false); assert.ok(!el.classList.contains('closing')); assert.equal(el.paClosing,false);
-  await sleep(300); assert.equal(el.open,false);
+  await sleep(370); assert.equal(el.open,false);
   assert.ok(!(el.L.cancel||[]).length,'Esc（cancel）でうごかさない');
 });
 
@@ -259,6 +259,25 @@ test('シート：つまみ・見出しを下へひっぱるととじる。ゆ�
   assert.equal(el.style.transform,'');
 });
 
+test('シート：上がっている・もどっているとちゅうにつかむと、いま見えている場所からひっぱる（ぱっともとにもどらない）',()=>{
+  const {PA}=load(), picks=[];
+  const el=keySheet(PA,picks);
+  PA.__win.getComputedStyle=()=>({transform:'matrix(1, 0, 0, 1, 0, 60)'}); // まだ 60px 下
+  PA.__win.DOMMatrixReadOnly=class{constructor(t){this.m42=Number(String(t).match(/(-?[\d.]+)\)$/)[1]);}};
+  const head=()=>el.querySelector('.sheet-head h2');
+  const ev=(t,y,ts,type)=>el.fire(type,{target:head(),pointerId:1,clientY:y,timeStamp:ts,button:0});
+  ev(head(),100,0,'pointerdown');
+  assert.equal(el.style.transition,'none'); assert.equal(el.style.transform,'translateY(60px)');
+  // つかんですぐはなした（タップ）：60px 下にいても、とじない。もとの場所へもどる
+  ev(head(),100,60,'pointerup');
+  assert.ok(!el.classList.contains('closing')); assert.equal(el.style.transform,'');
+  // ひっぱる：ゆびがうごいた分だけ（つかんだ場所から）
+  ev(head(),100,100,'pointerdown');
+  ev(head(),110,150,'pointermove'); assert.equal(el.style.transform,'translateY(70px)');
+  ev(head(),95,2000,'pointermove'); assert.equal(el.style.transform,'translateY(55px)');
+  ev(head(),95,2000,'pointerup'); assert.ok(!el.classList.contains('closing')); // 上へもどした：とじない
+});
+
 /* ----- おしたときの手ごたえ ----- */
 test('PRESS_SEL：おせるものはぜんぶ .is-pressed。文の中のリンク・鍵盤・data-nopress はのぞく。横いっぱいの行・横スクロールの中はすこしまつ',async()=>{
   const {body,on}=load();
@@ -281,6 +300,25 @@ test('PRESS_SEL：おせるものはぜんぶ .is-pressed。文の中のリン�
   // マウスは :active（app.css）にまかせる
   down({pointerType:'mouse',target:$('sc'),clientX:0,clientY:0}); await sleep(130);
   assert.equal($('sc').classList.contains('is-pressed'),false);
+});
+
+test('PRESS_OFF：<li> の中の行（a.arow）はおせる（すこしまってから）。<li> の中の class のないリンクと、svg の中（楽譜のます）はおさない',async()=>{
+  const {body,on}=load();
+  const down=on('pointerdown','PRESS_SEL'), up=on('pointerup','pressOff(true)');
+  mount(body,'<ul><li><a class="arow" href="z.html" id="lirow">島の行</a></li><li><a href="x.html" id="liprose">こちら</a></li></ul>'
+    +'<div class="weakrow"><a href="w.html" id="weak">にがて</a></div>'
+    +'<svg class="score"><rect class="hit" role="button" data-slot="0" id="hit"></rect></svg>');
+  const $=id=>body.querySelector('#'+id);
+  down({pointerType:'touch',target:$('lirow'),clientX:0,clientY:0});
+  assert.equal($('lirow').classList.contains('is-pressed'),false,'すぐには光らない');
+  await sleep(80); assert.equal($('lirow').classList.contains('is-pressed'),true,'0.06びょうあと'); up({});
+  for(const id of ['liprose','hit']){
+    down({pointerType:'touch',target:$(id),clientX:0,clientY:0}); await sleep(80);
+    assert.equal($(id).classList.contains('is-pressed'),false,id); up({});
+  }
+  // にがての丸いボタンは、ふつうのボタンとおなじくすぐ
+  down({pointerType:'touch',target:$('weak'),clientX:0,clientY:0});
+  assert.equal($('weak').classList.contains('is-pressed'),true); up({});
 });
 
 test('core.js：古いブラウザのための分かれ道はもうない（<dialog>なし・Pointer Events なし・touchstart）',()=>{

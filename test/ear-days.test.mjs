@@ -180,7 +180,7 @@ test('app.css：丸・紙ふぶき。うごきをへらす設定では紙ふぶ�
   assert.match(css,/@keyframes pa-fall/);
   // 「できたね！」は pa-celebrate（ふつうの「ぽん」より、すこしゆっくり）
   assert.match(css,/\.pa-cheer\{[^}]*animation:pa-celebrate var\(--dur-celebrate\) var\(--ease-out\)\}/);
-  assert.match(css,/@keyframes pa-celebrate\{0%\{transform:scale\(\.96\)\}60%\{transform:scale\(1\.02\)\}100%\{transform:none\}\}/);
+  assert.match(css,/@keyframes pa-celebrate\{0%\{transform:scale\(\.96\)\}60%\{transform:scale\(1\.02\);animation-timing-function:var\(--ease-in-out\)\}100%\{transform:none\}\}/); // もどるところは、ゆっくりはじまってゆっくりおわる
   assert.ok(!/@keyframes pop\b/.test(css));
   assert.match(css,/@media \(prefers-reduced-motion:reduce\)\{\.pa-cheer\{animation:none\}\.pa-confetti\{display:none\}\}/);
 });
