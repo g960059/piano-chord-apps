@@ -14,6 +14,7 @@
  * 3. アプリにもどったとき：着信などのあと AudioContext がうごかないままになることがあるので、つくりなおす
  * 4. ふるえ（PA.haptic）：ネイティブの PianoHaptics（ios/App/App/PianoHapticsPlugin.swift）。マイクできいているあいだ・
  *    電子ピアノからの入力ではふるえない（マイクがひろう・ピアノをひいている手にはいらない）。0.08びょうに1回まで
+ * 5. 音のしくみ：ページをひらいたらすぐ PA.warmAudio()（WKWebView はタップなしで鳴らせる。さいしょの1音が待たない）
  */
 (function(){
 'use strict';
@@ -65,6 +66,10 @@ PA.haptic=kind=>{
   const t=Date.now(); if(t-lastHaptic<80) return; lastHaptic=t;
   try{cap.toNative('PianoHaptics','play',{kind});}catch(e){}
 };
+
+/* ===== 5. 音のしくみを先にうごかす：WKWebView はタップなしで鳴らせるので、ページをひらいたらすぐ（さいしょの1音が待たない） ===== */
+if(PA.warmAudio) PA.warmAudio();
+window.addEventListener('pageshow',e=>{if(e.persisted&&PA.warmAudio) PA.warmAudio();});
 
 /* ===== 2. 電子ピアノ（MIDI）と 3. アプリにもどったとき ===== */
 const devs=r=>{if(r&&Array.isArray(r.devices)) PA.midi.setDevices(r.devices);};

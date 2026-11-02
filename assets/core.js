@@ -371,6 +371,9 @@ PA.audioReset=()=>{
 document.addEventListener('visibilitychange',()=>{if(!document.hidden&&actx&&actx.state!=='running'&&actx.state!=='closed')actx.resume().catch(()=>{});});
 // ページをひらいたら、さわる前に録音を読んでおく（さいしょの音からピアノになるように）。音を鳴らさないページ（<body data-nosound>）では読まない
 if(typeof window.addEventListener==='function') window.addEventListener('load',()=>{if(S.sound&&wantPiano()&&!noSoundPage()) PA.loadPiano();});
+// 音のしくみを、さわる前からうごかしておく（アプリだけ：WKWebView はタップなしで鳴らせる。native.js がよぶ）。
+// さいしょの1音が、AudioContext をつくってうごきだすのを待たない
+PA.warmAudio=()=>{if(S.sound&&!noSoundPage()) PA.audio();};
 const pianoNote=(ac,midi,t,dur,vel)=>{
   const s=PA.pianoNearest(pianoBufs,midi), src=ac.createBufferSource(), g=ac.createGain(), a=vel/0.22*PIANO.gain;
   src.buffer=s.buf; src.playbackRate.value=PA.pianoRate(midi,s.midi,S.pitchA);
@@ -381,11 +384,12 @@ const pianoNote=(ac,midi,t,dur,vel)=>{
   src.connect(g); g.connect(master); src.start(t); src.stop(t+dur+0.3);
   const voice={os:[src],g,t0:t}; voices.add(voice);
   src.onended=()=>{try{src.disconnect();g.disconnect();}catch(e){}voices.delete(voice);};
+  return voice;
 };
 PA.playNote=(midi,when=0,dur=1.6,vel=0.22)=>{
   if(!S.sound) return; const ac=PA.audio(); if(!ac) return;
   const t=ac.currentTime+when+0.01;
-  if(PA.voice()==='piano'){pianoNote(ac,midi,t,dur,vel);return;}
+  if(PA.voice()==='piano') return pianoNote(ac,midi,t,dur,vel);
   const f=S.pitchA*Math.pow(2,(midi-69)/12); // 平均律・A4＝基準ピッチ
   const g=ac.createGain(), lp=ac.createBiquadFilter();
   lp.type='lowpass';
@@ -405,20 +409,25 @@ PA.playNote=(midi,when=0,dur=1.6,vel=0.22)=>{
     o.onended=()=>{try{o.disconnect();og.disconnect();if(i===parts.length-1){g.disconnect();lp.disconnect();voices.delete(voice);}}catch(e){}};
     voice.os.push(o);
   });
+  return voice;
 };
+// 1つの音をすぐ（0.015びょうで）けす。鳴りはじめていない音は鳴らさない
+const hush=(v,t)=>{try{
+  const p=v.g.gain;
+  if(v.t0>t){p.cancelScheduledValues(0);p.setValueAtTime(0,t);}
+  else{
+    if(p.cancelAndHoldAtTime) p.cancelAndHoldAtTime(t); else {p.cancelScheduledValues(t);p.setValueAtTime(p.value,t);}
+    p.setTargetAtTime(0.0001,t,0.015);
+  }
+  v.os.forEach(o=>o.stop(t+0.12));
+}catch(e){}};
+// PA.playNote がかえした音だけをけす（鍵盤をおしてすぐ横スクロールになったとき）
+PA.hushNote=v=>{if(v&&actx&&voices.has(v)){hush(v,actx.currentTime);voices.delete(v);}};
 PA.stopSound=()=>{
   soundGen++;
   if(actx){
     const t=actx.currentTime;
-    voices.forEach(v=>{try{
-      const p=v.g.gain;
-      if(v.t0>t){p.cancelScheduledValues(0);p.setValueAtTime(0,t);} // まだ鳴りはじめていない音はすぐ消す
-      else{
-        if(p.cancelAndHoldAtTime) p.cancelAndHoldAtTime(t); else {p.cancelScheduledValues(t);p.setValueAtTime(p.value,t);}
-        p.setTargetAtTime(0.0001,t,0.015);
-      }
-      v.os.forEach(o=>o.stop(t+0.12));
-    }catch(e){}});
+    voices.forEach(v=>hush(v,t));
   }
   voices.clear();
 };
@@ -1516,12 +1525,13 @@ document.addEventListener('pointerdown',e=>{
   if(e.pointerType==='mouse'){if(e.button!==0)return;keyFlash(k);PA.audio();PA.playNote(m,0,1.4,0.24);if(PA.onKey)PA.onKey(m);return;}
   const box=k.closest('.scroll'), scrollable=!!box&&box.scrollWidth>box.clientWidth+1;
   const d={m,k,x:e.clientX,y:e.clientY,played:false,t0:0,lit:0};
-  if(PA.audioRunning()&&!scrollable){PA.playNote(m,0,1.4,0.24);d.played=true;}
+  // 音はふれた瞬間（横スクロールできる鍵盤も）。スクロールになったら、その音だけすぐけす（下の pointerup・pointercancel）
+  if(PA.audioRunning()){d.v=PA.playNote(m,0,1.4,0.24);d.played=true;}
   // 鍵をへこませる。横にスクロールできる鍵盤は、0.06びょう指がうごかなかったら（スワイプで鍵が光らないように）
   const lit=()=>{if(downs.get(e.pointerId)===d&&!d.on){setDown(m,true);d.on=true;d.t0=Date.now();}};
-  if(scrollable) d.lit=setTimeout(lit,60);
+  if(scrollable&&!d.played) d.lit=setTimeout(lit,60);
   downs.set(e.pointerId,d);
-  if(!scrollable) lit();
+  if(!scrollable||d.played) lit();
 });
 // へこんでいる鍵は高さ（m）でおぼえる：おした鍵で描きなおしても、PA.paint が新しい鍵にもつけなおす
 const keyDowns=new Map(); // m → おしている数（指・マウス・電子ピアノ）
@@ -1543,11 +1553,11 @@ document.addEventListener('pointerup',e=>{
   const tap=Math.hypot(e.clientX-d.x,e.clientY-d.y)<10;
   if(tap&&!d.on){setDown(d.m,true);d.on=true;d.t0=Date.now();} // 0.06びょうより早くはなした（横スクロールの鍵盤）：いま見せる
   keyUp(d,false);
-  if(!tap) return;
+  if(!tap){PA.hushNote(d.v);return;}
   if(!d.played){PA.audio();PA.playNote(d.m,0,1.4,0.24);}
   if(PA.onKey) PA.onKey(d.m);
 });
-document.addEventListener('pointercancel',e=>{const d=downs.get(e.pointerId);if(d) keyUp(d,true);downs.delete(e.pointerId);stopCancel();});
+document.addEventListener('pointercancel',e=>{const d=downs.get(e.pointerId);if(d){keyUp(d,true);PA.hushNote(d.v);}downs.delete(e.pointerId);stopCancel();});
 // キーボード・読み上げソフトでひく：Enter／スペース（読み上げソフトの「タップ」は detail=0の click）、←→ Home End でとなりの鍵へ
 const hitKey=k=>{const m=+k.dataset.m;keyFlash(k);PA.audio();PA.playNote(m,0,1.4,0.24);if(PA.onKey)PA.onKey(m);};
 document.addEventListener('keydown',e=>{

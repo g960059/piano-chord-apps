@@ -263,3 +263,13 @@ test('PA.midi.reset：おさえていた鍵の画面のへこみも、もどす�
   assert.deepEqual(lit,[[60,true],[64,true],[60,false],[64,false]]);
   assert.equal(PA.midi.held().size,0);
 });
+
+test('もっさりしない：アプリは音のしくみを先にうごかす・鍵盤はふれた瞬間に鳴らす（スクロールになったらけす）',()=>{
+  const nat=fs.readFileSync(new URL('../assets/native.js',import.meta.url),'utf8');
+  const core=fs.readFileSync(new URL('../assets/core.js',import.meta.url),'utf8');
+  assert.match(nat,/if\(PA\.warmAudio\) PA\.warmAudio\(\);/);
+  assert.match(core,/PA\.warmAudio=\(\)=>\{if\(S\.sound&&!noSoundPage\(\)\) PA\.audio\(\);\};/);
+  assert.match(core,/if\(PA\.audioRunning\(\)\)\{d\.v=PA\.playNote\(m,0,1\.4,0\.24\);d\.played=true;\}/);
+  assert.match(core,/if\(!tap\)\{PA\.hushNote\(d\.v\);return;\}/);
+  assert.match(core,/if\(d\)\{keyUp\(d,true\);PA\.hushNote\(d\.v\);\}/);
+});
